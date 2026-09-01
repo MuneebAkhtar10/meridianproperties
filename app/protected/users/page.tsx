@@ -30,12 +30,14 @@ const ROLE_PILL: Record<UserType, string> = {
   admin: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
   worker: "bg-teal-50 text-teal-700 ring-teal-600/20",
   user: "bg-slate-50 text-slate-600 ring-slate-500/20",
+  owner: "bg-amber-50 text-amber-700 ring-amber-600/20",
 };
 
 const ROLE_LABEL: Record<UserType, string> = {
   admin: "Admin",
   worker: "Worker",
   user: "Tenant",
+  owner: "Property owner",
 };
 
 const ROLE_FILTERS = [
@@ -43,6 +45,7 @@ const ROLE_FILTERS = [
   { value: "user", label: "Tenants" },
   { value: "worker", label: "Workers" },
   { value: "admin", label: "Admins" },
+  { value: "owner", label: "Owners" },
 ] as const;
 
 export default async function PeoplePage({ searchParams }: PageProps) {
@@ -459,6 +462,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                                 <option value="user">Tenant</option>
                                 <option value="worker">Worker</option>
                                 <option value="admin">Admin</option>
+                                <option value="owner">Property owner</option>
                               </Select>
                             </div>
                             <SubmitButton
@@ -537,6 +541,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                   <option value="user">Tenant</option>
                   <option value="worker">Worker</option>
                   <option value="admin">Admin</option>
+                  <option value="owner">Property owner</option>
                 </Select>
               </div>
 

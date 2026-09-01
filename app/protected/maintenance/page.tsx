@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { PendingLink } from "@/components/ui/pending-link";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/session";
+import { requireAnyRole } from "@/lib/session";
 import { RequestStatus, UserType } from "@/lib/generated/prisma/client";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
@@ -27,7 +27,8 @@ const STATUS_FILTERS = [
 export default async function AllRequestsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const message = params as unknown as Message;
-  await requireRole(UserType.admin);
+  const user = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = user.userType === UserType.owner;
 
   const status = params.status as string | undefined;
   const propertyId = params.property as string | undefined;
@@ -41,6 +42,11 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
 
   if (propertyId && propertyId !== "all") {
     where.unit = { propertyId };
+  }
+
+  // An owner only ever sees requests for units in properties they own.
+  if (isOwner) {
+    where.unit = { ...where.unit, property: { ownerId: user.id } };
   }
 
   if (query) {
@@ -85,6 +91,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
       orderBy: { email: "asc" },
     }),
     prisma.property.findMany({
+      where: isOwner ? { ownerId: user.id } : {},
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

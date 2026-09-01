@@ -28,6 +28,7 @@ const NAV_BY_ROLE: Record<UserType, NavItem[]> = {
     { href: "/protected/tenancies", label: "Tenancies" },
     { href: "/protected/properties", label: "Properties" },
     { href: "/protected/users", label: "People" },
+    { href: "/protected/admin/qr-code", label: "QR Code" },
   ],
   worker: [
     { href: "/protected", label: "Dashboard" },
@@ -40,6 +41,13 @@ const NAV_BY_ROLE: Record<UserType, NavItem[]> = {
     { href: "/protected/finances", label: "Rent & Bills" },
     { href: "/protected/documents", label: "My Documents" },
     { href: "/protected/report", label: "Report Issue" },
+  ],
+  owner: [
+    { href: "/protected", label: "Dashboard" },
+    { href: "/protected/maintenance", label: "Requests" },
+    { href: "/protected/finances", label: "Rent & Bills" },
+    { href: "/protected/tenancies", label: "Tenancies" },
+    { href: "/protected/properties", label: "Properties" },
   ],
 };
 

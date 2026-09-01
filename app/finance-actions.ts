@@ -7,6 +7,9 @@ import { unstable_rethrow } from "next/navigation";
 
 import {
   notifyAdminsPaymentProof,
+  notifyChargeWaived,
+  notifyOwnerChargePaid,
+  notifyOwnerPaymentProof,
   notifyPaymentReviewed,
   notifyTenantCharge,
 } from "@/lib/notifications";
@@ -22,7 +25,7 @@ import {
 } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
-import { requireRole, requireUser } from "@/lib/session";
+import { requireAnyRole, requireUser } from "@/lib/session";
 import { uploadFinancialDocument } from "@/lib/storage";
 import { encodedRedirect } from "@/utils/utils";
 import {
@@ -61,7 +64,8 @@ async function publishFinance(userIds: Array<string | null | undefined> = []) {
 /* ── Tenancies ────────────────────────────────────────────────────────────── */
 
 export const startTenancyAction = async (formData: FormData) => {
-  const admin = await requireRole(UserType.admin);
+  const admin = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = admin.userType === UserType.owner;
 
   const unitId = formData.get("unitId")?.toString();
   const tenantId = formData.get("tenantId")?.toString();
@@ -119,7 +123,7 @@ export const startTenancyAction = async (formData: FormData) => {
   const [unit, tenant] = await Promise.all([
     prisma.unit.findUnique({
       where: { id: unitId },
-      include: { property: { select: { name: true } } },
+      include: { property: { select: { name: true, ownerId: true } } },
     }),
     prisma.user.findUnique({
       where: { id: tenantId },
@@ -132,7 +136,12 @@ export const startTenancyAction = async (formData: FormData) => {
     }),
   ]);
 
-  if (!unit || !tenant || tenant.userType !== UserType.user) {
+  if (
+    !unit ||
+    !tenant ||
+    tenant.userType !== UserType.user ||
+    (isOwner && unit.property.ownerId !== admin.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/tenancies",
@@ -202,12 +211,31 @@ export const startTenancyAction = async (formData: FormData) => {
       });
     }
 
+    let createdCharges: { id: string; title: string }[] = [];
     if (charges.length > 0) {
       await tx.charge.createMany({ data: charges });
+      createdCharges = await tx.charge.findMany({
+        where: { tenancyId: created.id },
+        select: { id: true, title: true },
+      });
     }
 
-    return created;
+    return { ...created, createdCharges };
   });
+
+  // First-move-in charges exist now — tell the tenant. Not worth failing the
+  // whole tenancy creation over a notification hiccup.
+  try {
+    for (const charge of tenancy.createdCharges) {
+      await notifyTenantCharge({
+        tenantId,
+        chargeId: charge.id,
+        title: charge.title,
+      });
+    }
+  } catch (error) {
+    console.error("Tenancy charge notification failed:", error);
+  }
 
   let documentUploadError: string | null = null;
   try {
@@ -259,7 +287,8 @@ export const startTenancyAction = async (formData: FormData) => {
 };
 
 export const updateTenancyAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
 
   const tenancyId = formData.get("tenancyId")?.toString();
   const startDate = parseDate(formData.get("startDate")?.toString());
@@ -301,6 +330,20 @@ export const updateTenancyAction = async (formData: FormData) => {
     );
   }
 
+  if (isOwner) {
+    const owned = await prisma.tenancy.findFirst({
+      where: { id: tenancyId, unit: { property: { ownerId: actor.id } } },
+      select: { id: true },
+    });
+    if (!owned) {
+      return encodedRedirect(
+        "error",
+        "/protected/tenancies",
+        "Tenancy not found.",
+      );
+    }
+  }
+
   const tenancy = await prisma.tenancy.update({
     where: { id: tenancyId },
     data: {
@@ -327,7 +370,8 @@ export const updateTenancyAction = async (formData: FormData) => {
 };
 
 export const endTenancyAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
 
   const tenancyId = formData.get("tenancyId")?.toString();
   const endDate = parseDate(formData.get("endDate")?.toString());
@@ -340,8 +384,15 @@ export const endTenancyAction = async (formData: FormData) => {
     );
   }
 
-  const tenancy = await prisma.tenancy.findUnique({ where: { id: tenancyId } });
-  if (!tenancy || tenancy.endDate) {
+  const tenancy = await prisma.tenancy.findUnique({
+    where: { id: tenancyId },
+    include: { unit: { select: { property: { select: { ownerId: true } } } } },
+  });
+  if (
+    !tenancy ||
+    tenancy.endDate ||
+    (isOwner && tenancy.unit.property.ownerId !== actor.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/tenancies",
@@ -385,7 +436,8 @@ export const endTenancyAction = async (formData: FormData) => {
 /* ── Charges and rent generation ──────────────────────────────────────────── */
 
 export const createChargeAction = async (formData: FormData) => {
-  const admin = await requireRole(UserType.admin);
+  const admin = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = admin.userType === UserType.owner;
 
   const tenancyId = formData.get("tenancyId")?.toString();
   const type = formData.get("type")?.toString();
@@ -415,10 +467,16 @@ export const createChargeAction = async (formData: FormData) => {
 
   const tenancy = await prisma.tenancy.findUnique({
     where: { id: tenancyId },
-    include: { tenant: { select: { id: true } } },
+    include: {
+      tenant: { select: { id: true } },
+      unit: { select: { property: { select: { ownerId: true } } } },
+    },
   });
 
-  if (!tenancy) {
+  if (
+    !tenancy ||
+    (isOwner && tenancy.unit.property.ownerId !== admin.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/finances",
@@ -489,7 +547,8 @@ export const createChargeAction = async (formData: FormData) => {
 };
 
 export const generateRentChargesAction = async (formData: FormData) => {
-  const admin = await requireRole(UserType.admin);
+  const admin = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = admin.userType === UserType.owner;
   const period = monthStart(formData.get("month")?.toString() || "");
 
   if (!period) {
@@ -508,6 +567,7 @@ export const generateRentChargesAction = async (formData: FormData) => {
       monthlyRent: { gt: 0 },
       startDate: { lte: periodEnd },
       OR: [{ endDate: null }, { endDate: { gte: period } }],
+      ...(isOwner ? { unit: { property: { ownerId: admin.id } } } : {}),
     },
     select: {
       id: true,
@@ -625,12 +685,18 @@ export const submitPaymentAction = async (formData: FormData) => {
     include: {
       tenant: { select: { email: true } },
       payments: { select: { amount: true, status: true } },
+      unit: { select: { property: { select: { ownerId: true } } } },
     },
   });
 
+  const isOwnPropertyOwner =
+    user.userType === UserType.owner &&
+    charge?.unit.property.ownerId === user.id;
+
   if (
     !charge ||
-    (user.userType === UserType.user && charge.tenantId !== user.id)
+    (user.userType === UserType.user && charge.tenantId !== user.id) ||
+    (user.userType === UserType.owner && !isOwnPropertyOwner)
   ) {
     return encodedRedirect("error", "/protected/finances", "Charge not found.");
   }
@@ -663,6 +729,10 @@ export const submitPaymentAction = async (formData: FormData) => {
     );
   }
 
+  // Admins and an owner recording a payment on their own property can mark it
+  // as paid outright, same as before — only a plain tenant needs proof.
+  const isAdminStyleActor = user.userType === UserType.admin || isOwnPropertyOwner;
+
   if (
     user.userType === UserType.user &&
     (!(receipt instanceof File) || receipt.size === 0)
@@ -693,12 +763,11 @@ export const submitPaymentAction = async (formData: FormData) => {
     }
   }
 
-  const status =
-    user.userType === UserType.admin
-      ? PaymentStatus.approved
-      : PaymentStatus.pending;
+  const status = isAdminStyleActor
+    ? PaymentStatus.approved
+    : PaymentStatus.pending;
 
-  await prisma.$transaction(async (tx) => {
+  const chargeFullyPaid = await prisma.$transaction(async (tx) => {
     await tx.payment.create({
       data: {
         id: paymentId,
@@ -710,8 +779,8 @@ export const submitPaymentAction = async (formData: FormData) => {
         notes,
         status,
         submittedById: user.id,
-        reviewedById: user.userType === UserType.admin ? user.id : null,
-        reviewedAt: user.userType === UserType.admin ? new Date() : null,
+        reviewedById: isAdminStyleActor ? user.id : null,
+        reviewedAt: isAdminStyleActor ? new Date() : null,
         attachments: uploaded
           ? {
               create: {
@@ -737,8 +806,10 @@ export const submitPaymentAction = async (formData: FormData) => {
           where: { id: chargeId },
           data: { status: ChargeStatus.paid },
         });
+        return true;
       }
     }
+    return false;
   });
 
   // The payment is committed by this point. Letting a failed notification throw
@@ -751,12 +822,31 @@ export const submitPaymentAction = async (formData: FormData) => {
         tenantEmail: charge.tenant.email,
         title: charge.title,
       });
+      await notifyOwnerPaymentProof({
+        ownerId: charge.unit.property.ownerId,
+        chargeId,
+        title: charge.title,
+        tenantEmail: charge.tenant.email,
+      });
     } else {
+      // A tenant is never the one recording an admin-style payment, so this
+      // is always an admin or the property's own owner acting — tell the
+      // tenant either way.
       await notifyPaymentReviewed({
         tenantId: charge.tenantId,
         chargeId,
         title: charge.title,
         approved: true,
+      });
+    }
+
+    if (chargeFullyPaid) {
+      await notifyOwnerChargePaid({
+        ownerId: charge.unit.property.ownerId,
+        chargeId,
+        title: charge.title,
+        amount: `OMR ${Number(charge.amount).toFixed(3)}`,
+        tenantEmail: charge.tenant.email,
       });
     }
   } catch (error) {
@@ -780,7 +870,8 @@ export const reviewPaymentAction = async (
   decision: "approve" | "reject",
   formData: FormData,
 ) => {
-  const admin = await requireRole(UserType.admin);
+  const admin = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = admin.userType === UserType.owner;
   const paymentId = formData.get("paymentId")?.toString();
   const reviewNotes = formData.get("reviewNotes")?.toString().trim() || null;
 
@@ -798,12 +889,18 @@ export const reviewPaymentAction = async (
       charge: {
         include: {
           payments: { select: { id: true, amount: true, status: true } },
+          tenant: { select: { email: true } },
+          unit: { select: { property: { select: { ownerId: true } } } },
         },
       },
     },
   });
 
-  if (!payment || payment.status !== PaymentStatus.pending) {
+  if (
+    !payment ||
+    payment.status !== PaymentStatus.pending ||
+    (isOwner && payment.charge.unit.property.ownerId !== admin.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/finances",
@@ -832,7 +929,7 @@ export const reviewPaymentAction = async (
     }
   }
 
-  await prisma.$transaction(async (tx) => {
+  const chargeFullyPaid = await prisma.$transaction(async (tx) => {
     await tx.payment.update({
       where: { id: paymentId },
       data: {
@@ -853,16 +950,35 @@ export const reviewPaymentAction = async (
           where: { id: payment.chargeId },
           data: { status: ChargeStatus.paid },
         });
+        return true;
       }
     }
+    return false;
   });
 
-  await notifyPaymentReviewed({
-    tenantId: payment.charge.tenantId,
-    chargeId: payment.chargeId,
-    title: payment.charge.title,
-    approved,
-  });
+  // The review is committed by this point — don't let a notification failure
+  // surface as an error over a decision that already went through.
+  try {
+    await notifyPaymentReviewed({
+      tenantId: payment.charge.tenantId,
+      chargeId: payment.chargeId,
+      title: payment.charge.title,
+      approved,
+    });
+
+    if (chargeFullyPaid) {
+      await notifyOwnerChargePaid({
+        ownerId: payment.charge.unit.property.ownerId,
+        chargeId: payment.chargeId,
+        title: payment.charge.title,
+        amount: `OMR ${Number(payment.charge.amount).toFixed(3)}`,
+        tenantEmail: payment.charge.tenant.email,
+      });
+    }
+  } catch (error) {
+    console.error("Payment review notification failed:", error);
+  }
+
   await publishFinance([payment.charge.tenantId]);
   revalidatePath(financeBack(payment.chargeId));
   revalidatePath("/protected/finances");
@@ -877,7 +993,8 @@ export const reviewPaymentAction = async (
 };
 
 export const waiveChargeAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
   const chargeId = formData.get("chargeId")?.toString();
 
   if (!chargeId) {
@@ -886,9 +1003,16 @@ export const waiveChargeAction = async (formData: FormData) => {
 
   const charge = await prisma.charge.findUnique({
     where: { id: chargeId },
-    include: { payments: { select: { status: true } } },
+    include: {
+      payments: { select: { status: true } },
+      unit: { select: { property: { select: { ownerId: true } } } },
+    },
   });
-  if (!charge || charge.status !== ChargeStatus.open) {
+  if (
+    !charge ||
+    charge.status !== ChargeStatus.open ||
+    (isOwner && charge.unit.property.ownerId !== actor.id)
+  ) {
     return encodedRedirect(
       "error",
       financeBack(chargeId),
@@ -914,6 +1038,18 @@ export const waiveChargeAction = async (formData: FormData) => {
     where: { id: chargeId },
     data: { status: ChargeStatus.waived },
   });
+
+  try {
+    await notifyChargeWaived({
+      tenantId: charge.tenantId,
+      ownerId: charge.unit.property.ownerId,
+      chargeId,
+      title: charge.title,
+    });
+  } catch (error) {
+    console.error("Charge waived notification failed:", error);
+  }
+
   await publishFinance([charge.tenantId]);
   revalidatePath(financeBack(chargeId));
   revalidatePath("/protected/finances");

@@ -14,9 +14,12 @@ import {
   createUnitAction,
   deleteUnitAction,
   generateUnitsAction,
+  markServiceChargeReceivedAction,
   updatePropertyAction,
   updateUnitAction,
 } from "@/app/admin-actions";
+import { CalendarClock } from "lucide-react";
+import { differenceInCalendarDays, format } from "date-fns";
 import { EmptyState } from "@/components/empty-state";
 import { EntityDocumentManager } from "@/components/entity-document-manager";
 import { FormMessage, Message } from "@/components/form-message";
@@ -32,7 +35,7 @@ import { formatMoney } from "@/lib/finance";
 import { formatOmanAddress, OMAN_GOVERNORATES } from "@/lib/oman";
 import { formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/session";
+import { requireAnyRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -43,12 +46,15 @@ export default async function PropertyDetailPage({
   const { id } = await params;
   const message = (await searchParams) as unknown as Message;
 
-  await requireRole(UserType.admin);
+  const user = await requireAnyRole(UserType.admin, UserType.owner);
+  const isAdmin = user.userType === UserType.admin;
+  const isOwner = user.userType === UserType.owner;
 
   const property = await prisma.property.findUnique({
     where: { id },
     include: {
       propertyType: true,
+      owner: { select: { id: true, email: true } },
       documents: { orderBy: { createdAt: "desc" } },
       units: {
         orderBy: [{ floor: "asc" }, { label: "asc" }],
@@ -65,18 +71,25 @@ export default async function PropertyDetailPage({
     },
   });
 
-  if (!property) {
+  if (!property || (isOwner && property.ownerId !== user.id)) {
     notFound();
   }
 
   // Tenants who could move in: anyone with the tenant role who isn't already housed.
-  const [availableTenants, propertyTypes] = await Promise.all([
+  const [availableTenants, propertyTypes, owners] = await Promise.all([
     prisma.user.findMany({
       where: { userType: UserType.user, unit: null },
       orderBy: { email: "asc" },
       select: { id: true, email: true },
     }),
     prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
+    isAdmin
+      ? prisma.user.findMany({
+          where: { userType: UserType.owner },
+          select: { id: true, email: true },
+          orderBy: { email: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
 
   const propertyType = property.propertyType;
@@ -109,6 +122,19 @@ export default async function PropertyDetailPage({
           Tenancy terms
         </ButtonLink>
       </PageHeader>
+
+      {!property.approved && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+            Pending approval
+          </span>
+          <span>
+            {isAdmin
+              ? "This property was submitted by its owner and isn't live yet. Approve or reject it from the properties list."
+              : "Your property is waiting for an admin to approve it. You can still set it up in the meantime — units, documents, and everything else here — but it won't appear anywhere else in the system until it's approved."}
+          </span>
+        </div>
+      )}
 
       {"error" in message || "success" in message ? (
         <FormMessage message={message} />
@@ -475,6 +501,73 @@ export default async function PropertyDetailPage({
             </CardContent>
           </Card>
 
+          {(property.serviceChargeAmount ||
+            isAdmin ||
+            isOwner) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CalendarClock className="h-4 w-4" />
+                  Service charge
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {property.serviceChargeAmount &&
+                property.serviceChargeDueDate ? (
+                  (() => {
+                    const daysUntilDue = differenceInCalendarDays(
+                      property.serviceChargeDueDate,
+                      new Date(),
+                    );
+                    const isOverdue = daysUntilDue < 0;
+                    const isDueSoon = daysUntilDue >= 0 && daysUntilDue <= 7;
+                    return (
+                      <>
+                        <p className="text-2xl font-semibold tracking-tight">
+                          {formatMoney(property.serviceChargeAmount)}
+                        </p>
+                        <p className="text-muted-foreground">
+                          Every {property.serviceChargeCycleMonths}{" "}
+                          {property.serviceChargeCycleMonths === 1
+                            ? "month"
+                            : "months"}{" "}
+                          · Due {format(property.serviceChargeDueDate, "d MMM yyyy")}
+                        </p>
+                        {isOverdue ? (
+                          <p className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                            {Math.abs(daysUntilDue)} day
+                            {Math.abs(daysUntilDue) === 1 ? "" : "s"} overdue
+                          </p>
+                        ) : isDueSoon ? (
+                          <p className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            Due in {daysUntilDue} day{daysUntilDue === 1 ? "" : "s"}
+                          </p>
+                        ) : null}
+                        <form>
+                          <input type="hidden" name="propertyId" value={property.id} />
+                          <SubmitButton
+                            formAction={markServiceChargeReceivedAction}
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            pendingText="Recording..."
+                          >
+                            Mark received
+                          </SubmitButton>
+                        </form>
+                      </>
+                    );
+                  })()
+                ) : (
+                  <p className="text-muted-foreground">
+                    No service charge set up yet. Add one from the edit form
+                    below.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Property details</CardTitle>
@@ -600,6 +693,80 @@ export default async function PropertyDetailPage({
                         id="property-postal"
                         name="postalCode"
                         defaultValue={property.postalCode ?? ""}
+                      />
+                    </div>
+                  </div>
+                  {isAdmin && (
+                    <div className="space-y-1">
+                      <Label htmlFor="property-owner" className="text-xs">
+                        Owner
+                      </Label>
+                      <Select
+                        id="property-owner"
+                        name="ownerId"
+                        defaultValue={property.ownerId ?? ""}
+                      >
+                        <option value="">No owner assigned</option>
+                        {owners.map((owner) => (
+                          <option key={owner.id} value={owner.id}>
+                            {owner.email}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  )}
+                  <div className="space-y-1 rounded-lg border p-2">
+                    <p className="text-xs font-medium">Service charge</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="property-service-amount" className="text-xs">
+                          Amount (OMR)
+                        </Label>
+                        <Input
+                          id="property-service-amount"
+                          name="serviceChargeAmount"
+                          type="number"
+                          step="0.001"
+                          min="0"
+                          defaultValue={property.serviceChargeAmount?.toString() ?? ""}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="property-service-cycle" className="text-xs">
+                          Repeats every
+                        </Label>
+                        <Select
+                          id="property-service-cycle"
+                          name="serviceChargeCycleMonths"
+                          defaultValue={property.serviceChargeCycleMonths?.toString() ?? ""}
+                          className="text-xs"
+                          required
+                        >
+                          <option value="" disabled>
+                            Select cycle
+                          </option>
+                          <option value="1">1 month</option>
+                          <option value="3">3 months</option>
+                          <option value="6">6 months</option>
+                          <option value="12">12 months</option>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="property-service-due" className="text-xs">
+                        Due date
+                      </Label>
+                      <Input
+                        id="property-service-due"
+                        name="serviceChargeDueDate"
+                        type="date"
+                        defaultValue={
+                          property.serviceChargeDueDate
+                            ? property.serviceChargeDueDate.toISOString().slice(0, 10)
+                            : ""
+                        }
+                        required
                       />
                     </div>
                   </div>

@@ -41,6 +41,7 @@ export default async function DashboardPage() {
       {user.userType === UserType.admin && <AdminDashboard />}
       {user.userType === UserType.worker && <WorkerDashboard user={user} />}
       {user.userType === UserType.user && <TenantDashboard user={user} />}
+      {user.userType === UserType.owner && <OwnerDashboard user={user} />}
     </div>
   );
 }
@@ -321,6 +322,97 @@ async function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+    </>
+  );
+}
+
+/* ── Owner ─────────────────────────────────────────────────────────────────── */
+
+/** Same shape as the admin dashboard's stats, scoped to properties this
+ * landlord owns. Owners never see other owners' or unassigned properties. */
+async function OwnerDashboard({ user }: { user: SessionUser }) {
+  const [properties, unitCount, occupiedCount, openRequests, outstandingCharges] =
+    await Promise.all([
+      prisma.property.count({ where: { ownerId: user.id } }),
+      prisma.unit.count({ where: { property: { ownerId: user.id } } }),
+      prisma.unit.count({
+        where: { property: { ownerId: user.id }, tenantId: { not: null } },
+      }),
+      prisma.maintenanceRequest.count({
+        where: {
+          status: { not: RequestStatus.completed },
+          unit: { property: { ownerId: user.id } },
+        },
+      }),
+      prisma.charge.findMany({
+        where: {
+          status: ChargeStatus.open,
+          type: { in: NON_UTILITY_CHARGE_TYPES },
+          unit: { property: { ownerId: user.id } },
+        },
+        select: {
+          amount: true,
+          status: true,
+          payments: { select: { amount: true, status: true } },
+        },
+      }),
+    ]);
+
+  const outstanding = outstandingCharges.reduce(
+    (total, charge) => total + chargeBalance(charge),
+    0,
+  );
+
+  return (
+    <>
+      <PageHeader
+        title="Dashboard"
+        description="Everything happening across your properties."
+      >
+        <ButtonLink href="/protected/properties" variant="outline">
+          <Building2 className="h-4 w-4" />
+          Properties
+        </ButtonLink>
+        <ButtonLink href="/protected/maintenance">
+          <ClipboardList className="h-4 w-4" />
+          Requests
+        </ButtonLink>
+      </PageHeader>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          label="Your properties"
+          value={properties}
+          icon={<Building2 className="h-4 w-4" />}
+          href="/protected/properties"
+        />
+        <StatTile
+          label="Units occupied"
+          value={`${occupiedCount} / ${unitCount}`}
+          icon={<DoorOpen className="h-4 w-4" />}
+          href="/protected/properties"
+        />
+        <StatTile
+          label="Open requests"
+          value={openRequests}
+          icon={<Wrench className="h-4 w-4" />}
+          href="/protected/maintenance"
+        />
+        <StatTile
+          label="Outstanding balance"
+          value={formatMoney(outstanding)}
+          icon={<WalletCards className="h-4 w-4" />}
+          href="/protected/finances"
+        />
+      </div>
+
+      {properties === 0 && (
+        <EmptyState
+          icon={Building2}
+          title="No properties yet"
+          description="Add your first property — an admin will need to approve it before it goes live."
+        />
+      )}
     </>
   );
 }
@@ -621,24 +713,34 @@ function StatTile({
   hint,
   dot,
   icon,
+  href,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: string;
   dot?: string;
   icon?: React.ReactNode;
+  href?: string;
 }) {
-  return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {dot && <span className={`h-2 w-2 rounded-full ${dot}`} />}
-          {icon}
-          {label}
-        </div>
-        <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
-      </CardContent>
-    </Card>
+  const content = (
+    <CardContent className="p-5">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        {dot && <span className={`h-2 w-2 rounded-full ${dot}`} />}
+        {icon}
+        {label}
+      </div>
+      <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+    </CardContent>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        <Card className="transition-colors hover:bg-muted/50">{content}</Card>
+      </Link>
+    );
+  }
+
+  return <Card>{content}</Card>;
 }

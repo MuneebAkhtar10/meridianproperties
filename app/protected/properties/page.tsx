@@ -17,25 +17,55 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { formatOmanAddress, OMAN_GOVERNORATES } from "@/lib/oman";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/session";
+import { requireAnyRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
+import {
+  approvePropertyAction,
+  rejectPropertyAction,
+} from "@/app/admin-actions";
 
 export default async function PropertiesPage({ searchParams }: PageProps) {
   const message = (await searchParams) as unknown as Message;
-  await requireRole(UserType.admin);
+  const user = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = user.userType === UserType.owner;
+  const isAdmin = user.userType === UserType.admin;
 
-  const [properties, propertyTypes] = await Promise.all([
-    prisma.property.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        propertyType: true,
-        _count: { select: { units: true } },
-        units: { select: { tenantId: true } },
-      },
-    }),
-    prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
-  ]);
+  const [properties, propertyTypes, pendingProperties, owners] =
+    await Promise.all([
+      prisma.property.findMany({
+        where: isOwner
+          ? { ownerId: user.id }
+          : // Admin's main list only shows live properties; unapproved
+            // owner-submitted ones surface separately below for review.
+            { approved: true },
+        orderBy: { createdAt: "desc" },
+        include: {
+          propertyType: true,
+          owner: { select: { email: true } },
+          _count: { select: { units: true } },
+          units: { select: { tenantId: true } },
+        },
+      }),
+      prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
+      isAdmin
+        ? prisma.property.findMany({
+            where: { approved: false },
+            orderBy: { createdAt: "asc" },
+            include: {
+              propertyType: true,
+              owner: { select: { email: true } },
+            },
+          })
+        : Promise.resolve([]),
+      isAdmin
+        ? prisma.user.findMany({
+            where: { userType: UserType.owner },
+            select: { id: true, email: true },
+            orderBy: { email: "asc" },
+          })
+        : Promise.resolve([]),
+    ]);
 
   const totalUnits = properties.reduce((sum, p) => sum + p._count.units, 0);
   const totalOccupied = properties.reduce(
@@ -51,11 +81,85 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
           properties.length === 1 ? "y" : "ies"
         } · ${totalOccupied} of ${totalUnits} units occupied`}
       >
-        <ButtonLink href="/protected/admin/property-types" variant="outline">
-          <Settings className="h-4 w-4" />
-          Property types
-        </ButtonLink>
+        {isAdmin && (
+          <ButtonLink href="/protected/admin/property-types" variant="outline">
+            <Settings className="h-4 w-4" />
+            Property types
+          </ButtonLink>
+        )}
       </PageHeader>
+
+      {isAdmin && pendingProperties.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              Pending properties
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                {pendingProperties.length} awaiting review
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {pendingProperties.map((property) => (
+              <div
+                key={property.id}
+                className="flex flex-col gap-3 rounded-lg border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <Link
+                    href={`/protected/properties/${property.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {property.name}
+                  </Link>
+                  <p className="text-sm text-muted-foreground">
+                    {property.propertyType.label} ·{" "}
+                    {formatOmanAddress(property)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Submitted by{" "}
+                    {property.owner?.email ?? "an unknown owner"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <ButtonLink
+                    href={`/protected/properties/${property.id}`}
+                    variant="outline"
+                    size="sm"
+                  >
+                    View details
+                  </ButtonLink>
+                  <form action={approvePropertyAction}>
+                    <input
+                      type="hidden"
+                      name="propertyId"
+                      value={property.id}
+                    />
+                    <SubmitButton size="sm" pendingText="Approving...">
+                      Approve
+                    </SubmitButton>
+                  </form>
+                  <form action={rejectPropertyAction}>
+                    <input
+                      type="hidden"
+                      name="propertyId"
+                      value={property.id}
+                    />
+                    <SubmitButton
+                      size="sm"
+                      variant="outline"
+                      className="text-rose-700"
+                      pendingText="Rejecting..."
+                    >
+                      Reject
+                    </SubmitButton>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {"error" in message || "success" in message ? (
         <FormMessage message={message} />
@@ -93,6 +197,11 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                               {property.propertyType.label}
                             </span>
+                            {!property.approved && (
+                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                Pending approval
+                              </span>
+                            )}
                           </div>
                           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <MapPin className="h-3.5 w-3.5" />
@@ -240,6 +349,20 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   </div>
                 </div>
 
+                {isAdmin && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ownerId">Owner (optional)</Label>
+                    <Select id="ownerId" name="ownerId" defaultValue="">
+                      <option value="">No owner assigned</option>
+                      {owners.map((owner) => (
+                        <option key={owner.id} value={owner.id}>
+                          {owner.email}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
                   <Label htmlFor="titleDeedDocuments">
                     Title deed / ownership documents
@@ -273,10 +396,65 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   />
                 </div>
 
+                <div className="space-y-1.5 rounded-lg border p-3">
+                  <p className="text-sm font-medium">Service charge</p>
+                  <p className="text-xs text-muted-foreground">
+                    The recurring maintenance budget for this property, and
+                    when it&apos;s next due.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="serviceChargeAmount">Amount (OMR)</Label>
+                      <Input
+                        id="serviceChargeAmount"
+                        name="serviceChargeAmount"
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        placeholder="400"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="serviceChargeCycleMonths">Repeats every</Label>
+                      <Select
+                        id="serviceChargeCycleMonths"
+                        name="serviceChargeCycleMonths"
+                        defaultValue=""
+                        required
+                      >
+                        <option value="" disabled>
+                          Select cycle
+                        </option>
+                        <option value="1">1 month</option>
+                        <option value="3">3 months</option>
+                        <option value="6">6 months</option>
+                        <option value="12">12 months</option>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 pt-1">
+                    <Label htmlFor="serviceChargeDueDate">Due date</Label>
+                    <Input
+                      id="serviceChargeDueDate"
+                      name="serviceChargeDueDate"
+                      type="date"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="notes">Notes</Label>
                   <Input id="notes" name="notes" placeholder="Optional" />
                 </div>
+
+                {isOwner && (
+                  <p className="text-xs text-muted-foreground">
+                    Your property will be reviewed by an administrator before
+                    it appears anywhere else.
+                  </p>
+                )}
 
                 <SubmitButton
                   formAction={createPropertyAction}

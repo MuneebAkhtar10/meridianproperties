@@ -2,10 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
+import { addMonths, format } from "date-fns";
 
+import {
+  notifyPropertyApproved,
+  notifyPropertyAssigned,
+  notifyPropertyRejected,
+  notifyServiceChargeReceived,
+} from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
-import { requireRole } from "@/lib/session";
+import { requireAnyRole, requireRole } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   storeEntityDocumentGroups,
@@ -22,6 +29,44 @@ import {
 
 const USER_TYPES = Object.values(UserType) as string[];
 
+/** Allowed service-charge recurrence cycles, in months. */
+const SERVICE_CHARGE_CYCLE_MONTHS = [1, 3, 6, 12] as const;
+
+/** Parses & validates the three service-charge form fields together — either
+ * all three are present or none are (a partial charge makes no sense). */
+function parseServiceCharge(formData: FormData):
+  | { ok: true; amount: number; cycleMonths: number; dueDate: Date }
+  | { ok: false; error: string } {
+  const amountRaw = formData.get("serviceChargeAmount")?.toString().trim();
+  const cycleRaw = formData.get("serviceChargeCycleMonths")?.toString().trim();
+  const dueDateRaw = formData.get("serviceChargeDueDate")?.toString().trim();
+
+  if (!amountRaw || !cycleRaw || !dueDateRaw) {
+    return {
+      ok: false,
+      error:
+        "Service charge amount, cycle, and due date are required.",
+    };
+  }
+
+  const amount = Number(amountRaw);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { ok: false, error: "Service charge amount must be a positive number." };
+  }
+
+  const cycleMonths = Number(cycleRaw);
+  if (!SERVICE_CHARGE_CYCLE_MONTHS.includes(cycleMonths as (typeof SERVICE_CHARGE_CYCLE_MONTHS)[number])) {
+    return { ok: false, error: "Select a valid service charge cycle." };
+  }
+
+  const dueDate = new Date(`${dueDateRaw}T00:00:00.000Z`);
+  if (Number.isNaN(dueDate.getTime())) {
+    return { ok: false, error: "Select a valid service charge due date." };
+  }
+
+  return { ok: true, amount, cycleMonths, dueDate };
+}
+
 /** Buildings, apartments and people only ever change from an admin's screen. */
 function publishDirectoryChange(userIds: (string | null | undefined)[] = []) {
   return publish({
@@ -34,7 +79,8 @@ function publishDirectoryChange(userIds: (string | null | undefined)[] = []) {
 /* ── Properties (buildings) ────────────────────────────────────────────────── */
 
 export const createPropertyAction = async (formData: FormData) => {
-  const admin = await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
 
   const name = formData.get("name")?.toString().trim();
   const propertyTypeId = formData.get("propertyTypeId")?.toString().trim();
@@ -47,6 +93,11 @@ export const createPropertyAction = async (formData: FormData) => {
     formData.get("buildingNumber")?.toString().trim() || null;
   const postalCode = formData.get("postalCode")?.toString().trim() || null;
   const notes = formData.get("notes")?.toString().trim() || null;
+  // Only an admin can hand a property to an existing owner; an owner creating
+  // their own property is always assigned to themselves.
+  const ownerId = isOwner
+    ? actor.id
+    : formData.get("ownerId")?.toString().trim() || null;
   const titleDeedDocuments = uploadedFiles(formData, "titleDeedDocuments");
   const approvalDocuments = uploadedFiles(formData, "approvalDocuments");
   const otherDocuments = uploadedFiles(formData, "otherPropertyDocuments");
@@ -83,6 +134,11 @@ export const createPropertyAction = async (formData: FormData) => {
     );
   }
 
+  const serviceCharge = parseServiceCharge(formData);
+  if (!serviceCharge.ok) {
+    return encodedRedirect("error", "/protected/properties", serviceCharge.error);
+  }
+
   const property = await prisma.property.create({
     data: {
       name,
@@ -95,14 +151,32 @@ export const createPropertyAction = async (formData: FormData) => {
       buildingNumber,
       postalCode,
       notes,
+      ownerId,
+      // Admin-created properties are live immediately; an owner's submission
+      // waits for an admin to approve it — see the "Pending properties"
+      // section on the properties page.
+      approved: !isOwner,
+      serviceChargeAmount: serviceCharge.amount,
+      serviceChargeCycleMonths: serviceCharge.cycleMonths,
+      serviceChargeDueDate: serviceCharge.dueDate,
     },
   });
+
+  // Admin picked an existing owner for this new property from the dropdown —
+  // an owner assigning it to themselves already knows, so no alert needed.
+  if (!isOwner && ownerId) {
+    await notifyPropertyAssigned({
+      ownerId,
+      propertyId: property.id,
+      propertyName: property.name,
+    });
+  }
 
   let documentUploadError: string | null = null;
   try {
     await storeEntityDocumentGroups({
       target: { type: "property", id: property.id },
-      uploadedById: admin.id,
+      uploadedById: actor.id,
       groups: [
         {
           category: EntityDocumentCategory.title_deed,
@@ -141,7 +215,8 @@ export const createPropertyAction = async (formData: FormData) => {
 };
 
 export const updatePropertyAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
 
   const id = formData.get("propertyId")?.toString();
   const name = formData.get("name")?.toString().trim();
@@ -155,6 +230,22 @@ export const updatePropertyAction = async (formData: FormData) => {
     formData.get("buildingNumber")?.toString().trim() || null;
   const postalCode = formData.get("postalCode")?.toString().trim() || null;
   const notes = formData.get("notes")?.toString().trim() || null;
+  // Only an admin may reassign a property's owner from this form.
+  const ownerId = formData.get("ownerId")?.toString().trim() || null;
+
+  if (isOwner) {
+    const owned = await prisma.property.findFirst({
+      where: { id, ownerId: actor.id },
+      select: { id: true },
+    });
+    if (!owned) {
+      return encodedRedirect(
+        "error",
+        "/protected/properties",
+        "Property not found.",
+      );
+    }
+  }
 
   if (!id || !name || !address) {
     return encodedRedirect(
@@ -188,6 +279,23 @@ export const updatePropertyAction = async (formData: FormData) => {
     );
   }
 
+  const serviceCharge = parseServiceCharge(formData);
+  if (!serviceCharge.ok) {
+    return encodedRedirect("error", `/protected/properties/${id}`, serviceCharge.error);
+  }
+
+  // Only admins can change ownerId (see the ...(isOwner ? {} : ...) below), so
+  // this comparison only matters for them — fetch the prior owner first to
+  // tell whether this update is actually a (re)assignment.
+  const previousOwnerId = isOwner
+    ? null
+    : (
+        await prisma.property.findUnique({
+          where: { id },
+          select: { ownerId: true },
+        })
+      )?.ownerId ?? null;
+
   await prisma.property.update({
     where: { id },
     data: {
@@ -201,12 +309,27 @@ export const updatePropertyAction = async (formData: FormData) => {
       buildingNumber,
       postalCode,
       notes,
+      ...(isOwner ? {} : { ownerId }),
+      serviceChargeAmount: serviceCharge.amount,
+      serviceChargeCycleMonths: serviceCharge.cycleMonths,
+      serviceChargeDueDate: serviceCharge.dueDate,
+      // Editing the charge (amount/cycle/date) starts a fresh reminder cycle.
+      serviceChargeLastStage: null,
     },
   });
+
+  if (!isOwner && ownerId && ownerId !== previousOwnerId) {
+    await notifyPropertyAssigned({
+      ownerId,
+      propertyId: id,
+      propertyName: name,
+    });
+  }
 
   await publishDirectoryChange();
 
   revalidatePath(`/protected/properties/${id}`);
+  revalidatePath("/protected/properties");
 
   return encodedRedirect(
     "success",
@@ -271,6 +394,188 @@ export const deletePropertyAction = async (formData: FormData) => {
     "success",
     "/protected/properties",
     "Property deleted.",
+  );
+};
+
+/**
+ * Admin approves an owner-submitted property, making it live everywhere.
+ */
+export const approvePropertyAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+
+  const id = formData.get("propertyId")?.toString();
+  if (!id) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Invalid property",
+    );
+  }
+
+  const property = await prisma.property.update({
+    where: { id },
+    data: { approved: true },
+    select: { name: true, ownerId: true },
+  });
+
+  if (property.ownerId) {
+    await notifyPropertyApproved({
+      ownerId: property.ownerId,
+      propertyId: id,
+      propertyName: property.name,
+    });
+  }
+
+  await publishDirectoryChange();
+
+  revalidatePath("/protected/properties");
+
+  return encodedRedirect(
+    "success",
+    "/protected/properties",
+    "Property approved.",
+  );
+};
+
+/**
+ * Admin rejects a pending owner-submitted property. Rejection deletes the row
+ * outright (documented choice — a rejected property has no units, tenants or
+ * financial history yet, so there is nothing worth keeping an "unapproved,
+ * rejected" record of; the owner can just resubmit it).
+ */
+export const rejectPropertyAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+
+  const id = formData.get("propertyId")?.toString();
+  if (!id) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Invalid property",
+    );
+  }
+
+  const property = await prisma.property.findUnique({
+    where: { id },
+    select: { approved: true, name: true, ownerId: true },
+  });
+
+  if (!property || property.approved) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Only a pending property can be rejected.",
+    );
+  }
+
+  const documents = await prisma.entityDocument.findMany({
+    where: { propertyId: id },
+    select: { filePath: true },
+  });
+  await prisma.property.delete({ where: { id } });
+  await Promise.allSettled(
+    documents.map((document) => deleteAttachment(document.filePath)),
+  );
+
+  if (property.ownerId) {
+    await notifyPropertyRejected({
+      ownerId: property.ownerId,
+      propertyName: property.name,
+    });
+  }
+
+  revalidatePath("/protected/properties");
+
+  return encodedRedirect(
+    "success",
+    "/protected/properties",
+    "Property rejected and removed.",
+  );
+};
+
+/**
+ * Owner or admin confirms this cycle's service charge came in. There's no
+ * ledger for it (reminder-only feature) — this just rolls the due date
+ * forward by the property's cycle and notifies the owner + admins.
+ */
+export const markServiceChargeReceivedAction = async (formData: FormData) => {
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
+
+  const id = formData.get("propertyId")?.toString();
+  if (!id) {
+    return encodedRedirect("error", "/protected/properties", "Invalid property");
+  }
+
+  const property = await prisma.property.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      ownerId: true,
+      serviceChargeAmount: true,
+      serviceChargeCycleMonths: true,
+      serviceChargeDueDate: true,
+    },
+  });
+
+  if (!property || (isOwner && property.ownerId !== actor.id)) {
+    return encodedRedirect("error", "/protected/properties", "Property not found.");
+  }
+
+  if (
+    !property.serviceChargeAmount ||
+    !property.serviceChargeCycleMonths ||
+    !property.serviceChargeDueDate
+  ) {
+    return encodedRedirect(
+      "error",
+      `/protected/properties/${id}`,
+      "This property has no service charge set up.",
+    );
+  }
+
+  // Roll forward from the due date (not from today) so a cycle paid early or
+  // late still lands on the intended recurring schedule.
+  const nextDueDate = addMonths(
+    property.serviceChargeDueDate,
+    property.serviceChargeCycleMonths,
+  );
+
+  await prisma.property.update({
+    where: { id },
+    data: {
+      serviceChargeDueDate: nextDueDate,
+      serviceChargeLastStage: null,
+    },
+  });
+
+  const admins = await prisma.user.findMany({
+    where: { userType: UserType.admin, id: { not: actor.id } },
+    select: { id: true },
+  });
+  const recipientIds = Array.from(
+    new Set(
+      [property.ownerId, ...admins.map((admin) => admin.id)].filter(
+        (recipientId): recipientId is string => Boolean(recipientId),
+      ),
+    ),
+  );
+
+  await notifyServiceChargeReceived({
+    propertyId: id,
+    propertyName: property.name,
+    amount: `OMR ${Number(property.serviceChargeAmount).toFixed(3)}`,
+    nextDueDate: format(nextDueDate, "d MMM yyyy"),
+    recipientIds,
+  });
+
+  revalidatePath(`/protected/properties/${id}`);
+  revalidatePath("/protected/properties");
+
+  return encodedRedirect(
+    "success",
+    `/protected/properties/${id}`,
+    "Service charge marked as received. Next due date updated.",
   );
 };
 
@@ -435,7 +740,7 @@ export const deletePropertyTypeAction = async (formData: FormData) => {
  * Floors 1–10 with 5 per floor gives 101–105, 201–205 … 1001–1005.
  */
 export const generateUnitsAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const propertyId = formData.get("propertyId")?.toString();
   const floors = Number(formData.get("floors"));
@@ -455,8 +760,22 @@ export const generateUnitsAction = async (formData: FormData) => {
 
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
-    select: { propertyType: { select: { hasFloors: true, unitNounPlural: true } } },
+    select: {
+      ownerId: true,
+      propertyType: { select: { hasFloors: true, unitNounPlural: true } },
+    },
   });
+
+  if (
+    actor.userType === UserType.owner &&
+    property?.ownerId !== actor.id
+  ) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Property not found.",
+    );
+  }
 
   if (property && !property.propertyType.hasFloors) {
     return encodedRedirect(
@@ -516,7 +835,7 @@ export const generateUnitsAction = async (formData: FormData) => {
 };
 
 export const createUnitAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const propertyId = formData.get("propertyId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -534,6 +853,16 @@ export const createUnitAction = async (formData: FormData) => {
   }
 
   const back = `/protected/properties/${propertyId}`;
+
+  if (actor.userType === UserType.owner) {
+    const owned = await prisma.property.findFirst({
+      where: { id: propertyId, ownerId: actor.id },
+      select: { id: true },
+    });
+    if (!owned) {
+      return encodedRedirect("error", "/protected/properties", "Property not found.");
+    }
+  }
 
   const exists = await prisma.unit.findUnique({
     where: { propertyId_label: { propertyId, label } },
@@ -556,7 +885,7 @@ export const createUnitAction = async (formData: FormData) => {
 
 /** Edits a unit's number, floor and bedroom count in place. */
 export const updateUnitAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const unitId = formData.get("unitId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -573,10 +902,17 @@ export const updateUnitAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { propertyId: true, label: true },
+    select: {
+      propertyId: true,
+      label: true,
+      property: { select: { ownerId: true } },
+    },
   });
 
-  if (!unit) {
+  if (
+    !unit ||
+    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -629,7 +965,7 @@ export const updateUnitAction = async (formData: FormData) => {
 };
 
 export const deleteUnitAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const unitId = formData.get("unitId")?.toString();
 
@@ -643,10 +979,18 @@ export const deleteUnitAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { propertyId: true, label: true, tenantId: true },
+    select: {
+      propertyId: true,
+      label: true,
+      tenantId: true,
+      property: { select: { ownerId: true } },
+    },
   });
 
-  if (!unit) {
+  if (
+    !unit ||
+    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -684,7 +1028,7 @@ export const deleteUnitAction = async (formData: FormData) => {
 
 /** Assigns a tenant to a unit, or clears it when no tenant is picked. */
 export const assignTenantAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const unitId = formData.get("unitId")?.toString();
   const tenantId = formData.get("tenantId")?.toString() || null;
@@ -699,10 +1043,18 @@ export const assignTenantAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { propertyId: true, label: true, tenantId: true },
+    select: {
+      propertyId: true,
+      label: true,
+      tenantId: true,
+      property: { select: { ownerId: true } },
+    },
   });
 
-  if (!unit) {
+  if (
+    !unit ||
+    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/properties",

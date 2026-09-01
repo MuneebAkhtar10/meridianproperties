@@ -15,10 +15,16 @@ import {
   notifySupplyRequestDecided,
   notifySupplyRequested,
   notifyWorkerAssigned,
+  notifyWorkerUnassigned,
 } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
-import { getCurrentUser, requireRole, requireUser } from "@/lib/session";
+import {
+  getCurrentUser,
+  requireAnyRole,
+  requireRole,
+  requireUser,
+} from "@/lib/session";
 import {
   deleteAttachment,
   uploadAttachment,
@@ -35,6 +41,28 @@ import {
 const PRIORITIES = Object.values(Priority) as string[];
 const STATUSES = Object.values(RequestStatus) as string[];
 const USER_TYPES = Object.values(UserType) as string[];
+
+/**
+ * True when `actor` may manage this maintenance request as if they were an
+ * admin — either they ARE an admin, or they are the owner of the property
+ * the request's unit belongs to. Always re-checked against the database;
+ * never trust a client-supplied ownerId. Requests with no unit (rare, e.g. a
+ * general report) have no property to own, so only an admin can manage them.
+ */
+async function canManageRequest(
+  actor: { id: string; userType: UserType },
+  requestId: string,
+): Promise<boolean> {
+  if (actor.userType === UserType.admin) return true;
+  if (actor.userType !== UserType.owner) return false;
+
+  const request = await prisma.maintenanceRequest.findUnique({
+    where: { id: requestId },
+    select: { unit: { select: { property: { select: { ownerId: true } } } } },
+  });
+
+  return request?.unit?.property.ownerId === actor.id;
+}
 const HOLDABLE_STATUSES: RequestStatus[] = [
   RequestStatus.pending,
   RequestStatus.en_route,
@@ -52,7 +80,7 @@ function parsePriority(value: string | undefined): Priority {
  * Returns true if at least one file failed, so the caller can warn the user
  * without throwing away the request itself.
  */
-async function saveAttachments(
+export async function saveAttachments(
   files: FormDataEntryValue[],
   requestId: string,
   userId: string,
@@ -574,9 +602,9 @@ export const holdTaskAction = async (
 
   const isAssignedWorker =
     actor.userType === UserType.worker && task?.assignedToId === actor.id;
-  const isAdmin = actor.userType === UserType.admin;
+  const canManage = task ? await canManageRequest(actor, task.id) : false;
 
-  if (!task || (!isAssignedWorker && !isAdmin)) {
+  if (!task || (!isAssignedWorker && !canManage)) {
     return { ok: false, message: "You cannot put this job on hold." };
   }
 
@@ -688,9 +716,9 @@ export const addSupplyRequestAction = async (
 
   const isAssignedWorker =
     actor.userType === UserType.worker && task?.assignedToId === actor.id;
-  const isAdmin = actor.userType === UserType.admin;
+  const canManage = task ? await canManageRequest(actor, task.id) : false;
 
-  if (!task || (!isAssignedWorker && !isAdmin)) {
+  if (!task || (!isAssignedWorker && !canManage)) {
     return { ok: false, message: "You cannot request supplies for this job." };
   }
 
@@ -816,7 +844,7 @@ export const uploadSupplyReceiptAction = async (
 export const decideSupplyRequestAction = async (
   formData: FormData,
 ): Promise<TaskStatusResult> => {
-  const admin = await requireRole(UserType.admin);
+  const admin = await requireAnyRole(UserType.admin, UserType.owner);
 
   const supplyRequestId = formData.get("supplyRequestId")?.toString() ?? "";
   const decision = formData.get("decision")?.toString();
@@ -848,6 +876,10 @@ export const decideSupplyRequestAction = async (
 
   if (!supplyRequest) {
     return { ok: false, message: "Request not found." };
+  }
+
+  if (!(await canManageRequest(admin, supplyRequest.request.id))) {
+    return { ok: false, message: "You cannot decide this request." };
   }
 
   if (supplyRequest.status !== SupplyRequestStatus.pending) {
@@ -1054,7 +1086,7 @@ export const workerReadyToResumeAction = async (
 export const resumeHeldTaskAction = async (
   formData: FormData,
 ): Promise<TaskStatusResult> => {
-  const admin = await requireRole(UserType.admin);
+  const admin = await requireAnyRole(UserType.admin, UserType.owner);
   const taskId = formData.get("taskId")?.toString() ?? "";
   const workerId = formData.get("workerId")?.toString() ?? "";
   const notes = formData.get("notes")?.toString().trim() ?? "";
@@ -1083,6 +1115,10 @@ export const resumeHeldTaskAction = async (
 
   if (!task) {
     return { ok: false, message: "Job not found." };
+  }
+
+  if (!(await canManageRequest(admin, taskId))) {
+    return { ok: false, message: "You cannot manage this job." };
   }
 
   if (task.status !== RequestStatus.on_hold) {
@@ -1363,7 +1399,7 @@ export const cancelCompletionAction = async (
 /* ── Admin actions ─────────────────────────────────────────────────────────── */
 
 export const assignWorkerAction = async (formData: FormData) => {
-  const admin = await requireRole(UserType.admin);
+  const admin = await requireAnyRole(UserType.admin, UserType.owner);
 
   const requestId = formData.get("requestId")?.toString();
   const workerId = formData.get("workerId")?.toString() || undefined;
@@ -1388,6 +1424,10 @@ export const assignWorkerAction = async (formData: FormData) => {
 
   if (!current) {
     throw new Error("Request not found");
+  }
+
+  if (!(await canManageRequest(admin, requestId))) {
+    throw new Error("You cannot manage this request");
   }
 
   if (
@@ -1457,6 +1497,14 @@ export const assignWorkerAction = async (formData: FormData) => {
     });
 
     await notifyWorkerAssigned(current, workerId);
+
+    if (current.assignedToId && current.assignedToId !== workerId) {
+      await notifyWorkerUnassigned({
+        id: current.id,
+        title: current.title,
+        workerId: current.assignedToId,
+      });
+    }
   }
 
   // The worker losing the job needs to hear about it as much as the one getting it.

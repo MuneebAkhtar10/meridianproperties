@@ -51,6 +51,7 @@ export function UnitPicker({
   const [propertyTypeId, setPropertyTypeId] = useState<string>(
     defaultUnit?.propertyTypeId ?? "",
   );
+  const [unitId, setUnitId] = useState<string>(defaultUnit?.id ?? "");
 
   const filteredUnits = useMemo(
     () => units.filter((u) => u.propertyTypeId === propertyTypeId),
@@ -68,7 +69,13 @@ export function UnitPicker({
         <Select
           id={`${id}-type`}
           value={propertyTypeId}
-          onChange={(e) => setPropertyTypeId(e.target.value)}
+          autoComplete="off"
+          onChange={(e) => {
+            setPropertyTypeId(e.target.value);
+            // A unit from the previous type can never be valid once the type
+            // changes — clear it so a stale id doesn't get submitted.
+            setUnitId("");
+          }}
         >
           <option value="">— Choose a property type —</option>
           {availableTypes.map((type) => (
@@ -86,7 +93,9 @@ export function UnitPicker({
         <Select
           id={id}
           name={name}
-          defaultValue={defaultUnit?.id ?? ""}
+          value={unitId}
+          onChange={(e) => setUnitId(e.target.value)}
+          autoComplete="off"
           disabled={!propertyTypeId}
           required={required}
         >

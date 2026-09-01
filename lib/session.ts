@@ -55,3 +55,17 @@ export async function requireRole(role: UserType): Promise<SessionUser> {
 
   return user;
 }
+
+/** Like requireRole, but accepts any of several roles — e.g. admin-or-owner
+ * screens that are otherwise identical to the admin one but scoped down. */
+export async function requireAnyRole(
+  ...types: UserType[]
+): Promise<SessionUser> {
+  const user = await requireUser();
+
+  if (!types.includes(user.userType)) {
+    redirect("/protected");
+  }
+
+  return user;
+}

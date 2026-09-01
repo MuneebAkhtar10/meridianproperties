@@ -28,6 +28,7 @@
     "next": "16.2.10",
     "pg": "^8.22.0",
     "prettier": "^3.3.3",
+    "qrcode": "^1.5.4",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "server-only": "^0.0.1"
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@types/node": "22.10.2",
     "@types/pg": "^8.20.0",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.2",
     "@types/react-dom": "19.0.2",
     "@types/ws": "^8.18.1",

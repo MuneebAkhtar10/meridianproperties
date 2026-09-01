@@ -101,7 +101,8 @@ export namespace $Enums {
   export const UserType: {
   user: 'user',
   admin: 'admin',
-  worker: 'worker'
+  worker: 'worker',
+  owner: 'owner'
 };
 
 export type UserType = (typeof UserType)[keyof typeof UserType]
@@ -2393,6 +2394,7 @@ export namespace Prisma {
     documentUploads: number
     supplyRequestsMade: number
     supplyRequestsDecided: number
+    ownedProperties: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2411,6 +2413,7 @@ export namespace Prisma {
     documentUploads?: boolean | UserCountOutputTypeCountDocumentUploadsArgs
     supplyRequestsMade?: boolean | UserCountOutputTypeCountSupplyRequestsMadeArgs
     supplyRequestsDecided?: boolean | UserCountOutputTypeCountSupplyRequestsDecidedArgs
+    ownedProperties?: boolean | UserCountOutputTypeCountOwnedPropertiesArgs
   }
 
   // Custom InputTypes
@@ -2527,6 +2530,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountSupplyRequestsDecidedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: SupplyRequestWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountOwnedPropertiesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PropertyWhereInput
   }
 
 
@@ -3889,8 +3899,20 @@ export namespace Prisma {
 
   export type AggregateProperty = {
     _count: PropertyCountAggregateOutputType | null
+    _avg: PropertyAvgAggregateOutputType | null
+    _sum: PropertySumAggregateOutputType | null
     _min: PropertyMinAggregateOutputType | null
     _max: PropertyMaxAggregateOutputType | null
+  }
+
+  export type PropertyAvgAggregateOutputType = {
+    serviceChargeAmount: Decimal | null
+    serviceChargeCycleMonths: number | null
+  }
+
+  export type PropertySumAggregateOutputType = {
+    serviceChargeAmount: Decimal | null
+    serviceChargeCycleMonths: number | null
   }
 
   export type PropertyMinAggregateOutputType = {
@@ -3907,6 +3929,12 @@ export namespace Prisma {
     titleDeedNumber: string | null
     plotNumber: string | null
     notes: string | null
+    ownerId: string | null
+    approved: boolean | null
+    serviceChargeAmount: Decimal | null
+    serviceChargeCycleMonths: number | null
+    serviceChargeDueDate: Date | null
+    serviceChargeLastStage: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3925,6 +3953,12 @@ export namespace Prisma {
     titleDeedNumber: string | null
     plotNumber: string | null
     notes: string | null
+    ownerId: string | null
+    approved: boolean | null
+    serviceChargeAmount: Decimal | null
+    serviceChargeCycleMonths: number | null
+    serviceChargeDueDate: Date | null
+    serviceChargeLastStage: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3943,11 +3977,27 @@ export namespace Prisma {
     titleDeedNumber: number
     plotNumber: number
     notes: number
+    ownerId: number
+    approved: number
+    serviceChargeAmount: number
+    serviceChargeCycleMonths: number
+    serviceChargeDueDate: number
+    serviceChargeLastStage: number
     createdAt: number
     updatedAt: number
     _all: number
   }
 
+
+  export type PropertyAvgAggregateInputType = {
+    serviceChargeAmount?: true
+    serviceChargeCycleMonths?: true
+  }
+
+  export type PropertySumAggregateInputType = {
+    serviceChargeAmount?: true
+    serviceChargeCycleMonths?: true
+  }
 
   export type PropertyMinAggregateInputType = {
     id?: true
@@ -3963,6 +4013,12 @@ export namespace Prisma {
     titleDeedNumber?: true
     plotNumber?: true
     notes?: true
+    ownerId?: true
+    approved?: true
+    serviceChargeAmount?: true
+    serviceChargeCycleMonths?: true
+    serviceChargeDueDate?: true
+    serviceChargeLastStage?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3981,6 +4037,12 @@ export namespace Prisma {
     titleDeedNumber?: true
     plotNumber?: true
     notes?: true
+    ownerId?: true
+    approved?: true
+    serviceChargeAmount?: true
+    serviceChargeCycleMonths?: true
+    serviceChargeDueDate?: true
+    serviceChargeLastStage?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3999,6 +4061,12 @@ export namespace Prisma {
     titleDeedNumber?: true
     plotNumber?: true
     notes?: true
+    ownerId?: true
+    approved?: true
+    serviceChargeAmount?: true
+    serviceChargeCycleMonths?: true
+    serviceChargeDueDate?: true
+    serviceChargeLastStage?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -4042,6 +4110,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: PropertyAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PropertySumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: PropertyMinAggregateInputType
@@ -4072,6 +4152,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: PropertyCountAggregateInputType | true
+    _avg?: PropertyAvgAggregateInputType
+    _sum?: PropertySumAggregateInputType
     _min?: PropertyMinAggregateInputType
     _max?: PropertyMaxAggregateInputType
   }
@@ -4090,9 +4172,17 @@ export namespace Prisma {
     titleDeedNumber: string | null
     plotNumber: string | null
     notes: string | null
+    ownerId: string | null
+    approved: boolean
+    serviceChargeAmount: Decimal | null
+    serviceChargeCycleMonths: number | null
+    serviceChargeDueDate: Date | null
+    serviceChargeLastStage: string | null
     createdAt: Date
     updatedAt: Date
     _count: PropertyCountAggregateOutputType | null
+    _avg: PropertyAvgAggregateOutputType | null
+    _sum: PropertySumAggregateOutputType | null
     _min: PropertyMinAggregateOutputType | null
     _max: PropertyMaxAggregateOutputType | null
   }
@@ -4125,9 +4215,16 @@ export namespace Prisma {
     titleDeedNumber?: boolean
     plotNumber?: boolean
     notes?: boolean
+    ownerId?: boolean
+    approved?: boolean
+    serviceChargeAmount?: boolean
+    serviceChargeCycleMonths?: boolean
+    serviceChargeDueDate?: boolean
+    serviceChargeLastStage?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
+    owner?: boolean | Property$ownerArgs<ExtArgs>
     units?: boolean | Property$unitsArgs<ExtArgs>
     documents?: boolean | Property$documentsArgs<ExtArgs>
     _count?: boolean | PropertyCountOutputTypeDefaultArgs<ExtArgs>
@@ -4147,9 +4244,16 @@ export namespace Prisma {
     titleDeedNumber?: boolean
     plotNumber?: boolean
     notes?: boolean
+    ownerId?: boolean
+    approved?: boolean
+    serviceChargeAmount?: boolean
+    serviceChargeCycleMonths?: boolean
+    serviceChargeDueDate?: boolean
+    serviceChargeLastStage?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
+    owner?: boolean | Property$ownerArgs<ExtArgs>
   }, ExtArgs["result"]["property"]>
 
   export type PropertySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -4166,9 +4270,16 @@ export namespace Prisma {
     titleDeedNumber?: boolean
     plotNumber?: boolean
     notes?: boolean
+    ownerId?: boolean
+    approved?: boolean
+    serviceChargeAmount?: boolean
+    serviceChargeCycleMonths?: boolean
+    serviceChargeDueDate?: boolean
+    serviceChargeLastStage?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
+    owner?: boolean | Property$ownerArgs<ExtArgs>
   }, ExtArgs["result"]["property"]>
 
   export type PropertySelectScalar = {
@@ -4185,28 +4296,38 @@ export namespace Prisma {
     titleDeedNumber?: boolean
     plotNumber?: boolean
     notes?: boolean
+    ownerId?: boolean
+    approved?: boolean
+    serviceChargeAmount?: boolean
+    serviceChargeCycleMonths?: boolean
+    serviceChargeDueDate?: boolean
+    serviceChargeLastStage?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
+  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "ownerId" | "approved" | "serviceChargeAmount" | "serviceChargeCycleMonths" | "serviceChargeDueDate" | "serviceChargeLastStage" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
   export type PropertyInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
+    owner?: boolean | Property$ownerArgs<ExtArgs>
     units?: boolean | Property$unitsArgs<ExtArgs>
     documents?: boolean | Property$documentsArgs<ExtArgs>
     _count?: boolean | PropertyCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type PropertyIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
+    owner?: boolean | Property$ownerArgs<ExtArgs>
   }
   export type PropertyIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
+    owner?: boolean | Property$ownerArgs<ExtArgs>
   }
 
   export type $PropertyPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Property"
     objects: {
       propertyType: Prisma.$PropertyTypePayload<ExtArgs>
+      owner: Prisma.$UserPayload<ExtArgs> | null
       units: Prisma.$UnitPayload<ExtArgs>[]
       documents: Prisma.$EntityDocumentPayload<ExtArgs>[]
     }
@@ -4224,6 +4345,34 @@ export namespace Prisma {
       titleDeedNumber: string | null
       plotNumber: string | null
       notes: string | null
+      /**
+       * The landlord this property belongs to. Null means no owner is assigned
+       * yet (all properties created before the owner role existed, and any an
+       * admin hasn't assigned). Set automatically to themselves when an owner
+       * creates the property; only an admin can assign or reassign it.
+       */
+      ownerId: string | null
+      /**
+       * Live/visible to admin, tenant and worker screens once true. Properties
+       * an admin creates are approved immediately; properties an owner creates
+       * start unapproved and stay hidden everywhere until an admin approves
+       * them. Defaults to true so every pre-existing row stays live.
+       */
+      approved: boolean
+      /**
+       * Recurring maintenance budget the owner collects from/for this property
+       * (e.g. 400 OMR every 3 months). All three are null until someone sets
+       * them; nulls mean "no service charge tracked" and the reminder job skips
+       * the property entirely.
+       */
+      serviceChargeAmount: Prisma.Decimal | null
+      serviceChargeCycleMonths: number | null
+      serviceChargeDueDate: Date | null
+      /**
+       * Which reminder was last sent for the CURRENT due date, so the daily job
+       * never sends the same stage twice ("upcoming" | "due" | "overdue").
+       */
+      serviceChargeLastStage: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["property"]>
@@ -4621,6 +4770,7 @@ export namespace Prisma {
   export interface Prisma__PropertyClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     propertyType<T extends PropertyTypeDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PropertyTypeDefaultArgs<ExtArgs>>): Prisma__PropertyTypeClient<$Result.GetResult<Prisma.$PropertyTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    owner<T extends Property$ownerArgs<ExtArgs> = {}>(args?: Subset<T, Property$ownerArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     units<T extends Property$unitsArgs<ExtArgs> = {}>(args?: Subset<T, Property$unitsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UnitPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     documents<T extends Property$documentsArgs<ExtArgs> = {}>(args?: Subset<T, Property$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EntityDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -4665,6 +4815,12 @@ export namespace Prisma {
     readonly titleDeedNumber: FieldRef<"Property", 'String'>
     readonly plotNumber: FieldRef<"Property", 'String'>
     readonly notes: FieldRef<"Property", 'String'>
+    readonly ownerId: FieldRef<"Property", 'String'>
+    readonly approved: FieldRef<"Property", 'Boolean'>
+    readonly serviceChargeAmount: FieldRef<"Property", 'Decimal'>
+    readonly serviceChargeCycleMonths: FieldRef<"Property", 'Int'>
+    readonly serviceChargeDueDate: FieldRef<"Property", 'DateTime'>
+    readonly serviceChargeLastStage: FieldRef<"Property", 'String'>
     readonly createdAt: FieldRef<"Property", 'DateTime'>
     readonly updatedAt: FieldRef<"Property", 'DateTime'>
   }
@@ -5065,6 +5221,25 @@ export namespace Prisma {
      * Limit how many Properties to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Property.owner
+   */
+  export type Property$ownerArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
   }
 
   /**
@@ -6634,6 +6809,7 @@ export namespace Prisma {
     documentUploads?: boolean | User$documentUploadsArgs<ExtArgs>
     supplyRequestsMade?: boolean | User$supplyRequestsMadeArgs<ExtArgs>
     supplyRequestsDecided?: boolean | User$supplyRequestsDecidedArgs<ExtArgs>
+    ownedProperties?: boolean | User$ownedPropertiesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -6703,6 +6879,7 @@ export namespace Prisma {
     documentUploads?: boolean | User$documentUploadsArgs<ExtArgs>
     supplyRequestsMade?: boolean | User$supplyRequestsMadeArgs<ExtArgs>
     supplyRequestsDecided?: boolean | User$supplyRequestsDecidedArgs<ExtArgs>
+    ownedProperties?: boolean | User$ownedPropertiesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -6730,6 +6907,10 @@ export namespace Prisma {
       documentUploads: Prisma.$EntityDocumentPayload<ExtArgs>[]
       supplyRequestsMade: Prisma.$SupplyRequestPayload<ExtArgs>[]
       supplyRequestsDecided: Prisma.$SupplyRequestPayload<ExtArgs>[]
+      /**
+       * Set only for owners: the properties they were assigned or created.
+       */
+      ownedProperties: Prisma.$PropertyPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7155,6 +7336,7 @@ export namespace Prisma {
     documentUploads<T extends User$documentUploadsArgs<ExtArgs> = {}>(args?: Subset<T, User$documentUploadsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EntityDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     supplyRequestsMade<T extends User$supplyRequestsMadeArgs<ExtArgs> = {}>(args?: Subset<T, User$supplyRequestsMadeArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplyRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     supplyRequestsDecided<T extends User$supplyRequestsDecidedArgs<ExtArgs> = {}>(args?: Subset<T, User$supplyRequestsDecidedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplyRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    ownedProperties<T extends User$ownedPropertiesArgs<ExtArgs> = {}>(args?: Subset<T, User$ownedPropertiesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -7966,6 +8148,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: SupplyRequestScalarFieldEnum | SupplyRequestScalarFieldEnum[]
+  }
+
+  /**
+   * User.ownedProperties
+   */
+  export type User$ownedPropertiesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Property
+     */
+    select?: PropertySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Property
+     */
+    omit?: PropertyOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyInclude<ExtArgs> | null
+    where?: PropertyWhereInput
+    orderBy?: PropertyOrderByWithRelationInput | PropertyOrderByWithRelationInput[]
+    cursor?: PropertyWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PropertyScalarFieldEnum | PropertyScalarFieldEnum[]
   }
 
   /**
@@ -20665,6 +20871,12 @@ export namespace Prisma {
     titleDeedNumber: 'titleDeedNumber',
     plotNumber: 'plotNumber',
     notes: 'notes',
+    ownerId: 'ownerId',
+    approved: 'approved',
+    serviceChargeAmount: 'serviceChargeAmount',
+    serviceChargeCycleMonths: 'serviceChargeCycleMonths',
+    serviceChargeDueDate: 'serviceChargeDueDate',
+    serviceChargeLastStage: 'serviceChargeLastStage',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -20958,6 +21170,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Decimal'
+   */
+  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal[]'
+   */
+  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Int'
    */
   export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -20982,20 +21208,6 @@ export namespace Prisma {
    * Reference to a field of type 'UserType[]'
    */
   export type ListEnumUserTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserType[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Decimal'
-   */
-  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
-    
-
-
-  /**
-   * Reference to a field of type 'Decimal[]'
-   */
-  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
     
 
 
@@ -21258,9 +21470,16 @@ export namespace Prisma {
     titleDeedNumber?: StringNullableFilter<"Property"> | string | null
     plotNumber?: StringNullableFilter<"Property"> | string | null
     notes?: StringNullableFilter<"Property"> | string | null
+    ownerId?: UuidNullableFilter<"Property"> | string | null
+    approved?: BoolFilter<"Property"> | boolean
+    serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
+    serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
+    serviceChargeLastStage?: StringNullableFilter<"Property"> | string | null
     createdAt?: DateTimeFilter<"Property"> | Date | string
     updatedAt?: DateTimeFilter<"Property"> | Date | string
     propertyType?: XOR<PropertyTypeScalarRelationFilter, PropertyTypeWhereInput>
+    owner?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     units?: UnitListRelationFilter
     documents?: EntityDocumentListRelationFilter
   }
@@ -21279,9 +21498,16 @@ export namespace Prisma {
     titleDeedNumber?: SortOrderInput | SortOrder
     plotNumber?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
+    ownerId?: SortOrderInput | SortOrder
+    approved?: SortOrder
+    serviceChargeAmount?: SortOrderInput | SortOrder
+    serviceChargeCycleMonths?: SortOrderInput | SortOrder
+    serviceChargeDueDate?: SortOrderInput | SortOrder
+    serviceChargeLastStage?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     propertyType?: PropertyTypeOrderByWithRelationInput
+    owner?: UserOrderByWithRelationInput
     units?: UnitOrderByRelationAggregateInput
     documents?: EntityDocumentOrderByRelationAggregateInput
   }
@@ -21303,9 +21529,16 @@ export namespace Prisma {
     titleDeedNumber?: StringNullableFilter<"Property"> | string | null
     plotNumber?: StringNullableFilter<"Property"> | string | null
     notes?: StringNullableFilter<"Property"> | string | null
+    ownerId?: UuidNullableFilter<"Property"> | string | null
+    approved?: BoolFilter<"Property"> | boolean
+    serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
+    serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
+    serviceChargeLastStage?: StringNullableFilter<"Property"> | string | null
     createdAt?: DateTimeFilter<"Property"> | Date | string
     updatedAt?: DateTimeFilter<"Property"> | Date | string
     propertyType?: XOR<PropertyTypeScalarRelationFilter, PropertyTypeWhereInput>
+    owner?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     units?: UnitListRelationFilter
     documents?: EntityDocumentListRelationFilter
   }, "id">
@@ -21324,11 +21557,19 @@ export namespace Prisma {
     titleDeedNumber?: SortOrderInput | SortOrder
     plotNumber?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
+    ownerId?: SortOrderInput | SortOrder
+    approved?: SortOrder
+    serviceChargeAmount?: SortOrderInput | SortOrder
+    serviceChargeCycleMonths?: SortOrderInput | SortOrder
+    serviceChargeDueDate?: SortOrderInput | SortOrder
+    serviceChargeLastStage?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: PropertyCountOrderByAggregateInput
+    _avg?: PropertyAvgOrderByAggregateInput
     _max?: PropertyMaxOrderByAggregateInput
     _min?: PropertyMinOrderByAggregateInput
+    _sum?: PropertySumOrderByAggregateInput
   }
 
   export type PropertyScalarWhereWithAggregatesInput = {
@@ -21348,6 +21589,12 @@ export namespace Prisma {
     titleDeedNumber?: StringNullableWithAggregatesFilter<"Property"> | string | null
     plotNumber?: StringNullableWithAggregatesFilter<"Property"> | string | null
     notes?: StringNullableWithAggregatesFilter<"Property"> | string | null
+    ownerId?: UuidNullableWithAggregatesFilter<"Property"> | string | null
+    approved?: BoolWithAggregatesFilter<"Property"> | boolean
+    serviceChargeAmount?: DecimalNullableWithAggregatesFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: IntNullableWithAggregatesFilter<"Property"> | number | null
+    serviceChargeDueDate?: DateTimeNullableWithAggregatesFilter<"Property"> | Date | string | null
+    serviceChargeLastStage?: StringNullableWithAggregatesFilter<"Property"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Property"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Property"> | Date | string
   }
@@ -21470,6 +21717,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentListRelationFilter
     supplyRequestsMade?: SupplyRequestListRelationFilter
     supplyRequestsDecided?: SupplyRequestListRelationFilter
+    ownedProperties?: PropertyListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -21502,6 +21750,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentOrderByRelationAggregateInput
     supplyRequestsMade?: SupplyRequestOrderByRelationAggregateInput
     supplyRequestsDecided?: SupplyRequestOrderByRelationAggregateInput
+    ownedProperties?: PropertyOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -21537,6 +21786,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentListRelationFilter
     supplyRequestsMade?: SupplyRequestListRelationFilter
     supplyRequestsDecided?: SupplyRequestListRelationFilter
+    ownedProperties?: PropertyListRelationFilter
   }, "id" | "email" | "civilId">
 
   export type UserOrderByWithAggregationInput = {
@@ -22727,9 +22977,15 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
+    owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
     units?: UnitCreateNestedManyWithoutPropertyInput
     documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
   }
@@ -22748,6 +23004,12 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    ownerId?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
@@ -22767,9 +23029,15 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
+    owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
     units?: UnitUpdateManyWithoutPropertyNestedInput
     documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
   }
@@ -22788,6 +23056,12 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
@@ -22808,6 +23082,12 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    ownerId?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -22825,6 +23105,11 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22843,6 +23128,12 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22964,6 +23255,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -22996,6 +23288,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUpdateInput = {
@@ -23028,6 +23321,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -23060,6 +23354,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -24418,9 +24713,59 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type UuidNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedUuidNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type DecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
   export type PropertyTypeScalarRelationFilter = {
     is?: PropertyTypeWhereInput
     isNot?: PropertyTypeWhereInput
+  }
+
+  export type UserNullableScalarRelationFilter = {
+    is?: UserWhereInput | null
+    isNot?: UserWhereInput | null
   }
 
   export type UnitListRelationFilter = {
@@ -24457,8 +24802,19 @@ export namespace Prisma {
     titleDeedNumber?: SortOrder
     plotNumber?: SortOrder
     notes?: SortOrder
+    ownerId?: SortOrder
+    approved?: SortOrder
+    serviceChargeAmount?: SortOrder
+    serviceChargeCycleMonths?: SortOrder
+    serviceChargeDueDate?: SortOrder
+    serviceChargeLastStage?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type PropertyAvgOrderByAggregateInput = {
+    serviceChargeAmount?: SortOrder
+    serviceChargeCycleMonths?: SortOrder
   }
 
   export type PropertyMaxOrderByAggregateInput = {
@@ -24475,6 +24831,12 @@ export namespace Prisma {
     titleDeedNumber?: SortOrder
     plotNumber?: SortOrder
     notes?: SortOrder
+    ownerId?: SortOrder
+    approved?: SortOrder
+    serviceChargeAmount?: SortOrder
+    serviceChargeCycleMonths?: SortOrder
+    serviceChargeDueDate?: SortOrder
+    serviceChargeLastStage?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -24493,22 +24855,22 @@ export namespace Prisma {
     titleDeedNumber?: SortOrder
     plotNumber?: SortOrder
     notes?: SortOrder
+    ownerId?: SortOrder
+    approved?: SortOrder
+    serviceChargeAmount?: SortOrder
+    serviceChargeCycleMonths?: SortOrder
+    serviceChargeDueDate?: SortOrder
+    serviceChargeLastStage?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
-  export type IntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  export type PropertySumOrderByAggregateInput = {
+    serviceChargeAmount?: SortOrder
+    serviceChargeCycleMonths?: SortOrder
   }
 
-  export type UuidNullableFilter<$PrismaModel = never> = {
+  export type UuidNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
     in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
     notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
@@ -24517,17 +24879,61 @@ export namespace Prisma {
     gt?: string | StringFieldRefInput<$PrismaModel>
     gte?: string | StringFieldRefInput<$PrismaModel>
     mode?: QueryMode
-    not?: NestedUuidNullableFilter<$PrismaModel> | string | null
+    not?: NestedUuidNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type PropertyScalarRelationFilter = {
     is?: PropertyWhereInput
     isNot?: PropertyWhereInput
-  }
-
-  export type UserNullableScalarRelationFilter = {
-    is?: UserWhereInput | null
-    isNot?: UserWhereInput | null
   }
 
   export type MaintenanceRequestListRelationFilter = {
@@ -24606,37 +25012,6 @@ export namespace Prisma {
   export type UnitSumOrderByAggregateInput = {
     floor?: SortOrder
     bedrooms?: SortOrder
-  }
-
-  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedIntNullableFilter<$PrismaModel>
-    _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
-  export type UuidNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedUuidNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type EnumUserTypeFilter<$PrismaModel = never> = {
@@ -24769,17 +25144,6 @@ export namespace Prisma {
     _max?: NestedEnumUserTypeFilter<$PrismaModel>
   }
 
-  export type DateTimeNullableFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
-  }
-
   export type DecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -24892,20 +25256,6 @@ export namespace Prisma {
     monthlyRent?: SortOrder
     rentDueDay?: SortOrder
     securityDeposit?: SortOrder
-  }
-
-  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
@@ -25433,17 +25783,6 @@ export namespace Prisma {
     not?: NestedEnumSupplyRequestStatusFilter<$PrismaModel> | $Enums.SupplyRequestStatus
   }
 
-  export type DecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-  }
-
   export type MaintenanceRequestScalarRelationFilter = {
     is?: MaintenanceRequestWhereInput
     isNot?: MaintenanceRequestWhereInput
@@ -25524,22 +25863,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumSupplyRequestStatusFilter<$PrismaModel>
     _max?: NestedEnumSupplyRequestStatusFilter<$PrismaModel>
-  }
-
-  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedDecimalNullableFilter<$PrismaModel>
-    _sum?: NestedDecimalNullableFilter<$PrismaModel>
-    _min?: NestedDecimalNullableFilter<$PrismaModel>
-    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
   export type MaintenanceAttachmentCountOrderByAggregateInput = {
@@ -25721,6 +26044,12 @@ export namespace Prisma {
     connect?: PropertyTypeWhereUniqueInput
   }
 
+  export type UserCreateNestedOneWithoutOwnedPropertiesInput = {
+    create?: XOR<UserCreateWithoutOwnedPropertiesInput, UserUncheckedCreateWithoutOwnedPropertiesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOwnedPropertiesInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type UnitCreateNestedManyWithoutPropertyInput = {
     create?: XOR<UnitCreateWithoutPropertyInput, UnitUncheckedCreateWithoutPropertyInput> | UnitCreateWithoutPropertyInput[] | UnitUncheckedCreateWithoutPropertyInput[]
     connectOrCreate?: UnitCreateOrConnectWithoutPropertyInput | UnitCreateOrConnectWithoutPropertyInput[]
@@ -25749,12 +26078,42 @@ export namespace Prisma {
     connect?: EntityDocumentWhereUniqueInput | EntityDocumentWhereUniqueInput[]
   }
 
+  export type NullableDecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string | null
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
+  }
+
   export type PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput = {
     create?: XOR<PropertyTypeCreateWithoutPropertiesInput, PropertyTypeUncheckedCreateWithoutPropertiesInput>
     connectOrCreate?: PropertyTypeCreateOrConnectWithoutPropertiesInput
     upsert?: PropertyTypeUpsertWithoutPropertiesInput
     connect?: PropertyTypeWhereUniqueInput
     update?: XOR<XOR<PropertyTypeUpdateToOneWithWhereWithoutPropertiesInput, PropertyTypeUpdateWithoutPropertiesInput>, PropertyTypeUncheckedUpdateWithoutPropertiesInput>
+  }
+
+  export type UserUpdateOneWithoutOwnedPropertiesNestedInput = {
+    create?: XOR<UserCreateWithoutOwnedPropertiesInput, UserUncheckedCreateWithoutOwnedPropertiesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOwnedPropertiesInput
+    upsert?: UserUpsertWithoutOwnedPropertiesInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutOwnedPropertiesInput, UserUpdateWithoutOwnedPropertiesInput>, UserUncheckedUpdateWithoutOwnedPropertiesInput>
   }
 
   export type UnitUpdateManyWithoutPropertyNestedInput = {
@@ -25865,14 +26224,6 @@ export namespace Prisma {
     connectOrCreate?: ChargeCreateOrConnectWithoutUnitInput | ChargeCreateOrConnectWithoutUnitInput[]
     createMany?: ChargeCreateManyUnitInputEnvelope
     connect?: ChargeWhereUniqueInput | ChargeWhereUniqueInput[]
-  }
-
-  export type NullableIntFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
   }
 
   export type PropertyUpdateOneRequiredWithoutUnitsNestedInput = {
@@ -26088,6 +26439,13 @@ export namespace Prisma {
     connect?: SupplyRequestWhereUniqueInput | SupplyRequestWhereUniqueInput[]
   }
 
+  export type PropertyCreateNestedManyWithoutOwnerInput = {
+    create?: XOR<PropertyCreateWithoutOwnerInput, PropertyUncheckedCreateWithoutOwnerInput> | PropertyCreateWithoutOwnerInput[] | PropertyUncheckedCreateWithoutOwnerInput[]
+    connectOrCreate?: PropertyCreateOrConnectWithoutOwnerInput | PropertyCreateOrConnectWithoutOwnerInput[]
+    createMany?: PropertyCreateManyOwnerInputEnvelope
+    connect?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+  }
+
   export type UnitUncheckedCreateNestedOneWithoutTenantInput = {
     create?: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenantInput
@@ -26197,6 +26555,13 @@ export namespace Prisma {
     connectOrCreate?: SupplyRequestCreateOrConnectWithoutDecidedByInput | SupplyRequestCreateOrConnectWithoutDecidedByInput[]
     createMany?: SupplyRequestCreateManyDecidedByInputEnvelope
     connect?: SupplyRequestWhereUniqueInput | SupplyRequestWhereUniqueInput[]
+  }
+
+  export type PropertyUncheckedCreateNestedManyWithoutOwnerInput = {
+    create?: XOR<PropertyCreateWithoutOwnerInput, PropertyUncheckedCreateWithoutOwnerInput> | PropertyCreateWithoutOwnerInput[] | PropertyUncheckedCreateWithoutOwnerInput[]
+    connectOrCreate?: PropertyCreateOrConnectWithoutOwnerInput | PropertyCreateOrConnectWithoutOwnerInput[]
+    createMany?: PropertyCreateManyOwnerInputEnvelope
+    connect?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
   }
 
   export type EnumUserTypeFieldUpdateOperationsInput = {
@@ -26423,6 +26788,20 @@ export namespace Prisma {
     deleteMany?: SupplyRequestScalarWhereInput | SupplyRequestScalarWhereInput[]
   }
 
+  export type PropertyUpdateManyWithoutOwnerNestedInput = {
+    create?: XOR<PropertyCreateWithoutOwnerInput, PropertyUncheckedCreateWithoutOwnerInput> | PropertyCreateWithoutOwnerInput[] | PropertyUncheckedCreateWithoutOwnerInput[]
+    connectOrCreate?: PropertyCreateOrConnectWithoutOwnerInput | PropertyCreateOrConnectWithoutOwnerInput[]
+    upsert?: PropertyUpsertWithWhereUniqueWithoutOwnerInput | PropertyUpsertWithWhereUniqueWithoutOwnerInput[]
+    createMany?: PropertyCreateManyOwnerInputEnvelope
+    set?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+    disconnect?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+    delete?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+    connect?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+    update?: PropertyUpdateWithWhereUniqueWithoutOwnerInput | PropertyUpdateWithWhereUniqueWithoutOwnerInput[]
+    updateMany?: PropertyUpdateManyWithWhereWithoutOwnerInput | PropertyUpdateManyWithWhereWithoutOwnerInput[]
+    deleteMany?: PropertyScalarWhereInput | PropertyScalarWhereInput[]
+  }
+
   export type UnitUncheckedUpdateOneWithoutTenantNestedInput = {
     create?: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenantInput
@@ -26643,6 +27022,20 @@ export namespace Prisma {
     deleteMany?: SupplyRequestScalarWhereInput | SupplyRequestScalarWhereInput[]
   }
 
+  export type PropertyUncheckedUpdateManyWithoutOwnerNestedInput = {
+    create?: XOR<PropertyCreateWithoutOwnerInput, PropertyUncheckedCreateWithoutOwnerInput> | PropertyCreateWithoutOwnerInput[] | PropertyUncheckedCreateWithoutOwnerInput[]
+    connectOrCreate?: PropertyCreateOrConnectWithoutOwnerInput | PropertyCreateOrConnectWithoutOwnerInput[]
+    upsert?: PropertyUpsertWithWhereUniqueWithoutOwnerInput | PropertyUpsertWithWhereUniqueWithoutOwnerInput[]
+    createMany?: PropertyCreateManyOwnerInputEnvelope
+    set?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+    disconnect?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+    delete?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+    connect?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
+    update?: PropertyUpdateWithWhereUniqueWithoutOwnerInput | PropertyUpdateWithWhereUniqueWithoutOwnerInput[]
+    updateMany?: PropertyUpdateManyWithWhereWithoutOwnerInput | PropertyUpdateManyWithWhereWithoutOwnerInput[]
+    deleteMany?: PropertyScalarWhereInput | PropertyScalarWhereInput[]
+  }
+
   export type UnitCreateNestedOneWithoutTenanciesInput = {
     create?: XOR<UnitCreateWithoutTenanciesInput, UnitUncheckedCreateWithoutTenanciesInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenanciesInput
@@ -26681,10 +27074,6 @@ export namespace Prisma {
     connectOrCreate?: EntityDocumentCreateOrConnectWithoutTenancyInput | EntityDocumentCreateOrConnectWithoutTenancyInput[]
     createMany?: EntityDocumentCreateManyTenancyInputEnvelope
     connect?: EntityDocumentWhereUniqueInput | EntityDocumentWhereUniqueInput[]
-  }
-
-  export type NullableDateTimeFieldUpdateOperationsInput = {
-    set?: Date | string | null
   }
 
   export type DecimalFieldUpdateOperationsInput = {
@@ -27391,14 +27780,6 @@ export namespace Prisma {
     set?: $Enums.SupplyRequestStatus
   }
 
-  export type NullableDecimalFieldUpdateOperationsInput = {
-    set?: Decimal | DecimalJsLike | number | string | null
-    increment?: Decimal | DecimalJsLike | number | string
-    decrement?: Decimal | DecimalJsLike | number | string
-    multiply?: Decimal | DecimalJsLike | number | string
-    divide?: Decimal | DecimalJsLike | number | string
-  }
-
   export type MaintenanceRequestUpdateOneRequiredWithoutSupplyRequestsNestedInput = {
     create?: XOR<MaintenanceRequestCreateWithoutSupplyRequestsInput, MaintenanceRequestUncheckedCreateWithoutSupplyRequestsInput>
     connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutSupplyRequestsInput
@@ -27673,6 +28054,58 @@ export namespace Prisma {
     not?: NestedUuidNullableFilter<$PrismaModel> | string | null
   }
 
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type NestedUuidNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedUuidNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
   export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
     in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
@@ -27700,18 +28133,18 @@ export namespace Prisma {
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
-  export type NestedUuidNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedUuidNullableWithAggregatesFilter<$PrismaModel> | string | null
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
     _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumUserTypeFilter<$PrismaModel = never> = {
@@ -27731,17 +28164,6 @@ export namespace Prisma {
     _max?: NestedEnumUserTypeFilter<$PrismaModel>
   }
 
-  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
-  }
-
   export type NestedDecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -27758,20 +28180,6 @@ export namespace Prisma {
     in?: $Enums.TenancyPurpose[] | ListEnumTenancyPurposeFieldRefInput<$PrismaModel>
     notIn?: $Enums.TenancyPurpose[] | ListEnumTenancyPurposeFieldRefInput<$PrismaModel>
     not?: NestedEnumTenancyPurposeFilter<$PrismaModel> | $Enums.TenancyPurpose
-  }
-
-  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
@@ -27987,17 +28395,6 @@ export namespace Prisma {
     not?: NestedEnumSupplyRequestStatusFilter<$PrismaModel> | $Enums.SupplyRequestStatus
   }
 
-  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-  }
-
   export type NestedEnumSupplyRequestStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.SupplyRequestStatus | EnumSupplyRequestStatusFieldRefInput<$PrismaModel>
     in?: $Enums.SupplyRequestStatus[] | ListEnumSupplyRequestStatusFieldRefInput<$PrismaModel>
@@ -28006,22 +28403,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumSupplyRequestStatusFilter<$PrismaModel>
     _max?: NestedEnumSupplyRequestStatusFilter<$PrismaModel>
-  }
-
-  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedDecimalNullableFilter<$PrismaModel>
-    _sum?: NestedDecimalNullableFilter<$PrismaModel>
-    _min?: NestedDecimalNullableFilter<$PrismaModel>
-    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
   export type PropertyCreateWithoutPropertyTypeInput = {
@@ -28037,8 +28418,14 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
     units?: UnitCreateNestedManyWithoutPropertyInput
     documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
   }
@@ -28056,6 +28443,12 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    ownerId?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
@@ -28105,6 +28498,12 @@ export namespace Prisma {
     titleDeedNumber?: StringNullableFilter<"Property"> | string | null
     plotNumber?: StringNullableFilter<"Property"> | string | null
     notes?: StringNullableFilter<"Property"> | string | null
+    ownerId?: UuidNullableFilter<"Property"> | string | null
+    approved?: BoolFilter<"Property"> | boolean
+    serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
+    serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
+    serviceChargeLastStage?: StringNullableFilter<"Property"> | string | null
     createdAt?: DateTimeFilter<"Property"> | Date | string
     updatedAt?: DateTimeFilter<"Property"> | Date | string
   }
@@ -28140,6 +28539,75 @@ export namespace Prisma {
   export type PropertyTypeCreateOrConnectWithoutPropertiesInput = {
     where: PropertyTypeWhereUniqueInput
     create: XOR<PropertyTypeCreateWithoutPropertiesInput, PropertyTypeUncheckedCreateWithoutPropertiesInput>
+  }
+
+  export type UserCreateWithoutOwnedPropertiesInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+  }
+
+  export type UserUncheckedCreateWithoutOwnedPropertiesInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+  }
+
+  export type UserCreateOrConnectWithoutOwnedPropertiesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutOwnedPropertiesInput, UserUncheckedCreateWithoutOwnedPropertiesInput>
   }
 
   export type UnitCreateWithoutPropertyInput = {
@@ -28255,6 +28723,81 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type UserUpsertWithoutOwnedPropertiesInput = {
+    update: XOR<UserUpdateWithoutOwnedPropertiesInput, UserUncheckedUpdateWithoutOwnedPropertiesInput>
+    create: XOR<UserCreateWithoutOwnedPropertiesInput, UserUncheckedCreateWithoutOwnedPropertiesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutOwnedPropertiesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutOwnedPropertiesInput, UserUncheckedUpdateWithoutOwnedPropertiesInput>
+  }
+
+  export type UserUpdateWithoutOwnedPropertiesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutOwnedPropertiesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+  }
+
   export type UnitUpsertWithWhereUniqueWithoutPropertyInput = {
     where: UnitWhereUniqueInput
     update: XOR<UnitUpdateWithoutPropertyInput, UnitUncheckedUpdateWithoutPropertyInput>
@@ -28332,9 +28875,15 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
+    owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
     documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
   }
 
@@ -28352,6 +28901,12 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    ownerId?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
@@ -28391,6 +28946,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutUnitInput = {
@@ -28422,6 +28978,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutUnitInput = {
@@ -28619,9 +29176,15 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
+    owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
     documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
   }
 
@@ -28639,6 +29202,12 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
@@ -28684,6 +29253,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutUnitInput = {
@@ -28715,6 +29285,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type MaintenanceRequestUpsertWithWhereUniqueWithoutUnitInput = {
@@ -29522,6 +30093,66 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PropertyCreateWithoutOwnerInput = {
+    id?: string
+    name: string
+    address: string
+    governorate?: string | null
+    wilayat?: string | null
+    area?: string | null
+    wayNumber?: string | null
+    buildingNumber?: string | null
+    postalCode?: string | null
+    titleDeedNumber?: string | null
+    plotNumber?: string | null
+    notes?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
+    units?: UnitCreateNestedManyWithoutPropertyInput
+    documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
+  }
+
+  export type PropertyUncheckedCreateWithoutOwnerInput = {
+    id?: string
+    name: string
+    propertyTypeId: string
+    address: string
+    governorate?: string | null
+    wilayat?: string | null
+    area?: string | null
+    wayNumber?: string | null
+    buildingNumber?: string | null
+    postalCode?: string | null
+    titleDeedNumber?: string | null
+    plotNumber?: string | null
+    notes?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
+  }
+
+  export type PropertyCreateOrConnectWithoutOwnerInput = {
+    where: PropertyWhereUniqueInput
+    create: XOR<PropertyCreateWithoutOwnerInput, PropertyUncheckedCreateWithoutOwnerInput>
+  }
+
+  export type PropertyCreateManyOwnerInputEnvelope = {
+    data: PropertyCreateManyOwnerInput | PropertyCreateManyOwnerInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UnitUpsertWithoutTenantInput = {
     update: XOR<UnitUpdateWithoutTenantInput, UnitUncheckedUpdateWithoutTenantInput>
     create: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
@@ -29897,6 +30528,22 @@ export namespace Prisma {
     data: XOR<SupplyRequestUpdateManyMutationInput, SupplyRequestUncheckedUpdateManyWithoutDecidedByInput>
   }
 
+  export type PropertyUpsertWithWhereUniqueWithoutOwnerInput = {
+    where: PropertyWhereUniqueInput
+    update: XOR<PropertyUpdateWithoutOwnerInput, PropertyUncheckedUpdateWithoutOwnerInput>
+    create: XOR<PropertyCreateWithoutOwnerInput, PropertyUncheckedCreateWithoutOwnerInput>
+  }
+
+  export type PropertyUpdateWithWhereUniqueWithoutOwnerInput = {
+    where: PropertyWhereUniqueInput
+    data: XOR<PropertyUpdateWithoutOwnerInput, PropertyUncheckedUpdateWithoutOwnerInput>
+  }
+
+  export type PropertyUpdateManyWithWhereWithoutOwnerInput = {
+    where: PropertyScalarWhereInput
+    data: XOR<PropertyUpdateManyMutationInput, PropertyUncheckedUpdateManyWithoutOwnerInput>
+  }
+
   export type UnitCreateWithoutTenanciesInput = {
     id?: string
     label: string
@@ -29957,6 +30604,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutTenanciesInput = {
@@ -29988,6 +30636,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutTenanciesInput = {
@@ -30158,6 +30807,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTenanciesInput = {
@@ -30189,6 +30839,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type ChargeUpsertWithWhereUniqueWithoutTenancyInput = {
@@ -30236,9 +30887,15 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
+    owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
     units?: UnitCreateNestedManyWithoutPropertyInput
   }
 
@@ -30256,6 +30913,12 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    ownerId?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
@@ -30344,6 +31007,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutDocumentsInput = {
@@ -30375,6 +31039,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutDocumentsInput = {
@@ -30411,6 +31076,7 @@ export namespace Prisma {
     documents?: EntityDocumentCreateNestedManyWithoutUserInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutDocumentUploadsInput = {
@@ -30442,6 +31108,7 @@ export namespace Prisma {
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutDocumentUploadsInput = {
@@ -30473,9 +31140,15 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
+    owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
     units?: UnitUpdateManyWithoutPropertyNestedInput
   }
 
@@ -30493,6 +31166,12 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
@@ -30593,6 +31272,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDocumentsInput = {
@@ -30624,6 +31304,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUpsertWithoutDocumentUploadsInput = {
@@ -30666,6 +31347,7 @@ export namespace Prisma {
     documents?: EntityDocumentUpdateManyWithoutUserNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDocumentUploadsInput = {
@@ -30697,6 +31379,7 @@ export namespace Prisma {
     documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type TenancyCreateWithoutChargesInput = {
@@ -30808,6 +31491,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutChargesInput = {
@@ -30839,6 +31523,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutChargesInput = {
@@ -30875,6 +31560,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutCreatedChargesInput = {
@@ -30906,6 +31592,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutCreatedChargesInput = {
@@ -31123,6 +31810,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutChargesInput = {
@@ -31154,6 +31842,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUpsertWithoutCreatedChargesInput = {
@@ -31196,6 +31885,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedChargesInput = {
@@ -31227,6 +31917,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type PaymentUpsertWithWhereUniqueWithoutChargeInput = {
@@ -31333,6 +32024,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutSubmittedPaymentsInput = {
@@ -31364,6 +32056,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutSubmittedPaymentsInput = {
@@ -31400,6 +32093,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutReviewedPaymentsInput = {
@@ -31431,6 +32125,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutReviewedPaymentsInput = {
@@ -31561,6 +32256,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSubmittedPaymentsInput = {
@@ -31592,6 +32288,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUpsertWithoutReviewedPaymentsInput = {
@@ -31634,6 +32331,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReviewedPaymentsInput = {
@@ -31665,6 +32363,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type FinancialAttachmentUpsertWithWhereUniqueWithoutPaymentInput = {
@@ -31794,6 +32493,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutFinancialUploadsInput = {
@@ -31825,6 +32525,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutFinancialUploadsInput = {
@@ -31966,6 +32667,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinancialUploadsInput = {
@@ -31997,6 +32699,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserCreateWithoutRequestsInput = {
@@ -32028,6 +32731,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutRequestsInput = {
@@ -32059,6 +32763,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutRequestsInput = {
@@ -32126,6 +32831,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutAssignedRequestsInput = {
@@ -32157,6 +32863,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutAssignedRequestsInput = {
@@ -32336,6 +33043,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRequestsInput = {
@@ -32367,6 +33075,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type UnitUpsertWithoutRequestsInput = {
@@ -32446,6 +33155,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedRequestsInput = {
@@ -32477,6 +33187,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type MaintenanceAttachmentUpsertWithWhereUniqueWithoutRequestInput = {
@@ -32631,6 +33342,7 @@ export namespace Prisma {
     documents?: EntityDocumentCreateNestedManyWithoutUserInput
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutSupplyRequestsMadeInput = {
@@ -32662,6 +33374,7 @@ export namespace Prisma {
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutSupplyRequestsMadeInput = {
@@ -32698,6 +33411,7 @@ export namespace Prisma {
     documents?: EntityDocumentCreateNestedManyWithoutUserInput
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutSupplyRequestsDecidedInput = {
@@ -32729,6 +33443,7 @@ export namespace Prisma {
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutSupplyRequestsDecidedInput = {
@@ -32841,6 +33556,7 @@ export namespace Prisma {
     documents?: EntityDocumentUpdateManyWithoutUserNestedInput
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSupplyRequestsMadeInput = {
@@ -32872,6 +33588,7 @@ export namespace Prisma {
     documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUpsertWithoutSupplyRequestsDecidedInput = {
@@ -32914,6 +33631,7 @@ export namespace Prisma {
     documents?: EntityDocumentUpdateManyWithoutUserNestedInput
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSupplyRequestsDecidedInput = {
@@ -32945,6 +33663,7 @@ export namespace Prisma {
     documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type MaintenanceRequestCreateWithoutAttachmentsInput = {
@@ -33035,6 +33754,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutAttachmentsInput = {
@@ -33066,6 +33786,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutAttachmentsInput = {
@@ -33178,6 +33899,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAttachmentsInput = {
@@ -33209,6 +33931,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type MaintenanceRequestCreateWithoutTaskLogsInput = {
@@ -33299,6 +34022,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutTaskLogsInput = {
@@ -33330,6 +34054,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutTaskLogsInput = {
@@ -33442,6 +34167,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTaskLogsInput = {
@@ -33473,6 +34199,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserCreateWithoutNotificationsInput = {
@@ -33504,6 +34231,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
   }
 
   export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -33535,6 +34263,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
   }
 
   export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -33641,6 +34370,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -33672,6 +34402,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
   }
 
   export type MaintenanceRequestUpsertWithoutNotificationsInput = {
@@ -33752,6 +34483,12 @@ export namespace Prisma {
     titleDeedNumber?: string | null
     plotNumber?: string | null
     notes?: string | null
+    ownerId?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -33769,8 +34506,14 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
     units?: UnitUpdateManyWithoutPropertyNestedInput
     documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
   }
@@ -33788,6 +34531,12 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
@@ -33807,6 +34556,12 @@ export namespace Prisma {
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -34401,6 +35156,29 @@ export namespace Prisma {
     receiptFileType?: string | null
     requestedById: string
     decidedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PropertyCreateManyOwnerInput = {
+    id?: string
+    name: string
+    propertyTypeId: string
+    address: string
+    governorate?: string | null
+    wilayat?: string | null
+    area?: string | null
+    wayNumber?: string | null
+    buildingNumber?: string | null
+    postalCode?: string | null
+    titleDeedNumber?: string | null
+    plotNumber?: string | null
+    notes?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -35141,6 +35919,79 @@ export namespace Prisma {
     receiptFileType?: NullableStringFieldUpdateOperationsInput | string | null
     requestedById?: StringFieldUpdateOperationsInput | string
     decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PropertyUpdateWithoutOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    governorate?: NullableStringFieldUpdateOperationsInput | string | null
+    wilayat?: NullableStringFieldUpdateOperationsInput | string | null
+    area?: NullableStringFieldUpdateOperationsInput | string | null
+    wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
+    units?: UnitUpdateManyWithoutPropertyNestedInput
+    documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
+  }
+
+  export type PropertyUncheckedUpdateWithoutOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    propertyTypeId?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    governorate?: NullableStringFieldUpdateOperationsInput | string | null
+    wilayat?: NullableStringFieldUpdateOperationsInput | string | null
+    area?: NullableStringFieldUpdateOperationsInput | string | null
+    wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
+  }
+
+  export type PropertyUncheckedUpdateManyWithoutOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    propertyTypeId?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    governorate?: NullableStringFieldUpdateOperationsInput | string | null
+    wilayat?: NullableStringFieldUpdateOperationsInput | string | null
+    area?: NullableStringFieldUpdateOperationsInput | string | null
+    wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

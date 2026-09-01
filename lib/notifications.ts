@@ -219,6 +219,25 @@ export async function notifyWorkerAssigned(
   });
 }
 
+/** A different worker took over a request — lets the one who lost it know,
+ * so their task list doesn't just silently drop something they were on. */
+export async function notifyWorkerUnassigned(request: {
+  id: string;
+  title: string;
+  workerId: string;
+}): Promise<void> {
+  await prisma.notification.create({
+    data: {
+      userId: request.workerId,
+      title: "Reassigned",
+      message: `"${request.title}" has been reassigned to someone else.`,
+      relatedId: request.id,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [request.workerId] });
+}
+
 /** A worker needs something to finish a held job. Every admin sees it, since
  * whoever is free can pick it up or make the purchase. */
 export async function notifySupplyRequested(input: {
@@ -408,4 +427,220 @@ export async function notifyPaymentReviewed(input: {
   });
 
   await publish({ kind: "notification", userIds: [input.tenantId] });
+}
+
+/** A charge on one of the owner's properties was fully paid (regardless of
+ * which path made that happen — admin-recorded, tenant proof approved, or
+ * the owner recording it themselves). Skipped when the property has no owner. */
+export async function notifyOwnerChargePaid(input: {
+  ownerId: string | null | undefined;
+  chargeId: string;
+  title: string;
+  amount: string;
+  tenantEmail: string;
+}): Promise<void> {
+  if (!input.ownerId) return;
+
+  await prisma.notification.create({
+    data: {
+      userId: input.ownerId,
+      title: "Charge Paid",
+      message: `${input.tenantEmail} paid ${input.amount} for “${input.title}”.`,
+      href: `/protected/finances/${input.chargeId}`,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+/** A pending payment proof was submitted for a charge on the owner's
+ * property — mirrors notifyAdminsPaymentProof but for the owner. */
+export async function notifyOwnerPaymentProof(input: {
+  ownerId: string | null | undefined;
+  chargeId: string;
+  title: string;
+  tenantEmail: string;
+}): Promise<void> {
+  if (!input.ownerId) return;
+
+  await prisma.notification.create({
+    data: {
+      userId: input.ownerId,
+      title: "Payment Proof Submitted",
+      message: `${input.tenantEmail} submitted proof for “${input.title}”.`,
+      href: `/protected/finances/${input.chargeId}`,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+/** A charge was waived (written off) — the tenant no longer owes it, and the
+ * owner should know the money isn't coming for that charge. */
+export async function notifyChargeWaived(input: {
+  tenantId: string;
+  ownerId: string | null | undefined;
+  chargeId: string;
+  title: string;
+}): Promise<void> {
+  const recipientIds = Array.from(
+    new Set([input.tenantId, input.ownerId].filter((id): id is string => Boolean(id))),
+  );
+  if (recipientIds.length === 0) return;
+
+  await prisma.notification.createMany({
+    data: recipientIds.map((userId) => ({
+      userId,
+      title: "Charge Waived",
+      message: `“${input.title}” has been waived and is no longer due.`,
+      href: `/protected/finances/${input.chargeId}`,
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: recipientIds });
+}
+
+/** An admin approved a property an owner submitted — it's now live. */
+export async function notifyPropertyApproved(input: {
+  ownerId: string;
+  propertyId: string;
+  propertyName: string;
+}): Promise<void> {
+  await prisma.notification.create({
+    data: {
+      userId: input.ownerId,
+      title: "Property Approved",
+      message: `“${input.propertyName}” has been approved and is now live.`,
+      href: `/protected/properties/${input.propertyId}`,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+/** An admin rejected a property an owner submitted. The property row is
+ * deleted as part of rejection, so this carries no `href` to it. */
+export async function notifyPropertyRejected(input: {
+  ownerId: string;
+  propertyName: string;
+}): Promise<void> {
+  await prisma.notification.create({
+    data: {
+      userId: input.ownerId,
+      title: "Property Rejected",
+      message: `“${input.propertyName}” was not approved. Please contact the admin, or submit it again with corrections.`,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+/** An admin assigned an existing (or newly created) property to an owner. */
+export async function notifyPropertyAssigned(input: {
+  ownerId: string;
+  propertyId: string;
+  propertyName: string;
+}): Promise<void> {
+  await prisma.notification.create({
+    data: {
+      userId: input.ownerId,
+      title: "Property Assigned to You",
+      message: `“${input.propertyName}” has been assigned to you.`,
+      href: `/protected/properties/${input.propertyId}`,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+/**
+ * Service charge reminders. `recipientIds` is the property owner plus every
+ * admin (deduped by the caller) — everyone who can act on collecting or
+ * chasing the payment.
+ */
+export async function notifyServiceChargeUpcoming(input: {
+  propertyId: string;
+  propertyName: string;
+  amount: string;
+  dueDate: string;
+  recipientIds: string[];
+}): Promise<void> {
+  if (input.recipientIds.length === 0) return;
+
+  await prisma.notification.createMany({
+    data: input.recipientIds.map((userId) => ({
+      userId,
+      title: "Service Charge Due Soon",
+      message: `The ${input.amount} service charge for “${input.propertyName}” is due on ${input.dueDate}.`,
+      href: `/protected/properties/${input.propertyId}`,
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: input.recipientIds });
+}
+
+export async function notifyServiceChargeDue(input: {
+  propertyId: string;
+  propertyName: string;
+  amount: string;
+  recipientIds: string[];
+}): Promise<void> {
+  if (input.recipientIds.length === 0) return;
+
+  await prisma.notification.createMany({
+    data: input.recipientIds.map((userId) => ({
+      userId,
+      title: "Service Charge Due Today",
+      message: `The ${input.amount} service charge for “${input.propertyName}” is due today.`,
+      href: `/protected/properties/${input.propertyId}`,
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: input.recipientIds });
+}
+
+export async function notifyServiceChargeOverdue(input: {
+  propertyId: string;
+  propertyName: string;
+  amount: string;
+  daysOverdue: number;
+  recipientIds: string[];
+}): Promise<void> {
+  if (input.recipientIds.length === 0) return;
+
+  await prisma.notification.createMany({
+    data: input.recipientIds.map((userId) => ({
+      userId,
+      title: "Service Charge Overdue",
+      message: `The ${input.amount} service charge for “${input.propertyName}” is ${input.daysOverdue} day${
+        input.daysOverdue === 1 ? "" : "s"
+      } overdue.`,
+      href: `/protected/properties/${input.propertyId}`,
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: input.recipientIds });
+}
+
+/** An admin (or the owner) marked the current cycle's service charge as
+ * received, rolling the due date forward to the next cycle. */
+export async function notifyServiceChargeReceived(input: {
+  propertyId: string;
+  propertyName: string;
+  amount: string;
+  nextDueDate: string;
+  recipientIds: string[];
+}): Promise<void> {
+  if (input.recipientIds.length === 0) return;
+
+  await prisma.notification.createMany({
+    data: input.recipientIds.map((userId) => ({
+      userId,
+      title: "Service Charge Received",
+      message: `The ${input.amount} service charge for “${input.propertyName}” was recorded as received. Next due: ${input.nextDueDate}.`,
+      href: `/protected/properties/${input.propertyId}`,
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: input.recipientIds });
 }

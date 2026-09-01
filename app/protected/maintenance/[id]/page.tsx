@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/finance";
 import { formatUnitLabel } from "@/lib/property-types";
-import { requireRole } from "@/lib/session";
+import { requireAnyRole } from "@/lib/session";
 import { formatOmanAddress } from "@/lib/oman";
 import { PriorityBadge, StatusBadge } from "@/lib/status";
 import { attachmentUrl } from "@/lib/utils";
@@ -26,7 +26,7 @@ import { PageProps } from "@/types/page";
 export default async function MaintenanceDetailPage({ params }: PageProps) {
   const { id } = await params;
 
-  await requireRole(UserType.admin);
+  const user = await requireAnyRole(UserType.admin, UserType.owner);
 
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id },
@@ -49,7 +49,11 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
     },
   });
 
-  if (!request) {
+  if (
+    !request ||
+    (user.userType === UserType.owner &&
+      request.unit?.property.ownerId !== user.id)
+  ) {
     notFound();
   }
 

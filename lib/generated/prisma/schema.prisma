@@ -11,6 +11,9 @@ enum UserType {
   user
   admin
   worker
+  /// A landlord who can list their own properties (unapproved until an admin
+  /// approves them) and see everything scoped to properties they own.
+  owner
 }
 
 enum Priority {
@@ -134,27 +137,49 @@ model PropertyType {
 
 /// A building or managed property in Oman.
 model Property {
-  id              String   @id @default(uuid()) @db.Uuid
-  name            String
-  propertyTypeId  String   @map("property_type_id") @db.Uuid
-  address         String
-  governorate     String?
-  wilayat         String?
-  area            String?
-  wayNumber       String?  @map("way_number")
-  buildingNumber  String?  @map("building_number")
-  postalCode      String?  @map("postal_code")
-  titleDeedNumber String?  @map("title_deed_number")
-  plotNumber      String?  @map("plot_number")
-  notes           String?
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id                       String    @id @default(uuid()) @db.Uuid
+  name                     String
+  propertyTypeId           String    @map("property_type_id") @db.Uuid
+  address                  String
+  governorate              String?
+  wilayat                  String?
+  area                     String?
+  wayNumber                String?   @map("way_number")
+  buildingNumber           String?   @map("building_number")
+  postalCode               String?   @map("postal_code")
+  titleDeedNumber          String?   @map("title_deed_number")
+  plotNumber               String?   @map("plot_number")
+  notes                    String?
+  /// The landlord this property belongs to. Null means no owner is assigned
+  /// yet (all properties created before the owner role existed, and any an
+  /// admin hasn't assigned). Set automatically to themselves when an owner
+  /// creates the property; only an admin can assign or reassign it.
+  ownerId                  String?   @map("owner_id") @db.Uuid
+  /// Live/visible to admin, tenant and worker screens once true. Properties
+  /// an admin creates are approved immediately; properties an owner creates
+  /// start unapproved and stay hidden everywhere until an admin approves
+  /// them. Defaults to true so every pre-existing row stays live.
+  approved                 Boolean   @default(true)
+  /// Recurring maintenance budget the owner collects from/for this property
+  /// (e.g. 400 OMR every 3 months). All three are null until someone sets
+  /// them; nulls mean "no service charge tracked" and the reminder job skips
+  /// the property entirely.
+  serviceChargeAmount      Decimal?  @map("service_charge_amount") @db.Decimal(14, 3)
+  serviceChargeCycleMonths Int?      @map("service_charge_cycle_months")
+  serviceChargeDueDate     DateTime? @map("service_charge_due_date") @db.Date
+  /// Which reminder was last sent for the CURRENT due date, so the daily job
+  /// never sends the same stage twice ("upcoming" | "due" | "overdue").
+  serviceChargeLastStage   String?   @map("service_charge_last_stage")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
 
   propertyType PropertyType     @relation(fields: [propertyTypeId], references: [id], onDelete: Restrict)
+  owner        User?            @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   units        Unit[]
   documents    EntityDocument[]
 
   @@index([propertyTypeId])
+  @@index([ownerId])
   @@map("properties")
 }
 
@@ -217,6 +242,8 @@ model User {
   documentUploads       EntityDocument[]        @relation("EntityDocumentUploader")
   supplyRequestsMade    SupplyRequest[]         @relation("SupplyRequestedBy")
   supplyRequestsDecided SupplyRequest[]         @relation("SupplyDecidedBy")
+  /// Set only for owners: the properties they were assigned or created.
+  ownedProperties       Property[]              @relation("PropertyOwner")
 
   @@map("users")
 }

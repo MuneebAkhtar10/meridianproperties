@@ -99,10 +99,17 @@ export default async function FinanceDetailPage({
 
   if (
     !charge ||
-    (user.userType === UserType.user && charge.tenantId !== user.id)
+    (user.userType === UserType.user && charge.tenantId !== user.id) ||
+    (user.userType === UserType.owner &&
+      charge.unit.property.ownerId !== user.id)
   ) {
     notFound();
   }
+
+  // Owners get full admin-equivalent write access on their own properties'
+  // charges — the ownership check above already confirmed they own this one.
+  const canManagePayments =
+    user.userType === UserType.admin || user.userType === UserType.owner;
 
   const balance = chargeBalance(charge);
   const approved = approvedTotal(charge.payments);
@@ -309,7 +316,7 @@ export default async function FinanceDetailPage({
                           </p>
                         )}
 
-                        {user.userType === UserType.admin &&
+                        {canManagePayments &&
                           payment.status === PaymentStatus.pending && (
                             <form className="mt-4 space-y-3 border-t pt-4">
                               <input
@@ -369,7 +376,7 @@ export default async function FinanceDetailPage({
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">
-                  {user.userType === UserType.admin
+                  {canManagePayments
                     ? "Record a payment"
                     : "Submit payment proof"}
                 </CardTitle>
@@ -410,7 +417,7 @@ export default async function FinanceDetailPage({
                   </Field>
                   <Field
                     label={
-                      user.userType === UserType.admin
+                      canManagePayments
                         ? "Receipt (optional)"
                         : "Receipt / screenshot *"
                     }
@@ -428,7 +435,7 @@ export default async function FinanceDetailPage({
                     className="w-full"
                     pendingText="Submitting..."
                   >
-                    {user.userType === UserType.admin
+                    {canManagePayments
                       ? "Record as approved"
                       : "Send proof for review"}
                   </SubmitButton>
@@ -442,7 +449,7 @@ export default async function FinanceDetailPage({
             </Card>
           )}
 
-          {user.userType === UserType.admin &&
+          {canManagePayments &&
             charge.status === ChargeStatus.open && (
               <Card>
                 <CardContent className="space-y-3 p-5">

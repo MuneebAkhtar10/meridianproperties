@@ -19,6 +19,7 @@ const ROLE_LABEL: Record<UserType, string> = {
   admin: "Administrator",
   worker: "Maintenance worker",
   user: "Tenant",
+  owner: "Property owner",
 };
 
 export function UserMenu({

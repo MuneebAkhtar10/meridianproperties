@@ -33,7 +33,7 @@ import { UnitPicker, type PickableUnit } from "@/components/unit-picker";
 import { chargeBalance, dateInputValue, formatMoney } from "@/lib/finance";
 import { formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/session";
+import { requireAnyRole } from "@/lib/session";
 import {
   ChargeStatus,
   TenancyPurpose,
@@ -43,11 +43,16 @@ import { PageProps } from "@/types/page";
 
 export default async function TenanciesPage({ searchParams }: PageProps) {
   const message = (await searchParams) as unknown as Message;
-  await requireRole(UserType.admin);
+  const user = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = user.userType === UserType.owner;
+  const isAdmin = user.userType === UserType.admin;
 
   const [active, history, availableTenants, emptyUnits] = await Promise.all([
     prisma.tenancy.findMany({
-      where: { endDate: null },
+      where: {
+        endDate: null,
+        ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+      },
       orderBy: { createdAt: "desc" },
       include: {
         tenant: true,
@@ -64,7 +69,10 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
       },
     }),
     prisma.tenancy.findMany({
-      where: { endDate: { not: null } },
+      where: {
+        endDate: { not: null },
+        ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+      },
       orderBy: { endDate: "desc" },
       take: 20,
       include: {
@@ -72,16 +80,20 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
         unit: { include: { property: { include: { propertyType: true } } } },
       },
     }),
-    prisma.user.findMany({
-      where: { userType: UserType.user, unit: null },
-      orderBy: { email: "asc" },
-      select: { id: true, email: true, firstName: true, lastName: true },
-    }),
-    prisma.unit.findMany({
-      where: { tenantId: null },
-      orderBy: [{ property: { name: "asc" } }, { label: "asc" }],
-      include: { property: { include: { propertyType: true } } },
-    }),
+    isAdmin
+      ? prisma.user.findMany({
+          where: { userType: UserType.user, unit: null },
+          orderBy: { email: "asc" },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        })
+      : Promise.resolve([]),
+    isAdmin
+      ? prisma.unit.findMany({
+          where: { tenantId: null },
+          orderBy: [{ property: { name: "asc" } }, { label: "asc" }],
+          include: { property: { include: { propertyType: true } } },
+        })
+      : Promise.resolve([]),
   ]);
   const pickableUnits: PickableUnit[] = emptyUnits.map((unit) => ({
     id: unit.id,

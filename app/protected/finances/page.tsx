@@ -139,6 +139,12 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     );
   }
 
+  const isOwner = user.userType === UserType.owner;
+  const isAdmin = user.userType === UserType.admin;
+  // Owners get the same read-only ledger layout as admins, scoped to their
+  // own properties; only true admins get the write tools (AdminTools).
+  const isAdminView = isAdmin || isOwner;
+
   const params = await searchParams;
   const message = params as unknown as Message;
   // A single query param can carry more than one status (comma-separated),
@@ -185,11 +191,12 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     prisma.charge.findMany({
       where: {
         ...(user.userType === UserType.user ? { tenantId: user.id } : {}),
+        ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
         type:
           typeFilter === "all"
             ? { in: NON_UTILITY_CHARGE_TYPES }
             : (typeFilter as ChargeType),
-        ...(user.userType === UserType.admin && propertyFilter !== "all"
+        ...((isAdmin || isOwner) && propertyFilter !== "all"
           ? { unit: { propertyId: propertyFilter } }
           : {}),
       },
@@ -213,9 +220,12 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         },
       },
     }),
-    user.userType === UserType.admin
+    isAdmin || isOwner
       ? prisma.tenancy.findMany({
-          where: { endDate: null },
+          where: {
+            endDate: null,
+            ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+          },
           orderBy: [
             { unit: { property: { name: "asc" } } },
             { unit: { label: "asc" } },
@@ -228,8 +238,9 @@ export default async function FinancesPage({ searchParams }: PageProps) {
           },
         })
       : Promise.resolve([]),
-    user.userType === UserType.admin
+    isAdmin || isOwner
       ? prisma.property.findMany({
+          where: isOwner ? { ownerId: user.id } : {},
           orderBy: { name: "asc" },
           select: { id: true, name: true },
         })
@@ -287,15 +298,15 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
       <PageHeader
         title={
-          user.userType === UserType.admin ? "Rent & bills" : "My rent & bills"
+          isAdminView ? "Rent & bills" : "My rent & bills"
         }
         description={
-          user.userType === UserType.admin
+          isAdminView
             ? "Manual collections, proof review and tenant ledgers—no payment gateway."
             : "See amounts due, upload payment proof and keep your receipts together."
         }
       >
-        {user.userType === UserType.admin && (
+        {isAdminView && (
           <ButtonLink href="/protected/tenancies" variant="outline">
             <Landmark className="h-4 w-4" />
             Manage tenancies
@@ -330,7 +341,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
           label="Proofs to review"
           value={pendingCount}
           hint={
-            user.userType === UserType.admin
+            isAdminView
               ? "needs admin decision"
               : "waiting for admin"
           }
@@ -340,7 +351,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         <StatCard
           icon={<WalletCards className="h-4 w-4" />}
           label={
-            user.userType === UserType.admin
+            isAdminView
               ? "Collected this month"
               : "Paid this month"
           }
@@ -354,7 +365,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       <div
         id="ledger"
         className={
-          user.userType === UserType.admin
+          isAdminView
             ? "grid gap-8 scroll-mt-24 lg:grid-cols-[1fr_22rem]"
             : "grid scroll-mt-24"
         }
@@ -387,7 +398,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                   </option>
                 ))}
               </Select>
-              {user.userType === UserType.admin && (
+              {(isAdmin || isOwner) && (
                 <Select name="property" defaultValue={propertyFilter}>
                   <option value="all">All properties</option>
                   {properties.map((property) => (
@@ -427,7 +438,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                         active={sortColumn === "charge"}
                         dir={sortDir}
                       />
-                      {user.userType === UserType.admin && (
+                      {isAdminView && (
                         <SortableTh
                           label="Tenant / unit"
                           href={sortHref("tenant")}
@@ -489,7 +500,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                                 : ""}
                             </p>
                           </td>
-                          {user.userType === UserType.admin && (
+                          {isAdminView && (
                             <td className="px-4 py-3.5 align-middle">
                               <p>{tenantName}</p>
                               <p className="text-xs text-muted-foreground">
@@ -526,7 +537,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
           )}
         </div>
 
-        {user.userType === UserType.admin && (
+        {(isAdmin || isOwner) && (
           <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
             <AdminTools tenancies={activeTenancies} />
           </div>
