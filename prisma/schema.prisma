@@ -1,0 +1,502 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserType {
+  user
+  admin
+  worker
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+enum RequestStatus {
+  pending
+  en_route
+  in_progress
+  on_hold
+  completed
+}
+
+enum SupplyRequestStatus {
+  pending
+  approved
+  denied
+}
+
+enum ChargeType {
+  rent
+  electricity
+  gas
+  water
+  internet
+  maintenance
+  municipality_fee
+  deposit
+  other
+}
+
+enum ChargeStatus {
+  open
+  paid
+  waived
+}
+
+enum PaymentStatus {
+  pending
+  approved
+  rejected
+}
+
+enum PaymentMethod {
+  cash
+  bank_transfer
+  oman_net
+  mobile_payment
+  direct_debit
+  cheque
+  other
+}
+
+enum TenancyPurpose {
+  residential
+  commercial
+}
+
+enum FinancialDocumentKind {
+  bill
+  receipt
+}
+
+enum EntityDocumentCategory {
+  tenancy_agreement
+  municipality_registration
+  move_in_report
+  title_deed
+  ownership_certificate
+  cadastral_plan
+  building_permit
+  completion_certificate
+  noc
+  property_insurance
+  civil_id
+  passport
+  resident_card
+  visa
+  employment_letter
+  other
+}
+
+/// A configurable kind of property (apartment building, villa, office, ...).
+/// Admins can add their own instead of being limited to a fixed set, which is
+/// why the floor behaviour and unit wording live here as data, not code.
+model PropertyType {
+  id       String @id @default(uuid()) @db.Uuid
+  /// Stable machine key, e.g. "apartment". Never shown to users.
+  name     String @unique
+  /// Shown when picking a property type, e.g. "Apartment building".
+  label    String
+  /// Singular noun for one unit of this type, e.g. "Apartment", "Villa", "Office".
+  unitNounSingular String @map("unit_noun_singular")
+  /// Plural noun, e.g. "Apartments", "Villas", "Offices".
+  unitNounPlural   String @map("unit_noun_plural")
+  /// Short prefix shown before a unit's label, e.g. "Apt" → "Apt 101". Null
+  /// means the unit label is shown on its own, with no prefix — the villa
+  /// convention ("Villa 2", not "Villa Villa 2").
+  unitPrefix       String? @map("unit_prefix")
+  /// Whether units of this type are organized by floor. Controls the floor
+  /// field, the "generate by floor" wizard and the floor grouping in the UI.
+  hasFloors        Boolean @default(true) @map("has_floors")
+  /// Whether units of this type track a bedroom count. Off for commercial
+  /// types like offices or shops, where "bedrooms" doesn't apply.
+  hasBedrooms      Boolean @default(true) @map("has_bedrooms")
+  /// Choices shown in "Where is the problem?" when a tenant of this type
+  /// reports a maintenance issue, e.g. ["Kitchen", "Bathroom", ...] for an
+  /// apartment or ["Sales floor", "Storeroom", ...] for a shop. Always ends
+  /// with a fallback "Other" entry.
+  locationOptions  String[] @default(["Main area", "Storeroom", "Entrance", "Whole space", "Other"]) @map("location_options")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  properties Property[]
+
+  @@map("property_types")
+}
+
+/// A building or managed property in Oman.
+model Property {
+  id              String       @id @default(uuid()) @db.Uuid
+  name            String
+  propertyTypeId  String       @map("property_type_id") @db.Uuid
+  address         String
+  governorate     String?
+  wilayat         String?
+  area            String?
+  wayNumber       String?  @map("way_number")
+  buildingNumber  String?  @map("building_number")
+  postalCode      String?  @map("postal_code")
+  titleDeedNumber String?  @map("title_deed_number")
+  plotNumber      String?  @map("plot_number")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  propertyType PropertyType     @relation(fields: [propertyTypeId], references: [id], onDelete: Restrict)
+  units        Unit[]
+  documents    EntityDocument[]
+
+  @@index([propertyTypeId])
+  @@map("properties")
+}
+
+/// An apartment inside a building.
+model Unit {
+  id         String   @id @default(uuid()) @db.Uuid
+  propertyId String   @map("property_id") @db.Uuid
+  label      String
+  floor      Int?
+  bedrooms   Int?
+  /// The tenant living here. Null means the apartment is empty.
+  tenantId   String?  @unique @map("tenant_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  property  Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant    User?                @relation("UnitTenant", fields: [tenantId], references: [id], onDelete: SetNull)
+  requests  MaintenanceRequest[]
+  tenancies Tenancy[]
+  charges   Charge[]
+
+  @@unique([propertyId, label])
+  @@index([propertyId])
+  @@map("units")
+}
+
+/// Account and profile in one row. `userType` drives every authorization check.
+/// `id` is not generated here — it is the id of the matching row in Supabase
+/// Auth's `auth.users`, which credentials and password hashing live in; see
+/// the `_supabase_auth` migration for the foreign key that ties the two together.
+model User {
+  id                    String   @id @db.Uuid
+  email                 String   @unique
+  userType              UserType @default(user) @map("user_type")
+  firstName             String?  @map("first_name")
+  lastName              String?  @map("last_name")
+  phone                 String?
+  civilId               String?  @unique @map("civil_id")
+  nationality           String?
+  employer              String?
+  emergencyContactName  String?  @map("emergency_contact_name")
+  emergencyContactPhone String?  @map("emergency_contact_phone")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  /// Set only for tenants: the apartment they live in.
+  unit              Unit?                   @relation("UnitTenant")
+  requests          MaintenanceRequest[]    @relation("RequestOwner")
+  assignedRequests  MaintenanceRequest[]    @relation("AssignedWorker")
+  attachments       MaintenanceAttachment[]
+  taskLogs          TaskLog[]
+  notifications     Notification[]
+  tenancies         Tenancy[]               @relation("TenancyTenant")
+  charges           Charge[]                @relation("ChargeTenant")
+  createdCharges    Charge[]                @relation("ChargeCreator")
+  submittedPayments Payment[]               @relation("PaymentSubmitter")
+  reviewedPayments  Payment[]               @relation("PaymentReviewer")
+  financialUploads  FinancialAttachment[]   @relation("FinancialUploader")
+  documents         EntityDocument[]         @relation("UserDocuments")
+  documentUploads   EntityDocument[]         @relation("EntityDocumentUploader")
+  supplyRequestsMade    SupplyRequest[]      @relation("SupplyRequestedBy")
+  supplyRequestsDecided SupplyRequest[]      @relation("SupplyDecidedBy")
+
+  @@map("users")
+}
+
+/// A historical occupancy record. Unit.tenantId remains the fast pointer to the
+/// current occupant; this model preserves the commercial terms and move history.
+model Tenancy {
+  id                         String         @id @default(uuid()) @db.Uuid
+  unitId                     String         @map("unit_id") @db.Uuid
+  tenantId                   String         @map("tenant_id") @db.Uuid
+  startDate                  DateTime       @map("start_date") @db.Date
+  endDate                    DateTime?      @map("end_date") @db.Date
+  leaseEndDate               DateTime?      @map("lease_end_date") @db.Date
+  monthlyRent                Decimal        @default(0) @map("monthly_rent") @db.Decimal(14, 3)
+  rentDueDay                 Int            @default(5) @map("rent_due_day")
+  securityDeposit            Decimal        @default(0) @map("security_deposit") @db.Decimal(14, 3)
+  purpose                    TenancyPurpose @default(residential)
+  agreementRef               String?        @map("agreement_ref")
+  municipalityContractNumber String?        @map("municipality_contract_number")
+  contractRegisteredAt       DateTime?      @map("contract_registered_at") @db.Date
+  electricityAccountNumber   String?        @map("electricity_account_number")
+  waterAccountNumber         String?        @map("water_account_number")
+  notes                      String?
+  createdAt                  DateTime       @default(now()) @map("created_at")
+  updatedAt                  DateTime       @updatedAt @map("updated_at")
+
+  unit      Unit             @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  tenant    User             @relation("TenancyTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  charges   Charge[]
+  documents EntityDocument[]
+
+  @@index([unitId, endDate])
+  @@index([tenantId, endDate])
+  @@map("tenancies")
+}
+
+/// Private supporting documents belonging to exactly one property, tenancy or person.
+model EntityDocument {
+  id           String                 @id @default(uuid()) @db.Uuid
+  propertyId   String?                @map("property_id") @db.Uuid
+  tenancyId    String?                @map("tenancy_id") @db.Uuid
+  userId       String?                @map("user_id") @db.Uuid
+  category     EntityDocumentCategory
+  label        String?
+  fileName     String                 @map("file_name")
+  filePath     String                 @map("file_path")
+  fileType     String                 @map("file_type")
+  fileSize     Int                    @map("file_size")
+  uploadedById String?                @map("uploaded_by") @db.Uuid
+  createdAt    DateTime               @default(now()) @map("created_at")
+
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenancy    Tenancy?  @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  user       User?     @relation("UserDocuments", fields: [userId], references: [id], onDelete: Cascade)
+  uploadedBy User?     @relation("EntityDocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, createdAt])
+  @@index([tenancyId, createdAt])
+  @@index([userId, createdAt])
+  @@map("entity_documents")
+}
+
+/// One amount due from a tenant. Approved payments can be partial; the charge is
+/// closed only once their total reaches the amount due.
+model Charge {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenancyId   String       @map("tenancy_id") @db.Uuid
+  unitId      String       @map("unit_id") @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+  type        ChargeType
+  title       String
+  amount      Decimal      @db.Decimal(14, 3)
+  dueDate     DateTime     @map("due_date") @db.Date
+  periodStart DateTime?    @map("period_start") @db.Date
+  status      ChargeStatus @default(open)
+  notes       String?
+  /// Set only for generated rent, making generation safely repeatable.
+  rentKey     String?      @unique @map("rent_key")
+  createdById String?      @map("created_by") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  tenancy     Tenancy               @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
+  unit        Unit                  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  tenant      User                  @relation("ChargeTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy   User?                 @relation("ChargeCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  payments    Payment[]
+  attachments FinancialAttachment[]
+
+  @@index([tenantId, status, dueDate])
+  @@index([unitId, dueDate])
+  @@index([tenancyId, periodStart])
+  @@index([type])
+  @@map("charges")
+}
+
+model Payment {
+  id            String        @id @default(uuid()) @db.Uuid
+  chargeId      String        @map("charge_id") @db.Uuid
+  amount        Decimal       @db.Decimal(14, 3)
+  paidAt        DateTime      @map("paid_at") @db.Date
+  method        PaymentMethod
+  reference     String?
+  notes         String?
+  status        PaymentStatus @default(pending)
+  submittedById String        @map("submitted_by") @db.Uuid
+  reviewedById  String?       @map("reviewed_by") @db.Uuid
+  reviewedAt    DateTime?     @map("reviewed_at")
+  reviewNotes   String?       @map("review_notes")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  charge      Charge                @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+  submittedBy User                  @relation("PaymentSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  reviewedBy  User?                 @relation("PaymentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  attachments FinancialAttachment[]
+
+  @@index([chargeId, status])
+  @@index([status, createdAt])
+  @@map("payments")
+}
+
+model FinancialAttachment {
+  id           String                @id @default(uuid()) @db.Uuid
+  chargeId     String?               @map("charge_id") @db.Uuid
+  paymentId    String?               @map("payment_id") @db.Uuid
+  kind         FinancialDocumentKind
+  fileName     String                @map("file_name")
+  filePath     String                @map("file_path")
+  fileType     String                @map("file_type")
+  fileSize     Int                   @map("file_size")
+  uploadedById String?               @map("uploaded_by") @db.Uuid
+  createdAt    DateTime              @default(now()) @map("created_at")
+
+  charge     Charge?  @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+  payment    Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  uploadedBy User?    @relation("FinancialUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([chargeId])
+  @@index([paymentId])
+  @@map("financial_attachments")
+}
+
+model MaintenanceRequest {
+  id                String         @id @default(uuid()) @db.Uuid
+  userId            String         @map("user_id") @db.Uuid
+  /// The apartment the issue is in. This is what tells anyone which flat in which
+  /// building to actually go to.
+  unitId            String?        @map("unit_id") @db.Uuid
+  title             String
+  description       String
+  /// Room within the apartment, e.g. "Kitchen".
+  location          String
+  priority          Priority       @default(medium)
+  status            RequestStatus  @default(pending)
+  assignedToId      String?        @map("assigned_to") @db.Uuid
+  notes             String?
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  completedAt       DateTime?      @map("completed_at")
+  enRouteAt         DateTime?      @map("en_route_at")
+  inProgressAt      DateTime?      @map("in_progress_at")
+  /// A held job leaves the worker's active queue and waits for an admin decision.
+  /// The old worker stays assigned as the default choice when work is resumed.
+  holdReason        String?        @map("hold_reason")
+  heldAt            DateTime?      @map("held_at")
+  heldFromStatus    RequestStatus? @map("held_from_status")
+  /// Set when the tenant tells management that their side of the blocker is clear.
+  /// It is only a signal; an admin still chooses the worker and resumes the job.
+  resumeRequestedAt DateTime?      @map("resume_requested_at")
+  /// 4-digit code the tenant gives the worker to confirm completion. Set when the
+  /// worker requests completion, cleared once the code is entered or cancelled.
+  completionCode    String?        @map("completion_code")
+  completionCodeAt  DateTime?      @map("completion_code_at")
+
+  user          User                    @relation("RequestOwner", fields: [userId], references: [id], onDelete: Cascade)
+  unit          Unit?                   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  assignedTo    User?                   @relation("AssignedWorker", fields: [assignedToId], references: [id], onDelete: SetNull)
+  attachments   MaintenanceAttachment[]
+  taskLogs      TaskLog[]
+  notifications Notification[]
+  supplyRequests SupplyRequest[]
+
+  @@index([userId])
+  @@index([unitId])
+  @@index([assignedToId])
+  @@index([status])
+  @@map("maintenance_requests")
+}
+
+/// A worker's ask for something needed to finish a held job — a part, a
+/// tool, a purchase. The admin approves (optionally with a note on where it
+/// is / how it was sourced) or denies (with a reason); the worker resumes
+/// the job themselves once they actually have it in hand.
+model SupplyRequest {
+  id            String              @id @default(uuid()) @db.Uuid
+  requestId     String              @map("request_id") @db.Uuid
+  /// Short name of what's needed, e.g. "20m PVC pipe" or "replacement water heater".
+  item          String
+  /// Extra detail from the worker — size, brand, where to buy, cost estimate.
+  notes         String?
+  status        SupplyRequestStatus @default(pending)
+  /// Admin's reason for denying, or a note like "picked up, ready for you".
+  adminNote     String?             @map("admin_note")
+  /// The actual price paid, recorded by the admin at the moment of approval.
+  /// Set once and never edited again — decideSupplyRequestAction refuses any
+  /// request that isn't still pending, so this is the permanent cost record
+  /// for the audit trail, unaffected by later job status changes.
+  cost          Decimal?            @db.Decimal(14, 3)
+  /// What the worker says they paid, entered alongside the receipt. A
+  /// suggestion for the admin only — never authoritative and never a
+  /// substitute for `cost`, which the admin sets explicitly on approval.
+  workerCost      Decimal?          @map("worker_cost") @db.Decimal(14, 3)
+  /// Storage object key for a photo/PDF of the purchase receipt the worker
+  /// uploaded as proof of what they already bought. Set once, while the
+  /// request is still pending — see uploadSupplyReceiptAction.
+  receiptPath     String?           @map("receipt_path")
+  receiptFileName String?           @map("receipt_file_name")
+  receiptFileType String?           @map("receipt_file_type")
+  requestedById String              @map("requested_by") @db.Uuid
+  decidedById   String?             @map("decided_by") @db.Uuid
+  decidedAt     DateTime?           @map("decided_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  request     MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestedBy User               @relation("SupplyRequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)
+  decidedBy   User?              @relation("SupplyDecidedBy", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([requestId])
+  @@index([status])
+  @@map("supply_requests")
+}
+
+model MaintenanceAttachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  requestId   String   @map("request_id") @db.Uuid
+  fileName    String   @map("file_name")
+  /// Object key inside the MinIO bucket, e.g. "attachments/<requestId>/<uuid>.jpg".
+  filePath    String   @map("file_path")
+  fileType    String   @map("file_type")
+  fileSize    Int      @map("file_size")
+  createdAt   DateTime @default(now()) @map("created_at")
+  createdById String?  @map("created_by") @db.Uuid
+
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  createdBy User?              @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([requestId])
+  @@map("maintenance_attachments")
+}
+
+model TaskLog {
+  id          String        @id @default(uuid()) @db.Uuid
+  requestId   String        @map("request_id") @db.Uuid
+  status      RequestStatus
+  changedById String?       @map("changed_by") @db.Uuid
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  changedBy User?              @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([requestId])
+  @@map("task_logs")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String
+  message   String
+  relatedId String?  @map("related_to") @db.Uuid
+  href      String?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  related MaintenanceRequest? @relation(fields: [relatedId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}

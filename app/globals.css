@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Light theme only — this app has no dark mode.
+ *
+ * Indigo is the single accent, reserved for primary actions and the active nav item.
+ * Status colours (amber / sky / violet / emerald / rose) live once in lib/status.tsx and
+ * are never used for decoration, so a colour always means something.
+ */
+@layer base {
+  :root {
+    --background: 240 20% 99%;
+    --foreground: 240 10% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 6% 96%;
+    --secondary-foreground: 240 10% 20%;
+
+    --muted: 240 6% 96%;
+    --muted-foreground: 240 5% 46%;
+
+    --accent: 243 75% 96%;
+    --accent-foreground: 243 60% 40%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 88%;
+    --ring: 243 75% 59%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Keyboard focus stays visible, without ringing on every mouse click. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Keep native date / month picker icons visible in narrow containers.
+     WebKit renders date inputs as an internal flex row:
+       ::-webkit-datetime-edit  (text)  +  ::-webkit-calendar-picker-indicator  (icon)
+     The text portion can expand and push the icon off the edge. */
+  input[type="date"],
+  input[type="month"] {
+    min-width: 0;
+  }
+
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="month"]::-webkit-datetime-edit {
+    flex: 1 1 0%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator {
+    flex-shrink: 0;
+    opacity: 1;
+    cursor: pointer;
+    margin-left: 4px;
+  }
+}
+
+@layer components {
+  /* Soft indigo wash used behind the signed-out pages. */
+  .surface-gradient {
+    background-image:
+      radial-gradient(60rem 40rem at 15% -10%, hsl(243 75% 59% / 0.07), transparent 60%),
+      radial-gradient(50rem 35rem at 95% 0%, hsl(262 70% 60% / 0.06), transparent 55%);
+  }
+}

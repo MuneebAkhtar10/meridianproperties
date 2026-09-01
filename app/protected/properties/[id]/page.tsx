@@ -1,0 +1,692 @@
+import {
+  DoorOpen,
+  KeyRound,
+  LayoutGrid,
+  MapPin,
+  Trash2,
+  UserPlus,
+  Wand2,
+} from "lucide-react";
+import { notFound } from "next/navigation";
+
+import {
+  assignTenantAction,
+  createUnitAction,
+  deleteUnitAction,
+  generateUnitsAction,
+  updatePropertyAction,
+  updateUnitAction,
+} from "@/app/admin-actions";
+import { EmptyState } from "@/components/empty-state";
+import { EntityDocumentManager } from "@/components/entity-document-manager";
+import { FormMessage, Message } from "@/components/form-message";
+import { PageHeader } from "@/components/page-header";
+import { SubmitButton } from "@/components/submit-button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ButtonLink } from "@/components/ui/button-link";
+import { formatMoney } from "@/lib/finance";
+import { formatOmanAddress, OMAN_GOVERNORATES } from "@/lib/oman";
+import { formatUnitLabel } from "@/lib/property-types";
+import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/session";
+import { UserType } from "@/lib/generated/prisma/client";
+import { PageProps } from "@/types/page";
+
+export default async function PropertyDetailPage({
+  params,
+  searchParams,
+}: PageProps) {
+  const { id } = await params;
+  const message = (await searchParams) as unknown as Message;
+
+  await requireRole(UserType.admin);
+
+  const property = await prisma.property.findUnique({
+    where: { id },
+    include: {
+      propertyType: true,
+      documents: { orderBy: { createdAt: "desc" } },
+      units: {
+        orderBy: [{ floor: "asc" }, { label: "asc" }],
+        include: {
+          tenant: { select: { id: true, email: true } },
+          _count: { select: { requests: true } },
+          tenancies: {
+            where: { endDate: null },
+            select: { monthlyRent: true },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+
+  if (!property) {
+    notFound();
+  }
+
+  // Tenants who could move in: anyone with the tenant role who isn't already housed.
+  const [availableTenants, propertyTypes] = await Promise.all([
+    prisma.user.findMany({
+      where: { userType: UserType.user, unit: null },
+      orderBy: { email: "asc" },
+      select: { id: true, email: true },
+    }),
+    prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
+  ]);
+
+  const propertyType = property.propertyType;
+  const hasFloors = propertyType.hasFloors;
+  const hasBedrooms = propertyType.hasBedrooms;
+  const unitNoun = propertyType.unitNounSingular.toLowerCase();
+  const unitNounCap = propertyType.unitNounSingular;
+  const occupied = property.units.filter((u) => u.tenant).length;
+  const scheduledMonthlyRent = property.units.reduce(
+    (total, unit) => total + Number(unit.tenancies[0]?.monthlyRent ?? 0),
+    0,
+  );
+  const byFloor = new Map<number | null, typeof property.units>();
+
+  for (const unit of property.units) {
+    const list = byFloor.get(unit.floor) ?? [];
+    list.push(unit);
+    byFloor.set(unit.floor, list);
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
+      <PageHeader
+        title={property.name}
+        description={`${propertyType.label} · ${formatOmanAddress(property)}`}
+        back={{ href: "/protected/properties", label: "All properties" }}
+      >
+        <ButtonLink href="/protected/tenancies" variant="outline">
+          <KeyRound className="h-4 w-4" />
+          Tenancy terms
+        </ButtonLink>
+      </PageHeader>
+
+      {"error" in message || "success" in message ? (
+        <FormMessage message={message} />
+      ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryTile
+          icon={<DoorOpen className="h-4 w-4" />}
+          value={property.units.length}
+          label={propertyType.unitNounPlural}
+        />
+        <SummaryTile
+          icon={<UserPlus className="h-4 w-4" />}
+          value={occupied}
+          label="Occupied"
+        />
+        <SummaryTile
+          icon={<LayoutGrid className="h-4 w-4" />}
+          value={property.units.length - occupied}
+          label="Empty"
+        />
+        <SummaryTile
+          icon={<KeyRound className="h-4 w-4" />}
+          value={formatMoney(scheduledMonthlyRent)}
+          label="Scheduled monthly rent"
+        />
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
+        {/* ── Apartments ─────────────────────────────────────────────────── */}
+        <div className="space-y-6">
+          {property.units.length === 0 ? (
+            <EmptyState
+              icon={DoorOpen}
+              title={`No ${propertyType.unitNounPlural.toLowerCase()} yet`}
+              description={
+                hasFloors
+                  ? `Use "Generate ${propertyType.unitNounPlural.toLowerCase()}" to create them all at once — 10 floors × 5 per floor gives you 50.`
+                  : `Use "Add ${unitNoun}" to add them one at a time.`
+              }
+            />
+          ) : (
+            /* A table, not cards: fifty apartments have to stay scannable. */
+            [...byFloor.entries()].map(([floor, units]) => (
+              <Card key={String(floor)} className="overflow-hidden">
+                <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2.5">
+                  <h2 className="text-sm font-medium">
+                    {!hasFloors
+                      ? propertyType.unitNounPlural
+                      : floor === null
+                        ? "Unassigned floor"
+                        : `Floor ${floor}`}
+                  </h2>
+                  <span className="text-xs text-muted-foreground">
+                    {units.filter((u) => u.tenant).length}/{units.length}{" "}
+                    occupied
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="border-b bg-muted/30 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="py-2 pl-4 pr-3 font-semibold">
+                          {unitNounCap} details
+                        </th>
+                        <th className="px-3 py-2 font-semibold">Status</th>
+                        <th className="px-3 py-2 font-semibold">Tenant</th>
+                        <th className="py-2 pl-3 pr-4"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {units.map((unit) => (
+                        <tr
+                          key={unit.id}
+                          className="border-b last:border-b-0 hover:bg-muted/30"
+                        >
+                          <td className="py-2.5 pl-4 pr-3">
+                            <form className="flex flex-nowrap items-end gap-2 rounded-md border bg-muted/10 px-2 py-1.5">
+                              <input
+                                type="hidden"
+                                name="unitId"
+                                value={unit.id}
+                              />
+                              <Field
+                                label={
+                                  propertyType.unitPrefix
+                                    ? `${propertyType.unitPrefix} #`
+                                    : "Number"
+                                }
+                              >
+                                <Input
+                                  name="label"
+                                  defaultValue={unit.label}
+                                  className="h-8 w-20 text-xs font-medium"
+                                  aria-label={`${unitNounCap} number, currently ${unit.label}`}
+                                />
+                              </Field>
+                              {hasFloors && (
+                                <Field label="Floor">
+                                  <Input
+                                    name="floor"
+                                    type="number"
+                                    defaultValue={unit.floor ?? ""}
+                                    className="h-8 w-20 text-xs"
+                                    aria-label={`Floor for ${unitNoun} ${unit.label}`}
+                                  />
+                                </Field>
+                              )}
+                              {hasBedrooms && (
+                                <Field label="Bedrooms">
+                                  <Input
+                                    name="bedrooms"
+                                    type="number"
+                                    min={0}
+                                    defaultValue={unit.bedrooms ?? ""}
+                                    className="h-8 w-20 text-xs"
+                                    aria-label={`Bedrooms for ${unitNoun} ${unit.label}`}
+                                  />
+                                </Field>
+                              )}
+                              <SubmitButton
+                                formAction={updateUnitAction}
+                                variant="outline"
+                                size="sm"
+                                pendingText="…"
+                                className="h-8 shrink-0"
+                              >
+                                Save
+                              </SubmitButton>
+                            </form>
+                            {unit._count.requests > 0 && (
+                              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                {unit._count.requests} request
+                                {unit._count.requests === 1 ? "" : "s"}
+                              </p>
+                            )}
+                          </td>
+
+                          <td className="px-3 py-2.5">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+                                unit.tenant
+                                  ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+                                  : "bg-slate-50 text-slate-600 ring-slate-500/20"
+                              }`}
+                            >
+                              {unit.tenant ? "Occupied" : "Empty"}
+                            </span>
+                          </td>
+
+                          <td className="px-3 py-2.5">
+                            <form className="flex items-center gap-2">
+                              <input
+                                type="hidden"
+                                name="unitId"
+                                value={unit.id}
+                              />
+                              <Select
+                                name="tenantId"
+                                defaultValue={unit.tenant?.id ?? ""}
+                                className="h-8 min-w-44 text-xs"
+                                aria-label={`Tenant for ${unitNoun} ${unit.label}`}
+                              >
+                                <option value="">— Empty —</option>
+                                {/* The current tenant has to stay selectable. */}
+                                {unit.tenant && (
+                                  <option value={unit.tenant.id}>
+                                    {unit.tenant.email}
+                                  </option>
+                                )}
+                                {availableTenants.map((tenant) => (
+                                  <option key={tenant.id} value={tenant.id}>
+                                    {tenant.email}
+                                  </option>
+                                ))}
+                              </Select>
+
+                              <SubmitButton
+                                formAction={assignTenantAction}
+                                variant="outline"
+                                size="sm"
+                                pendingText="…"
+                                className="h-8"
+                              >
+                                Save
+                              </SubmitButton>
+                            </form>
+                          </td>
+
+                          <td className="py-2 pl-3 pr-4 text-right">
+                            <form>
+                              <input
+                                type="hidden"
+                                name="unitId"
+                                value={unit.id}
+                              />
+                              <SubmitButton
+                                formAction={deleteUnitAction}
+                                variant="ghost"
+                                size="iconSm"
+                                pendingText="…"
+                                className="text-muted-foreground hover:text-destructive"
+                                aria-label={`Delete ${unitNoun} ${unit.label}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </SubmitButton>
+                            </form>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+
+        {/* ── Tools ──────────────────────────────────────────────────────── */}
+        <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
+          {hasFloors && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Wand2 className="h-4 w-4" />
+                  Generate {propertyType.unitNounPlural.toLowerCase()}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-4">
+                  <input type="hidden" name="propertyId" value={property.id} />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="floors">Floors</Label>
+                      <Input
+                        id="floors"
+                        name="floors"
+                        type="number"
+                        min={1}
+                        defaultValue={10}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="perFloor">Per floor</Label>
+                      <Input
+                        id="perFloor"
+                        name="perFloor"
+                        type="number"
+                        min={1}
+                        defaultValue={5}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="startFloor">Start floor</Label>
+                      <Input
+                        id="startFloor"
+                        name="startFloor"
+                        type="number"
+                        min={0}
+                        defaultValue={1}
+                      />
+                    </div>
+                    {hasBedrooms && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="bedrooms">Bedrooms</Label>
+                        <Input
+                          id="bedrooms"
+                          name="bedrooms"
+                          type="number"
+                          min={0}
+                          placeholder="—"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    10 floors × 5 per floor creates{" "}
+                    {propertyType.unitNounPlural.toLowerCase()} 101–105,
+                    201–205 … 1001–1005. Existing ones are skipped.
+                  </p>
+
+                  <SubmitButton
+                    formAction={generateUnitsAction}
+                    className="w-full"
+                    pendingText="Generating..."
+                  >
+                    Generate
+                  </SubmitButton>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Add {unitNoun}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-3">
+                <input type="hidden" name="propertyId" value={property.id} />
+
+                <div
+                  className={`grid gap-2 ${
+                    [true, hasFloors, hasBedrooms].filter(Boolean).length === 3
+                      ? "grid-cols-3"
+                      : [true, hasFloors, hasBedrooms].filter(Boolean).length === 2
+                        ? "grid-cols-2"
+                        : "grid-cols-1"
+                  }`}
+                >
+                  <div className="space-y-1.5">
+                    <Label htmlFor="label" className="text-xs">
+                      Number
+                    </Label>
+                    <Input
+                      id="label"
+                      name="label"
+                      placeholder={hasFloors ? "101" : `${unitNounCap} 1`}
+                      required
+                    />
+                  </div>
+                  {hasFloors && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="unit-floor" className="text-xs">
+                        Floor
+                      </Label>
+                      <Input
+                        id="unit-floor"
+                        name="floor"
+                        type="number"
+                        placeholder="1"
+                      />
+                    </div>
+                  )}
+                  {hasBedrooms && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="unit-beds" className="text-xs">
+                        Beds
+                      </Label>
+                      <Input
+                        id="unit-beds"
+                        name="bedrooms"
+                        type="number"
+                        placeholder={hasFloors ? "2" : "4"}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <SubmitButton
+                  formAction={createUnitAction}
+                  variant="outline"
+                  className="w-full"
+                  pendingText="Adding..."
+                >
+                  Add {unitNoun}
+                </SubmitButton>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Property details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <p className="flex items-start gap-2 text-muted-foreground">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{formatOmanAddress(property)}</span>
+              </p>
+              {property.notes && (
+                <p className="text-muted-foreground">{property.notes}</p>
+              )}
+              <details className="group rounded-lg border">
+                <summary className="cursor-pointer list-none px-3 py-2 text-center text-xs font-medium">
+                  Edit Oman address & records
+                </summary>
+                <form className="space-y-3 border-t p-3">
+                  <input type="hidden" name="propertyId" value={property.id} />
+                  <div className="space-y-1">
+                    <Label htmlFor="property-name" className="text-xs">
+                      Name
+                    </Label>
+                    <Input
+                      id="property-name"
+                      name="name"
+                      defaultValue={property.name}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="property-type" className="text-xs">
+                      Property type
+                    </Label>
+                    <Select
+                      id="property-type"
+                      name="propertyTypeId"
+                      defaultValue={property.propertyTypeId}
+                      className="text-xs"
+                    >
+                      {propertyTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="property-address" className="text-xs">
+                      Address / locality
+                    </Label>
+                    <Input
+                      id="property-address"
+                      name="address"
+                      defaultValue={property.address}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="property-governorate" className="text-xs">
+                        Governorate
+                      </Label>
+                      <Select
+                        id="property-governorate"
+                        name="governorate"
+                        defaultValue={property.governorate ?? "Muscat"}
+                        className="text-xs"
+                      >
+                        {OMAN_GOVERNORATES.map((governorate) => (
+                          <option key={governorate} value={governorate}>
+                            {governorate}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="property-wilayat" className="text-xs">
+                        Wilayat
+                      </Label>
+                      <Input
+                        id="property-wilayat"
+                        name="wilayat"
+                        defaultValue={property.wilayat ?? ""}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="property-area" className="text-xs">
+                      Area / village
+                    </Label>
+                    <Input
+                      id="property-area"
+                      name="area"
+                      defaultValue={property.area ?? ""}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="property-way" className="text-xs">
+                        Way
+                      </Label>
+                      <Input
+                        id="property-way"
+                        name="wayNumber"
+                        defaultValue={property.wayNumber ?? ""}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="property-building" className="text-xs">
+                        Building
+                      </Label>
+                      <Input
+                        id="property-building"
+                        name="buildingNumber"
+                        defaultValue={property.buildingNumber ?? ""}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="property-postal" className="text-xs">
+                        PC
+                      </Label>
+                      <Input
+                        id="property-postal"
+                        name="postalCode"
+                        defaultValue={property.postalCode ?? ""}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="property-notes" className="text-xs">
+                      Notes
+                    </Label>
+                    <Textarea
+                      id="property-notes"
+                      name="notes"
+                      defaultValue={property.notes ?? ""}
+                      className="min-h-16 text-xs"
+                    />
+                  </div>
+                  <SubmitButton
+                    formAction={updatePropertyAction}
+                    size="sm"
+                    className="w-full"
+                    pendingText="Saving..."
+                  >
+                    Save property record
+                  </SubmitButton>
+                </form>
+              </details>
+              <ButtonLink
+                href={`/protected/maintenance?property=${property.id}`}
+                variant="outline"
+                size="sm"
+                className="mt-2 w-full"
+              >
+                View this property&apos;s requests
+              </ButtonLink>
+            </CardContent>
+          </Card>
+
+          <EntityDocumentManager
+            documents={property.documents}
+            targetType="property"
+            targetId={property.id}
+            back={`/protected/properties/${property.id}`}
+            title="Property documents"
+            description="Title deed, ownership certificate, building approvals, insurance and other private property records."
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Small labeled slot for a compact inline edit field, e.g. inside a table row. */
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function SummaryTile({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-4 p-5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+          {icon}
+        </span>
+        <div>
+          <p className="text-2xl font-semibold leading-none">{value}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{label}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

@@ -1,0 +1,615 @@
+"use client";
+
+import { useState } from "react";
+import { format } from "date-fns";
+import {
+  CheckCircle2,
+  ExternalLink,
+  Home,
+  Image as ImageIcon,
+  LoaderCircle,
+  MapPin,
+  PauseCircle,
+  PlayCircle,
+  User,
+  XCircle,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import {
+  assignWorkerAction,
+  decideSupplyRequestAction,
+  holdTaskAction,
+  resumeHeldTaskAction,
+} from "@/app/actions";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { SubmitButton } from "@/components/submit-button";
+import { PendingLink } from "@/components/ui/pending-link";
+import { PriorityBadge, StatusBadge } from "@/lib/status";
+import { attachmentUrl } from "@/lib/utils";
+import { formatMoney } from "@/lib/finance";
+import { formatUnitLabel } from "@/lib/property-types";
+import type {
+  Attachment,
+  RequestWithPlace,
+  SupplyRequestWithUsers,
+} from "@/types/maintenance";
+
+export function AdminRequestCard({
+  request,
+  workers,
+  attachments = [],
+}: {
+  request: RequestWithPlace;
+  workers: { id: string; email: string }[];
+  attachments?: Attachment[];
+}) {
+  const [message, setMessage] = useState<string | null>(null);
+  const [showHoldForm, setShowHoldForm] = useState(false);
+  const [holdReason, setHoldReason] = useState("");
+  const [resumeNotes, setResumeNotes] = useState("");
+  const [selectedWorkerId, setSelectedWorkerId] = useState(
+    request.assignedToId ?? "",
+  );
+  const [isHoldSaving, setIsHoldSaving] = useState(false);
+  const router = useRouter();
+
+  const preview = attachments.slice(0, 3);
+  const extra = attachments.length - preview.length;
+  const isHeld = request.status === "on_hold";
+
+  const showResult = (result: { ok: boolean; message: string }) => {
+    setMessage(result.message);
+    if (result.ok) {
+      router.refresh();
+    }
+    setTimeout(() => setMessage(null), 5000);
+  };
+
+  const putOnHold = async () => {
+    setIsHoldSaving(true);
+    const formData = new FormData();
+    formData.append("taskId", request.id);
+    formData.append("reason", holdReason);
+
+    try {
+      const result = await holdTaskAction(formData);
+      showResult(result);
+      if (result.ok) {
+        setShowHoldForm(false);
+        setHoldReason("");
+      }
+    } catch {
+      showResult({ ok: false, message: "Could not put this job on hold." });
+    } finally {
+      setIsHoldSaving(false);
+    }
+  };
+
+  const assignAndResume = async () => {
+    setIsHoldSaving(true);
+    const formData = new FormData();
+    formData.append("taskId", request.id);
+    formData.append("workerId", selectedWorkerId);
+    formData.append("notes", resumeNotes);
+
+    try {
+      const result = await resumeHeldTaskAction(formData);
+      showResult(result);
+    } catch {
+      showResult({ ok: false, message: "Could not resume this job." });
+    } finally {
+      setIsHoldSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold">{request.title}</h3>
+              <PendingLink
+                href={`/protected/maintenance/${request.id}`}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Details
+                <ExternalLink className="h-3 w-3" />
+              </PendingLink>
+            </div>
+
+            {/* Where a worker actually has to go. */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                <Home className="h-3.5 w-3.5" />
+                {request.unit
+                  ? `${request.unit.property.name} · ${formatUnitLabel(
+                      request.unit.property.propertyType,
+                      request.unit.label,
+                    )}`
+                  : "No unit linked"}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5" />
+                {request.location}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
+                {request.user.email}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <PriorityBadge priority={request.priority} />
+            <StatusBadge status={request.status} />
+          </div>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          {request.description.length > 160
+            ? `${request.description.slice(0, 160)}…`
+            : request.description}
+        </p>
+
+        {isHeld && (
+          <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4 text-orange-900">
+            <div className="flex items-center gap-2 font-medium">
+              <PauseCircle className="h-4 w-4" />
+              Waiting for admin review
+            </div>
+            <p className="whitespace-pre-wrap text-sm">
+              {request.holdReason ?? "No hold reason was recorded."}
+            </p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-orange-800/80">
+              {request.heldAt && (
+                <span>Held {format(request.heldAt, "d MMM, HH:mm")}</span>
+              )}
+              {request.resumeRequestedAt && (
+                <span className="font-semibold">
+                  {request.user.email} says the blocker is resolved
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(request.supplyRequests?.length ?? 0) > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Supply requests
+            </p>
+            {request.supplyRequests!.map((supplyRequest) => (
+              <SupplyRequestRow
+                key={supplyRequest.id}
+                supplyRequest={supplyRequest}
+                onDecided={showResult}
+              />
+            ))}
+          </div>
+        )}
+
+        {preview.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {preview.map((attachment) => (
+              <a
+                key={attachment.id}
+                href={attachmentUrl(attachment.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-16 w-16 overflow-hidden rounded-lg border bg-muted"
+              >
+                {attachment.fileType.startsWith("image/") ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={attachmentUrl(attachment.id)}
+                    alt={attachment.fileName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center">
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  </span>
+                )}
+              </a>
+            ))}
+            {extra > 0 && (
+              <span className="flex h-16 w-16 items-center justify-center rounded-lg border bg-muted text-xs text-muted-foreground">
+                +{extra}
+              </span>
+            )}
+          </div>
+        )}
+
+        {isHeld ? (
+          <div className="space-y-4 border-t pt-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor={`resume-worker-${request.id}`}>
+                  Worker for resumed job
+                </Label>
+                <Select
+                  id={`resume-worker-${request.id}`}
+                  value={selectedWorkerId}
+                  onChange={(event) => setSelectedWorkerId(event.target.value)}
+                >
+                  <option value="">— Choose a worker —</option>
+                  {workers.map((worker) => (
+                    <option key={worker.id} value={worker.id}>
+                      {worker.email}
+                      {worker.id === request.assignedToId
+                        ? " (previous worker)"
+                        : ""}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor={`resume-notes-${request.id}`}>
+                  Resume note (optional)
+                </Label>
+                <Textarea
+                  id={`resume-notes-${request.id}`}
+                  value={resumeNotes}
+                  onChange={(event) => setResumeNotes(event.target.value)}
+                  placeholder="What was resolved?"
+                  className="min-h-10"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="max-w-xl text-xs text-muted-foreground">
+                The previous worker continues from the earlier stage. Choosing a
+                different worker restarts the job as Pending.
+              </p>
+              <Button
+                type="button"
+                onClick={assignAndResume}
+                disabled={isHoldSaving || !selectedWorkerId}
+              >
+                {isHoldSaving ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+                ) : (
+                  <PlayCircle className="h-4 w-4" />
+                )}
+                {isHoldSaving ? "Resuming…" : "Assign & Resume"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <form
+              key={`${request.assignedToId ?? ""}-${request.status}`}
+              action={async (formData) => {
+                try {
+                  await assignWorkerAction(formData);
+                  // This action is invoked manually, so refresh the client route
+                  // after the server cache has been revalidated.
+                  router.refresh();
+                  setMessage("Saved");
+                } catch {
+                  setMessage("Something went wrong");
+                }
+                setTimeout(() => setMessage(null), 3000);
+              }}
+              className="flex flex-wrap items-end gap-3 border-t pt-4"
+            >
+              <input type="hidden" name="requestId" value={request.id} />
+
+              <div className="min-w-48 flex-1 space-y-1.5">
+                <Label htmlFor={`worker-${request.id}`} className="text-xs">
+                  Assign to worker
+                </Label>
+                <Select
+                  id={`worker-${request.id}`}
+                  name="workerId"
+                  defaultValue={request.assignedToId ?? ""}
+                  className="h-9 text-sm"
+                >
+                  <option value="">— Unassigned —</option>
+                  {workers.map((worker) => (
+                    <option key={worker.id} value={worker.id}>
+                      {worker.email}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor={`status-${request.id}`} className="text-xs">
+                  Status
+                </Label>
+                <Select
+                  id={`status-${request.id}`}
+                  name="status"
+                  defaultValue={request.status}
+                  className="h-9 w-36 text-sm"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="en_route">En Route</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </Select>
+              </div>
+
+              <SubmitButton size="sm" pendingText="Saving...">
+                Update
+              </SubmitButton>
+            </form>
+
+            {request.status !== "completed" && (
+              <div className="border-t pt-4">
+                {showHoldForm ? (
+                  <div className="space-y-3 rounded-lg bg-muted/40 p-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`hold-reason-${request.id}`}>
+                        Why is this job on hold?
+                      </Label>
+                      <Textarea
+                        id={`hold-reason-${request.id}`}
+                        value={holdReason}
+                        onChange={(event) => setHoldReason(event.target.value)}
+                        placeholder="Example: Waiting for a replacement part from the tenant"
+                        maxLength={1000}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setShowHoldForm(false);
+                          setHoldReason("");
+                        }}
+                        disabled={isHoldSaving}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={putOnHold}
+                        disabled={isHoldSaving || !holdReason.trim()}
+                      >
+                        {isHoldSaving && (
+                          <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+                        )}
+                        {isHoldSaving ? "Saving…" : "Confirm On Hold"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowHoldForm(true)}
+                  >
+                    <PauseCircle className="h-4 w-4" />
+                    Put On Hold
+                  </Button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {message && (
+          <p className="rounded-md bg-muted px-3 py-2 text-sm">{message}</p>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          Reported {format(request.createdAt, "PPP")}
+          {request.completedAt
+            ? ` · completed ${format(request.completedAt, "PPP")}`
+            : ""}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** One supply request with its own approve/deny controls and note field —
+ * kept separate so typing a note on one request never leaks into another
+ * pending request on the same job. */
+function SupplyRequestRow({
+  supplyRequest,
+  onDecided,
+}: {
+  supplyRequest: SupplyRequestWithUsers;
+  onDecided: (result: { ok: boolean; message: string }) => void;
+}) {
+  const [note, setNote] = useState("");
+  const [cost, setCost] = useState(
+    supplyRequest.workerCost != null ? String(supplyRequest.workerCost) : "",
+  );
+  const [denying, setDenying] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const decide = async (decision: "approved" | "denied") => {
+    setIsSaving(true);
+    const formData = new FormData();
+    formData.append("supplyRequestId", supplyRequest.id);
+    formData.append("decision", decision);
+    if (note.trim()) {
+      formData.append("adminNote", note.trim());
+    }
+    if (decision === "approved" && cost.trim()) {
+      formData.append("cost", cost.trim());
+    }
+
+    try {
+      const result = await decideSupplyRequestAction(formData);
+      onDecided(result);
+      if (result.ok) {
+        setDenying(false);
+        setNote("");
+        setCost("");
+      }
+    } catch {
+      onDecided({ ok: false, message: "Could not save this decision." });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2 rounded-lg border p-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <span className="font-medium">{supplyRequest.item}</span>
+          <span className="ml-2 text-xs text-muted-foreground">
+            requested by {supplyRequest.requestedBy.email}
+          </span>
+        </div>
+        {supplyRequest.status === "pending" && (
+          <span className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20">
+            Pending
+          </span>
+        )}
+        {supplyRequest.status === "approved" && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+            <CheckCircle2 className="h-3 w-3" />
+            Approved
+          </span>
+        )}
+        {supplyRequest.status === "denied" && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/20">
+            <XCircle className="h-3 w-3" />
+            Denied
+          </span>
+        )}
+      </div>
+
+      {supplyRequest.notes && (
+        <p className="text-xs text-muted-foreground">{supplyRequest.notes}</p>
+      )}
+
+      {supplyRequest.receiptPath && (
+        <a
+          href={`/api/supply-receipt/${supplyRequest.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary underline"
+        >
+          View uploaded receipt
+          {supplyRequest.workerCost != null
+            ? ` · worker says they paid ${formatMoney(supplyRequest.workerCost)}`
+            : ""}
+        </a>
+      )}
+
+      {supplyRequest.adminNote && (
+        <p className="text-xs text-muted-foreground">
+          Your note: {supplyRequest.adminNote}
+        </p>
+      )}
+
+      {supplyRequest.status === "approved" && supplyRequest.cost != null && (
+        <p className="text-xs font-medium text-emerald-700">
+          Cost: {formatMoney(supplyRequest.cost)}
+        </p>
+      )}
+
+      {supplyRequest.status === "pending" && (
+        <div className="space-y-2">
+          <Textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder={
+              denying
+                ? "Reason for denying (required)"
+                : 'Note (optional) — e.g. "Picked up, ready for you"'
+            }
+            className="min-h-10 text-xs"
+          />
+          {!denying && (
+            <div className="space-y-1">
+              <Label
+                htmlFor={`supply-cost-${supplyRequest.id}`}
+                className="text-xs text-muted-foreground"
+              >
+                Cost (OMR, optional) — locked once approved
+              </Label>
+              <Input
+                id={`supply-cost-${supplyRequest.id}`}
+                type="number"
+                min="0"
+                step="0.001"
+                inputMode="decimal"
+                value={cost}
+                onChange={(event) => setCost(event.target.value)}
+                placeholder="0.000"
+                className="h-8 w-32 text-xs"
+              />
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            {denying ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setDenying(false);
+                    setNote("");
+                  }}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="text-rose-700"
+                  onClick={() => decide("denied")}
+                  disabled={isSaving || !note.trim()}
+                >
+                  Confirm deny
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="text-rose-700"
+                  onClick={() => {
+                    setDenying(true);
+                    setNote("");
+                  }}
+                  disabled={isSaving}
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                  Deny
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => decide("approved")}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+                  ) : (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  )}
+                  Approve
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
