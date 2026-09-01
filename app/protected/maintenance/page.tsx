@@ -40,13 +40,19 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
     where.status = status as RequestStatus;
   }
 
+  const unitWhere: Prisma.UnitWhereInput = {};
+
   if (propertyId && propertyId !== "all") {
-    where.unit = { propertyId };
+    unitWhere.propertyId = propertyId;
   }
 
   // An owner only ever sees requests for units in properties they own.
   if (isOwner) {
-    where.unit = { ...where.unit, property: { ownerId: user.id } };
+    unitWhere.property = { ownerId: user.id };
+  }
+
+  if (Object.keys(unitWhere).length > 0) {
+    where.unit = unitWhere;
   }
 
   if (query) {
