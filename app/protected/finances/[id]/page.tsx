@@ -55,7 +55,7 @@ const PAYMENT_STATUS_META: Record<
 > = {
   pending: {
     label: "Pending review",
-    className: "bg-sky-50 text-sky-700 ring-sky-600/20",
+    className: "bg-[#0886be]/10 text-[#0886be] ring-[#0886be]/20",
   },
   approved: {
     label: "Approved",

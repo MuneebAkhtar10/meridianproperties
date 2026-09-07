@@ -77,7 +77,7 @@ export default async function RequestDetailPage({
       ) : null}
 
       {request.status === RequestStatus.on_hold && (
-        <Card className="border-orange-200 bg-orange-50 text-orange-900">
+        <Card className="border-[#dc961e]/30 bg-[#dc961e]/10 text-[#8a5c10]">
           <CardContent className="space-y-4 p-5">
             <div className="flex items-start gap-3">
               <PauseCircle className="mt-0.5 h-5 w-5 shrink-0" />
@@ -87,7 +87,7 @@ export default async function RequestDetailPage({
                   {request.holdReason ?? "No hold reason was recorded."}
                 </p>
                 {request.heldAt && (
-                  <p className="text-xs text-orange-800/80">
+                  <p className="text-xs text-[#8a5c10]/80">
                     Paused {format(request.heldAt, "d MMM yyyy, HH:mm")}
                   </p>
                 )}
@@ -103,8 +103,8 @@ export default async function RequestDetailPage({
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-3 border-t border-orange-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="max-w-xl text-xs text-orange-800/80">
+              <div className="flex flex-col gap-3 border-t border-[#dc961e]/30 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="max-w-xl text-xs text-[#8a5c10]/80">
                   If the item, access, approval, or other dependency mentioned
                   above is now ready, notify the admin. This will not restart
                   the job automatically.

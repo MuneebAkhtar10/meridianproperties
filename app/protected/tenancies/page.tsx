@@ -1,6 +1,5 @@
 import { format } from "date-fns";
 import {
-  ChevronDown,
   FilePenLine,
   Home,
   KeyRound,
@@ -16,6 +15,7 @@ import {
 } from "@/app/finance-actions";
 import { EmptyState } from "@/components/empty-state";
 import { EntityDocumentManager } from "@/components/entity-document-manager";
+import { ManageToggle } from "@/components/manage-toggle";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
@@ -121,6 +121,37 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
         <FormMessage message={message} />
       ) : null}
 
+      <div className="flex flex-wrap gap-4">
+        <Card className="relative w-full overflow-hidden border-border/60 shadow-sm sm:w-auto sm:min-w-64">
+          <span className="absolute inset-x-0 top-0 h-1 bg-emerald-500" />
+          <CardContent className="flex items-center gap-4 p-5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <Users className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Active tenancies</p>
+              <p className="text-2xl font-semibold">{active.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="relative w-full overflow-hidden border-border/60 shadow-sm sm:w-auto sm:min-w-72">
+          <span className="absolute inset-x-0 top-0 h-1 bg-[#0886be]" />
+          <CardContent className="flex items-center gap-4 p-5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0886be]/10 text-[#0886be]">
+              <Home className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="whitespace-nowrap text-xs text-muted-foreground">
+                Scheduled monthly rent
+              </p>
+              <p className="whitespace-nowrap text-2xl font-semibold">
+                {formatMoney(scheduledMonthlyRent)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="space-y-6">
           {active.length === 0 ? (
@@ -141,11 +172,14 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                 );
 
                 return (
-                  <Card key={tenancy.id}>
+                  <Card
+                    key={tenancy.id}
+                    className="border-border/60 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  >
                     <CardContent className="space-y-5 p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex items-start gap-3">
-                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0886be]/10 text-[#0886be]">
                             <Home className="h-5 w-5" />
                           </span>
                           <div className="min-w-0">
@@ -157,7 +191,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                                   tenancy.unit.label,
                                 )}
                               </p>
-                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
                                 Active
                               </span>
                             </div>
@@ -206,42 +240,44 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                         </div>
                       )}
 
-                      <div className="grid gap-3 border-t pt-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
-                        <Info
-                          label="Rent due"
-                          value={`Day ${tenancy.rentDueDay}`}
-                        />
-                        <Info
-                          label="Deposit"
-                          value={formatMoney(tenancy.securityDeposit)}
-                        />
-                        <Info
-                          label="Purpose"
-                          value={
-                            tenancy.purpose === TenancyPurpose.residential
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
+                        <span>
+                          Rent due{" "}
+                          <span className="font-medium text-foreground">
+                            Day {tenancy.rentDueDay}
+                          </span>
+                        </span>
+                        <span>
+                          Deposit{" "}
+                          <span className="font-medium text-foreground">
+                            {formatMoney(tenancy.securityDeposit)}
+                          </span>
+                        </span>
+                        <span>
+                          Purpose{" "}
+                          <span className="font-medium text-foreground">
+                            {tenancy.purpose === TenancyPurpose.residential
                               ? "Residential"
-                              : "Commercial"
-                          }
-                        />
-                        <Info
-                          label="Civil ID / Resident Card"
-                          value={tenancy.tenant.civilId || "—"}
-                        />
-                      </div>
-
-                      <details className="group overflow-hidden rounded-xl border bg-background">
-                        <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors hover:bg-muted/50">
-                          <FilePenLine className="h-4 w-4 text-muted-foreground" />
+                              : "Commercial"}
+                          </span>
+                        </span>
+                        {tenancy.tenant.civilId && (
                           <span>
-                            Manage tenancy
-                            <span className="ml-2 hidden text-xs font-normal text-muted-foreground sm:inline">
-                              Terms, Oman records and move-out
+                            Civil ID{" "}
+                            <span className="font-medium text-foreground">
+                              {tenancy.tenant.civilId}
                             </span>
                           </span>
-                          <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
-                        </summary>
-                        <div className="border-t bg-muted/10">
-                          <form className="space-y-5 p-4 sm:p-5">
+                        )}
+                      </div>
+
+                      <ManageToggle
+                        label="Manage tenancy"
+                        hint="Terms, Oman records and move-out"
+                        icon={<FilePenLine className="h-3.5 w-3.5" />}
+                      >
+                        <div className="space-y-5">
+                          <form className="space-y-5">
                             <input
                               type="hidden"
                               name="tenancyId"
@@ -414,7 +450,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                             </div>
                           </form>
                         </div>
-                      </details>
+                      </ManageToggle>
                     </CardContent>
                   </Card>
                 );
@@ -423,15 +459,20 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
           )}
 
           {history.length > 0 && (
-            <Card>
+            <Card className="border-border/60 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-base">Move-out history</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                    <LogOut className="h-3.5 w-3.5" />
+                  </span>
+                  Move-out history
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="text-left text-xs text-muted-foreground">
-                      <tr className="border-b">
+                      <tr className="border-b border-border/60">
                         <th className="pb-2 font-medium">Tenant</th>
                         <th className="pb-2 font-medium">Unit</th>
                         <th className="pb-2 font-medium">Period</th>
@@ -440,7 +481,10 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                     </thead>
                     <tbody>
                       {history.map((tenancy) => (
-                        <tr key={tenancy.id} className="border-b last:border-0">
+                        <tr
+                          key={tenancy.id}
+                          className="border-b border-border/60 last:border-0 hover:bg-muted/30"
+                        >
                           <td className="py-3 pr-4">{tenancy.tenant.email}</td>
                           <td className="py-3 pr-4">
                             {tenancy.unit.property.name} ·{" "}
@@ -450,12 +494,17 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                             )}
                           </td>
                           <td className="whitespace-nowrap py-3 pr-4 text-muted-foreground">
-                            {format(tenancy.startDate, "dd MMM yyyy")} –{" "}
-                            {tenancy.endDate
-                              ? format(tenancy.endDate, "dd MMM yyyy")
-                              : "—"}
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+                              Ended
+                            </span>
+                            <span className="ml-2">
+                              {format(tenancy.startDate, "dd MMM yyyy")} –{" "}
+                              {tenancy.endDate
+                                ? format(tenancy.endDate, "dd MMM yyyy")
+                                : "—"}
+                            </span>
                           </td>
-                          <td className="py-3 text-right">
+                          <td className="py-3 text-right font-medium">
                             {formatMoney(tenancy.monthlyRent)}
                           </td>
                         </tr>
@@ -469,19 +518,19 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
         </div>
 
         <Card
-          className={`h-fit ${
+          className={`h-fit overflow-hidden border-border/60 shadow-sm ${
             availableTenants.length === 0 || emptyUnits.length === 0
               ? "xl:sticky xl:top-24"
               : ""
           }`}
         >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5 text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15">
               <Plus className="h-4 w-4" />
-              Start a tenancy
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </span>
+            <span className="text-base font-semibold">Start a tenancy</span>
+          </div>
+          <CardContent className="pt-5">
             {availableTenants.length === 0 || emptyUnits.length === 0 ? (
               <div className="space-y-4 text-sm text-muted-foreground">
                 <p>
@@ -514,7 +563,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
             ) : (
               <UploadBudgetProvider>
                 <form className="space-y-4" encType="multipart/form-data">
-                  <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800">
+                  <div className="rounded-lg border border-[#0886be]/25 bg-[#0886be]/10 p-3 text-xs text-[#075e82]">
                     Oman record checklist: keep the tenant Civil ID under
                     People, title deed/plot under Property, and add the
                     municipality contract below.

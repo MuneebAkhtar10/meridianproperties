@@ -147,7 +147,7 @@ export const CHARGE_STATUS_META: Record<
   },
   under_review: {
     label: "Proof under review",
-    className: "bg-sky-50 text-sky-700 ring-sky-600/20",
+    className: "bg-[#0886be]/10 text-[#0886be] ring-[#0886be]/20",
   },
   partially_paid: {
     label: "Partially paid",

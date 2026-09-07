@@ -123,7 +123,7 @@ export function HeldTaskCard({
           <PriorityBadge priority={task.priority} />
         </div>
 
-        <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4 text-orange-900">
+        <div className="space-y-2 rounded-lg border border-[#dc961e]/30 bg-[#dc961e]/10 p-4 text-[#8a5c10]">
           <div className="flex items-center gap-2 font-medium">
             <PauseCircle className="h-4 w-4" />
             On hold — waiting for admin
@@ -298,7 +298,7 @@ function WorkerSupplyRequestRow({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-medium">{request.item}</span>
         {request.status === "pending" && (
-          <span className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20">
+          <span className="inline-flex items-center rounded-full bg-[#0886be]/10 px-2 py-0.5 text-xs font-medium text-[#0886be] ring-1 ring-inset ring-[#0886be]/20">
             Waiting for admin
           </span>
         )}

@@ -7,6 +7,7 @@ import {
   Landmark,
   Plus,
   ReceiptText,
+  SlidersHorizontal,
   WalletCards,
 } from "lucide-react";
 
@@ -53,12 +54,12 @@ import {
 import { PageProps } from "@/types/page";
 
 const STATUS_FILTERS = [
-  { value: "all", label: "All" },
-  { value: "open", label: "Due" },
-  { value: "overdue", label: "Overdue" },
-  { value: "under_review", label: "Under review" },
-  { value: "partially_paid", label: "Partially paid" },
-  { value: "paid", label: "Paid" },
+  { value: "all", label: "All", dot: null },
+  { value: "open", label: "Due", dot: "bg-amber-500" },
+  { value: "overdue", label: "Overdue", dot: "bg-rose-500" },
+  { value: "under_review", label: "Under review", dot: "bg-[#0886be]" },
+  { value: "partially_paid", label: "Partially paid", dot: "bg-violet-500" },
+  { value: "paid", label: "Paid", dot: "bg-emerald-500" },
 ] as const;
 
 const SORT_COLUMNS = [
@@ -321,6 +322,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<Banknote className="h-4 w-4" />}
+          color="amber"
           label="Outstanding"
           value={formatMoney(outstanding)}
           hint="approved payments deducted"
@@ -329,6 +331,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         />
         <StatCard
           icon={<CalendarPlus className="h-4 w-4" />}
+          color="rose"
           label="Overdue"
           value={formatMoney(overdue)}
           hint="past due date"
@@ -338,6 +341,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         />
         <StatCard
           icon={<FileCheck2 className="h-4 w-4" />}
+          color="blue"
           label="Proofs to review"
           value={pendingCount}
           hint={
@@ -350,6 +354,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         />
         <StatCard
           icon={<WalletCards className="h-4 w-4" />}
+          color="emerald"
           label={
             isAdminView
               ? "Collected this month"
@@ -371,18 +376,21 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         }
       >
         <div className="space-y-4">
-          <div className="space-y-3 rounded-xl border bg-muted/20 p-3">
-            <div className="flex flex-wrap gap-1">
+          <div className="space-y-3 rounded-xl border border-border/60 bg-card p-3 shadow-sm">
+            <div className="flex flex-wrap gap-1 rounded-lg bg-muted/50 p-1">
               {STATUS_FILTERS.map((filter) => (
                 <PendingLink
                   key={filter.value}
                   href={`${filterHref(params, { status: filter.value })}#ledger`}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                     isTabActive(filter.value)
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-white text-foreground shadow-sm ring-1 ring-border/60"
+                      : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
                   }`}
                 >
+                  {filter.dot && (
+                    <span className={`h-1.5 w-1.5 rounded-full ${filter.dot}`} />
+                  )}
                   {filter.label}
                 </PendingLink>
               ))}
@@ -409,6 +417,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                 </Select>
               )}
               <SubmitButton variant="outline" pendingText="Filtering...">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
                 Filter
               </SubmitButton>
             </form>
@@ -421,9 +430,10 @@ export default async function FinancesPage({ searchParams }: PageProps) {
               description="There are no charges matching these filters."
             />
           ) : (
-            <Card className="overflow-hidden rounded-xl border shadow-sm">
-              <div className="flex items-center justify-between border-b bg-muted/20 px-4 py-2.5">
-                <p className="text-xs font-medium text-muted-foreground">
+            <Card className="overflow-hidden rounded-xl border-border/60 shadow-sm">
+              <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2.5">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <ReceiptText className="h-3.5 w-3.5" />
                   {visibleCharges.length}{" "}
                   {visibleCharges.length === 1 ? "entry" : "entries"}
                 </p>
@@ -562,14 +572,16 @@ function AdminTools({
 }) {
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+      <Card className="overflow-hidden border-border/60 shadow-sm">
+        <div className="flex items-center gap-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 text-white">
             <CalendarPlus className="h-4 w-4" />
+          </span>
+          <CardTitle className="text-base text-white">
             Generate monthly rent
           </CardTitle>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <CardContent className="pt-5">
           <form className="space-y-3">
             <Field label="Rent month">
               <Input
@@ -594,14 +606,16 @@ function AdminTools({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+      <Card className="overflow-hidden border-border/60 shadow-sm">
+        <div className="flex items-center gap-2.5 border-b bg-emerald-50 px-5 py-3.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
             <Plus className="h-4 w-4" />
+          </span>
+          <CardTitle className="text-base text-emerald-900">
             Add a charge or bill
           </CardTitle>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <CardContent className="pt-5">
           {tenancies.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Start a tenancy before adding rent or bills.
@@ -684,11 +698,19 @@ function AdminTools({
   );
 }
 
+const STAT_CARD_COLORS = {
+  amber: { bar: "bg-amber-500", badge: "bg-amber-50 text-amber-600" },
+  rose: { bar: "bg-rose-500", badge: "bg-rose-50 text-rose-600" },
+  blue: { bar: "bg-[#0886be]", badge: "bg-[#0886be]/10 text-[#0886be]" },
+  emerald: { bar: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-600" },
+} as const;
+
 function StatCard({
   icon,
   label,
   value,
   hint,
+  color,
   danger = false,
   href,
   active = false,
@@ -697,34 +719,46 @@ function StatCard({
   label: string;
   value: React.ReactNode;
   hint: string;
+  color: keyof typeof STAT_CARD_COLORS;
   danger?: boolean;
   href?: string;
   active?: boolean;
 }) {
+  const palette = STAT_CARD_COLORS[color];
+
   const content = (
-    <CardContent className="p-5">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        {icon}
-        {label}
+    <CardContent className="relative overflow-hidden p-5">
+      <span aria-hidden className={`absolute inset-x-0 top-0 h-1 ${palette.bar}`} />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          <p
+            className={`mt-2 text-2xl font-semibold tracking-tight ${danger ? "text-rose-700" : "text-foreground"}`}
+          >
+            {value}
+          </p>
+          <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>
+        </div>
+        <span
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${palette.badge}`}
+        >
+          {icon}
+        </span>
       </div>
-      <p
-        className={`mt-2 text-2xl font-semibold tracking-tight ${danger ? "text-rose-700" : ""}`}
-      >
-        {value}
-      </p>
-      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </CardContent>
   );
 
   if (!href) {
-    return <Card>{content}</Card>;
+    return <Card className="overflow-hidden border-border/60 shadow-sm">{content}</Card>;
   }
 
   return (
     <Link href={href} className="block no-underline">
       <Card
-        className={`transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md ${
-          active ? "border-primary/50 ring-1 ring-primary/30" : ""
+        className={`overflow-hidden border-border/60 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+          active ? "ring-2 ring-primary/40" : ""
         }`}
       >
         {content}

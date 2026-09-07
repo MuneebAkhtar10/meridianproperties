@@ -19,6 +19,9 @@ export const ENTITY_DOCUMENT_CATEGORY_LABEL: Record<
   resident_card: "Resident card",
   visa: "Visa",
   employment_letter: "Employment / sponsor letter",
+  driving_license: "Driving license",
+  vehicle_registration: "Vehicle registration (Mulkiya)",
+  car_insurance: "Car insurance",
   other: "Other document",
 };
 
@@ -46,6 +49,9 @@ export const PERSONAL_DOCUMENT_CATEGORIES = [
   EntityDocumentCategory.resident_card,
   EntityDocumentCategory.visa,
   EntityDocumentCategory.employment_letter,
+  EntityDocumentCategory.driving_license,
+  EntityDocumentCategory.vehicle_registration,
+  EntityDocumentCategory.car_insurance,
   EntityDocumentCategory.other,
 ] as const;
 

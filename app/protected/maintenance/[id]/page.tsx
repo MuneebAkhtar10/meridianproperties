@@ -68,7 +68,7 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
       </PageHeader>
 
       {request.status === "on_hold" && (
-        <Card className="border-orange-200 bg-orange-50 text-orange-900">
+        <Card className="border-[#dc961e]/30 bg-[#dc961e]/10 text-[#8a5c10]">
           <CardContent className="space-y-2 p-5">
             <div className="flex items-center gap-2 font-semibold">
               <PauseCircle className="h-4 w-4" />
@@ -77,7 +77,7 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
             <p className="whitespace-pre-wrap text-sm">
               {request.holdReason ?? "No hold reason was recorded."}
             </p>
-            <p className="text-xs text-orange-800/80">
+            <p className="text-xs text-[#8a5c10]/80">
               {request.heldAt
                 ? `Held ${format(request.heldAt, "d MMM yyyy, HH:mm")}. `
                 : ""}
@@ -113,7 +113,7 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
                         ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
                         : supplyRequest.status === "denied"
                           ? "bg-rose-50 text-rose-700 ring-rose-600/20"
-                          : "bg-sky-50 text-sky-700 ring-sky-600/20"
+                          : "bg-[#0886be]/10 text-[#0886be] ring-[#0886be]/20"
                     }`}
                   >
                     {supplyRequest.status === "pending"

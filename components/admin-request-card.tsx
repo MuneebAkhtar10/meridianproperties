@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import {
   CheckCircle2,
+  ChevronDown,
   ExternalLink,
   Home,
   Image as ImageIcon,
@@ -12,6 +13,7 @@ import {
   PauseCircle,
   PlayCircle,
   User,
+  UserCog,
   XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -30,7 +32,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/components/submit-button";
 import { PendingLink } from "@/components/ui/pending-link";
-import { PriorityBadge, StatusBadge } from "@/lib/status";
+import { PriorityBadge, STATUS_META, StatusBadge } from "@/lib/status";
 import { attachmentUrl } from "@/lib/utils";
 import { formatMoney } from "@/lib/finance";
 import { formatUnitLabel } from "@/lib/property-types";
@@ -46,9 +48,24 @@ export function AdminRequestCard({
   attachments = [],
 }: {
   request: RequestWithPlace;
-  workers: { id: string; email: string }[];
+  workers: {
+    id: string;
+    email: string;
+    workerCategory: "in_house" | "third_party" | null;
+    companyName: string | null;
+  }[];
   attachments?: Attachment[];
 }) {
+  const inHouseWorkers = workers.filter(
+    (worker) => worker.workerCategory !== "third_party",
+  );
+  const thirdPartyWorkers = workers.filter(
+    (worker) => worker.workerCategory === "third_party",
+  );
+  const workerLabel = (worker: (typeof workers)[number]) =>
+    worker.workerCategory === "third_party" && worker.companyName
+      ? `${worker.email} (${worker.companyName})`
+      : worker.email;
   const [message, setMessage] = useState<string | null>(null);
   const [showHoldForm, setShowHoldForm] = useState(false);
   const [holdReason, setHoldReason] = useState("");
@@ -62,6 +79,13 @@ export function AdminRequestCard({
   const preview = attachments.slice(0, 3);
   const extra = attachments.length - preview.length;
   const isHeld = request.status === "on_hold";
+  const pendingSupplyCount =
+    request.supplyRequests?.filter((sr) => sr.status === "pending").length ??
+    0;
+  // Collapsed by default so a long list of requests fits without scrolling
+  // past each one — anything needing attention right away starts expanded.
+  const [expanded, setExpanded] = useState(isHeld || pendingSupplyCount > 0);
+  const assignedWorker = workers.find((w) => w.id === request.assignedToId);
 
   const showResult = (result: { ok: boolean; message: string }) => {
     setMessage(result.message);
@@ -108,58 +132,109 @@ export function AdminRequestCard({
     }
   };
 
+  const statusMeta = STATUS_META[request.status];
+  const initials = (assignedWorker?.email ?? request.user.email)
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <Card>
-      <CardContent className="space-y-4 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-semibold">{request.title}</h3>
-              <PendingLink
-                href={`/protected/maintenance/${request.id}`}
-                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                Details
-                <ExternalLink className="h-3 w-3" />
-              </PendingLink>
+    <Card className="overflow-hidden border-border/60 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex">
+        <span
+          aria-hidden
+          className={`w-1.5 shrink-0 ${statusMeta.dot}`}
+        />
+        <CardContent className="min-w-0 flex-1 space-y-3 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold leading-tight tracking-tight">
+                  {request.title}
+                </h3>
+                <PendingLink
+                  href={`/protected/maintenance/${request.id}`}
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  Details
+                  <ExternalLink className="h-3 w-3" />
+                </PendingLink>
+              </div>
+
+              {/* Where a worker actually has to go. */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1 font-medium text-foreground">
+                  <Home className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  {request.unit
+                    ? `${request.unit.property.name} · ${formatUnitLabel(
+                        request.unit.property.propertyType,
+                        request.unit.label,
+                      )}`
+                    : "No unit linked"}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  {request.location}
+                </span>
+                <span className="flex items-center gap-1">
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  {request.user.email}
+                </span>
+              </div>
             </div>
 
-            {/* Where a worker actually has to go. */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5 font-medium text-foreground">
-                <Home className="h-3.5 w-3.5" />
-                {request.unit
-                  ? `${request.unit.property.name} · ${formatUnitLabel(
-                      request.unit.property.propertyType,
-                      request.unit.label,
-                    )}`
-                  : "No unit linked"}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" />
-                {request.location}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" />
-                {request.user.email}
-              </span>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <PriorityBadge priority={request.priority} />
+              <StatusBadge status={request.status} />
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <PriorityBadge priority={request.priority} />
-            <StatusBadge status={request.status} />
-          </div>
-        </div>
+          {/* Compact summary bar — always visible; the heavier controls below
+              only render once expanded, so a long list of requests scans in a
+              fraction of the space it used to take. */}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-left text-xs transition-colors hover:border-border hover:bg-muted/60"
+          >
+            <span className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
+                    assignedWorker
+                      ? "bg-slate-200 text-slate-700"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {assignedWorker ? initials : <UserCog className="h-3 w-3" />}
+                </span>
+                {assignedWorker ? workerLabel(assignedWorker) : "Unassigned"}
+              </span>
+              {pendingSupplyCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                  {pendingSupplyCount} supply request
+                  {pendingSupplyCount === 1 ? "" : "s"} pending
+                </span>
+              )}
+              <span>Reported {format(request.createdAt, "d MMM yyyy")}</span>
+            </span>
+            <span className="flex items-center gap-1 rounded-md border border-border/60 bg-background px-2.5 py-1 font-medium text-foreground shadow-sm">
+              {expanded ? "Hide" : "Manage"}
+              <ChevronDown
+                className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
+              />
+            </span>
+          </button>
 
-        <p className="text-sm text-muted-foreground">
-          {request.description.length > 160
-            ? `${request.description.slice(0, 160)}…`
-            : request.description}
-        </p>
+        {expanded && (
+          <p className="text-sm text-muted-foreground">
+            {request.description.length > 240
+              ? `${request.description.slice(0, 240)}…`
+              : request.description}
+          </p>
+        )}
 
-        {isHeld && (
-          <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4 text-orange-900">
+        {expanded && isHeld && (
+          <div className="space-y-2 rounded-lg border border-[#dc961e]/30 bg-[#dc961e]/10 p-4 text-[#8a5c10]">
             <div className="flex items-center gap-2 font-medium">
               <PauseCircle className="h-4 w-4" />
               Waiting for admin review
@@ -167,7 +242,7 @@ export function AdminRequestCard({
             <p className="whitespace-pre-wrap text-sm">
               {request.holdReason ?? "No hold reason was recorded."}
             </p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-orange-800/80">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#8a5c10]/80">
               {request.heldAt && (
                 <span>Held {format(request.heldAt, "d MMM, HH:mm")}</span>
               )}
@@ -180,7 +255,7 @@ export function AdminRequestCard({
           </div>
         )}
 
-        {(request.supplyRequests?.length ?? 0) > 0 && (
+        {expanded && (request.supplyRequests?.length ?? 0) > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Supply requests
@@ -195,7 +270,7 @@ export function AdminRequestCard({
           </div>
         )}
 
-        {preview.length > 0 && (
+        {expanded && preview.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {preview.map((attachment) => (
               <a
@@ -227,7 +302,7 @@ export function AdminRequestCard({
           </div>
         )}
 
-        {isHeld ? (
+        {expanded && (isHeld ? (
           <div className="space-y-4 border-t pt-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -240,14 +315,30 @@ export function AdminRequestCard({
                   onChange={(event) => setSelectedWorkerId(event.target.value)}
                 >
                   <option value="">— Choose a worker —</option>
-                  {workers.map((worker) => (
-                    <option key={worker.id} value={worker.id}>
-                      {worker.email}
-                      {worker.id === request.assignedToId
-                        ? " (previous worker)"
-                        : ""}
-                    </option>
-                  ))}
+                  {inHouseWorkers.length > 0 && (
+                    <optgroup label="In-house">
+                      {inHouseWorkers.map((worker) => (
+                        <option key={worker.id} value={worker.id}>
+                          {workerLabel(worker)}
+                          {worker.id === request.assignedToId
+                            ? " (previous worker)"
+                            : ""}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {thirdPartyWorkers.length > 0 && (
+                    <optgroup label="3rd-party">
+                      {thirdPartyWorkers.map((worker) => (
+                        <option key={worker.id} value={worker.id}>
+                          {workerLabel(worker)}
+                          {worker.id === request.assignedToId
+                            ? " (previous worker)"
+                            : ""}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </Select>
               </div>
 
@@ -315,11 +406,24 @@ export function AdminRequestCard({
                   className="h-9 text-sm"
                 >
                   <option value="">— Unassigned —</option>
-                  {workers.map((worker) => (
-                    <option key={worker.id} value={worker.id}>
-                      {worker.email}
-                    </option>
-                  ))}
+                  {inHouseWorkers.length > 0 && (
+                    <optgroup label="In-house">
+                      {inHouseWorkers.map((worker) => (
+                        <option key={worker.id} value={worker.id}>
+                          {workerLabel(worker)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {thirdPartyWorkers.length > 0 && (
+                    <optgroup label="3rd-party">
+                      {thirdPartyWorkers.map((worker) => (
+                        <option key={worker.id} value={worker.id}>
+                          {workerLabel(worker)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </Select>
               </div>
 
@@ -398,19 +502,19 @@ export function AdminRequestCard({
               </div>
             )}
           </>
-        )}
+        ))}
 
         {message && (
           <p className="rounded-md bg-muted px-3 py-2 text-sm">{message}</p>
         )}
 
-        <p className="text-xs text-muted-foreground">
-          Reported {format(request.createdAt, "PPP")}
-          {request.completedAt
-            ? ` · completed ${format(request.completedAt, "PPP")}`
-            : ""}
-        </p>
-      </CardContent>
+          {expanded && request.completedAt && (
+            <p className="text-xs text-muted-foreground">
+              Completed {format(request.completedAt, "PPP")}
+            </p>
+          )}
+        </CardContent>
+      </div>
     </Card>
   );
 }
@@ -469,7 +573,7 @@ function SupplyRequestRow({
           </span>
         </div>
         {supplyRequest.status === "pending" && (
-          <span className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20">
+          <span className="inline-flex items-center rounded-full bg-[#0886be]/10 px-2 py-0.5 text-xs font-medium text-[#0886be] ring-1 ring-inset ring-[#0886be]/20">
             Pending
           </span>
         )}

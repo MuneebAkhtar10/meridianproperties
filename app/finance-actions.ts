@@ -11,13 +11,16 @@ import {
   notifyOwnerChargePaid,
   notifyOwnerPaymentProof,
   notifyPaymentReviewed,
-  notifyTenantCharge,
+  notifyTenantAssigned,
+  notifyTenantInvoice,
 } from "@/lib/notifications";
 import {
   storeEntityDocumentGroups,
   uploadedFiles,
 } from "@/lib/entity-document-service";
+import { formatUnitLabel } from "@/lib/property-types";
 import {
+  formatMoney,
   monthStart,
   parseDate,
   parseNonNegativeMoney,
@@ -38,6 +41,7 @@ import {
   TenancyPurpose,
   UserType,
 } from "@/lib/generated/prisma/client";
+import type { Prisma } from "@/lib/generated/prisma/client";
 
 const CHARGE_TYPES = Object.values(ChargeType) as string[];
 const PAYMENT_METHODS = Object.values(PaymentMethod) as string[];
@@ -123,13 +127,23 @@ export const startTenancyAction = async (formData: FormData) => {
   const [unit, tenant] = await Promise.all([
     prisma.unit.findUnique({
       where: { id: unitId },
-      include: { property: { select: { name: true, ownerId: true } } },
+      include: {
+        property: {
+          select: {
+            name: true,
+            ownerId: true,
+            propertyType: { select: { unitPrefix: true } },
+          },
+        },
+      },
     }),
     prisma.user.findUnique({
       where: { id: tenantId },
       select: {
         id: true,
         email: true,
+        firstName: true,
+        lastName: true,
         userType: true,
         unit: { select: { id: true } },
       },
@@ -211,30 +225,70 @@ export const startTenancyAction = async (formData: FormData) => {
       });
     }
 
-    let createdCharges: { id: string; title: string }[] = [];
+    let createdCharges: { id: string; title: string; amount: Prisma.Decimal; dueDate: Date }[] = [];
     if (charges.length > 0) {
       await tx.charge.createMany({ data: charges });
       createdCharges = await tx.charge.findMany({
         where: { tenancyId: created.id },
-        select: { id: true, title: true },
+        select: { id: true, title: true, amount: true, dueDate: true },
       });
     }
 
     return { ...created, createdCharges };
   });
 
-  // First-move-in charges exist now — tell the tenant. Not worth failing the
-  // whole tenancy creation over a notification hiccup.
+  const unitLabel = formatUnitLabel(unit.property.propertyType, unit.label);
+
+  // The tenant has a home now — a rich welcome email with the lease specifics,
+  // not just a bare "you were assigned" line. Not worth failing the whole
+  // tenancy creation over a notification hiccup.
   try {
-    for (const charge of tenancy.createdCharges) {
-      await notifyTenantCharge({
-        tenantId,
-        chargeId: charge.id,
-        title: charge.title,
-      });
-    }
+    await notifyTenantAssigned({
+      tenantId,
+      propertyName: unit.property.name,
+      unitLabel,
+      moveInDate: format(startDate, "d MMMM yyyy"),
+      monthlyRent: formatMoney(monthlyRent),
+      rentDueDay,
+      securityDeposit:
+        Number(securityDeposit) > 0 ? formatMoney(securityDeposit) : undefined,
+      leaseEndDate: leaseEndDate ? format(leaseEndDate, "d MMMM yyyy") : undefined,
+    });
   } catch (error) {
-    console.error("Tenancy charge notification failed:", error);
+    console.error("Tenant-assigned notification failed:", error);
+  }
+
+  // First-move-in charges exist now — send one combined invoice rather than
+  // a separate email per charge.
+  if (tenancy.createdCharges.length > 0) {
+    try {
+      const total = tenancy.createdCharges.reduce(
+        (sum, charge) => sum + Number(charge.amount),
+        0,
+      );
+      const earliestDue = tenancy.createdCharges.reduce((earliest, charge) =>
+        charge.dueDate < earliest.dueDate ? charge : earliest,
+      );
+
+      await notifyTenantInvoice({
+        tenantId,
+        tenantName:
+          [tenant.firstName, tenant.lastName].filter(Boolean).join(" ") ||
+          tenant.email,
+        propertyName: unit.property.name,
+        unitLabel,
+        invoiceRef: tenancy.id,
+        dueDate: format(earliestDue.dueDate, "d MMMM yyyy"),
+        href: `/protected/finances/${earliestDue.id}`,
+        lineItems: tenancy.createdCharges.map((charge) => ({
+          label: charge.title,
+          amount: formatMoney(charge.amount),
+        })),
+        total: formatMoney(total),
+      });
+    } catch (error) {
+      console.error("Tenancy invoice notification failed:", error);
+    }
   }
 
   let documentUploadError: string | null = null;
@@ -468,8 +522,21 @@ export const createChargeAction = async (formData: FormData) => {
   const tenancy = await prisma.tenancy.findUnique({
     where: { id: tenancyId },
     include: {
-      tenant: { select: { id: true } },
-      unit: { select: { property: { select: { ownerId: true } } } },
+      tenant: {
+        select: { id: true, email: true, firstName: true, lastName: true },
+      },
+      unit: {
+        select: {
+          label: true,
+          property: {
+            select: {
+              ownerId: true,
+              name: true,
+              propertyType: { select: { unitPrefix: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -525,10 +592,22 @@ export const createChargeAction = async (formData: FormData) => {
   // The charge exists now. A failed notification is not worth an error page that
   // reads as "nothing was saved" and invites a duplicate charge.
   try {
-    await notifyTenantCharge({
+    await notifyTenantInvoice({
       tenantId: tenancy.tenantId,
-      chargeId: charge.id,
-      title,
+      tenantName:
+        [tenancy.tenant.firstName, tenancy.tenant.lastName]
+          .filter(Boolean)
+          .join(" ") || tenancy.tenant.email,
+      propertyName: tenancy.unit.property.name,
+      unitLabel: formatUnitLabel(
+        tenancy.unit.property.propertyType,
+        tenancy.unit.label,
+      ),
+      invoiceRef: charge.id,
+      dueDate: format(dueDate, "d MMMM yyyy"),
+      href: `/protected/finances/${charge.id}`,
+      lineItems: [{ label: title, amount: formatMoney(amount) }],
+      total: formatMoney(amount),
     });
   } catch (error) {
     console.error("Charge notification failed:", error);
@@ -616,22 +695,49 @@ export const generateRentChargesAction = async (formData: FormData) => {
 
     const created = await prisma.charge.findMany({
       where: { rentKey: { in: newCharges.map((item) => item.rentKey) } },
-      select: { id: true, tenantId: true, title: true },
+      select: {
+        id: true,
+        tenantId: true,
+        title: true,
+        amount: true,
+        dueDate: true,
+        tenant: { select: { email: true, firstName: true, lastName: true } },
+        unit: {
+          select: {
+            label: true,
+            property: {
+              select: {
+                name: true,
+                propertyType: { select: { unitPrefix: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
-    await prisma.notification.createMany({
-      data: created.map((charge) => ({
-        userId: charge.tenantId,
-        title: "Monthly Rent Added",
-        message: `${charge.title} has been added to your ledger.`,
-        href: financeBack(charge.id),
-      })),
-    });
-
-    await publish({
-      kind: "notification",
-      userIds: [...new Set(created.map((charge) => charge.tenantId))],
-    });
+    // One invoice email per tenant — best-effort, run in parallel; a failed
+    // send for one tenant shouldn't stop the others or fail the bulk action.
+    await Promise.allSettled(
+      created.map((charge) =>
+        notifyTenantInvoice({
+          tenantId: charge.tenantId,
+          tenantName:
+            [charge.tenant.firstName, charge.tenant.lastName]
+              .filter(Boolean)
+              .join(" ") || charge.tenant.email,
+          propertyName: charge.unit?.property.name ?? "—",
+          unitLabel: charge.unit
+            ? formatUnitLabel(charge.unit.property.propertyType, charge.unit.label)
+            : "—",
+          invoiceRef: charge.id,
+          dueDate: format(charge.dueDate, "d MMMM yyyy"),
+          href: financeBack(charge.id),
+          lineItems: [{ label: charge.title, amount: formatMoney(charge.amount) }],
+          total: formatMoney(charge.amount),
+        }),
+      ),
+    );
   }
 
   await publishFinance(newCharges.map((charge) => charge.tenantId));

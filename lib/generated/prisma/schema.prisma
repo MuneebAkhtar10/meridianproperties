@@ -16,6 +16,13 @@ enum UserType {
   owner
 }
 
+/// Only meaningful when userType = worker. Distinguishes staff employed by
+/// the company (in_house) from external contractors/vendors (third_party).
+enum WorkerCategory {
+  in_house
+  third_party
+}
+
 enum Priority {
   low
   medium
@@ -96,6 +103,9 @@ enum EntityDocumentCategory {
   resident_card
   visa
   employment_letter
+  driving_license
+  vehicle_registration
+  car_insurance
   other
 }
 
@@ -211,19 +221,61 @@ model Unit {
 /// Auth's `auth.users`, which credentials and password hashing live in; see
 /// the `_supabase_auth` migration for the foreign key that ties the two together.
 model User {
-  id                    String   @id @db.Uuid
-  email                 String   @unique
-  userType              UserType @default(user) @map("user_type")
-  firstName             String?  @map("first_name")
-  lastName              String?  @map("last_name")
-  phone                 String?
-  civilId               String?  @unique @map("civil_id")
-  nationality           String?
-  employer              String?
-  emergencyContactName  String?  @map("emergency_contact_name")
-  emergencyContactPhone String?  @map("emergency_contact_phone")
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  id                          String          @id @db.Uuid
+  /// Unique per role, not globally: a tenant and a worker (etc.) can share an
+  /// email, but two tenants (or two workers) can't. See @@unique below.
+  email                       String
+  userType                    UserType        @default(user) @map("user_type")
+  /// Only set when userType = worker: whether this worker is in-house staff
+  /// or a 3rd-party contractor/vendor.
+  workerCategory              WorkerCategory? @map("worker_category")
+  /// Only meaningful for 3rd-party workers: the vendor/company name shown
+  /// alongside their contact info wherever they're listed.
+  companyName                 String?         @map("company_name")
+  firstName                   String?         @map("first_name")
+  lastName                    String?         @map("last_name")
+  phone                       String?         @unique
+  civilId                     String?         @unique @map("civil_id")
+  nationality                 String?
+  employer                    String?
+  emergencyContactName        String?         @map("emergency_contact_name")
+  emergencyContactPhone       String?         @map("emergency_contact_phone")
+  /// The following are only meaningful for in-house workers — the paperwork
+  /// required to legally employ someone in the Gulf. Third-party
+  /// contractors' documents are their own employer's responsibility, not
+  /// tracked here.
+  passportNumber              String?         @map("passport_number")
+  passportIssuance            DateTime?       @map("passport_issuance")
+  passportExpiry              DateTime?       @map("passport_expiry")
+  /// Work visa / residency permit.
+  visaNumber                  String?         @map("visa_number")
+  visaIssuance                DateTime?       @map("visa_issuance")
+  visaExpiry                  DateTime?       @map("visa_expiry")
+  /// Issuance/expiry of the Civil ID / Resident Card already captured in
+  /// `civilId`.
+  civilIdIssuance             DateTime?       @map("civil_id_issuance")
+  civilIdExpiry               DateTime?       @map("civil_id_expiry")
+  drivingLicenseNumber        String?         @map("driving_license_number")
+  drivingLicenseIssuance      DateTime?       @map("driving_license_issuance")
+  drivingLicenseExpiry        DateTime?       @map("driving_license_expiry")
+  /// Whether this worker has/drives a vehicle for work — gates whether the
+  /// vehicle documents below are asked for at all.
+  hasVehicle                  Boolean         @default(false) @map("has_vehicle")
+  /// Mulkiya — vehicle registration.
+  vehicleRegistrationNumber   String?         @map("vehicle_registration_number")
+  vehicleRegistrationIssuance DateTime?       @map("vehicle_registration_issuance")
+  vehicleRegistrationExpiry   DateTime?       @map("vehicle_registration_expiry")
+  carInsuranceNumber          String?         @map("car_insurance_number")
+  carInsuranceIssuance        DateTime?       @map("car_insurance_issuance")
+  carInsuranceExpiry          DateTime?       @map("car_insurance_expiry")
+  /// What was last sent for each HR document's expiry cycle — e.g.
+  /// {"passport": "upcoming", "visa": "overdue:3"} — so the daily reminder
+  /// job (lib/hr-reminders.ts) doesn't repeat the same nudge. Mirrors
+  /// Property.serviceChargeLastStage's pattern, generalized to several
+  /// documents per person instead of one charge per property.
+  hrReminderStages            Json?           @map("hr_reminder_stages")
+  createdAt                   DateTime        @default(now()) @map("created_at")
+  updatedAt                   DateTime        @updatedAt @map("updated_at")
 
   /// Set only for tenants: the apartment they live in.
   unit                  Unit?                   @relation("UnitTenant")
@@ -244,7 +296,9 @@ model User {
   supplyRequestsDecided SupplyRequest[]         @relation("SupplyDecidedBy")
   /// Set only for owners: the properties they were assigned or created.
   ownedProperties       Property[]              @relation("PropertyOwner")
+  whatsappSessions      WhatsappSession[]
 
+  @@unique([email, userType])
   @@map("users")
 }
 
@@ -419,13 +473,14 @@ model MaintenanceRequest {
   completionCode    String?        @map("completion_code")
   completionCodeAt  DateTime?      @map("completion_code_at")
 
-  user           User                    @relation("RequestOwner", fields: [userId], references: [id], onDelete: Cascade)
-  unit           Unit?                   @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  assignedTo     User?                   @relation("AssignedWorker", fields: [assignedToId], references: [id], onDelete: SetNull)
-  attachments    MaintenanceAttachment[]
-  taskLogs       TaskLog[]
-  notifications  Notification[]
-  supplyRequests SupplyRequest[]
+  user             User                    @relation("RequestOwner", fields: [userId], references: [id], onDelete: Cascade)
+  unit             Unit?                   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  assignedTo       User?                   @relation("AssignedWorker", fields: [assignedToId], references: [id], onDelete: SetNull)
+  attachments      MaintenanceAttachment[]
+  taskLogs         TaskLog[]
+  notifications    Notification[]
+  supplyRequests   SupplyRequest[]
+  whatsappSessions WhatsappSession[]
 
   @@index([userId])
   @@index([unitId])
@@ -526,4 +581,48 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+/// What an in-progress WhatsApp conversation with a given phone number is
+/// currently doing — a tenant stepping through "report an issue", or a
+/// worker who's been handed a specific task to act on. One row per phone
+/// number; it's overwritten (not appended to) as the conversation moves
+/// forward, since only the current step ever matters.
+enum WhatsappFlow {
+  /// Tenant is being walked through category → location → description →
+  /// confirm to create a new maintenance request.
+  new_request
+  /// Worker has an assigned task in front of them and can reply to move it
+  /// forward (start → in progress → request completion).
+  worker_task
+  /// Worker requested completion; the next message from them is treated as
+  /// the 4-digit code the tenant gave them, not a new command.
+  awaiting_completion_code
+}
+
+model WhatsappSession {
+  id        String        @id @default(uuid()) @db.Uuid
+  /// E.164 phone number — the WhatsApp conversation's identity. Looked up
+  /// against User.phone on every inbound message.
+  phone     String        @unique
+  userId    String?       @map("user_id") @db.Uuid
+  flow      WhatsappFlow?
+  /// Free-form step name within the flow (e.g. "category", "location",
+  /// "description", "confirm" for new_request). Not used by worker_task /
+  /// awaiting_completion_code, which re-derive state from the live task.
+  step      String?
+  /// Answers collected so far in the current flow (category, location,
+  /// description, ...). Cleared whenever the flow resets or completes.
+  data      Json?
+  /// The task a worker_task / awaiting_completion_code conversation is
+  /// about.
+  taskId    String?       @map("task_id") @db.Uuid
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  user User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task MaintenanceRequest? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("whatsapp_sessions")
 }

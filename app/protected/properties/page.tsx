@@ -89,12 +89,67 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
         )}
       </PageHeader>
 
+      <div className="flex flex-wrap gap-4">
+        <Card className="relative w-full overflow-hidden border-border/60 shadow-sm sm:w-auto sm:min-w-56">
+          <span className="absolute inset-x-0 top-0 h-1 bg-violet-500" />
+          <CardContent className="flex items-center gap-4 p-5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+              <Building2 className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="whitespace-nowrap text-xs text-muted-foreground">
+                Properties
+              </p>
+              <p className="text-2xl font-semibold">{properties.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="relative w-full overflow-hidden border-border/60 shadow-sm sm:w-auto sm:min-w-56">
+          <span className="absolute inset-x-0 top-0 h-1 bg-[#0886be]" />
+          <CardContent className="flex items-center gap-4 p-5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0886be]/10 text-[#0886be]">
+              <DoorOpen className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="whitespace-nowrap text-xs text-muted-foreground">
+                Total units
+              </p>
+              <p className="text-2xl font-semibold">{totalUnits}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="relative w-full overflow-hidden border-border/60 shadow-sm sm:w-auto sm:min-w-56">
+          <span className="absolute inset-x-0 top-0 h-1 bg-emerald-500" />
+          <CardContent className="flex items-center gap-4 p-5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <Users className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="whitespace-nowrap text-xs text-muted-foreground">
+                Occupied
+              </p>
+              <p className="whitespace-nowrap text-2xl font-semibold">
+                {totalOccupied}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {" "}
+                  / {totalUnits}
+                </span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {isAdmin && pendingProperties.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/40">
+        <Card className="relative overflow-hidden border-border/60 shadow-sm">
+          <span className="absolute inset-x-0 top-0 h-1 bg-amber-500" />
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <Building2 className="h-4 w-4" />
+              </span>
               Pending properties
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
                 {pendingProperties.length} awaiting review
               </span>
             </CardTitle>
@@ -103,12 +158,12 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
             {pendingProperties.map((property) => (
               <div
                 key={property.id}
-                className="flex flex-col gap-3 rounded-lg border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-lg border border-border/60 bg-background p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <Link
                     href={`/protected/properties/${property.id}`}
-                    className="font-medium hover:underline"
+                    className="font-medium hover:text-[#0886be] hover:underline"
                   >
                     {property.name}
                   </Link>
@@ -178,6 +233,21 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
               const occupied = property.units.filter((u) => u.tenantId).length;
               const total = property._count.units;
               const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
+              const occupancyTone =
+                pct === 100
+                  ? {
+                      pill: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+                      bar: "bg-emerald-500",
+                    }
+                  : pct > 0
+                    ? {
+                        pill: "bg-[#0886be]/10 text-[#0886be] ring-[#0886be]/20",
+                        bar: "bg-[#0886be]",
+                      }
+                    : {
+                        pill: "bg-slate-100 text-slate-600 ring-slate-500/20",
+                        bar: "bg-slate-300",
+                      };
 
               return (
                 <Link
@@ -185,41 +255,59 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   href={`/protected/properties/${property.id}`}
                   className="block"
                 >
-                  <Card className="transition-all hover:border-primary/40 hover:shadow-md">
-                    <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-start gap-4">
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-                          <Building2 className="h-5 w-5" />
-                        </span>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{property.name}</h3>
-                            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                              {property.propertyType.label}
-                            </span>
-                            {!property.approved && (
-                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                                Pending approval
+                  <Card className="overflow-hidden border-border/60 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#0886be]/30 hover:shadow-md">
+                    <CardContent className="space-y-4 p-5">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex items-start gap-4">
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0886be]/10 text-[#0886be] ring-1 ring-inset ring-[#0886be]/15">
+                            <Building2 className="h-5 w-5" />
+                          </span>
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="font-semibold tracking-tight">
+                                {property.name}
+                              </h3>
+                              <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700 ring-1 ring-inset ring-violet-600/15">
+                                {property.propertyType.label}
                               </span>
-                            )}
+                              {!property.approved && (
+                                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
+                                  Pending approval
+                                </span>
+                              )}
+                            </div>
+                            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <MapPin className="h-3.5 w-3.5 shrink-0" />
+                              {formatOmanAddress(property)}
+                            </p>
                           </div>
-                          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {formatOmanAddress(property)}
-                          </p>
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-5 sm:gap-6">
+                          <Stat
+                            icon={<DoorOpen className="h-4 w-4" />}
+                            value={total}
+                            label={property.propertyType.unitNounPlural.toLowerCase()}
+                          />
+                          <div className="h-8 w-px bg-border/60" />
+                          <div className="text-right">
+                            <div className="flex items-center justify-end gap-1.5 font-semibold">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              {occupied}
+                            </div>
+                            <span
+                              className={`mt-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${occupancyTone.pill}`}
+                            >
+                              {pct}% occupied
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-6">
-                        <Stat
-                          icon={<DoorOpen className="h-4 w-4" />}
-                          value={total}
-                          label={property.propertyType.unitNounPlural.toLowerCase()}
-                        />
-                        <Stat
-                          icon={<Users className="h-4 w-4" />}
-                          value={`${occupied}`}
-                          label={`occupied · ${pct}%`}
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={`h-full rounded-full ${occupancyTone.bar}`}
+                          style={{ width: `${pct}%` }}
                         />
                       </div>
                     </CardContent>
@@ -230,14 +318,16 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
           )}
         </div>
 
-        <Card className="h-fit lg:sticky lg:top-24">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+        <Card className="h-fit overflow-hidden border-border/60 shadow-sm lg:sticky lg:top-24">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 text-white">
               <Plus className="h-4 w-4" />
+            </span>
+            <h2 className="text-sm font-semibold text-white">
               Add a property
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
+          </div>
+          <CardContent className="pt-5">
             <UploadBudgetProvider>
               <form className="space-y-4" encType="multipart/form-data">
                 <div className="space-y-1.5">
@@ -396,7 +486,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   />
                 </div>
 
-                <div className="space-y-1.5 rounded-lg border p-3">
+                <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/30 p-3">
                   <p className="text-sm font-medium">Service charge</p>
                   <p className="text-xs text-muted-foreground">
                     The recurring maintenance budget for this property, and

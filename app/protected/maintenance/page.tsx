@@ -1,4 +1,10 @@
-import { ClipboardList, Home, Paperclip, Search } from "lucide-react";
+import {
+  ClipboardList,
+  Home,
+  Paperclip,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import Link from "next/link";
 
 import { AdminRequestCard } from "@/components/admin-request-card";
@@ -11,6 +17,7 @@ import { Select } from "@/components/ui/select";
 import { PendingLink } from "@/components/ui/pending-link";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole } from "@/lib/session";
+import { STATUS_META } from "@/lib/status";
 import { RequestStatus, UserType } from "@/lib/generated/prisma/client";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
@@ -93,7 +100,12 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
     }),
     prisma.user.findMany({
       where: { userType: UserType.worker },
-      select: { id: true, email: true },
+      select: {
+        id: true,
+        email: true,
+        workerCategory: true,
+        companyName: true,
+      },
       orderBy: { email: "asc" },
     }),
     prisma.property.findMany({
@@ -126,24 +138,31 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
         <FormMessage message={message} />
       ) : null}
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-1">
+      <div className="flex flex-col gap-4 rounded-xl border border-border/60 bg-card p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap gap-1 rounded-lg bg-muted/50 p-1">
           {STATUS_FILTERS.map((filter) => {
             const active =
               filter.value === "all"
                 ? !status || status === "all"
                 : status === filter.value;
+            const meta =
+              filter.value === "all"
+                ? null
+                : STATUS_META[filter.value as keyof typeof STATUS_META];
 
             return (
               <PendingLink
                 key={filter.value}
                 href={buildHref({ status: filter.value })}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-white text-foreground shadow-sm ring-1 ring-border/60"
+                    : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
                 }`}
               >
+                {meta && (
+                  <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                )}
                 {filter.label}
               </PendingLink>
             );
@@ -168,6 +187,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
               ))}
             </Select>
             <SubmitButton variant="outline" size="sm" pendingText="...">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
               Filter
             </SubmitButton>
           </form>
@@ -175,13 +195,16 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
           <form className="flex gap-2">
             <input type="hidden" name="status" value={status ?? "all"} />
             <input type="hidden" name="property" value={propertyId ?? "all"} />
-            <Input
-              type="search"
-              name="query"
-              placeholder="Search requests..."
-              defaultValue={query ?? ""}
-              className="sm:w-52"
-            />
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                name="query"
+                placeholder="Search requests..."
+                defaultValue={query ?? ""}
+                className="pl-8 sm:w-52"
+              />
+            </div>
             <SubmitButton variant="outline" size="icon" pendingText="">
               <Search className="h-4 w-4" />
             </SubmitButton>

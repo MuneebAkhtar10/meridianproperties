@@ -1,5 +1,6 @@
 import {
   Building2,
+  ChevronRight,
   ClipboardList,
   DoorOpen,
   Home,
@@ -160,82 +161,118 @@ async function AdminDashboard() {
           label="Open requests"
           value={open}
           hint={`${count("pending")} pending · ${count("on_hold")} on hold`}
-          dot={STATUS_META.pending.dot}
+          icon={<ClipboardList className="h-4 w-4" />}
+          color="amber"
+          href="/protected/maintenance"
         />
         <StatTile
           label="In progress"
           value={count("in_progress")}
           hint={`${count("en_route")} en route`}
-          dot={STATUS_META.in_progress.dot}
+          icon={<Wrench className="h-4 w-4" />}
+          color="sky"
+          href="/protected/maintenance?status=in_progress"
         />
         <StatTile
           label="Completed"
           value={count("completed")}
           hint="all time"
-          dot={STATUS_META.completed.dot}
+          icon={<KeyRound className="h-4 w-4" />}
+          color="emerald"
+          href="/protected/maintenance?status=completed"
         />
         <StatTile
           label="Occupancy"
           value={`${occupiedCount}/${unitCount}`}
           hint={`${workerCount} worker${workerCount === 1 ? "" : "s"}`}
           icon={<DoorOpen className="h-4 w-4" />}
+          color="violet"
+          href="/protected/properties"
         />
       </div>
 
-      <Card>
-        <CardContent className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-              <ReceiptText className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">
-                Scheduled monthly rent
-              </p>
-              <p className="font-semibold">
-                {formatMoney(scheduledMonthlyRent._sum.monthlyRent ?? 0)}
-              </p>
+      <Link href="/protected/finances" className="block">
+        <Card className="overflow-hidden border-border/60 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <div className="flex flex-row items-center justify-between gap-3 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+                <WalletCards className="h-4 w-4" />
+              </span>
+              <CardTitle className="text-base text-white">
+                Rent & bills overview
+              </CardTitle>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-              <WalletCards className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">
-                Outstanding rent & bills
-              </p>
-              <p className="font-semibold">{formatMoney(outstanding)}</p>
-            </div>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">
-              Proofs waiting for review
-            </p>
-            <p className="font-semibold">{pendingPayments}</p>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs text-muted-foreground">
-                Collected this month
-              </p>
-              <p className="font-semibold">
-                {formatMoney(collectedThisMonth._sum.amount ?? 0)}
-              </p>
-            </div>
-            <ButtonLink href="/protected/finances" variant="outline" size="sm">
+            <span className="flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white">
               Open ledger
-            </ButtonLink>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </span>
           </div>
-        </CardContent>
-      </Card>
+          <CardContent className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex items-start gap-3 rounded-xl bg-[#0886be]/10 p-3.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0886be]/15 text-[#0886be]">
+                <ReceiptText className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs text-[#0886be]/70">
+                  Scheduled monthly rent
+                </p>
+                <p className="mt-0.5 truncate text-lg font-semibold tracking-tight text-[#075e82]">
+                  {formatMoney(scheduledMonthlyRent._sum.monthlyRent ?? 0)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-3.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                <WalletCards className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs text-amber-700/70">
+                  Outstanding rent & bills
+                </p>
+                <p className="mt-0.5 truncate text-lg font-semibold tracking-tight text-amber-900">
+                  {formatMoney(outstanding)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-xl bg-rose-50 p-3.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600">
+                <ClipboardList className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs text-rose-700/70">
+                  Proofs waiting for review
+                </p>
+                <p className="mt-0.5 truncate text-lg font-semibold tracking-tight text-rose-900">
+                  {pendingPayments}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-xl bg-emerald-50 p-3.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                <KeyRound className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs text-emerald-700/70">
+                  Collected this month
+                </p>
+                <p className="mt-0.5 truncate text-lg font-semibold tracking-tight text-emerald-900">
+                  {formatMoney(collectedThisMonth._sum.amount ?? 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center gap-2 space-y-0">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600 ring-1 ring-inset ring-violet-600/15">
+              <Building2 className="h-4 w-4" />
+            </span>
             <CardTitle className="text-base">By property</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 border-t pt-4">
             {properties.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 No properties yet.{" "}
@@ -285,11 +322,14 @@ async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center gap-2 space-y-0">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0886be]/10 text-[#0886be] ring-1 ring-inset ring-[#0886be]/15">
+              <Wrench className="h-4 w-4" />
+            </span>
             <CardTitle className="text-base">Latest requests</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 border-t pt-4">
             {recent.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 No requests yet.
@@ -384,24 +424,28 @@ async function OwnerDashboard({ user }: { user: SessionUser }) {
           label="Your properties"
           value={properties}
           icon={<Building2 className="h-4 w-4" />}
+          color="violet"
           href="/protected/properties"
         />
         <StatTile
           label="Units occupied"
           value={`${occupiedCount} / ${unitCount}`}
           icon={<DoorOpen className="h-4 w-4" />}
+          color="sky"
           href="/protected/properties"
         />
         <StatTile
           label="Open requests"
           value={openRequests}
           icon={<Wrench className="h-4 w-4" />}
+          color="amber"
           href="/protected/maintenance"
         />
         <StatTile
           label="Outstanding balance"
           value={formatMoney(outstanding)}
           icon={<WalletCards className="h-4 w-4" />}
+          color="rose"
           href="/protected/finances"
         />
       </div>
@@ -463,19 +507,22 @@ async function WorkerDashboard({ user }: { user: SessionUser }) {
           label="Waiting on you"
           value={count("pending") + count("en_route")}
           hint={`${count("en_route")} en route`}
-          dot={STATUS_META.pending.dot}
+          icon={<ClipboardList className="h-4 w-4" />}
+          color="amber"
         />
         <StatTile
           label="In progress"
           value={count("in_progress")}
           hint="currently working"
-          dot={STATUS_META.in_progress.dot}
+          icon={<Wrench className="h-4 w-4" />}
+          color="sky"
         />
         <StatTile
           label="Completed"
           value={count("completed")}
           hint="all time"
-          dot={STATUS_META.completed.dot}
+          icon={<KeyRound className="h-4 w-4" />}
+          color="emerald"
         />
       </div>
 
@@ -635,6 +682,8 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
             <StatTile
               label="Rent & bills due"
               value={formatMoney(outstanding)}
+              icon={<WalletCards className="h-4 w-4" />}
+              color="rose"
               hint={
                 outstanding > 0
                   ? "view ledger or upload proof"
@@ -646,19 +695,22 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
               label="Open requests"
               value={open}
               hint={`${count("pending")} pending · ${count("on_hold")} on hold`}
-              dot={STATUS_META.pending.dot}
+              icon={<ClipboardList className="h-4 w-4" />}
+              color="amber"
             />
             <StatTile
               label="In progress"
               value={count("in_progress") + count("en_route")}
               hint="being worked on"
-              dot={STATUS_META.in_progress.dot}
+              icon={<Wrench className="h-4 w-4" />}
+              color="sky"
             />
             <StatTile
               label="Completed"
               value={count("completed")}
               hint="all time"
-              dot={STATUS_META.completed.dot}
+              icon={<KeyRound className="h-4 w-4" />}
+              color="emerald"
             />
           </div>
 
@@ -707,6 +759,41 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
 
 /* ── Shared ────────────────────────────────────────────────────────────────── */
 
+const STAT_TILE_COLORS = {
+  blue: {
+    bar: "bg-[#0886be]",
+    badge: "bg-[#0886be]/10 text-[#0886be] ring-1 ring-inset ring-[#0886be]/15",
+    dot: "bg-[#0886be]",
+  },
+  amber: {
+    bar: "bg-amber-500",
+    badge: "bg-amber-50 text-amber-600 ring-1 ring-inset ring-amber-600/15",
+    dot: "bg-amber-500",
+  },
+  emerald: {
+    bar: "bg-emerald-500",
+    badge: "bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-600/15",
+    dot: "bg-emerald-500",
+  },
+  violet: {
+    bar: "bg-violet-500",
+    badge: "bg-violet-50 text-violet-600 ring-1 ring-inset ring-violet-600/15",
+    dot: "bg-violet-500",
+  },
+  rose: {
+    bar: "bg-rose-500",
+    badge: "bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-600/15",
+    dot: "bg-rose-500",
+  },
+  sky: {
+    bar: "bg-[#0886be]",
+    badge: "bg-[#0886be]/10 text-[#0886be] ring-1 ring-inset ring-[#0886be]/15",
+    dot: "bg-[#0886be]",
+  },
+} as const;
+
+type StatTileColor = keyof typeof STAT_TILE_COLORS;
+
 function StatTile({
   label,
   value,
@@ -714,6 +801,7 @@ function StatTile({
   dot,
   icon,
   href,
+  color = "blue",
 }: {
   label: string;
   value: React.ReactNode;
@@ -721,26 +809,55 @@ function StatTile({
   dot?: string;
   icon?: React.ReactNode;
   href?: string;
+  color?: StatTileColor;
 }) {
+  const palette = STAT_TILE_COLORS[color];
+
   const content = (
-    <CardContent className="p-5">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        {dot && <span className={`h-2 w-2 rounded-full ${dot}`} />}
-        {icon}
-        {label}
+    <CardContent className="relative overflow-hidden p-5">
+      <span
+        aria-hidden
+        className={`absolute inset-x-0 top-0 h-1 ${palette.bar}`}
+      />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {dot && (
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot ?? palette.dot}`}
+              />
+            )}
+            <span className="truncate">{label}</span>
+          </div>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+            {value}
+          </p>
+          {hint && (
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {hint}
+            </p>
+          )}
+        </div>
+        {icon && (
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${palette.badge}`}
+          >
+            {icon}
+          </span>
+        )}
       </div>
-      <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
-      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </CardContent>
   );
 
   if (href) {
     return (
       <Link href={href} className="block">
-        <Card className="transition-colors hover:bg-muted/50">{content}</Card>
+        <Card className="border-border/60 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          {content}
+        </Card>
       </Link>
     );
   }
 
-  return <Card>{content}</Card>;
+  return <Card className="border-border/60 shadow-sm">{content}</Card>;
 }

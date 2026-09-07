@@ -1,4 +1,12 @@
-import { KeyRound, Search, Trash2, UserPlus, Users } from "lucide-react";
+import {
+  FileText,
+  IdCard,
+  KeyRound,
+  Search,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
 
 import {
   createUserAction,
@@ -12,13 +20,18 @@ import { EntityDocumentManager } from "@/components/entity-document-manager";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { PendingLink } from "@/components/ui/pending-link";
+import { NewPersonFields } from "@/components/new-person-fields";
 import { PhoneInput } from "@/components/phone-input";
-import { UnitPicker, type PickableUnit } from "@/components/unit-picker";
+import { RoleWorkerFields } from "@/components/role-worker-fields";
+import { ManageToggle } from "@/components/manage-toggle";
+import { WorkerHrBadge, WorkerHrModal } from "@/components/worker-hr-modal";
+import { HrOverview } from "@/components/hr-overview";
+import type { PickableUnit } from "@/components/unit-picker";
 import { formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
@@ -27,9 +40,9 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
 const ROLE_PILL: Record<UserType, string> = {
-  admin: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
-  worker: "bg-teal-50 text-teal-700 ring-teal-600/20",
-  user: "bg-slate-50 text-slate-600 ring-slate-500/20",
+  admin: "bg-violet-50 text-violet-700 ring-violet-600/20",
+  worker: "bg-[#0886be]/10 text-[#0886be] ring-[#0886be]/20",
+  user: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
   owner: "bg-amber-50 text-amber-700 ring-amber-600/20",
 };
 
@@ -72,7 +85,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
     where.userType = role as UserType;
   }
 
-  const [users, emptyUnits] = await Promise.all([
+  const [users, emptyUnits, inHouseWorkers] = await Promise.all([
     prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -85,6 +98,13 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       where: { tenantId: null },
       orderBy: [{ property: { name: "asc" } }, { label: "asc" }],
       include: { property: { include: { propertyType: true } } },
+    }),
+    // Independent of the search/role filters above — the HR overview always
+    // reflects every in-house worker, not just the currently filtered list.
+    prisma.user.findMany({
+      where: { userType: UserType.worker, workerCategory: "in_house" },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+      include: { documents: { orderBy: { createdAt: "desc" } } },
     }),
   ]);
 
@@ -110,10 +130,21 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         <FormMessage message={message} />
       ) : null}
 
+      <HrOverview
+        workers={inHouseWorkers.map((worker) => ({
+          id: worker.id,
+          name:
+            [worker.firstName, worker.lastName].filter(Boolean).join(" ") ||
+            worker.email,
+          record: worker,
+          documents: worker.documents,
+        }))}
+      />
+
       <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-4">
           {/* Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-1">
               {ROLE_FILTERS.map((filter) => {
                 const active =
@@ -139,13 +170,16 @@ export default async function PeoplePage({ searchParams }: PageProps) {
 
             <form className="flex gap-2">
               <input type="hidden" name="role" value={role ?? "all"} />
-              <Input
-                type="search"
-                name="query"
-                placeholder="Email, name, phone or Civil ID..."
-                defaultValue={query ?? ""}
-                className="sm:w-56"
-              />
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  name="query"
+                  placeholder="Email, name, phone or Civil ID..."
+                  defaultValue={query ?? ""}
+                  className="pl-8 sm:w-56"
+                />
+              </div>
               <SubmitButton variant="outline" size="icon" pendingText="">
                 <Search className="h-4 w-4" />
               </SubmitButton>
@@ -167,11 +201,11 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                   .join(" ");
 
                 return (
-                  <Card key={user.id}>
+                  <Card key={user.id} className="border-border/60 shadow-sm">
                     <CardContent className="flex flex-col gap-4 p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
                             {user.email.charAt(0).toUpperCase()}
                           </span>
                           <div className="space-y-0.5">
@@ -229,23 +263,48 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                           </div>
                         </div>
 
-                        <span
-                          className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
-                            ROLE_PILL[user.userType]
-                          }`}
-                        >
-                          {ROLE_LABEL[user.userType]}
-                        </span>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
+                              ROLE_PILL[user.userType]
+                            }`}
+                          >
+                            {ROLE_LABEL[user.userType]}
+                          </span>
+                          {user.userType === UserType.worker && (
+                            <span className="inline-flex items-center rounded-full bg-[#dc961e]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#dc961e] ring-1 ring-inset ring-[#dc961e]/20">
+                              {user.workerCategory === "third_party"
+                                ? user.companyName
+                                  ? `3rd-party · ${user.companyName}`
+                                  : "3rd-party"
+                                : "In-house"}
+                            </span>
+                          )}
+                          {user.userType === UserType.worker &&
+                            user.workerCategory !== "third_party" && (
+                              <WorkerHrBadge record={user} />
+                            )}
+                        </div>
                       </div>
 
-                      <details className="group rounded-lg border">
-                        <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium">
-                          Edit Oman identity & contact record
-                          <span className="float-right text-xs font-normal text-muted-foreground group-open:hidden">
-                            Open
-                          </span>
-                        </summary>
-                        <form className="space-y-3 border-t p-3">
+                      {user.userType === UserType.worker &&
+                        user.workerCategory !== "third_party" && (
+                          <div className="-mt-1">
+                            <WorkerHrModal
+                              userId={user.id}
+                              record={user}
+                              documents={user.documents}
+                            />
+                          </div>
+                        )}
+
+                      <ManageToggle label="Manage account">
+                        <div className="space-y-2">
+                          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <IdCard className="h-3.5 w-3.5" />
+                            Oman identity & contact record
+                          </p>
+                        <form className="space-y-3 rounded-lg border border-border/60 bg-background p-3">
                           <input type="hidden" name="userId" value={user.id} />
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-1">
@@ -286,6 +345,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                                 name="phone"
                                 defaultValue={user.phone ?? ""}
                                 placeholder="+968 9XXX XXXX"
+                                required
                               />
                             </div>
                             <div className="space-y-1">
@@ -363,137 +423,122 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                             Save profile
                           </SubmitButton>
                         </form>
-                      </details>
-
-                      <details className="group rounded-lg border">
-                        <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium">
-                          Identity documents
-                          <span className="ml-2 text-xs font-normal text-muted-foreground">
-                            {user.documents.length}
-                          </span>
-                          <span className="float-right text-xs font-normal text-muted-foreground group-open:hidden">
-                            Open
-                          </span>
-                        </summary>
-                        <div className="border-t p-3">
-                          <EntityDocumentManager
-                            documents={user.documents}
-                            targetType="user"
-                            targetId={user.id}
-                            back="/protected/users"
-                            title="Personal documents"
-                            description="Civil ID, passport, resident card, visa and employment or sponsor documents."
-                          />
                         </div>
-                      </details>
 
-                      {user.userType !== UserType.admin && (
-                        <details className="group rounded-lg border">
-                          <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium">
-                            <span className="inline-flex items-center gap-2">
-                              <KeyRound className="h-4 w-4" />
+                        <div className="space-y-2">
+                          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <FileText className="h-3.5 w-3.5" />
+                            Identity documents
+                            <span className="font-normal normal-case text-muted-foreground/70">
+                              ({user.documents.length})
+                            </span>
+                          </p>
+                          <div className="rounded-lg border border-border/60 bg-background p-3">
+                            <EntityDocumentManager
+                              documents={user.documents}
+                              targetType="user"
+                              targetId={user.id}
+                              back="/protected/users"
+                              title="Personal documents"
+                              description="Civil ID, passport, resident card, visa and employment or sponsor documents."
+                            />
+                          </div>
+                        </div>
+
+                        {user.userType !== UserType.admin && (
+                          <div className="space-y-2">
+                            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              <KeyRound className="h-3.5 w-3.5" />
                               Reset password
-                            </span>
-                            <span className="float-right text-xs font-normal text-muted-foreground group-open:hidden">
-                              Open
-                            </span>
-                          </summary>
-                          <form className="space-y-3 border-t p-3">
-                            <input
-                              type="hidden"
-                              name="userId"
-                              value={user.id}
-                            />
-                            <div className="space-y-1.5">
-                              <Label
-                                htmlFor={`password-${user.id}`}
-                                className="text-xs"
-                              >
-                                New temporary password
-                              </Label>
-                              <Input
-                                id={`password-${user.id}`}
-                                name="password"
-                                type="text"
-                                placeholder="At least 6 characters"
-                                minLength={6}
-                                autoComplete="new-password"
-                                required
+                            </p>
+                            <form className="space-y-3 rounded-lg border border-border/60 bg-background p-3">
+                              <input
+                                type="hidden"
+                                name="userId"
+                                value={user.id}
                               />
-                              <p className="text-xs text-muted-foreground">
-                                Existing passwords cannot be viewed. Set a new
-                                one here and share it securely with the user.
-                              </p>
-                            </div>
-                            <SubmitButton
-                              formAction={resetUserPasswordAction}
-                              variant="outline"
-                              size="sm"
-                              pendingText="Resetting..."
-                            >
-                              <KeyRound className="h-4 w-4" />
-                              Set temporary password
-                            </SubmitButton>
-                          </form>
-                        </details>
-                      )}
-
-                      {!isSelf && (
-                        <div className="flex flex-wrap items-end gap-3 border-t pt-4">
-                          <form className="flex items-end gap-2">
-                            <input
-                              type="hidden"
-                              name="userId"
-                              value={user.id}
-                            />
-                            <div className="space-y-1.5">
-                              <Label
-                                htmlFor={`role-${user.id}`}
-                                className="text-xs"
+                              <div className="space-y-1.5">
+                                <Label
+                                  htmlFor={`password-${user.id}`}
+                                  className="text-xs"
+                                >
+                                  New temporary password
+                                </Label>
+                                <Input
+                                  id={`password-${user.id}`}
+                                  name="password"
+                                  type="text"
+                                  placeholder="At least 6 characters"
+                                  minLength={6}
+                                  autoComplete="new-password"
+                                  required
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  Existing passwords cannot be viewed. Set a
+                                  new one here and share it securely with the
+                                  user.
+                                </p>
+                              </div>
+                              <SubmitButton
+                                formAction={resetUserPasswordAction}
+                                variant="outline"
+                                size="sm"
+                                pendingText="Resetting..."
                               >
-                                Role
-                              </Label>
-                              <Select
-                                id={`role-${user.id}`}
-                                name="userType"
-                                defaultValue={user.userType}
-                                className="h-9 w-36 text-sm"
-                              >
-                                <option value="user">Tenant</option>
-                                <option value="worker">Worker</option>
-                                <option value="admin">Admin</option>
-                                <option value="owner">Property owner</option>
-                              </Select>
-                            </div>
-                            <SubmitButton
-                              formAction={updateUserTypeAction}
-                              variant="outline"
-                              size="sm"
-                              pendingText="Saving..."
-                            >
-                              Update role
-                            </SubmitButton>
-                          </form>
+                                <KeyRound className="h-4 w-4" />
+                                Set temporary password
+                              </SubmitButton>
+                            </form>
+                          </div>
+                        )}
 
-                          <form className="ml-auto">
-                            <input
-                              type="hidden"
-                              name="userId"
-                              value={user.id}
-                            />
-                            <SubmitButton
-                              formAction={deleteUserAction}
-                              variant="ghost"
-                              size="sm"
-                              pendingText="Deleting..."
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </SubmitButton>
-                          </form>
-                        </div>
-                      )}
+                        {!isSelf && (
+                          <div className="flex flex-wrap items-end gap-3 border-t pt-4">
+                            <form className="flex items-end gap-2">
+                              <input
+                                type="hidden"
+                                name="userId"
+                                value={user.id}
+                              />
+                              <RoleWorkerFields
+                                idPrefix={`role-${user.id}`}
+                                roleSelectClassName="h-9 text-sm"
+                                defaultRole={user.userType}
+                                defaultWorkerCategory={
+                                  user.workerCategory ?? "in_house"
+                                }
+                                defaultCompanyName={user.companyName ?? ""}
+                              />
+                              <SubmitButton
+                                formAction={updateUserTypeAction}
+                                variant="outline"
+                                size="sm"
+                                pendingText="Saving..."
+                              >
+                                Update role
+                              </SubmitButton>
+                            </form>
+
+                            <form className="ml-auto">
+                              <input
+                                type="hidden"
+                                name="userId"
+                                value={user.id}
+                              />
+                              <SubmitButton
+                                formAction={deleteUserAction}
+                                variant="ghost"
+                                size="sm"
+                                pendingText="Deleting..."
+                                className="text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </SubmitButton>
+                            </form>
+                          </div>
+                        )}
+                      </ManageToggle>
                     </CardContent>
                   </Card>
                 );
@@ -503,15 +548,15 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         </div>
 
         {/* ── Create a user ────────────────────────────────────────────────── */}
-        <Card className="h-fit lg:sticky lg:top-24">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+        <Card className="h-fit overflow-hidden border-border/60 shadow-sm lg:sticky lg:top-24">
+          <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-white">
               <UserPlus className="h-4 w-4" />
-              Add a person
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4">
+            </span>
+            <CardTitle className="text-base text-white">Add a person</CardTitle>
+          </div>
+          <CardContent className="pt-6">
+            <form id="new-person-form" className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="new-email">Email</Label>
                 <Input
@@ -535,85 +580,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="new-role">Role</Label>
-                <Select id="new-role" name="userType" defaultValue="user">
-                  <option value="user">Tenant</option>
-                  <option value="worker">Worker</option>
-                  <option value="admin">Admin</option>
-                  <option value="owner">Property owner</option>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="firstName">First name</Label>
-                  <Input id="firstName" name="firstName" placeholder="Ali" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastName">Last name</Label>
-                  <Input id="lastName" name="lastName" placeholder="Khan" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone</Label>
-                <PhoneInput
-                  id="phone"
-                  name="phone"
-                  placeholder="+968 9XXX XXXX"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="civilId">Civil ID / Resident Card</Label>
-                  <Input id="civilId" name="civilId" placeholder="Optional" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="nationality">Nationality</Label>
-                  <Input
-                    id="nationality"
-                    name="nationality"
-                    placeholder="Omani"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="employer">Employer / sponsor</Label>
-                <Input id="employer" name="employer" placeholder="Optional" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="emergencyContactName">
-                    Emergency contact
-                  </Label>
-                  <Input
-                    id="emergencyContactName"
-                    name="emergencyContactName"
-                    placeholder="Name"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="emergencyContactPhone">Emergency phone</Label>
-                  <PhoneInput
-                    id="emergencyContactPhone"
-                    name="emergencyContactPhone"
-                    placeholder="+968 9XXX XXXX"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5 rounded-lg border bg-muted/10 p-3">
-                <Label>Unit (tenants only)</Label>
-                <UnitPicker id="unitId" name="unitId" units={pickableUnits} />
-                <p className="text-xs text-muted-foreground">
-                  Ignored for workers/admins. If selected, complete the rent and
-                  lease terms under Tenancies.
-                </p>
-              </div>
+              <NewPersonFields units={pickableUnits} />
 
               <SubmitButton
                 formAction={createUserAction}

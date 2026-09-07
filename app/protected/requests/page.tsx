@@ -112,7 +112,7 @@ export default async function MyRequestsPage({ searchParams }: PageProps) {
                   </p>
 
                   {request.status === "on_hold" && (
-                    <div className="flex items-start gap-2 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900">
+                    <div className="flex items-start gap-2 rounded-md border border-[#dc961e]/30 bg-[#dc961e]/10 p-3 text-sm text-[#8a5c10]">
                       <PauseCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <p className="line-clamp-2">
                         {request.holdReason ?? "Waiting for admin review."}

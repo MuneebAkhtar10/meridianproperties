@@ -1105,6 +1105,18 @@ export const resumeHeldTaskAction = async (
         assignedToId: true,
         status: true,
         heldFromStatus: true,
+        location: true,
+        unit: {
+          select: {
+            label: true,
+            property: {
+              select: {
+                name: true,
+                propertyType: { select: { unitPrefix: true } },
+              },
+            },
+          },
+        },
       },
     }),
     prisma.user.findFirst({
@@ -1182,12 +1194,21 @@ export const resumeHeldTaskAction = async (
     };
   }
 
+  const place = task.unit
+    ? `${task.unit.property.name} · ${
+        task.unit.property.propertyType.unitPrefix
+          ? `${task.unit.property.propertyType.unitPrefix} ${task.unit.label}`
+          : task.unit.label
+      } (${task.location})`
+    : task.location;
+
   await notifyRequestResumed({
     id: task.id,
     title: task.title,
     tenantId: task.userId,
     workerId: worker.id,
     workerChanged,
+    place,
   });
 
   await publish({
@@ -1419,6 +1440,18 @@ export const assignWorkerAction = async (formData: FormData) => {
       userId: true,
       status: true,
       assignedToId: true,
+      location: true,
+      unit: {
+        select: {
+          label: true,
+          property: {
+            select: {
+              name: true,
+              propertyType: { select: { unitPrefix: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -1478,13 +1511,24 @@ export const assignWorkerAction = async (formData: FormData) => {
       },
     });
 
-    await notifyStatusChange({ ...current, status: nextStatus });
+    await notifyStatusChange({
+      ...current,
+      status: nextStatus,
+      assignedToId: workerId ?? current.assignedToId,
+    });
   }
 
   if (workerChanged && workerId) {
     const worker = await prisma.user.findUnique({
       where: { id: workerId },
-      select: { email: true },
+      select: {
+        email: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        workerCategory: true,
+        companyName: true,
+      },
     });
 
     await prisma.taskLog.create({
@@ -1492,11 +1536,25 @@ export const assignWorkerAction = async (formData: FormData) => {
         requestId,
         status: nextStatus,
         changedById: admin.id,
-        notes: `Worker assigned: ${worker?.email ?? workerId}`,
+        notes: `Worker assigned: ${worker?.email ?? workerId}${
+          worker?.workerCategory === "third_party"
+            ? ` (3rd-party${worker.companyName ? ` — ${worker.companyName}` : ""})`
+            : worker?.workerCategory === "in_house"
+              ? " (in-house)"
+              : ""
+        }`,
       },
     });
 
-    await notifyWorkerAssigned(current, workerId);
+    const place = current.unit
+      ? `${current.unit.property.name} · ${
+          current.unit.property.propertyType.unitPrefix
+            ? `${current.unit.property.propertyType.unitPrefix} ${current.unit.label}`
+            : current.unit.label
+        } (${current.location})`
+      : current.location;
+
+    await notifyWorkerAssigned(current, workerId, worker, place);
 
     if (current.assignedToId && current.assignedToId !== workerId) {
       await notifyWorkerUnassigned({

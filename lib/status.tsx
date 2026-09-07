@@ -40,9 +40,9 @@ export const STATUS_META: Record<RequestStatus, StatusMeta> = {
   en_route: {
     label: "En Route",
     icon: Navigation,
-    pill: "bg-sky-50 text-sky-700 ring-sky-600/20",
-    icon_color: "text-sky-600",
-    dot: "bg-sky-500",
+    pill: "bg-[#0886be]/10 text-[#0886be] ring-[#0886be]/20",
+    icon_color: "text-[#0886be]",
+    dot: "bg-[#0886be]",
   },
   in_progress: {
     label: "In Progress",
@@ -54,9 +54,9 @@ export const STATUS_META: Record<RequestStatus, StatusMeta> = {
   on_hold: {
     label: "On Hold",
     icon: PauseCircle,
-    pill: "bg-orange-50 text-orange-700 ring-orange-600/20",
-    icon_color: "text-orange-600",
-    dot: "bg-orange-500",
+    pill: "bg-[#dc961e]/10 text-[#dc961e] ring-[#dc961e]/20",
+    icon_color: "text-[#dc961e]",
+    dot: "bg-[#dc961e]",
   },
   completed: {
     label: "Completed",

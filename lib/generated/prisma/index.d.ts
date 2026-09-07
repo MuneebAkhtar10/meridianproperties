@@ -93,6 +93,11 @@ export type TaskLog = $Result.DefaultSelection<Prisma.$TaskLogPayload>
  * 
  */
 export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
+/**
+ * Model WhatsappSession
+ * 
+ */
+export type WhatsappSession = $Result.DefaultSelection<Prisma.$WhatsappSessionPayload>
 
 /**
  * Enums
@@ -106,6 +111,14 @@ export namespace $Enums {
 };
 
 export type UserType = (typeof UserType)[keyof typeof UserType]
+
+
+export const WorkerCategory: {
+  in_house: 'in_house',
+  third_party: 'third_party'
+};
+
+export type WorkerCategory = (typeof WorkerCategory)[keyof typeof WorkerCategory]
 
 
 export const Priority: {
@@ -215,16 +228,32 @@ export const EntityDocumentCategory: {
   resident_card: 'resident_card',
   visa: 'visa',
   employment_letter: 'employment_letter',
+  driving_license: 'driving_license',
+  vehicle_registration: 'vehicle_registration',
+  car_insurance: 'car_insurance',
   other: 'other'
 };
 
 export type EntityDocumentCategory = (typeof EntityDocumentCategory)[keyof typeof EntityDocumentCategory]
+
+
+export const WhatsappFlow: {
+  new_request: 'new_request',
+  worker_task: 'worker_task',
+  awaiting_completion_code: 'awaiting_completion_code'
+};
+
+export type WhatsappFlow = (typeof WhatsappFlow)[keyof typeof WhatsappFlow]
 
 }
 
 export type UserType = $Enums.UserType
 
 export const UserType: typeof $Enums.UserType
+
+export type WorkerCategory = $Enums.WorkerCategory
+
+export const WorkerCategory: typeof $Enums.WorkerCategory
 
 export type Priority = $Enums.Priority
 
@@ -265,6 +294,10 @@ export const FinancialDocumentKind: typeof $Enums.FinancialDocumentKind
 export type EntityDocumentCategory = $Enums.EntityDocumentCategory
 
 export const EntityDocumentCategory: typeof $Enums.EntityDocumentCategory
+
+export type WhatsappFlow = $Enums.WhatsappFlow
+
+export const WhatsappFlow: typeof $Enums.WhatsappFlow
 
 /**
  * ##  Prisma Client ʲˢ
@@ -526,6 +559,16 @@ export class PrismaClient<
     * ```
     */
   get notification(): Prisma.NotificationDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.whatsappSession`: Exposes CRUD operations for the **WhatsappSession** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more WhatsappSessions
+    * const whatsappSessions = await prisma.whatsappSession.findMany()
+    * ```
+    */
+  get whatsappSession(): Prisma.WhatsappSessionDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -986,7 +1029,8 @@ export namespace Prisma {
     SupplyRequest: 'SupplyRequest',
     MaintenanceAttachment: 'MaintenanceAttachment',
     TaskLog: 'TaskLog',
-    Notification: 'Notification'
+    Notification: 'Notification',
+    WhatsappSession: 'WhatsappSession'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1002,7 +1046,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "propertyType" | "property" | "unit" | "user" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification"
+      modelProps: "propertyType" | "property" | "unit" | "user" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2042,6 +2086,80 @@ export namespace Prisma {
           }
         }
       }
+      WhatsappSession: {
+        payload: Prisma.$WhatsappSessionPayload<ExtArgs>
+        fields: Prisma.WhatsappSessionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WhatsappSessionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WhatsappSessionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>
+          }
+          findFirst: {
+            args: Prisma.WhatsappSessionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WhatsappSessionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>
+          }
+          findMany: {
+            args: Prisma.WhatsappSessionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>[]
+          }
+          create: {
+            args: Prisma.WhatsappSessionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>
+          }
+          createMany: {
+            args: Prisma.WhatsappSessionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WhatsappSessionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>[]
+          }
+          delete: {
+            args: Prisma.WhatsappSessionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>
+          }
+          update: {
+            args: Prisma.WhatsappSessionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>
+          }
+          deleteMany: {
+            args: Prisma.WhatsappSessionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WhatsappSessionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.WhatsappSessionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>[]
+          }
+          upsert: {
+            args: Prisma.WhatsappSessionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WhatsappSessionPayload>
+          }
+          aggregate: {
+            args: Prisma.WhatsappSessionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWhatsappSession>
+          }
+          groupBy: {
+            args: Prisma.WhatsappSessionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WhatsappSessionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WhatsappSessionCountArgs<ExtArgs>
+            result: $Utils.Optional<WhatsappSessionCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -2179,6 +2297,7 @@ export namespace Prisma {
     maintenanceAttachment?: MaintenanceAttachmentOmit
     taskLog?: TaskLogOmit
     notification?: NotificationOmit
+    whatsappSession?: WhatsappSessionOmit
   }
 
   /* Types for Logging */
@@ -2395,6 +2514,7 @@ export namespace Prisma {
     supplyRequestsMade: number
     supplyRequestsDecided: number
     ownedProperties: number
+    whatsappSessions: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2414,6 +2534,7 @@ export namespace Prisma {
     supplyRequestsMade?: boolean | UserCountOutputTypeCountSupplyRequestsMadeArgs
     supplyRequestsDecided?: boolean | UserCountOutputTypeCountSupplyRequestsDecidedArgs
     ownedProperties?: boolean | UserCountOutputTypeCountOwnedPropertiesArgs
+    whatsappSessions?: boolean | UserCountOutputTypeCountWhatsappSessionsArgs
   }
 
   // Custom InputTypes
@@ -2539,6 +2660,13 @@ export namespace Prisma {
     where?: PropertyWhereInput
   }
 
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountWhatsappSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WhatsappSessionWhereInput
+  }
+
 
   /**
    * Count Type TenancyCountOutputType
@@ -2660,6 +2788,7 @@ export namespace Prisma {
     taskLogs: number
     notifications: number
     supplyRequests: number
+    whatsappSessions: number
   }
 
   export type MaintenanceRequestCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2667,6 +2796,7 @@ export namespace Prisma {
     taskLogs?: boolean | MaintenanceRequestCountOutputTypeCountTaskLogsArgs
     notifications?: boolean | MaintenanceRequestCountOutputTypeCountNotificationsArgs
     supplyRequests?: boolean | MaintenanceRequestCountOutputTypeCountSupplyRequestsArgs
+    whatsappSessions?: boolean | MaintenanceRequestCountOutputTypeCountWhatsappSessionsArgs
   }
 
   // Custom InputTypes
@@ -2706,6 +2836,13 @@ export namespace Prisma {
    */
   export type MaintenanceRequestCountOutputTypeCountSupplyRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: SupplyRequestWhereInput
+  }
+
+  /**
+   * MaintenanceRequestCountOutputType without action
+   */
+  export type MaintenanceRequestCountOutputTypeCountWhatsappSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WhatsappSessionWhereInput
   }
 
 
@@ -6579,6 +6716,8 @@ export namespace Prisma {
     id: string | null
     email: string | null
     userType: $Enums.UserType | null
+    workerCategory: $Enums.WorkerCategory | null
+    companyName: string | null
     firstName: string | null
     lastName: string | null
     phone: string | null
@@ -6587,6 +6726,24 @@ export namespace Prisma {
     employer: string | null
     emergencyContactName: string | null
     emergencyContactPhone: string | null
+    passportNumber: string | null
+    passportIssuance: Date | null
+    passportExpiry: Date | null
+    visaNumber: string | null
+    visaIssuance: Date | null
+    visaExpiry: Date | null
+    civilIdIssuance: Date | null
+    civilIdExpiry: Date | null
+    drivingLicenseNumber: string | null
+    drivingLicenseIssuance: Date | null
+    drivingLicenseExpiry: Date | null
+    hasVehicle: boolean | null
+    vehicleRegistrationNumber: string | null
+    vehicleRegistrationIssuance: Date | null
+    vehicleRegistrationExpiry: Date | null
+    carInsuranceNumber: string | null
+    carInsuranceIssuance: Date | null
+    carInsuranceExpiry: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -6595,6 +6752,8 @@ export namespace Prisma {
     id: string | null
     email: string | null
     userType: $Enums.UserType | null
+    workerCategory: $Enums.WorkerCategory | null
+    companyName: string | null
     firstName: string | null
     lastName: string | null
     phone: string | null
@@ -6603,6 +6762,24 @@ export namespace Prisma {
     employer: string | null
     emergencyContactName: string | null
     emergencyContactPhone: string | null
+    passportNumber: string | null
+    passportIssuance: Date | null
+    passportExpiry: Date | null
+    visaNumber: string | null
+    visaIssuance: Date | null
+    visaExpiry: Date | null
+    civilIdIssuance: Date | null
+    civilIdExpiry: Date | null
+    drivingLicenseNumber: string | null
+    drivingLicenseIssuance: Date | null
+    drivingLicenseExpiry: Date | null
+    hasVehicle: boolean | null
+    vehicleRegistrationNumber: string | null
+    vehicleRegistrationIssuance: Date | null
+    vehicleRegistrationExpiry: Date | null
+    carInsuranceNumber: string | null
+    carInsuranceIssuance: Date | null
+    carInsuranceExpiry: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -6611,6 +6788,8 @@ export namespace Prisma {
     id: number
     email: number
     userType: number
+    workerCategory: number
+    companyName: number
     firstName: number
     lastName: number
     phone: number
@@ -6619,6 +6798,25 @@ export namespace Prisma {
     employer: number
     emergencyContactName: number
     emergencyContactPhone: number
+    passportNumber: number
+    passportIssuance: number
+    passportExpiry: number
+    visaNumber: number
+    visaIssuance: number
+    visaExpiry: number
+    civilIdIssuance: number
+    civilIdExpiry: number
+    drivingLicenseNumber: number
+    drivingLicenseIssuance: number
+    drivingLicenseExpiry: number
+    hasVehicle: number
+    vehicleRegistrationNumber: number
+    vehicleRegistrationIssuance: number
+    vehicleRegistrationExpiry: number
+    carInsuranceNumber: number
+    carInsuranceIssuance: number
+    carInsuranceExpiry: number
+    hrReminderStages: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -6629,6 +6827,8 @@ export namespace Prisma {
     id?: true
     email?: true
     userType?: true
+    workerCategory?: true
+    companyName?: true
     firstName?: true
     lastName?: true
     phone?: true
@@ -6637,6 +6837,24 @@ export namespace Prisma {
     employer?: true
     emergencyContactName?: true
     emergencyContactPhone?: true
+    passportNumber?: true
+    passportIssuance?: true
+    passportExpiry?: true
+    visaNumber?: true
+    visaIssuance?: true
+    visaExpiry?: true
+    civilIdIssuance?: true
+    civilIdExpiry?: true
+    drivingLicenseNumber?: true
+    drivingLicenseIssuance?: true
+    drivingLicenseExpiry?: true
+    hasVehicle?: true
+    vehicleRegistrationNumber?: true
+    vehicleRegistrationIssuance?: true
+    vehicleRegistrationExpiry?: true
+    carInsuranceNumber?: true
+    carInsuranceIssuance?: true
+    carInsuranceExpiry?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -6645,6 +6863,8 @@ export namespace Prisma {
     id?: true
     email?: true
     userType?: true
+    workerCategory?: true
+    companyName?: true
     firstName?: true
     lastName?: true
     phone?: true
@@ -6653,6 +6873,24 @@ export namespace Prisma {
     employer?: true
     emergencyContactName?: true
     emergencyContactPhone?: true
+    passportNumber?: true
+    passportIssuance?: true
+    passportExpiry?: true
+    visaNumber?: true
+    visaIssuance?: true
+    visaExpiry?: true
+    civilIdIssuance?: true
+    civilIdExpiry?: true
+    drivingLicenseNumber?: true
+    drivingLicenseIssuance?: true
+    drivingLicenseExpiry?: true
+    hasVehicle?: true
+    vehicleRegistrationNumber?: true
+    vehicleRegistrationIssuance?: true
+    vehicleRegistrationExpiry?: true
+    carInsuranceNumber?: true
+    carInsuranceIssuance?: true
+    carInsuranceExpiry?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -6661,6 +6899,8 @@ export namespace Prisma {
     id?: true
     email?: true
     userType?: true
+    workerCategory?: true
+    companyName?: true
     firstName?: true
     lastName?: true
     phone?: true
@@ -6669,6 +6909,25 @@ export namespace Prisma {
     employer?: true
     emergencyContactName?: true
     emergencyContactPhone?: true
+    passportNumber?: true
+    passportIssuance?: true
+    passportExpiry?: true
+    visaNumber?: true
+    visaIssuance?: true
+    visaExpiry?: true
+    civilIdIssuance?: true
+    civilIdExpiry?: true
+    drivingLicenseNumber?: true
+    drivingLicenseIssuance?: true
+    drivingLicenseExpiry?: true
+    hasVehicle?: true
+    vehicleRegistrationNumber?: true
+    vehicleRegistrationIssuance?: true
+    vehicleRegistrationExpiry?: true
+    carInsuranceNumber?: true
+    carInsuranceIssuance?: true
+    carInsuranceExpiry?: true
+    hrReminderStages?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -6750,6 +7009,8 @@ export namespace Prisma {
     id: string
     email: string
     userType: $Enums.UserType
+    workerCategory: $Enums.WorkerCategory | null
+    companyName: string | null
     firstName: string | null
     lastName: string | null
     phone: string | null
@@ -6758,6 +7019,25 @@ export namespace Prisma {
     employer: string | null
     emergencyContactName: string | null
     emergencyContactPhone: string | null
+    passportNumber: string | null
+    passportIssuance: Date | null
+    passportExpiry: Date | null
+    visaNumber: string | null
+    visaIssuance: Date | null
+    visaExpiry: Date | null
+    civilIdIssuance: Date | null
+    civilIdExpiry: Date | null
+    drivingLicenseNumber: string | null
+    drivingLicenseIssuance: Date | null
+    drivingLicenseExpiry: Date | null
+    hasVehicle: boolean
+    vehicleRegistrationNumber: string | null
+    vehicleRegistrationIssuance: Date | null
+    vehicleRegistrationExpiry: Date | null
+    carInsuranceNumber: string | null
+    carInsuranceIssuance: Date | null
+    carInsuranceExpiry: Date | null
+    hrReminderStages: JsonValue | null
     createdAt: Date
     updatedAt: Date
     _count: UserCountAggregateOutputType | null
@@ -6783,6 +7063,8 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     userType?: boolean
+    workerCategory?: boolean
+    companyName?: boolean
     firstName?: boolean
     lastName?: boolean
     phone?: boolean
@@ -6791,6 +7073,25 @@ export namespace Prisma {
     employer?: boolean
     emergencyContactName?: boolean
     emergencyContactPhone?: boolean
+    passportNumber?: boolean
+    passportIssuance?: boolean
+    passportExpiry?: boolean
+    visaNumber?: boolean
+    visaIssuance?: boolean
+    visaExpiry?: boolean
+    civilIdIssuance?: boolean
+    civilIdExpiry?: boolean
+    drivingLicenseNumber?: boolean
+    drivingLicenseIssuance?: boolean
+    drivingLicenseExpiry?: boolean
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: boolean
+    vehicleRegistrationIssuance?: boolean
+    vehicleRegistrationExpiry?: boolean
+    carInsuranceNumber?: boolean
+    carInsuranceIssuance?: boolean
+    carInsuranceExpiry?: boolean
+    hrReminderStages?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     unit?: boolean | User$unitArgs<ExtArgs>
@@ -6810,6 +7111,7 @@ export namespace Prisma {
     supplyRequestsMade?: boolean | User$supplyRequestsMadeArgs<ExtArgs>
     supplyRequestsDecided?: boolean | User$supplyRequestsDecidedArgs<ExtArgs>
     ownedProperties?: boolean | User$ownedPropertiesArgs<ExtArgs>
+    whatsappSessions?: boolean | User$whatsappSessionsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -6817,6 +7119,8 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     userType?: boolean
+    workerCategory?: boolean
+    companyName?: boolean
     firstName?: boolean
     lastName?: boolean
     phone?: boolean
@@ -6825,6 +7129,25 @@ export namespace Prisma {
     employer?: boolean
     emergencyContactName?: boolean
     emergencyContactPhone?: boolean
+    passportNumber?: boolean
+    passportIssuance?: boolean
+    passportExpiry?: boolean
+    visaNumber?: boolean
+    visaIssuance?: boolean
+    visaExpiry?: boolean
+    civilIdIssuance?: boolean
+    civilIdExpiry?: boolean
+    drivingLicenseNumber?: boolean
+    drivingLicenseIssuance?: boolean
+    drivingLicenseExpiry?: boolean
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: boolean
+    vehicleRegistrationIssuance?: boolean
+    vehicleRegistrationExpiry?: boolean
+    carInsuranceNumber?: boolean
+    carInsuranceIssuance?: boolean
+    carInsuranceExpiry?: boolean
+    hrReminderStages?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -6833,6 +7156,8 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     userType?: boolean
+    workerCategory?: boolean
+    companyName?: boolean
     firstName?: boolean
     lastName?: boolean
     phone?: boolean
@@ -6841,6 +7166,25 @@ export namespace Prisma {
     employer?: boolean
     emergencyContactName?: boolean
     emergencyContactPhone?: boolean
+    passportNumber?: boolean
+    passportIssuance?: boolean
+    passportExpiry?: boolean
+    visaNumber?: boolean
+    visaIssuance?: boolean
+    visaExpiry?: boolean
+    civilIdIssuance?: boolean
+    civilIdExpiry?: boolean
+    drivingLicenseNumber?: boolean
+    drivingLicenseIssuance?: boolean
+    drivingLicenseExpiry?: boolean
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: boolean
+    vehicleRegistrationIssuance?: boolean
+    vehicleRegistrationExpiry?: boolean
+    carInsuranceNumber?: boolean
+    carInsuranceIssuance?: boolean
+    carInsuranceExpiry?: boolean
+    hrReminderStages?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -6849,6 +7193,8 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     userType?: boolean
+    workerCategory?: boolean
+    companyName?: boolean
     firstName?: boolean
     lastName?: boolean
     phone?: boolean
@@ -6857,11 +7203,30 @@ export namespace Prisma {
     employer?: boolean
     emergencyContactName?: boolean
     emergencyContactPhone?: boolean
+    passportNumber?: boolean
+    passportIssuance?: boolean
+    passportExpiry?: boolean
+    visaNumber?: boolean
+    visaIssuance?: boolean
+    visaExpiry?: boolean
+    civilIdIssuance?: boolean
+    civilIdExpiry?: boolean
+    drivingLicenseNumber?: boolean
+    drivingLicenseIssuance?: boolean
+    drivingLicenseExpiry?: boolean
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: boolean
+    vehicleRegistrationIssuance?: boolean
+    vehicleRegistrationExpiry?: boolean
+    carInsuranceNumber?: boolean
+    carInsuranceIssuance?: boolean
+    carInsuranceExpiry?: boolean
+    hrReminderStages?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "userType" | "firstName" | "lastName" | "phone" | "civilId" | "nationality" | "employer" | "emergencyContactName" | "emergencyContactPhone" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "userType" | "workerCategory" | "companyName" | "firstName" | "lastName" | "phone" | "civilId" | "nationality" | "employer" | "emergencyContactName" | "emergencyContactPhone" | "passportNumber" | "passportIssuance" | "passportExpiry" | "visaNumber" | "visaIssuance" | "visaExpiry" | "civilIdIssuance" | "civilIdExpiry" | "drivingLicenseNumber" | "drivingLicenseIssuance" | "drivingLicenseExpiry" | "hasVehicle" | "vehicleRegistrationNumber" | "vehicleRegistrationIssuance" | "vehicleRegistrationExpiry" | "carInsuranceNumber" | "carInsuranceIssuance" | "carInsuranceExpiry" | "hrReminderStages" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     unit?: boolean | User$unitArgs<ExtArgs>
     requests?: boolean | User$requestsArgs<ExtArgs>
@@ -6880,6 +7245,7 @@ export namespace Prisma {
     supplyRequestsMade?: boolean | User$supplyRequestsMadeArgs<ExtArgs>
     supplyRequestsDecided?: boolean | User$supplyRequestsDecidedArgs<ExtArgs>
     ownedProperties?: boolean | User$ownedPropertiesArgs<ExtArgs>
+    whatsappSessions?: boolean | User$whatsappSessionsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -6911,11 +7277,26 @@ export namespace Prisma {
        * Set only for owners: the properties they were assigned or created.
        */
       ownedProperties: Prisma.$PropertyPayload<ExtArgs>[]
+      whatsappSessions: Prisma.$WhatsappSessionPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
+      /**
+       * Unique per role, not globally: a tenant and a worker (etc.) can share an
+       * email, but two tenants (or two workers) can't. See @@unique below.
+       */
       email: string
       userType: $Enums.UserType
+      /**
+       * Only set when userType = worker: whether this worker is in-house staff
+       * or a 3rd-party contractor/vendor.
+       */
+      workerCategory: $Enums.WorkerCategory | null
+      /**
+       * Only meaningful for 3rd-party workers: the vendor/company name shown
+       * alongside their contact info wherever they're listed.
+       */
+      companyName: string | null
       firstName: string | null
       lastName: string | null
       phone: string | null
@@ -6924,6 +7305,52 @@ export namespace Prisma {
       employer: string | null
       emergencyContactName: string | null
       emergencyContactPhone: string | null
+      /**
+       * The following are only meaningful for in-house workers — the paperwork
+       * required to legally employ someone in the Gulf. Third-party
+       * contractors' documents are their own employer's responsibility, not
+       * tracked here.
+       */
+      passportNumber: string | null
+      passportIssuance: Date | null
+      passportExpiry: Date | null
+      /**
+       * Work visa / residency permit.
+       */
+      visaNumber: string | null
+      visaIssuance: Date | null
+      visaExpiry: Date | null
+      /**
+       * Issuance/expiry of the Civil ID / Resident Card already captured in
+       * `civilId`.
+       */
+      civilIdIssuance: Date | null
+      civilIdExpiry: Date | null
+      drivingLicenseNumber: string | null
+      drivingLicenseIssuance: Date | null
+      drivingLicenseExpiry: Date | null
+      /**
+       * Whether this worker has/drives a vehicle for work — gates whether the
+       * vehicle documents below are asked for at all.
+       */
+      hasVehicle: boolean
+      /**
+       * Mulkiya — vehicle registration.
+       */
+      vehicleRegistrationNumber: string | null
+      vehicleRegistrationIssuance: Date | null
+      vehicleRegistrationExpiry: Date | null
+      carInsuranceNumber: string | null
+      carInsuranceIssuance: Date | null
+      carInsuranceExpiry: Date | null
+      /**
+       * What was last sent for each HR document's expiry cycle — e.g.
+       * {"passport": "upcoming", "visa": "overdue:3"} — so the daily reminder
+       * job (lib/hr-reminders.ts) doesn't repeat the same nudge. Mirrors
+       * Property.serviceChargeLastStage's pattern, generalized to several
+       * documents per person instead of one charge per property.
+       */
+      hrReminderStages: Prisma.JsonValue | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["user"]>
@@ -7337,6 +7764,7 @@ export namespace Prisma {
     supplyRequestsMade<T extends User$supplyRequestsMadeArgs<ExtArgs> = {}>(args?: Subset<T, User$supplyRequestsMadeArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplyRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     supplyRequestsDecided<T extends User$supplyRequestsDecidedArgs<ExtArgs> = {}>(args?: Subset<T, User$supplyRequestsDecidedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplyRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     ownedProperties<T extends User$ownedPropertiesArgs<ExtArgs> = {}>(args?: Subset<T, User$ownedPropertiesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    whatsappSessions<T extends User$whatsappSessionsArgs<ExtArgs> = {}>(args?: Subset<T, User$whatsappSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -7369,6 +7797,8 @@ export namespace Prisma {
     readonly id: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
     readonly userType: FieldRef<"User", 'UserType'>
+    readonly workerCategory: FieldRef<"User", 'WorkerCategory'>
+    readonly companyName: FieldRef<"User", 'String'>
     readonly firstName: FieldRef<"User", 'String'>
     readonly lastName: FieldRef<"User", 'String'>
     readonly phone: FieldRef<"User", 'String'>
@@ -7377,6 +7807,25 @@ export namespace Prisma {
     readonly employer: FieldRef<"User", 'String'>
     readonly emergencyContactName: FieldRef<"User", 'String'>
     readonly emergencyContactPhone: FieldRef<"User", 'String'>
+    readonly passportNumber: FieldRef<"User", 'String'>
+    readonly passportIssuance: FieldRef<"User", 'DateTime'>
+    readonly passportExpiry: FieldRef<"User", 'DateTime'>
+    readonly visaNumber: FieldRef<"User", 'String'>
+    readonly visaIssuance: FieldRef<"User", 'DateTime'>
+    readonly visaExpiry: FieldRef<"User", 'DateTime'>
+    readonly civilIdIssuance: FieldRef<"User", 'DateTime'>
+    readonly civilIdExpiry: FieldRef<"User", 'DateTime'>
+    readonly drivingLicenseNumber: FieldRef<"User", 'String'>
+    readonly drivingLicenseIssuance: FieldRef<"User", 'DateTime'>
+    readonly drivingLicenseExpiry: FieldRef<"User", 'DateTime'>
+    readonly hasVehicle: FieldRef<"User", 'Boolean'>
+    readonly vehicleRegistrationNumber: FieldRef<"User", 'String'>
+    readonly vehicleRegistrationIssuance: FieldRef<"User", 'DateTime'>
+    readonly vehicleRegistrationExpiry: FieldRef<"User", 'DateTime'>
+    readonly carInsuranceNumber: FieldRef<"User", 'String'>
+    readonly carInsuranceIssuance: FieldRef<"User", 'DateTime'>
+    readonly carInsuranceExpiry: FieldRef<"User", 'DateTime'>
+    readonly hrReminderStages: FieldRef<"User", 'Json'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
   }
@@ -8172,6 +8621,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PropertyScalarFieldEnum | PropertyScalarFieldEnum[]
+  }
+
+  /**
+   * User.whatsappSessions
+   */
+  export type User$whatsappSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    where?: WhatsappSessionWhereInput
+    orderBy?: WhatsappSessionOrderByWithRelationInput | WhatsappSessionOrderByWithRelationInput[]
+    cursor?: WhatsappSessionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WhatsappSessionScalarFieldEnum | WhatsappSessionScalarFieldEnum[]
   }
 
   /**
@@ -14965,6 +15438,7 @@ export namespace Prisma {
     taskLogs?: boolean | MaintenanceRequest$taskLogsArgs<ExtArgs>
     notifications?: boolean | MaintenanceRequest$notificationsArgs<ExtArgs>
     supplyRequests?: boolean | MaintenanceRequest$supplyRequestsArgs<ExtArgs>
+    whatsappSessions?: boolean | MaintenanceRequest$whatsappSessionsArgs<ExtArgs>
     _count?: boolean | MaintenanceRequestCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["maintenanceRequest"]>
 
@@ -15055,6 +15529,7 @@ export namespace Prisma {
     taskLogs?: boolean | MaintenanceRequest$taskLogsArgs<ExtArgs>
     notifications?: boolean | MaintenanceRequest$notificationsArgs<ExtArgs>
     supplyRequests?: boolean | MaintenanceRequest$supplyRequestsArgs<ExtArgs>
+    whatsappSessions?: boolean | MaintenanceRequest$whatsappSessionsArgs<ExtArgs>
     _count?: boolean | MaintenanceRequestCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type MaintenanceRequestIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -15078,6 +15553,7 @@ export namespace Prisma {
       taskLogs: Prisma.$TaskLogPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
       supplyRequests: Prisma.$SupplyRequestPayload<ExtArgs>[]
+      whatsappSessions: Prisma.$WhatsappSessionPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -15521,6 +15997,7 @@ export namespace Prisma {
     taskLogs<T extends MaintenanceRequest$taskLogsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$taskLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     notifications<T extends MaintenanceRequest$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     supplyRequests<T extends MaintenanceRequest$supplyRequestsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$supplyRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplyRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    whatsappSessions<T extends MaintenanceRequest$whatsappSessionsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$whatsappSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -16103,6 +16580,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: SupplyRequestScalarFieldEnum | SupplyRequestScalarFieldEnum[]
+  }
+
+  /**
+   * MaintenanceRequest.whatsappSessions
+   */
+  export type MaintenanceRequest$whatsappSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    where?: WhatsappSessionWhereInput
+    orderBy?: WhatsappSessionOrderByWithRelationInput | WhatsappSessionOrderByWithRelationInput[]
+    cursor?: WhatsappSessionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WhatsappSessionScalarFieldEnum | WhatsappSessionScalarFieldEnum[]
   }
 
   /**
@@ -20827,6 +21328,1180 @@ export namespace Prisma {
 
 
   /**
+   * Model WhatsappSession
+   */
+
+  export type AggregateWhatsappSession = {
+    _count: WhatsappSessionCountAggregateOutputType | null
+    _min: WhatsappSessionMinAggregateOutputType | null
+    _max: WhatsappSessionMaxAggregateOutputType | null
+  }
+
+  export type WhatsappSessionMinAggregateOutputType = {
+    id: string | null
+    phone: string | null
+    userId: string | null
+    flow: $Enums.WhatsappFlow | null
+    step: string | null
+    taskId: string | null
+    updatedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type WhatsappSessionMaxAggregateOutputType = {
+    id: string | null
+    phone: string | null
+    userId: string | null
+    flow: $Enums.WhatsappFlow | null
+    step: string | null
+    taskId: string | null
+    updatedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type WhatsappSessionCountAggregateOutputType = {
+    id: number
+    phone: number
+    userId: number
+    flow: number
+    step: number
+    data: number
+    taskId: number
+    updatedAt: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type WhatsappSessionMinAggregateInputType = {
+    id?: true
+    phone?: true
+    userId?: true
+    flow?: true
+    step?: true
+    taskId?: true
+    updatedAt?: true
+    createdAt?: true
+  }
+
+  export type WhatsappSessionMaxAggregateInputType = {
+    id?: true
+    phone?: true
+    userId?: true
+    flow?: true
+    step?: true
+    taskId?: true
+    updatedAt?: true
+    createdAt?: true
+  }
+
+  export type WhatsappSessionCountAggregateInputType = {
+    id?: true
+    phone?: true
+    userId?: true
+    flow?: true
+    step?: true
+    data?: true
+    taskId?: true
+    updatedAt?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type WhatsappSessionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WhatsappSession to aggregate.
+     */
+    where?: WhatsappSessionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WhatsappSessions to fetch.
+     */
+    orderBy?: WhatsappSessionOrderByWithRelationInput | WhatsappSessionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WhatsappSessionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WhatsappSessions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WhatsappSessions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned WhatsappSessions
+    **/
+    _count?: true | WhatsappSessionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WhatsappSessionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WhatsappSessionMaxAggregateInputType
+  }
+
+  export type GetWhatsappSessionAggregateType<T extends WhatsappSessionAggregateArgs> = {
+        [P in keyof T & keyof AggregateWhatsappSession]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWhatsappSession[P]>
+      : GetScalarType<T[P], AggregateWhatsappSession[P]>
+  }
+
+
+
+
+  export type WhatsappSessionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WhatsappSessionWhereInput
+    orderBy?: WhatsappSessionOrderByWithAggregationInput | WhatsappSessionOrderByWithAggregationInput[]
+    by: WhatsappSessionScalarFieldEnum[] | WhatsappSessionScalarFieldEnum
+    having?: WhatsappSessionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WhatsappSessionCountAggregateInputType | true
+    _min?: WhatsappSessionMinAggregateInputType
+    _max?: WhatsappSessionMaxAggregateInputType
+  }
+
+  export type WhatsappSessionGroupByOutputType = {
+    id: string
+    phone: string
+    userId: string | null
+    flow: $Enums.WhatsappFlow | null
+    step: string | null
+    data: JsonValue | null
+    taskId: string | null
+    updatedAt: Date
+    createdAt: Date
+    _count: WhatsappSessionCountAggregateOutputType | null
+    _min: WhatsappSessionMinAggregateOutputType | null
+    _max: WhatsappSessionMaxAggregateOutputType | null
+  }
+
+  type GetWhatsappSessionGroupByPayload<T extends WhatsappSessionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WhatsappSessionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WhatsappSessionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WhatsappSessionGroupByOutputType[P]>
+            : GetScalarType<T[P], WhatsappSessionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WhatsappSessionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    phone?: boolean
+    userId?: boolean
+    flow?: boolean
+    step?: boolean
+    data?: boolean
+    taskId?: boolean
+    updatedAt?: boolean
+    createdAt?: boolean
+    user?: boolean | WhatsappSession$userArgs<ExtArgs>
+    task?: boolean | WhatsappSession$taskArgs<ExtArgs>
+  }, ExtArgs["result"]["whatsappSession"]>
+
+  export type WhatsappSessionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    phone?: boolean
+    userId?: boolean
+    flow?: boolean
+    step?: boolean
+    data?: boolean
+    taskId?: boolean
+    updatedAt?: boolean
+    createdAt?: boolean
+    user?: boolean | WhatsappSession$userArgs<ExtArgs>
+    task?: boolean | WhatsappSession$taskArgs<ExtArgs>
+  }, ExtArgs["result"]["whatsappSession"]>
+
+  export type WhatsappSessionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    phone?: boolean
+    userId?: boolean
+    flow?: boolean
+    step?: boolean
+    data?: boolean
+    taskId?: boolean
+    updatedAt?: boolean
+    createdAt?: boolean
+    user?: boolean | WhatsappSession$userArgs<ExtArgs>
+    task?: boolean | WhatsappSession$taskArgs<ExtArgs>
+  }, ExtArgs["result"]["whatsappSession"]>
+
+  export type WhatsappSessionSelectScalar = {
+    id?: boolean
+    phone?: boolean
+    userId?: boolean
+    flow?: boolean
+    step?: boolean
+    data?: boolean
+    taskId?: boolean
+    updatedAt?: boolean
+    createdAt?: boolean
+  }
+
+  export type WhatsappSessionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "phone" | "userId" | "flow" | "step" | "data" | "taskId" | "updatedAt" | "createdAt", ExtArgs["result"]["whatsappSession"]>
+  export type WhatsappSessionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | WhatsappSession$userArgs<ExtArgs>
+    task?: boolean | WhatsappSession$taskArgs<ExtArgs>
+  }
+  export type WhatsappSessionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | WhatsappSession$userArgs<ExtArgs>
+    task?: boolean | WhatsappSession$taskArgs<ExtArgs>
+  }
+  export type WhatsappSessionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | WhatsappSession$userArgs<ExtArgs>
+    task?: boolean | WhatsappSession$taskArgs<ExtArgs>
+  }
+
+  export type $WhatsappSessionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "WhatsappSession"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs> | null
+      task: Prisma.$MaintenanceRequestPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      /**
+       * E.164 phone number — the WhatsApp conversation's identity. Looked up
+       * against User.phone on every inbound message.
+       */
+      phone: string
+      userId: string | null
+      flow: $Enums.WhatsappFlow | null
+      /**
+       * Free-form step name within the flow (e.g. "category", "location",
+       * "description", "confirm" for new_request). Not used by worker_task /
+       * awaiting_completion_code, which re-derive state from the live task.
+       */
+      step: string | null
+      /**
+       * Answers collected so far in the current flow (category, location,
+       * description, ...). Cleared whenever the flow resets or completes.
+       */
+      data: Prisma.JsonValue | null
+      /**
+       * The task a worker_task / awaiting_completion_code conversation is
+       * about.
+       */
+      taskId: string | null
+      updatedAt: Date
+      createdAt: Date
+    }, ExtArgs["result"]["whatsappSession"]>
+    composites: {}
+  }
+
+  type WhatsappSessionGetPayload<S extends boolean | null | undefined | WhatsappSessionDefaultArgs> = $Result.GetResult<Prisma.$WhatsappSessionPayload, S>
+
+  type WhatsappSessionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<WhatsappSessionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: WhatsappSessionCountAggregateInputType | true
+    }
+
+  export interface WhatsappSessionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['WhatsappSession'], meta: { name: 'WhatsappSession' } }
+    /**
+     * Find zero or one WhatsappSession that matches the filter.
+     * @param {WhatsappSessionFindUniqueArgs} args - Arguments to find a WhatsappSession
+     * @example
+     * // Get one WhatsappSession
+     * const whatsappSession = await prisma.whatsappSession.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WhatsappSessionFindUniqueArgs>(args: SelectSubset<T, WhatsappSessionFindUniqueArgs<ExtArgs>>): Prisma__WhatsappSessionClient<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one WhatsappSession that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {WhatsappSessionFindUniqueOrThrowArgs} args - Arguments to find a WhatsappSession
+     * @example
+     * // Get one WhatsappSession
+     * const whatsappSession = await prisma.whatsappSession.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WhatsappSessionFindUniqueOrThrowArgs>(args: SelectSubset<T, WhatsappSessionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WhatsappSessionClient<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WhatsappSession that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WhatsappSessionFindFirstArgs} args - Arguments to find a WhatsappSession
+     * @example
+     * // Get one WhatsappSession
+     * const whatsappSession = await prisma.whatsappSession.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WhatsappSessionFindFirstArgs>(args?: SelectSubset<T, WhatsappSessionFindFirstArgs<ExtArgs>>): Prisma__WhatsappSessionClient<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WhatsappSession that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WhatsappSessionFindFirstOrThrowArgs} args - Arguments to find a WhatsappSession
+     * @example
+     * // Get one WhatsappSession
+     * const whatsappSession = await prisma.whatsappSession.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WhatsappSessionFindFirstOrThrowArgs>(args?: SelectSubset<T, WhatsappSessionFindFirstOrThrowArgs<ExtArgs>>): Prisma__WhatsappSessionClient<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more WhatsappSessions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WhatsappSessionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all WhatsappSessions
+     * const whatsappSessions = await prisma.whatsappSession.findMany()
+     * 
+     * // Get first 10 WhatsappSessions
+     * const whatsappSessions = await prisma.whatsappSession.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const whatsappSessionWithIdOnly = await prisma.whatsappSession.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WhatsappSessionFindManyArgs>(args?: SelectSubset<T, WhatsappSessionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a WhatsappSession.
+     * @param {WhatsappSessionCreateArgs} args - Arguments to create a WhatsappSession.
+     * @example
+     * // Create one WhatsappSession
+     * const WhatsappSession = await prisma.whatsappSession.create({
+     *   data: {
+     *     // ... data to create a WhatsappSession
+     *   }
+     * })
+     * 
+     */
+    create<T extends WhatsappSessionCreateArgs>(args: SelectSubset<T, WhatsappSessionCreateArgs<ExtArgs>>): Prisma__WhatsappSessionClient<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many WhatsappSessions.
+     * @param {WhatsappSessionCreateManyArgs} args - Arguments to create many WhatsappSessions.
+     * @example
+     * // Create many WhatsappSessions
+     * const whatsappSession = await prisma.whatsappSession.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WhatsappSessionCreateManyArgs>(args?: SelectSubset<T, WhatsappSessionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many WhatsappSessions and returns the data saved in the database.
+     * @param {WhatsappSessionCreateManyAndReturnArgs} args - Arguments to create many WhatsappSessions.
+     * @example
+     * // Create many WhatsappSessions
+     * const whatsappSession = await prisma.whatsappSession.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many WhatsappSessions and only return the `id`
+     * const whatsappSessionWithIdOnly = await prisma.whatsappSession.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WhatsappSessionCreateManyAndReturnArgs>(args?: SelectSubset<T, WhatsappSessionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a WhatsappSession.
+     * @param {WhatsappSessionDeleteArgs} args - Arguments to delete one WhatsappSession.
+     * @example
+     * // Delete one WhatsappSession
+     * const WhatsappSession = await prisma.whatsappSession.delete({
+     *   where: {
+     *     // ... filter to delete one WhatsappSession
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WhatsappSessionDeleteArgs>(args: SelectSubset<T, WhatsappSessionDeleteArgs<ExtArgs>>): Prisma__WhatsappSessionClient<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one WhatsappSession.
+     * @param {WhatsappSessionUpdateArgs} args - Arguments to update one WhatsappSession.
+     * @example
+     * // Update one WhatsappSession
+     * const whatsappSession = await prisma.whatsappSession.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WhatsappSessionUpdateArgs>(args: SelectSubset<T, WhatsappSessionUpdateArgs<ExtArgs>>): Prisma__WhatsappSessionClient<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more WhatsappSessions.
+     * @param {WhatsappSessionDeleteManyArgs} args - Arguments to filter WhatsappSessions to delete.
+     * @example
+     * // Delete a few WhatsappSessions
+     * const { count } = await prisma.whatsappSession.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WhatsappSessionDeleteManyArgs>(args?: SelectSubset<T, WhatsappSessionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WhatsappSessions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WhatsappSessionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many WhatsappSessions
+     * const whatsappSession = await prisma.whatsappSession.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WhatsappSessionUpdateManyArgs>(args: SelectSubset<T, WhatsappSessionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WhatsappSessions and returns the data updated in the database.
+     * @param {WhatsappSessionUpdateManyAndReturnArgs} args - Arguments to update many WhatsappSessions.
+     * @example
+     * // Update many WhatsappSessions
+     * const whatsappSession = await prisma.whatsappSession.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more WhatsappSessions and only return the `id`
+     * const whatsappSessionWithIdOnly = await prisma.whatsappSession.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends WhatsappSessionUpdateManyAndReturnArgs>(args: SelectSubset<T, WhatsappSessionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one WhatsappSession.
+     * @param {WhatsappSessionUpsertArgs} args - Arguments to update or create a WhatsappSession.
+     * @example
+     * // Update or create a WhatsappSession
+     * const whatsappSession = await prisma.whatsappSession.upsert({
+     *   create: {
+     *     // ... data to create a WhatsappSession
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the WhatsappSession we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WhatsappSessionUpsertArgs>(args: SelectSubset<T, WhatsappSessionUpsertArgs<ExtArgs>>): Prisma__WhatsappSessionClient<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of WhatsappSessions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WhatsappSessionCountArgs} args - Arguments to filter WhatsappSessions to count.
+     * @example
+     * // Count the number of WhatsappSessions
+     * const count = await prisma.whatsappSession.count({
+     *   where: {
+     *     // ... the filter for the WhatsappSessions we want to count
+     *   }
+     * })
+    **/
+    count<T extends WhatsappSessionCountArgs>(
+      args?: Subset<T, WhatsappSessionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WhatsappSessionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a WhatsappSession.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WhatsappSessionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WhatsappSessionAggregateArgs>(args: Subset<T, WhatsappSessionAggregateArgs>): Prisma.PrismaPromise<GetWhatsappSessionAggregateType<T>>
+
+    /**
+     * Group by WhatsappSession.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WhatsappSessionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WhatsappSessionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WhatsappSessionGroupByArgs['orderBy'] }
+        : { orderBy?: WhatsappSessionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WhatsappSessionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWhatsappSessionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the WhatsappSession model
+   */
+  readonly fields: WhatsappSessionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for WhatsappSession.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WhatsappSessionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends WhatsappSession$userArgs<ExtArgs> = {}>(args?: Subset<T, WhatsappSession$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    task<T extends WhatsappSession$taskArgs<ExtArgs> = {}>(args?: Subset<T, WhatsappSession$taskArgs<ExtArgs>>): Prisma__MaintenanceRequestClient<$Result.GetResult<Prisma.$MaintenanceRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the WhatsappSession model
+   */
+  interface WhatsappSessionFieldRefs {
+    readonly id: FieldRef<"WhatsappSession", 'String'>
+    readonly phone: FieldRef<"WhatsappSession", 'String'>
+    readonly userId: FieldRef<"WhatsappSession", 'String'>
+    readonly flow: FieldRef<"WhatsappSession", 'WhatsappFlow'>
+    readonly step: FieldRef<"WhatsappSession", 'String'>
+    readonly data: FieldRef<"WhatsappSession", 'Json'>
+    readonly taskId: FieldRef<"WhatsappSession", 'String'>
+    readonly updatedAt: FieldRef<"WhatsappSession", 'DateTime'>
+    readonly createdAt: FieldRef<"WhatsappSession", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * WhatsappSession findUnique
+   */
+  export type WhatsappSessionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * Filter, which WhatsappSession to fetch.
+     */
+    where: WhatsappSessionWhereUniqueInput
+  }
+
+  /**
+   * WhatsappSession findUniqueOrThrow
+   */
+  export type WhatsappSessionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * Filter, which WhatsappSession to fetch.
+     */
+    where: WhatsappSessionWhereUniqueInput
+  }
+
+  /**
+   * WhatsappSession findFirst
+   */
+  export type WhatsappSessionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * Filter, which WhatsappSession to fetch.
+     */
+    where?: WhatsappSessionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WhatsappSessions to fetch.
+     */
+    orderBy?: WhatsappSessionOrderByWithRelationInput | WhatsappSessionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WhatsappSessions.
+     */
+    cursor?: WhatsappSessionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WhatsappSessions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WhatsappSessions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WhatsappSessions.
+     */
+    distinct?: WhatsappSessionScalarFieldEnum | WhatsappSessionScalarFieldEnum[]
+  }
+
+  /**
+   * WhatsappSession findFirstOrThrow
+   */
+  export type WhatsappSessionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * Filter, which WhatsappSession to fetch.
+     */
+    where?: WhatsappSessionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WhatsappSessions to fetch.
+     */
+    orderBy?: WhatsappSessionOrderByWithRelationInput | WhatsappSessionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WhatsappSessions.
+     */
+    cursor?: WhatsappSessionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WhatsappSessions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WhatsappSessions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WhatsappSessions.
+     */
+    distinct?: WhatsappSessionScalarFieldEnum | WhatsappSessionScalarFieldEnum[]
+  }
+
+  /**
+   * WhatsappSession findMany
+   */
+  export type WhatsappSessionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * Filter, which WhatsappSessions to fetch.
+     */
+    where?: WhatsappSessionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WhatsappSessions to fetch.
+     */
+    orderBy?: WhatsappSessionOrderByWithRelationInput | WhatsappSessionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing WhatsappSessions.
+     */
+    cursor?: WhatsappSessionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WhatsappSessions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WhatsappSessions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WhatsappSessions.
+     */
+    distinct?: WhatsappSessionScalarFieldEnum | WhatsappSessionScalarFieldEnum[]
+  }
+
+  /**
+   * WhatsappSession create
+   */
+  export type WhatsappSessionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * The data needed to create a WhatsappSession.
+     */
+    data: XOR<WhatsappSessionCreateInput, WhatsappSessionUncheckedCreateInput>
+  }
+
+  /**
+   * WhatsappSession createMany
+   */
+  export type WhatsappSessionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many WhatsappSessions.
+     */
+    data: WhatsappSessionCreateManyInput | WhatsappSessionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WhatsappSession createManyAndReturn
+   */
+  export type WhatsappSessionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * The data used to create many WhatsappSessions.
+     */
+    data: WhatsappSessionCreateManyInput | WhatsappSessionCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WhatsappSession update
+   */
+  export type WhatsappSessionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * The data needed to update a WhatsappSession.
+     */
+    data: XOR<WhatsappSessionUpdateInput, WhatsappSessionUncheckedUpdateInput>
+    /**
+     * Choose, which WhatsappSession to update.
+     */
+    where: WhatsappSessionWhereUniqueInput
+  }
+
+  /**
+   * WhatsappSession updateMany
+   */
+  export type WhatsappSessionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update WhatsappSessions.
+     */
+    data: XOR<WhatsappSessionUpdateManyMutationInput, WhatsappSessionUncheckedUpdateManyInput>
+    /**
+     * Filter which WhatsappSessions to update
+     */
+    where?: WhatsappSessionWhereInput
+    /**
+     * Limit how many WhatsappSessions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * WhatsappSession updateManyAndReturn
+   */
+  export type WhatsappSessionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * The data used to update WhatsappSessions.
+     */
+    data: XOR<WhatsappSessionUpdateManyMutationInput, WhatsappSessionUncheckedUpdateManyInput>
+    /**
+     * Filter which WhatsappSessions to update
+     */
+    where?: WhatsappSessionWhereInput
+    /**
+     * Limit how many WhatsappSessions to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WhatsappSession upsert
+   */
+  export type WhatsappSessionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * The filter to search for the WhatsappSession to update in case it exists.
+     */
+    where: WhatsappSessionWhereUniqueInput
+    /**
+     * In case the WhatsappSession found by the `where` argument doesn't exist, create a new WhatsappSession with this data.
+     */
+    create: XOR<WhatsappSessionCreateInput, WhatsappSessionUncheckedCreateInput>
+    /**
+     * In case the WhatsappSession was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WhatsappSessionUpdateInput, WhatsappSessionUncheckedUpdateInput>
+  }
+
+  /**
+   * WhatsappSession delete
+   */
+  export type WhatsappSessionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+    /**
+     * Filter which WhatsappSession to delete.
+     */
+    where: WhatsappSessionWhereUniqueInput
+  }
+
+  /**
+   * WhatsappSession deleteMany
+   */
+  export type WhatsappSessionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WhatsappSessions to delete
+     */
+    where?: WhatsappSessionWhereInput
+    /**
+     * Limit how many WhatsappSessions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * WhatsappSession.user
+   */
+  export type WhatsappSession$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * WhatsappSession.task
+   */
+  export type WhatsappSession$taskArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MaintenanceRequest
+     */
+    select?: MaintenanceRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MaintenanceRequest
+     */
+    omit?: MaintenanceRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MaintenanceRequestInclude<ExtArgs> | null
+    where?: MaintenanceRequestWhereInput
+  }
+
+  /**
+   * WhatsappSession without action
+   */
+  export type WhatsappSessionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WhatsappSession
+     */
+    select?: WhatsappSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WhatsappSession
+     */
+    omit?: WhatsappSessionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WhatsappSessionInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -20902,6 +22577,8 @@ export namespace Prisma {
     id: 'id',
     email: 'email',
     userType: 'userType',
+    workerCategory: 'workerCategory',
+    companyName: 'companyName',
     firstName: 'firstName',
     lastName: 'lastName',
     phone: 'phone',
@@ -20910,6 +22587,25 @@ export namespace Prisma {
     employer: 'employer',
     emergencyContactName: 'emergencyContactName',
     emergencyContactPhone: 'emergencyContactPhone',
+    passportNumber: 'passportNumber',
+    passportIssuance: 'passportIssuance',
+    passportExpiry: 'passportExpiry',
+    visaNumber: 'visaNumber',
+    visaIssuance: 'visaIssuance',
+    visaExpiry: 'visaExpiry',
+    civilIdIssuance: 'civilIdIssuance',
+    civilIdExpiry: 'civilIdExpiry',
+    drivingLicenseNumber: 'drivingLicenseNumber',
+    drivingLicenseIssuance: 'drivingLicenseIssuance',
+    drivingLicenseExpiry: 'drivingLicenseExpiry',
+    hasVehicle: 'hasVehicle',
+    vehicleRegistrationNumber: 'vehicleRegistrationNumber',
+    vehicleRegistrationIssuance: 'vehicleRegistrationIssuance',
+    vehicleRegistrationExpiry: 'vehicleRegistrationExpiry',
+    carInsuranceNumber: 'carInsuranceNumber',
+    carInsuranceIssuance: 'carInsuranceIssuance',
+    carInsuranceExpiry: 'carInsuranceExpiry',
+    hrReminderStages: 'hrReminderStages',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -21105,12 +22801,35 @@ export namespace Prisma {
   export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
+  export const WhatsappSessionScalarFieldEnum: {
+    id: 'id',
+    phone: 'phone',
+    userId: 'userId',
+    flow: 'flow',
+    step: 'step',
+    data: 'data',
+    taskId: 'taskId',
+    updatedAt: 'updatedAt',
+    createdAt: 'createdAt'
+  };
+
+  export type WhatsappSessionScalarFieldEnum = (typeof WhatsappSessionScalarFieldEnum)[keyof typeof WhatsappSessionScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
   };
 
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
   export const QueryMode: {
@@ -21127,6 +22846,15 @@ export namespace Prisma {
   };
 
   export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+  export const JsonNullValueFilter: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull,
+    AnyNull: typeof AnyNull
+  };
+
+  export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
   /**
@@ -21208,6 +22936,34 @@ export namespace Prisma {
    * Reference to a field of type 'UserType[]'
    */
   export type ListEnumUserTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserType[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'WorkerCategory'
+   */
+  export type EnumWorkerCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkerCategory'>
+    
+
+
+  /**
+   * Reference to a field of type 'WorkerCategory[]'
+   */
+  export type ListEnumWorkerCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkerCategory[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -21348,6 +23104,20 @@ export namespace Prisma {
    * Reference to a field of type 'SupplyRequestStatus[]'
    */
   export type ListEnumSupplyRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SupplyRequestStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'WhatsappFlow'
+   */
+  export type EnumWhatsappFlowFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WhatsappFlow'>
+    
+
+
+  /**
+   * Reference to a field of type 'WhatsappFlow[]'
+   */
+  export type ListEnumWhatsappFlowFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WhatsappFlow[]'>
     
 
 
@@ -21691,6 +23461,8 @@ export namespace Prisma {
     id?: UuidFilter<"User"> | string
     email?: StringFilter<"User"> | string
     userType?: EnumUserTypeFilter<"User"> | $Enums.UserType
+    workerCategory?: EnumWorkerCategoryNullableFilter<"User"> | $Enums.WorkerCategory | null
+    companyName?: StringNullableFilter<"User"> | string | null
     firstName?: StringNullableFilter<"User"> | string | null
     lastName?: StringNullableFilter<"User"> | string | null
     phone?: StringNullableFilter<"User"> | string | null
@@ -21699,6 +23471,25 @@ export namespace Prisma {
     employer?: StringNullableFilter<"User"> | string | null
     emergencyContactName?: StringNullableFilter<"User"> | string | null
     emergencyContactPhone?: StringNullableFilter<"User"> | string | null
+    passportNumber?: StringNullableFilter<"User"> | string | null
+    passportIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    passportExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    visaNumber?: StringNullableFilter<"User"> | string | null
+    visaIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    visaExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    civilIdIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    civilIdExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    drivingLicenseNumber?: StringNullableFilter<"User"> | string | null
+    drivingLicenseIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    drivingLicenseExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    hasVehicle?: BoolFilter<"User"> | boolean
+    vehicleRegistrationNumber?: StringNullableFilter<"User"> | string | null
+    vehicleRegistrationIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    vehicleRegistrationExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    carInsuranceNumber?: StringNullableFilter<"User"> | string | null
+    carInsuranceIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    carInsuranceExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    hrReminderStages?: JsonNullableFilter<"User">
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     unit?: XOR<UnitNullableScalarRelationFilter, UnitWhereInput> | null
@@ -21718,12 +23509,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestListRelationFilter
     supplyRequestsDecided?: SupplyRequestListRelationFilter
     ownedProperties?: PropertyListRelationFilter
+    whatsappSessions?: WhatsappSessionListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     email?: SortOrder
     userType?: SortOrder
+    workerCategory?: SortOrderInput | SortOrder
+    companyName?: SortOrderInput | SortOrder
     firstName?: SortOrderInput | SortOrder
     lastName?: SortOrderInput | SortOrder
     phone?: SortOrderInput | SortOrder
@@ -21732,6 +23526,25 @@ export namespace Prisma {
     employer?: SortOrderInput | SortOrder
     emergencyContactName?: SortOrderInput | SortOrder
     emergencyContactPhone?: SortOrderInput | SortOrder
+    passportNumber?: SortOrderInput | SortOrder
+    passportIssuance?: SortOrderInput | SortOrder
+    passportExpiry?: SortOrderInput | SortOrder
+    visaNumber?: SortOrderInput | SortOrder
+    visaIssuance?: SortOrderInput | SortOrder
+    visaExpiry?: SortOrderInput | SortOrder
+    civilIdIssuance?: SortOrderInput | SortOrder
+    civilIdExpiry?: SortOrderInput | SortOrder
+    drivingLicenseNumber?: SortOrderInput | SortOrder
+    drivingLicenseIssuance?: SortOrderInput | SortOrder
+    drivingLicenseExpiry?: SortOrderInput | SortOrder
+    hasVehicle?: SortOrder
+    vehicleRegistrationNumber?: SortOrderInput | SortOrder
+    vehicleRegistrationIssuance?: SortOrderInput | SortOrder
+    vehicleRegistrationExpiry?: SortOrderInput | SortOrder
+    carInsuranceNumber?: SortOrderInput | SortOrder
+    carInsuranceIssuance?: SortOrderInput | SortOrder
+    carInsuranceExpiry?: SortOrderInput | SortOrder
+    hrReminderStages?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     unit?: UnitOrderByWithRelationInput
@@ -21751,23 +23564,46 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestOrderByRelationAggregateInput
     supplyRequestsDecided?: SupplyRequestOrderByRelationAggregateInput
     ownedProperties?: PropertyOrderByRelationAggregateInput
+    whatsappSessions?: WhatsappSessionOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    email?: string
+    phone?: string
     civilId?: string
+    email_userType?: UserEmailUserTypeCompoundUniqueInput
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
+    email?: StringFilter<"User"> | string
     userType?: EnumUserTypeFilter<"User"> | $Enums.UserType
+    workerCategory?: EnumWorkerCategoryNullableFilter<"User"> | $Enums.WorkerCategory | null
+    companyName?: StringNullableFilter<"User"> | string | null
     firstName?: StringNullableFilter<"User"> | string | null
     lastName?: StringNullableFilter<"User"> | string | null
-    phone?: StringNullableFilter<"User"> | string | null
     nationality?: StringNullableFilter<"User"> | string | null
     employer?: StringNullableFilter<"User"> | string | null
     emergencyContactName?: StringNullableFilter<"User"> | string | null
     emergencyContactPhone?: StringNullableFilter<"User"> | string | null
+    passportNumber?: StringNullableFilter<"User"> | string | null
+    passportIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    passportExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    visaNumber?: StringNullableFilter<"User"> | string | null
+    visaIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    visaExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    civilIdIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    civilIdExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    drivingLicenseNumber?: StringNullableFilter<"User"> | string | null
+    drivingLicenseIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    drivingLicenseExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    hasVehicle?: BoolFilter<"User"> | boolean
+    vehicleRegistrationNumber?: StringNullableFilter<"User"> | string | null
+    vehicleRegistrationIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    vehicleRegistrationExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    carInsuranceNumber?: StringNullableFilter<"User"> | string | null
+    carInsuranceIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
+    carInsuranceExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    hrReminderStages?: JsonNullableFilter<"User">
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     unit?: XOR<UnitNullableScalarRelationFilter, UnitWhereInput> | null
@@ -21787,12 +23623,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestListRelationFilter
     supplyRequestsDecided?: SupplyRequestListRelationFilter
     ownedProperties?: PropertyListRelationFilter
-  }, "id" | "email" | "civilId">
+    whatsappSessions?: WhatsappSessionListRelationFilter
+  }, "id" | "phone" | "civilId" | "email_userType">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     email?: SortOrder
     userType?: SortOrder
+    workerCategory?: SortOrderInput | SortOrder
+    companyName?: SortOrderInput | SortOrder
     firstName?: SortOrderInput | SortOrder
     lastName?: SortOrderInput | SortOrder
     phone?: SortOrderInput | SortOrder
@@ -21801,6 +23640,25 @@ export namespace Prisma {
     employer?: SortOrderInput | SortOrder
     emergencyContactName?: SortOrderInput | SortOrder
     emergencyContactPhone?: SortOrderInput | SortOrder
+    passportNumber?: SortOrderInput | SortOrder
+    passportIssuance?: SortOrderInput | SortOrder
+    passportExpiry?: SortOrderInput | SortOrder
+    visaNumber?: SortOrderInput | SortOrder
+    visaIssuance?: SortOrderInput | SortOrder
+    visaExpiry?: SortOrderInput | SortOrder
+    civilIdIssuance?: SortOrderInput | SortOrder
+    civilIdExpiry?: SortOrderInput | SortOrder
+    drivingLicenseNumber?: SortOrderInput | SortOrder
+    drivingLicenseIssuance?: SortOrderInput | SortOrder
+    drivingLicenseExpiry?: SortOrderInput | SortOrder
+    hasVehicle?: SortOrder
+    vehicleRegistrationNumber?: SortOrderInput | SortOrder
+    vehicleRegistrationIssuance?: SortOrderInput | SortOrder
+    vehicleRegistrationExpiry?: SortOrderInput | SortOrder
+    carInsuranceNumber?: SortOrderInput | SortOrder
+    carInsuranceIssuance?: SortOrderInput | SortOrder
+    carInsuranceExpiry?: SortOrderInput | SortOrder
+    hrReminderStages?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -21815,6 +23673,8 @@ export namespace Prisma {
     id?: UuidWithAggregatesFilter<"User"> | string
     email?: StringWithAggregatesFilter<"User"> | string
     userType?: EnumUserTypeWithAggregatesFilter<"User"> | $Enums.UserType
+    workerCategory?: EnumWorkerCategoryNullableWithAggregatesFilter<"User"> | $Enums.WorkerCategory | null
+    companyName?: StringNullableWithAggregatesFilter<"User"> | string | null
     firstName?: StringNullableWithAggregatesFilter<"User"> | string | null
     lastName?: StringNullableWithAggregatesFilter<"User"> | string | null
     phone?: StringNullableWithAggregatesFilter<"User"> | string | null
@@ -21823,6 +23683,25 @@ export namespace Prisma {
     employer?: StringNullableWithAggregatesFilter<"User"> | string | null
     emergencyContactName?: StringNullableWithAggregatesFilter<"User"> | string | null
     emergencyContactPhone?: StringNullableWithAggregatesFilter<"User"> | string | null
+    passportNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
+    passportIssuance?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    passportExpiry?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    visaNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
+    visaIssuance?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    visaExpiry?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    civilIdIssuance?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    civilIdExpiry?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    drivingLicenseNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
+    drivingLicenseIssuance?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    drivingLicenseExpiry?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    hasVehicle?: BoolWithAggregatesFilter<"User"> | boolean
+    vehicleRegistrationNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
+    vehicleRegistrationIssuance?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    vehicleRegistrationExpiry?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    carInsuranceNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
+    carInsuranceIssuance?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    carInsuranceExpiry?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    hrReminderStages?: JsonNullableWithAggregatesFilter<"User">
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
@@ -22412,6 +24291,7 @@ export namespace Prisma {
     taskLogs?: TaskLogListRelationFilter
     notifications?: NotificationListRelationFilter
     supplyRequests?: SupplyRequestListRelationFilter
+    whatsappSessions?: WhatsappSessionListRelationFilter
   }
 
   export type MaintenanceRequestOrderByWithRelationInput = {
@@ -22443,6 +24323,7 @@ export namespace Prisma {
     taskLogs?: TaskLogOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
     supplyRequests?: SupplyRequestOrderByRelationAggregateInput
+    whatsappSessions?: WhatsappSessionOrderByRelationAggregateInput
   }
 
   export type MaintenanceRequestWhereUniqueInput = Prisma.AtLeast<{
@@ -22477,6 +24358,7 @@ export namespace Prisma {
     taskLogs?: TaskLogListRelationFilter
     notifications?: NotificationListRelationFilter
     supplyRequests?: SupplyRequestListRelationFilter
+    whatsappSessions?: WhatsappSessionListRelationFilter
   }, "id">
 
   export type MaintenanceRequestOrderByWithAggregationInput = {
@@ -22862,6 +24744,84 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Notification"> | Date | string
   }
 
+  export type WhatsappSessionWhereInput = {
+    AND?: WhatsappSessionWhereInput | WhatsappSessionWhereInput[]
+    OR?: WhatsappSessionWhereInput[]
+    NOT?: WhatsappSessionWhereInput | WhatsappSessionWhereInput[]
+    id?: UuidFilter<"WhatsappSession"> | string
+    phone?: StringFilter<"WhatsappSession"> | string
+    userId?: UuidNullableFilter<"WhatsappSession"> | string | null
+    flow?: EnumWhatsappFlowNullableFilter<"WhatsappSession"> | $Enums.WhatsappFlow | null
+    step?: StringNullableFilter<"WhatsappSession"> | string | null
+    data?: JsonNullableFilter<"WhatsappSession">
+    taskId?: UuidNullableFilter<"WhatsappSession"> | string | null
+    updatedAt?: DateTimeFilter<"WhatsappSession"> | Date | string
+    createdAt?: DateTimeFilter<"WhatsappSession"> | Date | string
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    task?: XOR<MaintenanceRequestNullableScalarRelationFilter, MaintenanceRequestWhereInput> | null
+  }
+
+  export type WhatsappSessionOrderByWithRelationInput = {
+    id?: SortOrder
+    phone?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    flow?: SortOrderInput | SortOrder
+    step?: SortOrderInput | SortOrder
+    data?: SortOrderInput | SortOrder
+    taskId?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
+    createdAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+    task?: MaintenanceRequestOrderByWithRelationInput
+  }
+
+  export type WhatsappSessionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    phone?: string
+    AND?: WhatsappSessionWhereInput | WhatsappSessionWhereInput[]
+    OR?: WhatsappSessionWhereInput[]
+    NOT?: WhatsappSessionWhereInput | WhatsappSessionWhereInput[]
+    userId?: UuidNullableFilter<"WhatsappSession"> | string | null
+    flow?: EnumWhatsappFlowNullableFilter<"WhatsappSession"> | $Enums.WhatsappFlow | null
+    step?: StringNullableFilter<"WhatsappSession"> | string | null
+    data?: JsonNullableFilter<"WhatsappSession">
+    taskId?: UuidNullableFilter<"WhatsappSession"> | string | null
+    updatedAt?: DateTimeFilter<"WhatsappSession"> | Date | string
+    createdAt?: DateTimeFilter<"WhatsappSession"> | Date | string
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    task?: XOR<MaintenanceRequestNullableScalarRelationFilter, MaintenanceRequestWhereInput> | null
+  }, "id" | "phone">
+
+  export type WhatsappSessionOrderByWithAggregationInput = {
+    id?: SortOrder
+    phone?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    flow?: SortOrderInput | SortOrder
+    step?: SortOrderInput | SortOrder
+    data?: SortOrderInput | SortOrder
+    taskId?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
+    createdAt?: SortOrder
+    _count?: WhatsappSessionCountOrderByAggregateInput
+    _max?: WhatsappSessionMaxOrderByAggregateInput
+    _min?: WhatsappSessionMinOrderByAggregateInput
+  }
+
+  export type WhatsappSessionScalarWhereWithAggregatesInput = {
+    AND?: WhatsappSessionScalarWhereWithAggregatesInput | WhatsappSessionScalarWhereWithAggregatesInput[]
+    OR?: WhatsappSessionScalarWhereWithAggregatesInput[]
+    NOT?: WhatsappSessionScalarWhereWithAggregatesInput | WhatsappSessionScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"WhatsappSession"> | string
+    phone?: StringWithAggregatesFilter<"WhatsappSession"> | string
+    userId?: UuidNullableWithAggregatesFilter<"WhatsappSession"> | string | null
+    flow?: EnumWhatsappFlowNullableWithAggregatesFilter<"WhatsappSession"> | $Enums.WhatsappFlow | null
+    step?: StringNullableWithAggregatesFilter<"WhatsappSession"> | string | null
+    data?: JsonNullableWithAggregatesFilter<"WhatsappSession">
+    taskId?: UuidNullableWithAggregatesFilter<"WhatsappSession"> | string | null
+    updatedAt?: DateTimeWithAggregatesFilter<"WhatsappSession"> | Date | string
+    createdAt?: DateTimeWithAggregatesFilter<"WhatsappSession"> | Date | string
+  }
+
   export type PropertyTypeCreateInput = {
     id?: string
     name: string
@@ -23229,6 +25189,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -23237,6 +25199,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -23256,12 +25237,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -23270,6 +25254,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -23289,12 +25292,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -23303,6 +25309,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -23322,12 +25347,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -23336,6 +25364,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -23355,12 +25402,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -23369,6 +25419,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -23377,6 +25446,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -23385,6 +25456,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -23393,6 +25483,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -23401,6 +25493,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -24023,6 +26134,7 @@ export namespace Prisma {
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUncheckedCreateInput = {
@@ -24051,6 +26163,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUpdateInput = {
@@ -24079,6 +26192,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateInput = {
@@ -24107,6 +26221,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestCreateManyInput = {
@@ -24516,6 +26631,88 @@ export namespace Prisma {
     relatedId?: NullableStringFieldUpdateOperationsInput | string | null
     href?: NullableStringFieldUpdateOperationsInput | string | null
     isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WhatsappSessionCreateInput = {
+    id?: string
+    phone: string
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: Date | string
+    createdAt?: Date | string
+    user?: UserCreateNestedOneWithoutWhatsappSessionsInput
+    task?: MaintenanceRequestCreateNestedOneWithoutWhatsappSessionsInput
+  }
+
+  export type WhatsappSessionUncheckedCreateInput = {
+    id?: string
+    phone: string
+    userId?: string | null
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    taskId?: string | null
+    updatedAt?: Date | string
+    createdAt?: Date | string
+  }
+
+  export type WhatsappSessionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneWithoutWhatsappSessionsNestedInput
+    task?: MaintenanceRequestUpdateOneWithoutWhatsappSessionsNestedInput
+  }
+
+  export type WhatsappSessionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    taskId?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WhatsappSessionCreateManyInput = {
+    id?: string
+    phone: string
+    userId?: string | null
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    taskId?: string | null
+    updatedAt?: Date | string
+    createdAt?: Date | string
+  }
+
+  export type WhatsappSessionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WhatsappSessionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    taskId?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -25021,6 +27218,36 @@ export namespace Prisma {
     not?: NestedEnumUserTypeFilter<$PrismaModel> | $Enums.UserType
   }
 
+  export type EnumWorkerCategoryNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkerCategory | EnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WorkerCategory[] | ListEnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WorkerCategory[] | ListEnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWorkerCategoryNullableFilter<$PrismaModel> | $Enums.WorkerCategory | null
+  }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
   export type UnitNullableScalarRelationFilter = {
     is?: UnitWhereInput | null
     isNot?: UnitWhereInput | null
@@ -25062,6 +27289,12 @@ export namespace Prisma {
     none?: SupplyRequestWhereInput
   }
 
+  export type WhatsappSessionListRelationFilter = {
+    every?: WhatsappSessionWhereInput
+    some?: WhatsappSessionWhereInput
+    none?: WhatsappSessionWhereInput
+  }
+
   export type MaintenanceAttachmentOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -25086,10 +27319,21 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
+  export type WhatsappSessionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type UserEmailUserTypeCompoundUniqueInput = {
+    email: string
+    userType: $Enums.UserType
+  }
+
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     email?: SortOrder
     userType?: SortOrder
+    workerCategory?: SortOrder
+    companyName?: SortOrder
     firstName?: SortOrder
     lastName?: SortOrder
     phone?: SortOrder
@@ -25098,6 +27342,25 @@ export namespace Prisma {
     employer?: SortOrder
     emergencyContactName?: SortOrder
     emergencyContactPhone?: SortOrder
+    passportNumber?: SortOrder
+    passportIssuance?: SortOrder
+    passportExpiry?: SortOrder
+    visaNumber?: SortOrder
+    visaIssuance?: SortOrder
+    visaExpiry?: SortOrder
+    civilIdIssuance?: SortOrder
+    civilIdExpiry?: SortOrder
+    drivingLicenseNumber?: SortOrder
+    drivingLicenseIssuance?: SortOrder
+    drivingLicenseExpiry?: SortOrder
+    hasVehicle?: SortOrder
+    vehicleRegistrationNumber?: SortOrder
+    vehicleRegistrationIssuance?: SortOrder
+    vehicleRegistrationExpiry?: SortOrder
+    carInsuranceNumber?: SortOrder
+    carInsuranceIssuance?: SortOrder
+    carInsuranceExpiry?: SortOrder
+    hrReminderStages?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -25106,6 +27369,8 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     userType?: SortOrder
+    workerCategory?: SortOrder
+    companyName?: SortOrder
     firstName?: SortOrder
     lastName?: SortOrder
     phone?: SortOrder
@@ -25114,6 +27379,24 @@ export namespace Prisma {
     employer?: SortOrder
     emergencyContactName?: SortOrder
     emergencyContactPhone?: SortOrder
+    passportNumber?: SortOrder
+    passportIssuance?: SortOrder
+    passportExpiry?: SortOrder
+    visaNumber?: SortOrder
+    visaIssuance?: SortOrder
+    visaExpiry?: SortOrder
+    civilIdIssuance?: SortOrder
+    civilIdExpiry?: SortOrder
+    drivingLicenseNumber?: SortOrder
+    drivingLicenseIssuance?: SortOrder
+    drivingLicenseExpiry?: SortOrder
+    hasVehicle?: SortOrder
+    vehicleRegistrationNumber?: SortOrder
+    vehicleRegistrationIssuance?: SortOrder
+    vehicleRegistrationExpiry?: SortOrder
+    carInsuranceNumber?: SortOrder
+    carInsuranceIssuance?: SortOrder
+    carInsuranceExpiry?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -25122,6 +27405,8 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     userType?: SortOrder
+    workerCategory?: SortOrder
+    companyName?: SortOrder
     firstName?: SortOrder
     lastName?: SortOrder
     phone?: SortOrder
@@ -25130,6 +27415,24 @@ export namespace Prisma {
     employer?: SortOrder
     emergencyContactName?: SortOrder
     emergencyContactPhone?: SortOrder
+    passportNumber?: SortOrder
+    passportIssuance?: SortOrder
+    passportExpiry?: SortOrder
+    visaNumber?: SortOrder
+    visaIssuance?: SortOrder
+    visaExpiry?: SortOrder
+    civilIdIssuance?: SortOrder
+    civilIdExpiry?: SortOrder
+    drivingLicenseNumber?: SortOrder
+    drivingLicenseIssuance?: SortOrder
+    drivingLicenseExpiry?: SortOrder
+    hasVehicle?: SortOrder
+    vehicleRegistrationNumber?: SortOrder
+    vehicleRegistrationIssuance?: SortOrder
+    vehicleRegistrationExpiry?: SortOrder
+    carInsuranceNumber?: SortOrder
+    carInsuranceIssuance?: SortOrder
+    carInsuranceExpiry?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -25142,6 +27445,42 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumUserTypeFilter<$PrismaModel>
     _max?: NestedEnumUserTypeFilter<$PrismaModel>
+  }
+
+  export type EnumWorkerCategoryNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkerCategory | EnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WorkerCategory[] | ListEnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WorkerCategory[] | ListEnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWorkerCategoryNullableWithAggregatesFilter<$PrismaModel> | $Enums.WorkerCategory | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumWorkerCategoryNullableFilter<$PrismaModel>
+    _max?: NestedEnumWorkerCategoryNullableFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type DecimalFilter<$PrismaModel = never> = {
@@ -25971,6 +28310,57 @@ export namespace Prisma {
     createdAt?: SortOrder
   }
 
+  export type EnumWhatsappFlowNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.WhatsappFlow | EnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WhatsappFlow[] | ListEnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WhatsappFlow[] | ListEnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWhatsappFlowNullableFilter<$PrismaModel> | $Enums.WhatsappFlow | null
+  }
+
+  export type WhatsappSessionCountOrderByAggregateInput = {
+    id?: SortOrder
+    phone?: SortOrder
+    userId?: SortOrder
+    flow?: SortOrder
+    step?: SortOrder
+    data?: SortOrder
+    taskId?: SortOrder
+    updatedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WhatsappSessionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    phone?: SortOrder
+    userId?: SortOrder
+    flow?: SortOrder
+    step?: SortOrder
+    taskId?: SortOrder
+    updatedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WhatsappSessionMinOrderByAggregateInput = {
+    id?: SortOrder
+    phone?: SortOrder
+    userId?: SortOrder
+    flow?: SortOrder
+    step?: SortOrder
+    taskId?: SortOrder
+    updatedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumWhatsappFlowNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WhatsappFlow | EnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WhatsappFlow[] | ListEnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WhatsappFlow[] | ListEnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWhatsappFlowNullableWithAggregatesFilter<$PrismaModel> | $Enums.WhatsappFlow | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumWhatsappFlowNullableFilter<$PrismaModel>
+    _max?: NestedEnumWhatsappFlowNullableFilter<$PrismaModel>
+  }
+
   export type PropertyTypeCreatelocationOptionsInput = {
     set: string[]
   }
@@ -26446,6 +28836,13 @@ export namespace Prisma {
     connect?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
   }
 
+  export type WhatsappSessionCreateNestedManyWithoutUserInput = {
+    create?: XOR<WhatsappSessionCreateWithoutUserInput, WhatsappSessionUncheckedCreateWithoutUserInput> | WhatsappSessionCreateWithoutUserInput[] | WhatsappSessionUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WhatsappSessionCreateOrConnectWithoutUserInput | WhatsappSessionCreateOrConnectWithoutUserInput[]
+    createMany?: WhatsappSessionCreateManyUserInputEnvelope
+    connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+  }
+
   export type UnitUncheckedCreateNestedOneWithoutTenantInput = {
     create?: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenantInput
@@ -26564,8 +28961,19 @@ export namespace Prisma {
     connect?: PropertyWhereUniqueInput | PropertyWhereUniqueInput[]
   }
 
+  export type WhatsappSessionUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<WhatsappSessionCreateWithoutUserInput, WhatsappSessionUncheckedCreateWithoutUserInput> | WhatsappSessionCreateWithoutUserInput[] | WhatsappSessionUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WhatsappSessionCreateOrConnectWithoutUserInput | WhatsappSessionCreateOrConnectWithoutUserInput[]
+    createMany?: WhatsappSessionCreateManyUserInputEnvelope
+    connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+  }
+
   export type EnumUserTypeFieldUpdateOperationsInput = {
     set?: $Enums.UserType
+  }
+
+  export type NullableEnumWorkerCategoryFieldUpdateOperationsInput = {
+    set?: $Enums.WorkerCategory | null
   }
 
   export type UnitUpdateOneWithoutTenantNestedInput = {
@@ -26802,6 +29210,20 @@ export namespace Prisma {
     deleteMany?: PropertyScalarWhereInput | PropertyScalarWhereInput[]
   }
 
+  export type WhatsappSessionUpdateManyWithoutUserNestedInput = {
+    create?: XOR<WhatsappSessionCreateWithoutUserInput, WhatsappSessionUncheckedCreateWithoutUserInput> | WhatsappSessionCreateWithoutUserInput[] | WhatsappSessionUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WhatsappSessionCreateOrConnectWithoutUserInput | WhatsappSessionCreateOrConnectWithoutUserInput[]
+    upsert?: WhatsappSessionUpsertWithWhereUniqueWithoutUserInput | WhatsappSessionUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: WhatsappSessionCreateManyUserInputEnvelope
+    set?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    disconnect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    delete?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    update?: WhatsappSessionUpdateWithWhereUniqueWithoutUserInput | WhatsappSessionUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: WhatsappSessionUpdateManyWithWhereWithoutUserInput | WhatsappSessionUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
+  }
+
   export type UnitUncheckedUpdateOneWithoutTenantNestedInput = {
     create?: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenantInput
@@ -27034,6 +29456,20 @@ export namespace Prisma {
     update?: PropertyUpdateWithWhereUniqueWithoutOwnerInput | PropertyUpdateWithWhereUniqueWithoutOwnerInput[]
     updateMany?: PropertyUpdateManyWithWhereWithoutOwnerInput | PropertyUpdateManyWithWhereWithoutOwnerInput[]
     deleteMany?: PropertyScalarWhereInput | PropertyScalarWhereInput[]
+  }
+
+  export type WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<WhatsappSessionCreateWithoutUserInput, WhatsappSessionUncheckedCreateWithoutUserInput> | WhatsappSessionCreateWithoutUserInput[] | WhatsappSessionUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WhatsappSessionCreateOrConnectWithoutUserInput | WhatsappSessionCreateOrConnectWithoutUserInput[]
+    upsert?: WhatsappSessionUpsertWithWhereUniqueWithoutUserInput | WhatsappSessionUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: WhatsappSessionCreateManyUserInputEnvelope
+    set?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    disconnect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    delete?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    update?: WhatsappSessionUpdateWithWhereUniqueWithoutUserInput | WhatsappSessionUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: WhatsappSessionUpdateManyWithWhereWithoutUserInput | WhatsappSessionUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
   }
 
   export type UnitCreateNestedOneWithoutTenanciesInput = {
@@ -27578,6 +30014,13 @@ export namespace Prisma {
     connect?: SupplyRequestWhereUniqueInput | SupplyRequestWhereUniqueInput[]
   }
 
+  export type WhatsappSessionCreateNestedManyWithoutTaskInput = {
+    create?: XOR<WhatsappSessionCreateWithoutTaskInput, WhatsappSessionUncheckedCreateWithoutTaskInput> | WhatsappSessionCreateWithoutTaskInput[] | WhatsappSessionUncheckedCreateWithoutTaskInput[]
+    connectOrCreate?: WhatsappSessionCreateOrConnectWithoutTaskInput | WhatsappSessionCreateOrConnectWithoutTaskInput[]
+    createMany?: WhatsappSessionCreateManyTaskInputEnvelope
+    connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+  }
+
   export type MaintenanceAttachmentUncheckedCreateNestedManyWithoutRequestInput = {
     create?: XOR<MaintenanceAttachmentCreateWithoutRequestInput, MaintenanceAttachmentUncheckedCreateWithoutRequestInput> | MaintenanceAttachmentCreateWithoutRequestInput[] | MaintenanceAttachmentUncheckedCreateWithoutRequestInput[]
     connectOrCreate?: MaintenanceAttachmentCreateOrConnectWithoutRequestInput | MaintenanceAttachmentCreateOrConnectWithoutRequestInput[]
@@ -27604,6 +30047,13 @@ export namespace Prisma {
     connectOrCreate?: SupplyRequestCreateOrConnectWithoutRequestInput | SupplyRequestCreateOrConnectWithoutRequestInput[]
     createMany?: SupplyRequestCreateManyRequestInputEnvelope
     connect?: SupplyRequestWhereUniqueInput | SupplyRequestWhereUniqueInput[]
+  }
+
+  export type WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput = {
+    create?: XOR<WhatsappSessionCreateWithoutTaskInput, WhatsappSessionUncheckedCreateWithoutTaskInput> | WhatsappSessionCreateWithoutTaskInput[] | WhatsappSessionUncheckedCreateWithoutTaskInput[]
+    connectOrCreate?: WhatsappSessionCreateOrConnectWithoutTaskInput | WhatsappSessionCreateOrConnectWithoutTaskInput[]
+    createMany?: WhatsappSessionCreateManyTaskInputEnvelope
+    connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
   }
 
   export type EnumPriorityFieldUpdateOperationsInput = {
@@ -27702,6 +30152,20 @@ export namespace Prisma {
     deleteMany?: SupplyRequestScalarWhereInput | SupplyRequestScalarWhereInput[]
   }
 
+  export type WhatsappSessionUpdateManyWithoutTaskNestedInput = {
+    create?: XOR<WhatsappSessionCreateWithoutTaskInput, WhatsappSessionUncheckedCreateWithoutTaskInput> | WhatsappSessionCreateWithoutTaskInput[] | WhatsappSessionUncheckedCreateWithoutTaskInput[]
+    connectOrCreate?: WhatsappSessionCreateOrConnectWithoutTaskInput | WhatsappSessionCreateOrConnectWithoutTaskInput[]
+    upsert?: WhatsappSessionUpsertWithWhereUniqueWithoutTaskInput | WhatsappSessionUpsertWithWhereUniqueWithoutTaskInput[]
+    createMany?: WhatsappSessionCreateManyTaskInputEnvelope
+    set?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    disconnect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    delete?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    update?: WhatsappSessionUpdateWithWhereUniqueWithoutTaskInput | WhatsappSessionUpdateWithWhereUniqueWithoutTaskInput[]
+    updateMany?: WhatsappSessionUpdateManyWithWhereWithoutTaskInput | WhatsappSessionUpdateManyWithWhereWithoutTaskInput[]
+    deleteMany?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
+  }
+
   export type MaintenanceAttachmentUncheckedUpdateManyWithoutRequestNestedInput = {
     create?: XOR<MaintenanceAttachmentCreateWithoutRequestInput, MaintenanceAttachmentUncheckedCreateWithoutRequestInput> | MaintenanceAttachmentCreateWithoutRequestInput[] | MaintenanceAttachmentUncheckedCreateWithoutRequestInput[]
     connectOrCreate?: MaintenanceAttachmentCreateOrConnectWithoutRequestInput | MaintenanceAttachmentCreateOrConnectWithoutRequestInput[]
@@ -27756,6 +30220,20 @@ export namespace Prisma {
     update?: SupplyRequestUpdateWithWhereUniqueWithoutRequestInput | SupplyRequestUpdateWithWhereUniqueWithoutRequestInput[]
     updateMany?: SupplyRequestUpdateManyWithWhereWithoutRequestInput | SupplyRequestUpdateManyWithWhereWithoutRequestInput[]
     deleteMany?: SupplyRequestScalarWhereInput | SupplyRequestScalarWhereInput[]
+  }
+
+  export type WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput = {
+    create?: XOR<WhatsappSessionCreateWithoutTaskInput, WhatsappSessionUncheckedCreateWithoutTaskInput> | WhatsappSessionCreateWithoutTaskInput[] | WhatsappSessionUncheckedCreateWithoutTaskInput[]
+    connectOrCreate?: WhatsappSessionCreateOrConnectWithoutTaskInput | WhatsappSessionCreateOrConnectWithoutTaskInput[]
+    upsert?: WhatsappSessionUpsertWithWhereUniqueWithoutTaskInput | WhatsappSessionUpsertWithWhereUniqueWithoutTaskInput[]
+    createMany?: WhatsappSessionCreateManyTaskInputEnvelope
+    set?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    disconnect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    delete?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+    update?: WhatsappSessionUpdateWithWhereUniqueWithoutTaskInput | WhatsappSessionUpdateWithWhereUniqueWithoutTaskInput[]
+    updateMany?: WhatsappSessionUpdateManyWithWhereWithoutTaskInput | WhatsappSessionUpdateManyWithWhereWithoutTaskInput[]
+    deleteMany?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
   }
 
   export type MaintenanceRequestCreateNestedOneWithoutSupplyRequestsInput = {
@@ -27894,6 +30372,42 @@ export namespace Prisma {
     delete?: MaintenanceRequestWhereInput | boolean
     connect?: MaintenanceRequestWhereUniqueInput
     update?: XOR<XOR<MaintenanceRequestUpdateToOneWithWhereWithoutNotificationsInput, MaintenanceRequestUpdateWithoutNotificationsInput>, MaintenanceRequestUncheckedUpdateWithoutNotificationsInput>
+  }
+
+  export type UserCreateNestedOneWithoutWhatsappSessionsInput = {
+    create?: XOR<UserCreateWithoutWhatsappSessionsInput, UserUncheckedCreateWithoutWhatsappSessionsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWhatsappSessionsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type MaintenanceRequestCreateNestedOneWithoutWhatsappSessionsInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutWhatsappSessionsInput, MaintenanceRequestUncheckedCreateWithoutWhatsappSessionsInput>
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutWhatsappSessionsInput
+    connect?: MaintenanceRequestWhereUniqueInput
+  }
+
+  export type NullableEnumWhatsappFlowFieldUpdateOperationsInput = {
+    set?: $Enums.WhatsappFlow | null
+  }
+
+  export type UserUpdateOneWithoutWhatsappSessionsNestedInput = {
+    create?: XOR<UserCreateWithoutWhatsappSessionsInput, UserUncheckedCreateWithoutWhatsappSessionsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWhatsappSessionsInput
+    upsert?: UserUpsertWithoutWhatsappSessionsInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutWhatsappSessionsInput, UserUpdateWithoutWhatsappSessionsInput>, UserUncheckedUpdateWithoutWhatsappSessionsInput>
+  }
+
+  export type MaintenanceRequestUpdateOneWithoutWhatsappSessionsNestedInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutWhatsappSessionsInput, MaintenanceRequestUncheckedCreateWithoutWhatsappSessionsInput>
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutWhatsappSessionsInput
+    upsert?: MaintenanceRequestUpsertWithoutWhatsappSessionsInput
+    disconnect?: MaintenanceRequestWhereInput | boolean
+    delete?: MaintenanceRequestWhereInput | boolean
+    connect?: MaintenanceRequestWhereUniqueInput
+    update?: XOR<XOR<MaintenanceRequestUpdateToOneWithWhereWithoutWhatsappSessionsInput, MaintenanceRequestUpdateWithoutWhatsappSessionsInput>, MaintenanceRequestUncheckedUpdateWithoutWhatsappSessionsInput>
   }
 
   export type NestedUuidFilter<$PrismaModel = never> = {
@@ -28154,6 +30668,13 @@ export namespace Prisma {
     not?: NestedEnumUserTypeFilter<$PrismaModel> | $Enums.UserType
   }
 
+  export type NestedEnumWorkerCategoryNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkerCategory | EnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WorkerCategory[] | ListEnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WorkerCategory[] | ListEnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWorkerCategoryNullableFilter<$PrismaModel> | $Enums.WorkerCategory | null
+  }
+
   export type NestedEnumUserTypeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.UserType | EnumUserTypeFieldRefInput<$PrismaModel>
     in?: $Enums.UserType[] | ListEnumUserTypeFieldRefInput<$PrismaModel>
@@ -28162,6 +30683,39 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumUserTypeFilter<$PrismaModel>
     _max?: NestedEnumUserTypeFilter<$PrismaModel>
+  }
+
+  export type NestedEnumWorkerCategoryNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkerCategory | EnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WorkerCategory[] | ListEnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WorkerCategory[] | ListEnumWorkerCategoryFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWorkerCategoryNullableWithAggregatesFilter<$PrismaModel> | $Enums.WorkerCategory | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumWorkerCategoryNullableFilter<$PrismaModel>
+    _max?: NestedEnumWorkerCategoryNullableFilter<$PrismaModel>
+  }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type NestedDecimalFilter<$PrismaModel = never> = {
@@ -28405,6 +30959,23 @@ export namespace Prisma {
     _max?: NestedEnumSupplyRequestStatusFilter<$PrismaModel>
   }
 
+  export type NestedEnumWhatsappFlowNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.WhatsappFlow | EnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WhatsappFlow[] | ListEnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WhatsappFlow[] | ListEnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWhatsappFlowNullableFilter<$PrismaModel> | $Enums.WhatsappFlow | null
+  }
+
+  export type NestedEnumWhatsappFlowNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WhatsappFlow | EnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WhatsappFlow[] | ListEnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WhatsappFlow[] | ListEnumWhatsappFlowFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWhatsappFlowNullableWithAggregatesFilter<$PrismaModel> | $Enums.WhatsappFlow | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumWhatsappFlowNullableFilter<$PrismaModel>
+    _max?: NestedEnumWhatsappFlowNullableFilter<$PrismaModel>
+  }
+
   export type PropertyCreateWithoutPropertyTypeInput = {
     id?: string
     name: string
@@ -28545,6 +31116,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -28553,6 +31126,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -28571,12 +31163,15 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutOwnedPropertiesInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -28585,6 +31180,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -28603,6 +31217,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutOwnedPropertiesInput = {
@@ -28738,6 +31353,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -28746,6 +31363,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -28764,12 +31400,15 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOwnedPropertiesInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -28778,6 +31417,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -28796,6 +31454,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UnitUpsertWithWhereUniqueWithoutPropertyInput = {
@@ -28921,6 +31580,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -28929,6 +31590,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
@@ -28947,12 +31627,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutUnitInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -28961,6 +31644,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
@@ -28979,6 +31681,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutUnitInput = {
@@ -29011,6 +31714,7 @@ export namespace Prisma {
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUncheckedCreateWithoutUnitInput = {
@@ -29038,6 +31742,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestCreateOrConnectWithoutUnitInput = {
@@ -29228,6 +31933,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -29236,6 +31943,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
@@ -29254,12 +31980,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutUnitInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -29268,6 +31997,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
@@ -29286,6 +32034,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestUpsertWithWhereUniqueWithoutUnitInput = {
@@ -29464,6 +32213,7 @@ export namespace Prisma {
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUncheckedCreateWithoutUserInput = {
@@ -29491,6 +32241,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestCreateOrConnectWithoutUserInput = {
@@ -29528,6 +32279,7 @@ export namespace Prisma {
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUncheckedCreateWithoutAssignedToInput = {
@@ -29555,6 +32307,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestCreateOrConnectWithoutAssignedToInput = {
@@ -30153,6 +32906,38 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type WhatsappSessionCreateWithoutUserInput = {
+    id?: string
+    phone: string
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: Date | string
+    createdAt?: Date | string
+    task?: MaintenanceRequestCreateNestedOneWithoutWhatsappSessionsInput
+  }
+
+  export type WhatsappSessionUncheckedCreateWithoutUserInput = {
+    id?: string
+    phone: string
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    taskId?: string | null
+    updatedAt?: Date | string
+    createdAt?: Date | string
+  }
+
+  export type WhatsappSessionCreateOrConnectWithoutUserInput = {
+    where: WhatsappSessionWhereUniqueInput
+    create: XOR<WhatsappSessionCreateWithoutUserInput, WhatsappSessionUncheckedCreateWithoutUserInput>
+  }
+
+  export type WhatsappSessionCreateManyUserInputEnvelope = {
+    data: WhatsappSessionCreateManyUserInput | WhatsappSessionCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UnitUpsertWithoutTenantInput = {
     update: XOR<UnitUpdateWithoutTenantInput, UnitUncheckedUpdateWithoutTenantInput>
     create: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
@@ -30544,6 +33329,37 @@ export namespace Prisma {
     data: XOR<PropertyUpdateManyMutationInput, PropertyUncheckedUpdateManyWithoutOwnerInput>
   }
 
+  export type WhatsappSessionUpsertWithWhereUniqueWithoutUserInput = {
+    where: WhatsappSessionWhereUniqueInput
+    update: XOR<WhatsappSessionUpdateWithoutUserInput, WhatsappSessionUncheckedUpdateWithoutUserInput>
+    create: XOR<WhatsappSessionCreateWithoutUserInput, WhatsappSessionUncheckedCreateWithoutUserInput>
+  }
+
+  export type WhatsappSessionUpdateWithWhereUniqueWithoutUserInput = {
+    where: WhatsappSessionWhereUniqueInput
+    data: XOR<WhatsappSessionUpdateWithoutUserInput, WhatsappSessionUncheckedUpdateWithoutUserInput>
+  }
+
+  export type WhatsappSessionUpdateManyWithWhereWithoutUserInput = {
+    where: WhatsappSessionScalarWhereInput
+    data: XOR<WhatsappSessionUpdateManyMutationInput, WhatsappSessionUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type WhatsappSessionScalarWhereInput = {
+    AND?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
+    OR?: WhatsappSessionScalarWhereInput[]
+    NOT?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
+    id?: UuidFilter<"WhatsappSession"> | string
+    phone?: StringFilter<"WhatsappSession"> | string
+    userId?: UuidNullableFilter<"WhatsappSession"> | string | null
+    flow?: EnumWhatsappFlowNullableFilter<"WhatsappSession"> | $Enums.WhatsappFlow | null
+    step?: StringNullableFilter<"WhatsappSession"> | string | null
+    data?: JsonNullableFilter<"WhatsappSession">
+    taskId?: UuidNullableFilter<"WhatsappSession"> | string | null
+    updatedAt?: DateTimeFilter<"WhatsappSession"> | Date | string
+    createdAt?: DateTimeFilter<"WhatsappSession"> | Date | string
+  }
+
   export type UnitCreateWithoutTenanciesInput = {
     id?: string
     label: string
@@ -30579,6 +33395,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -30587,6 +33405,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -30605,12 +33442,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTenanciesInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -30619,6 +33459,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -30637,6 +33496,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTenanciesInput = {
@@ -30782,6 +33642,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -30790,6 +33652,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -30808,12 +33689,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTenanciesInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -30822,6 +33706,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -30840,6 +33743,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ChargeUpsertWithWhereUniqueWithoutTenancyInput = {
@@ -30982,6 +33886,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -30990,6 +33896,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -31008,12 +33933,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutDocumentsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -31022,6 +33950,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -31040,6 +33987,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutDocumentsInput = {
@@ -31051,6 +33999,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -31059,6 +34009,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -31077,12 +34046,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutDocumentUploadsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -31091,6 +34063,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -31109,6 +34100,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutDocumentUploadsInput = {
@@ -31247,6 +34239,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31255,6 +34249,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -31273,12 +34286,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDocumentsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31287,6 +34303,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -31305,6 +34340,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutDocumentUploadsInput = {
@@ -31322,6 +34358,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31330,6 +34368,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -31348,12 +34405,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDocumentUploadsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31362,6 +34422,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -31380,6 +34459,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type TenancyCreateWithoutChargesInput = {
@@ -31466,6 +34546,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -31474,6 +34556,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -31492,12 +34593,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutChargesInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -31506,6 +34610,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -31524,6 +34647,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutChargesInput = {
@@ -31535,6 +34659,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -31543,6 +34669,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -31561,12 +34706,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutCreatedChargesInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -31575,6 +34723,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -31593,6 +34760,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutCreatedChargesInput = {
@@ -31785,6 +34953,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31793,6 +34963,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -31811,12 +35000,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutChargesInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31825,6 +35017,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -31843,6 +35054,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutCreatedChargesInput = {
@@ -31860,6 +35072,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31868,6 +35082,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -31886,12 +35119,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedChargesInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31900,6 +35136,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -31918,6 +35173,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PaymentUpsertWithWhereUniqueWithoutChargeInput = {
@@ -31999,6 +35255,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32007,6 +35265,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -32025,12 +35302,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSubmittedPaymentsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32039,6 +35319,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -32057,6 +35356,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSubmittedPaymentsInput = {
@@ -32068,6 +35368,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32076,6 +35378,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -32094,12 +35415,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutReviewedPaymentsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32108,6 +35432,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -32126,6 +35469,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutReviewedPaymentsInput = {
@@ -32231,6 +35575,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32239,6 +35585,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -32257,12 +35622,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSubmittedPaymentsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32271,6 +35639,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -32289,6 +35676,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutReviewedPaymentsInput = {
@@ -32306,6 +35694,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32314,6 +35704,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -32332,12 +35741,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReviewedPaymentsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32346,6 +35758,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -32364,6 +35795,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type FinancialAttachmentUpsertWithWhereUniqueWithoutPaymentInput = {
@@ -32468,6 +35900,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32476,6 +35910,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -32494,12 +35947,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutFinancialUploadsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32508,6 +35964,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -32526,6 +36001,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutFinancialUploadsInput = {
@@ -32642,6 +36118,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32650,6 +36128,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -32668,12 +36165,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinancialUploadsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32682,6 +36182,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -32700,12 +36219,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutRequestsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32714,6 +36236,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -32732,12 +36273,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutRequestsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32746,6 +36290,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -32764,6 +36327,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutRequestsInput = {
@@ -32806,6 +36370,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32814,6 +36380,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -32832,12 +36417,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAssignedRequestsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -32846,6 +36434,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -32864,6 +36471,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAssignedRequestsInput = {
@@ -33003,6 +36611,38 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type WhatsappSessionCreateWithoutTaskInput = {
+    id?: string
+    phone: string
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: Date | string
+    createdAt?: Date | string
+    user?: UserCreateNestedOneWithoutWhatsappSessionsInput
+  }
+
+  export type WhatsappSessionUncheckedCreateWithoutTaskInput = {
+    id?: string
+    phone: string
+    userId?: string | null
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: Date | string
+    createdAt?: Date | string
+  }
+
+  export type WhatsappSessionCreateOrConnectWithoutTaskInput = {
+    where: WhatsappSessionWhereUniqueInput
+    create: XOR<WhatsappSessionCreateWithoutTaskInput, WhatsappSessionUncheckedCreateWithoutTaskInput>
+  }
+
+  export type WhatsappSessionCreateManyTaskInputEnvelope = {
+    data: WhatsappSessionCreateManyTaskInput | WhatsappSessionCreateManyTaskInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserUpsertWithoutRequestsInput = {
     update: XOR<UserUpdateWithoutRequestsInput, UserUncheckedUpdateWithoutRequestsInput>
     create: XOR<UserCreateWithoutRequestsInput, UserUncheckedCreateWithoutRequestsInput>
@@ -33018,6 +36658,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33026,6 +36668,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -33044,12 +36705,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRequestsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33058,6 +36722,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -33076,6 +36759,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UnitUpsertWithoutRequestsInput = {
@@ -33130,6 +36814,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33138,6 +36824,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -33156,12 +36861,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedRequestsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33170,6 +36878,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -33188,6 +36915,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceAttachmentUpsertWithWhereUniqueWithoutRequestInput = {
@@ -33254,6 +36982,22 @@ export namespace Prisma {
     data: XOR<SupplyRequestUpdateManyMutationInput, SupplyRequestUncheckedUpdateManyWithoutRequestInput>
   }
 
+  export type WhatsappSessionUpsertWithWhereUniqueWithoutTaskInput = {
+    where: WhatsappSessionWhereUniqueInput
+    update: XOR<WhatsappSessionUpdateWithoutTaskInput, WhatsappSessionUncheckedUpdateWithoutTaskInput>
+    create: XOR<WhatsappSessionCreateWithoutTaskInput, WhatsappSessionUncheckedCreateWithoutTaskInput>
+  }
+
+  export type WhatsappSessionUpdateWithWhereUniqueWithoutTaskInput = {
+    where: WhatsappSessionWhereUniqueInput
+    data: XOR<WhatsappSessionUpdateWithoutTaskInput, WhatsappSessionUncheckedUpdateWithoutTaskInput>
+  }
+
+  export type WhatsappSessionUpdateManyWithWhereWithoutTaskInput = {
+    where: WhatsappSessionScalarWhereInput
+    data: XOR<WhatsappSessionUpdateManyMutationInput, WhatsappSessionUncheckedUpdateManyWithoutTaskInput>
+  }
+
   export type MaintenanceRequestCreateWithoutSupplyRequestsInput = {
     id?: string
     title: string
@@ -33279,6 +37023,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUncheckedCreateWithoutSupplyRequestsInput = {
@@ -33306,6 +37051,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestCreateOrConnectWithoutSupplyRequestsInput = {
@@ -33317,6 +37063,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -33325,6 +37073,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -33343,12 +37110,15 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSupplyRequestsMadeInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -33357,6 +37127,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -33375,6 +37164,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSupplyRequestsMadeInput = {
@@ -33386,6 +37176,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -33394,6 +37186,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -33412,12 +37223,15 @@ export namespace Prisma {
     documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSupplyRequestsDecidedInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -33426,6 +37240,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -33444,6 +37277,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSupplyRequestsDecidedInput = {
@@ -33487,6 +37321,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateWithoutSupplyRequestsInput = {
@@ -33514,6 +37349,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
   }
 
   export type UserUpsertWithoutSupplyRequestsMadeInput = {
@@ -33531,6 +37367,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33539,6 +37377,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -33557,12 +37414,15 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSupplyRequestsMadeInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33571,6 +37431,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -33589,6 +37468,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutSupplyRequestsDecidedInput = {
@@ -33606,6 +37486,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33614,6 +37496,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -33632,12 +37533,15 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSupplyRequestsDecidedInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33646,6 +37550,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -33664,6 +37587,7 @@ export namespace Prisma {
     documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestCreateWithoutAttachmentsInput = {
@@ -33691,6 +37615,7 @@ export namespace Prisma {
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUncheckedCreateWithoutAttachmentsInput = {
@@ -33718,6 +37643,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestCreateOrConnectWithoutAttachmentsInput = {
@@ -33729,6 +37655,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -33737,6 +37665,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -33755,12 +37702,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAttachmentsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -33769,6 +37719,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -33787,6 +37756,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAttachmentsInput = {
@@ -33830,6 +37800,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateWithoutAttachmentsInput = {
@@ -33857,6 +37828,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
   }
 
   export type UserUpsertWithoutAttachmentsInput = {
@@ -33874,6 +37846,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33882,6 +37856,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -33900,12 +37893,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAttachmentsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33914,6 +37910,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -33932,6 +37947,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestCreateWithoutTaskLogsInput = {
@@ -33959,6 +37975,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUncheckedCreateWithoutTaskLogsInput = {
@@ -33986,6 +38003,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutRequestInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestCreateOrConnectWithoutTaskLogsInput = {
@@ -33997,6 +38015,8 @@ export namespace Prisma {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -34005,6 +38025,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -34023,12 +38062,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTaskLogsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -34037,6 +38079,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -34055,6 +38116,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTaskLogsInput = {
@@ -34098,6 +38160,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateWithoutTaskLogsInput = {
@@ -34125,6 +38188,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
   }
 
   export type UserUpsertWithoutTaskLogsInput = {
@@ -34142,6 +38206,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -34150,6 +38216,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -34168,12 +38253,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTaskLogsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -34182,6 +38270,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -34200,12 +38307,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutNotificationsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -34214,6 +38324,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
@@ -34232,12 +38361,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutNotificationsInput = {
     id: string
     email: string
     userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
     firstName?: string | null
     lastName?: string | null
     phone?: string | null
@@ -34246,6 +38378,25 @@ export namespace Prisma {
     employer?: string | null
     emergencyContactName?: string | null
     emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
@@ -34264,6 +38415,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -34296,6 +38448,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestUncheckedCreateWithoutNotificationsInput = {
@@ -34323,6 +38476,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
     supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
   }
 
   export type MaintenanceRequestCreateOrConnectWithoutNotificationsInput = {
@@ -34345,6 +38499,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -34353,6 +38509,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
@@ -34371,12 +38546,15 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutNotificationsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
     firstName?: NullableStringFieldUpdateOperationsInput | string | null
     lastName?: NullableStringFieldUpdateOperationsInput | string | null
     phone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -34385,6 +38563,25 @@ export namespace Prisma {
     employer?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
     emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
@@ -34403,6 +38600,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestUpsertWithoutNotificationsInput = {
@@ -34441,6 +38639,7 @@ export namespace Prisma {
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateWithoutNotificationsInput = {
@@ -34467,6 +38666,367 @@ export namespace Prisma {
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
+    supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
+  }
+
+  export type UserCreateWithoutWhatsappSessionsInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+  }
+
+  export type UserUncheckedCreateWithoutWhatsappSessionsInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+  }
+
+  export type UserCreateOrConnectWithoutWhatsappSessionsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutWhatsappSessionsInput, UserUncheckedCreateWithoutWhatsappSessionsInput>
+  }
+
+  export type MaintenanceRequestCreateWithoutWhatsappSessionsInput = {
+    id?: string
+    title: string
+    description: string
+    location: string
+    priority?: $Enums.Priority
+    status?: $Enums.RequestStatus
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    completedAt?: Date | string | null
+    enRouteAt?: Date | string | null
+    inProgressAt?: Date | string | null
+    holdReason?: string | null
+    heldAt?: Date | string | null
+    heldFromStatus?: $Enums.RequestStatus | null
+    resumeRequestedAt?: Date | string | null
+    completionCode?: string | null
+    completionCodeAt?: Date | string | null
+    user: UserCreateNestedOneWithoutRequestsInput
+    unit?: UnitCreateNestedOneWithoutRequestsInput
+    assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
+    taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
+    notifications?: NotificationCreateNestedManyWithoutRelatedInput
+    supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+  }
+
+  export type MaintenanceRequestUncheckedCreateWithoutWhatsappSessionsInput = {
+    id?: string
+    userId: string
+    unitId?: string | null
+    title: string
+    description: string
+    location: string
+    priority?: $Enums.Priority
+    status?: $Enums.RequestStatus
+    assignedToId?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    completedAt?: Date | string | null
+    enRouteAt?: Date | string | null
+    inProgressAt?: Date | string | null
+    holdReason?: string | null
+    heldAt?: Date | string | null
+    heldFromStatus?: $Enums.RequestStatus | null
+    resumeRequestedAt?: Date | string | null
+    completionCode?: string | null
+    completionCodeAt?: Date | string | null
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutRequestInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
+    supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+  }
+
+  export type MaintenanceRequestCreateOrConnectWithoutWhatsappSessionsInput = {
+    where: MaintenanceRequestWhereUniqueInput
+    create: XOR<MaintenanceRequestCreateWithoutWhatsappSessionsInput, MaintenanceRequestUncheckedCreateWithoutWhatsappSessionsInput>
+  }
+
+  export type UserUpsertWithoutWhatsappSessionsInput = {
+    update: XOR<UserUpdateWithoutWhatsappSessionsInput, UserUncheckedUpdateWithoutWhatsappSessionsInput>
+    create: XOR<UserCreateWithoutWhatsappSessionsInput, UserUncheckedCreateWithoutWhatsappSessionsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutWhatsappSessionsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutWhatsappSessionsInput, UserUncheckedUpdateWithoutWhatsappSessionsInput>
+  }
+
+  export type UserUpdateWithoutWhatsappSessionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutWhatsappSessionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+  }
+
+  export type MaintenanceRequestUpsertWithoutWhatsappSessionsInput = {
+    update: XOR<MaintenanceRequestUpdateWithoutWhatsappSessionsInput, MaintenanceRequestUncheckedUpdateWithoutWhatsappSessionsInput>
+    create: XOR<MaintenanceRequestCreateWithoutWhatsappSessionsInput, MaintenanceRequestUncheckedCreateWithoutWhatsappSessionsInput>
+    where?: MaintenanceRequestWhereInput
+  }
+
+  export type MaintenanceRequestUpdateToOneWithWhereWithoutWhatsappSessionsInput = {
+    where?: MaintenanceRequestWhereInput
+    data: XOR<MaintenanceRequestUpdateWithoutWhatsappSessionsInput, MaintenanceRequestUncheckedUpdateWithoutWhatsappSessionsInput>
+  }
+
+  export type MaintenanceRequestUpdateWithoutWhatsappSessionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    location?: StringFieldUpdateOperationsInput | string
+    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    enRouteAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inProgressAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    holdReason?: NullableStringFieldUpdateOperationsInput | string | null
+    heldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    heldFromStatus?: NullableEnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus | null
+    resumeRequestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completionCode?: NullableStringFieldUpdateOperationsInput | string | null
+    completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    user?: UserUpdateOneRequiredWithoutRequestsNestedInput
+    unit?: UnitUpdateOneWithoutRequestsNestedInput
+    assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
+    notifications?: NotificationUpdateManyWithoutRelatedNestedInput
+    supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+  }
+
+  export type MaintenanceRequestUncheckedUpdateWithoutWhatsappSessionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    location?: StringFieldUpdateOperationsInput | string
+    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    enRouteAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inProgressAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    holdReason?: NullableStringFieldUpdateOperationsInput | string | null
+    heldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    heldFromStatus?: NullableEnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus | null
+    resumeRequestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completionCode?: NullableStringFieldUpdateOperationsInput | string | null
+    completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutRequestNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
   }
 
@@ -34753,6 +39313,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateWithoutUnitInput = {
@@ -34780,6 +39341,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateManyWithoutUnitInput = {
@@ -35183,6 +39745,17 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type WhatsappSessionCreateManyUserInput = {
+    id?: string
+    phone: string
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    taskId?: string | null
+    updatedAt?: Date | string
+    createdAt?: Date | string
+  }
+
   export type MaintenanceRequestUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
@@ -35208,6 +39781,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateWithoutUserInput = {
@@ -35235,6 +39809,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateManyWithoutUserInput = {
@@ -35285,6 +39860,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateWithoutAssignedToInput = {
@@ -35312,6 +39888,7 @@ export namespace Prisma {
     taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
   }
 
   export type MaintenanceRequestUncheckedUpdateManyWithoutAssignedToInput = {
@@ -35996,6 +40573,39 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type WhatsappSessionUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    task?: MaintenanceRequestUpdateOneWithoutWhatsappSessionsNestedInput
+  }
+
+  export type WhatsappSessionUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    taskId?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WhatsappSessionUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    taskId?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ChargeCreateManyTenancyInput = {
     id?: string
     unitId: string
@@ -36332,6 +40942,17 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type WhatsappSessionCreateManyTaskInput = {
+    id?: string
+    phone: string
+    userId?: string | null
+    flow?: $Enums.WhatsappFlow | null
+    step?: string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: Date | string
+    createdAt?: Date | string
+  }
+
   export type MaintenanceAttachmentUpdateWithoutRequestInput = {
     id?: StringFieldUpdateOperationsInput | string
     fileName?: StringFieldUpdateOperationsInput | string
@@ -36468,6 +41089,39 @@ export namespace Prisma {
     decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WhatsappSessionUpdateWithoutTaskInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneWithoutWhatsappSessionsNestedInput
+  }
+
+  export type WhatsappSessionUncheckedUpdateWithoutTaskInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WhatsappSessionUncheckedUpdateManyWithoutTaskInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    flow?: NullableEnumWhatsappFlowFieldUpdateOperationsInput | $Enums.WhatsappFlow | null
+    step?: NullableStringFieldUpdateOperationsInput | string | null
+    data?: NullableJsonNullValueInput | InputJsonValue
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 

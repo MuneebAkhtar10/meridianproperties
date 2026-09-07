@@ -275,7 +275,7 @@ export default function TaskCard({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium">{request.item}</span>
                   {request.status === "pending" && (
-                    <span className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20">
+                    <span className="inline-flex items-center rounded-full bg-[#0886be]/10 px-2 py-0.5 text-xs font-medium text-[#0886be] ring-1 ring-inset ring-[#0886be]/20">
                       Waiting for admin
                     </span>
                   )}

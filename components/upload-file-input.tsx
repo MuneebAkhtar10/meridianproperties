@@ -134,14 +134,14 @@ export function UploadFileInput({
       />
       {rejection ? (
         <p className="text-xs font-medium text-destructive">{rejection}</p>
-      ) : (
+      ) : hint !== "" ? (
         <p className="text-xs text-muted-foreground">
           {hint ??
             (kind === "image"
               ? `PNG, JPG, GIF or WebP · up to ${MAX_UPLOAD_LABEL}`
               : `PDF, PNG, JPG, GIF or WebP · up to ${MAX_UPLOAD_LABEL}`)}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

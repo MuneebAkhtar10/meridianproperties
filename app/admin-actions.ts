@@ -25,6 +25,7 @@ import { encodedRedirect } from "@/utils/utils";
 import {
   EntityDocumentCategory,
   UserType,
+  WorkerCategory,
 } from "@/lib/generated/prisma/client";
 
 const USER_TYPES = Object.values(UserType) as string[];
@@ -1138,6 +1139,17 @@ export const createUserAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString().trim().toLowerCase();
   const password = formData.get("password")?.toString();
   const userType = formData.get("userType")?.toString();
+  const workerCategoryRaw = formData.get("workerCategory")?.toString();
+  const workerCategory =
+    userType === UserType.worker
+      ? workerCategoryRaw === "third_party"
+        ? "third_party"
+        : "in_house"
+      : null;
+  const companyName =
+    userType === UserType.worker && workerCategory === "third_party"
+      ? formData.get("companyName")?.toString().trim() || null
+      : null;
   const firstName = formData.get("firstName")?.toString().trim() || null;
   const lastName = formData.get("lastName")?.toString().trim() || null;
   const phone = formData.get("phone")?.toString().trim() || null;
@@ -1158,11 +1170,19 @@ export const createUserAction = async (formData: FormData) => {
     );
   }
 
+  if (!phone) {
+    return encodedRedirect(
+      "error",
+      "/protected/users",
+      "Phone number is required.",
+    );
+  }
+
   if (phone && !isValidPhone(phone)) {
     return encodedRedirect(
       "error",
       "/protected/users",
-      "Phone must contain only digits, with an optional leading +, up to 12 characters.",
+      "Phone must contain only digits, with an optional leading +, up to 13 characters.",
     );
   }
 
@@ -1170,7 +1190,7 @@ export const createUserAction = async (formData: FormData) => {
     return encodedRedirect(
       "error",
       "/protected/users",
-      "Emergency phone must contain only digits, with an optional leading +, up to 12 characters.",
+      "Emergency phone must contain only digits, with an optional leading +, up to 13 characters.",
     );
   }
 
@@ -1186,11 +1206,17 @@ export const createUserAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/users", "Invalid role");
   }
 
-  if (await prisma.user.findUnique({ where: { email } })) {
+  // Email only has to be unique per role — a tenant and a worker (etc.) can
+  // share an email, but two accounts of the same role can't.
+  if (
+    await prisma.user.findUnique({
+      where: { email_userType: { email, userType: userType as UserType } },
+    })
+  ) {
     return encodedRedirect(
       "error",
       "/protected/users",
-      "That email is already registered",
+      `That email is already registered as a ${userType}.`,
     );
   }
 
@@ -1199,6 +1225,14 @@ export const createUserAction = async (formData: FormData) => {
       "error",
       "/protected/users",
       "That Civil ID / Resident Card number is already recorded.",
+    );
+  }
+
+  if (phone && (await prisma.user.findUnique({ where: { phone } }))) {
+    return encodedRedirect(
+      "error",
+      "/protected/users",
+      "That phone number is already registered to another account.",
     );
   }
 
@@ -1224,6 +1258,8 @@ export const createUserAction = async (formData: FormData) => {
         id: authUser.user.id,
         email,
         userType: userType as UserType,
+        workerCategory: workerCategory as WorkerCategory | null,
+        companyName,
         firstName,
         lastName,
         phone,
@@ -1232,6 +1268,9 @@ export const createUserAction = async (formData: FormData) => {
         employer,
         emergencyContactName,
         emergencyContactPhone,
+        ...(userType === UserType.worker && workerCategory === "in_house"
+          ? parseHrFields(formData)
+          : {}),
       },
     });
   } catch (error) {
@@ -1345,6 +1384,8 @@ export const updateUserTypeAction = async (formData: FormData) => {
 
   const userId = formData.get("userId")?.toString();
   const userType = formData.get("userType")?.toString();
+  const workerCategoryRaw = formData.get("workerCategory")?.toString();
+  const companyNameRaw = formData.get("companyName")?.toString().trim();
 
   if (!userId || !userType) {
     return encodedRedirect(
@@ -1366,9 +1407,24 @@ export const updateUserTypeAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/users", "Invalid role");
   }
 
+  const workerCategory =
+    userType === UserType.worker
+      ? workerCategoryRaw === "third_party"
+        ? "third_party"
+        : "in_house"
+      : null;
+  const companyName =
+    userType === UserType.worker && workerCategory === "third_party"
+      ? companyNameRaw || null
+      : null;
+
   await prisma.user.update({
     where: { id: userId },
-    data: { userType: userType as UserType },
+    data: {
+      userType: userType as UserType,
+      workerCategory: workerCategory as WorkerCategory | null,
+      companyName,
+    },
   });
 
   // Someone who is no longer a tenant should not still hold an apartment.
@@ -1422,11 +1478,19 @@ export const updateUserProfileAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/users", "Invalid person.");
   }
 
+  if (!phone) {
+    return encodedRedirect(
+      "error",
+      "/protected/users",
+      "Phone number is required.",
+    );
+  }
+
   if (phone && !isValidPhone(phone)) {
     return encodedRedirect(
       "error",
       "/protected/users",
-      "Phone must contain only digits, with an optional leading +, up to 12 characters.",
+      "Phone must contain only digits, with an optional leading +, up to 13 characters.",
     );
   }
 
@@ -1434,7 +1498,7 @@ export const updateUserProfileAction = async (formData: FormData) => {
     return encodedRedirect(
       "error",
       "/protected/users",
-      "Emergency phone must contain only digits, with an optional leading +, up to 12 characters.",
+      "Emergency phone must contain only digits, with an optional leading +, up to 13 characters.",
     );
   }
 
@@ -1449,6 +1513,20 @@ export const updateUserProfileAction = async (formData: FormData) => {
       "error",
       "/protected/users",
       "That Civil ID / Resident Card number is already recorded.",
+    );
+  }
+
+  if (
+    phone &&
+    (await prisma.user.findFirst({
+      where: { phone, id: { not: userId } },
+      select: { id: true },
+    }))
+  ) {
+    return encodedRedirect(
+      "error",
+      "/protected/users",
+      "That phone number is already registered to another account.",
     );
   }
 
@@ -1474,6 +1552,101 @@ export const updateUserProfileAction = async (formData: FormData) => {
     "success",
     "/protected/users",
     "Oman identity and contact record updated.",
+  );
+};
+
+/** Parses a <input type="date"> value ("yyyy-MM-dd") into a Date, or null
+ * if left blank. Doesn't validate the format — the browser's date input
+ * already only ever submits that shape or an empty string. */
+function parseDateInput(value: FormDataEntryValue | null): Date | null {
+  const str = value?.toString().trim();
+  return str ? new Date(`${str}T00:00:00.000Z`) : null;
+}
+
+/** Same as parseDateInput, but for an issuance date, which can never be in
+ * the future — a document can't be issued before today. The date input's
+ * `max` attribute already stops this in a normal browser, but that's only
+ * a UI hint, so it's enforced again here rather than trusted from the
+ * client. Anything past today is simply dropped (saved as unset) rather
+ * than erroring the whole save over one bad field. */
+function parseIssuanceDateInput(value: FormDataEntryValue | null): Date | null {
+  const date = parseDateInput(value);
+  if (date && date.getTime() > Date.now()) return null;
+  return date;
+}
+
+/** Every HR document field, read off a FormData — shared between account
+ * creation and the standalone HR-record edit, since both submit the same
+ * shape (see components/worker-hr-modal.tsx). Vehicle documents are only
+ * kept if "hasVehicle" is checked, so unchecking it later clears them
+ * rather than leaving stale Mulkiya/insurance dates behind. */
+function parseHrFields(formData: FormData) {
+  const hasVehicle = formData.get("hasVehicle") === "on";
+
+  return {
+    passportNumber: formData.get("passportNumber")?.toString().trim() || null,
+    passportIssuance: parseIssuanceDateInput(
+      formData.get("passportIssuance"),
+    ),
+    passportExpiry: parseDateInput(formData.get("passportExpiry")),
+    drivingLicenseNumber:
+      formData.get("drivingLicenseNumber")?.toString().trim() || null,
+    drivingLicenseIssuance: parseIssuanceDateInput(
+      formData.get("drivingLicenseIssuance"),
+    ),
+    drivingLicenseExpiry: parseDateInput(formData.get("drivingLicenseExpiry")),
+    visaNumber: formData.get("visaNumber")?.toString().trim() || null,
+    visaIssuance: parseIssuanceDateInput(formData.get("visaIssuance")),
+    visaExpiry: parseDateInput(formData.get("visaExpiry")),
+    civilIdIssuance: parseIssuanceDateInput(formData.get("civilIdIssuance")),
+    civilIdExpiry: parseDateInput(formData.get("civilIdExpiry")),
+    hasVehicle,
+    vehicleRegistrationNumber: hasVehicle
+      ? formData.get("vehicleRegistrationNumber")?.toString().trim() || null
+      : null,
+    vehicleRegistrationIssuance: hasVehicle
+      ? parseIssuanceDateInput(formData.get("vehicleRegistrationIssuance"))
+      : null,
+    vehicleRegistrationExpiry: hasVehicle
+      ? parseDateInput(formData.get("vehicleRegistrationExpiry"))
+      : null,
+    carInsuranceNumber: hasVehicle
+      ? formData.get("carInsuranceNumber")?.toString().trim() || null
+      : null,
+    carInsuranceIssuance: hasVehicle
+      ? parseIssuanceDateInput(formData.get("carInsuranceIssuance"))
+      : null,
+    carInsuranceExpiry: hasVehicle
+      ? parseDateInput(formData.get("carInsuranceExpiry"))
+      : null,
+  };
+}
+
+/** HR paperwork for an in-house worker: passport, work visa, Civil ID
+ * expiry, and (optionally) car insurance. Separate from
+ * updateUserProfileAction since it's a different concern edited from its
+ * own modal, not the identity & contact form. */
+export const updateWorkerHrAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+
+  const userId = formData.get("userId")?.toString();
+
+  if (!userId) {
+    return encodedRedirect("error", "/protected/users", "Invalid person.");
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: parseHrFields(formData),
+  });
+
+  await publishDirectoryChange([userId]);
+  revalidatePath("/protected/users");
+
+  return encodedRedirect(
+    "success",
+    "/protected/users",
+    "HR document record updated.",
   );
 };
 
