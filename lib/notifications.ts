@@ -8,6 +8,7 @@ import {
   renderInvoiceEmail,
 } from "@/lib/email";
 import { sendWhatsApp, sendWhatsAppTemplate } from "@/lib/whatsapp";
+import { generateWhatsAppMessage } from "@/lib/gemini";
 import { syncWorkerWhatsappSession } from "@/lib/whatsapp-session";
 import { UserType } from "@/lib/generated/prisma/client";
 import type { RequestStatus } from "@/lib/generated/prisma/client";
@@ -101,14 +102,21 @@ async function dispatchExternalChannels(
           );
         }
       } else if (user.phone) {
+        const phone = user.phone;
         const detailLines = row.details
           ?.map((d) => `${d.label}: ${d.value}`)
           .join("\n");
+        const fallbackBody = `*${row.title}*\n${row.message}${detailLines ? `\n\n${detailLines}` : ""}`;
+
         tasks.push(
-          sendWhatsApp({
-            to: user.phone,
-            body: `*${row.title}*\n${row.message}${detailLines ? `\n\n${detailLines}` : ""}`,
-          }),
+          (async () => {
+            const generated = await generateWhatsAppMessage({
+              title: row.title,
+              message: row.message,
+              details: row.details,
+            });
+            await sendWhatsApp({ to: phone, body: generated ?? fallbackBody });
+          })(),
         );
       }
 
@@ -124,9 +132,9 @@ async function dispatchExternalChannels(
 async function createNotification(args: {
   data: NotificationRow & ChannelExtras;
 }) {
-  const { details, emailHtml, ...dbData } = args.data;
+  const { details, emailHtml, whatsappTemplate, ...dbData } = args.data;
   const created = await prisma.notification.create({ data: dbData });
-  await dispatchExternalChannels([{ ...dbData, details, emailHtml }]);
+  await dispatchExternalChannels([{ ...dbData, details, emailHtml, whatsappTemplate }]);
   return created;
 }
 
@@ -134,7 +142,9 @@ async function createNotification(args: {
 async function createNotifications(args: {
   data: (NotificationRow & ChannelExtras)[];
 }) {
-  const dbData = args.data.map(({ details, emailHtml, ...rest }) => rest);
+  const dbData = args.data.map(
+    ({ details, emailHtml, whatsappTemplate, ...rest }) => rest,
+  );
   const created = await prisma.notification.createMany({ data: dbData });
   await dispatchExternalChannels(args.data);
   return created;
@@ -906,13 +916,29 @@ export async function notifyPropertyAssigned(input: {
   ownerId: string;
   propertyId: string;
   propertyName: string;
+  /** Included when the property has a service charge configured — surfaced
+   * as details on the email/WhatsApp message so the owner knows what
+   * they're on the hook for from day one. */
+  serviceCharge?: { amount: string; cycleMonths: number; dueDate: string };
 }): Promise<void> {
+  const details = input.serviceCharge
+    ? [
+        { label: "Service charge", value: input.serviceCharge.amount },
+        {
+          label: "Billing cycle",
+          value: `Every ${input.serviceCharge.cycleMonths} month${input.serviceCharge.cycleMonths === 1 ? "" : "s"}`,
+        },
+        { label: "Due date", value: input.serviceCharge.dueDate },
+      ]
+    : undefined;
+
   await createNotification({
     data: {
       userId: input.ownerId,
       title: "Property Assigned to You",
       message: `“${input.propertyName}” has been assigned to you.`,
       href: `/protected/properties/${input.propertyId}`,
+      ...(details && { details }),
     },
   });
 

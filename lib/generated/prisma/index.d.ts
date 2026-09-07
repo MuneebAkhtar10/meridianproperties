@@ -2411,11 +2411,13 @@ export namespace Prisma {
   export type PropertyCountOutputType = {
     units: number
     documents: number
+    commonAreaRequests: number
   }
 
   export type PropertyCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     units?: boolean | PropertyCountOutputTypeCountUnitsArgs
     documents?: boolean | PropertyCountOutputTypeCountDocumentsArgs
+    commonAreaRequests?: boolean | PropertyCountOutputTypeCountCommonAreaRequestsArgs
   }
 
   // Custom InputTypes
@@ -2441,6 +2443,13 @@ export namespace Prisma {
    */
   export type PropertyCountOutputTypeCountDocumentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EntityDocumentWhereInput
+  }
+
+  /**
+   * PropertyCountOutputType without action
+   */
+  export type PropertyCountOutputTypeCountCommonAreaRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MaintenanceRequestWhereInput
   }
 
 
@@ -4364,6 +4373,7 @@ export namespace Prisma {
     owner?: boolean | Property$ownerArgs<ExtArgs>
     units?: boolean | Property$unitsArgs<ExtArgs>
     documents?: boolean | Property$documentsArgs<ExtArgs>
+    commonAreaRequests?: boolean | Property$commonAreaRequestsArgs<ExtArgs>
     _count?: boolean | PropertyCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["property"]>
 
@@ -4449,6 +4459,7 @@ export namespace Prisma {
     owner?: boolean | Property$ownerArgs<ExtArgs>
     units?: boolean | Property$unitsArgs<ExtArgs>
     documents?: boolean | Property$documentsArgs<ExtArgs>
+    commonAreaRequests?: boolean | Property$commonAreaRequestsArgs<ExtArgs>
     _count?: boolean | PropertyCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type PropertyIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4467,6 +4478,7 @@ export namespace Prisma {
       owner: Prisma.$UserPayload<ExtArgs> | null
       units: Prisma.$UnitPayload<ExtArgs>[]
       documents: Prisma.$EntityDocumentPayload<ExtArgs>[]
+      commonAreaRequests: Prisma.$MaintenanceRequestPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -4910,6 +4922,7 @@ export namespace Prisma {
     owner<T extends Property$ownerArgs<ExtArgs> = {}>(args?: Subset<T, Property$ownerArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     units<T extends Property$unitsArgs<ExtArgs> = {}>(args?: Subset<T, Property$unitsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UnitPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     documents<T extends Property$documentsArgs<ExtArgs> = {}>(args?: Subset<T, Property$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EntityDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    commonAreaRequests<T extends Property$commonAreaRequestsArgs<ExtArgs> = {}>(args?: Subset<T, Property$commonAreaRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MaintenanceRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5425,6 +5438,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: EntityDocumentScalarFieldEnum | EntityDocumentScalarFieldEnum[]
+  }
+
+  /**
+   * Property.commonAreaRequests
+   */
+  export type Property$commonAreaRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MaintenanceRequest
+     */
+    select?: MaintenanceRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MaintenanceRequest
+     */
+    omit?: MaintenanceRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MaintenanceRequestInclude<ExtArgs> | null
+    where?: MaintenanceRequestWhereInput
+    orderBy?: MaintenanceRequestOrderByWithRelationInput | MaintenanceRequestOrderByWithRelationInput[]
+    cursor?: MaintenanceRequestWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: MaintenanceRequestScalarFieldEnum | MaintenanceRequestScalarFieldEnum[]
   }
 
   /**
@@ -15153,6 +15190,7 @@ export namespace Prisma {
     id: string | null
     userId: string | null
     unitId: string | null
+    propertyId: string | null
     title: string | null
     description: string | null
     location: string | null
@@ -15177,6 +15215,7 @@ export namespace Prisma {
     id: string | null
     userId: string | null
     unitId: string | null
+    propertyId: string | null
     title: string | null
     description: string | null
     location: string | null
@@ -15201,6 +15240,7 @@ export namespace Prisma {
     id: number
     userId: number
     unitId: number
+    propertyId: number
     title: number
     description: number
     location: number
@@ -15227,6 +15267,7 @@ export namespace Prisma {
     id?: true
     userId?: true
     unitId?: true
+    propertyId?: true
     title?: true
     description?: true
     location?: true
@@ -15251,6 +15292,7 @@ export namespace Prisma {
     id?: true
     userId?: true
     unitId?: true
+    propertyId?: true
     title?: true
     description?: true
     location?: true
@@ -15275,6 +15317,7 @@ export namespace Prisma {
     id?: true
     userId?: true
     unitId?: true
+    propertyId?: true
     title?: true
     description?: true
     location?: true
@@ -15372,6 +15415,7 @@ export namespace Prisma {
     id: string
     userId: string
     unitId: string | null
+    propertyId: string | null
     title: string
     description: string
     location: string
@@ -15413,6 +15457,7 @@ export namespace Prisma {
     id?: boolean
     userId?: boolean
     unitId?: boolean
+    propertyId?: boolean
     title?: boolean
     description?: boolean
     location?: boolean
@@ -15433,6 +15478,7 @@ export namespace Prisma {
     completionCodeAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
+    property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
     attachments?: boolean | MaintenanceRequest$attachmentsArgs<ExtArgs>
     taskLogs?: boolean | MaintenanceRequest$taskLogsArgs<ExtArgs>
@@ -15446,6 +15492,7 @@ export namespace Prisma {
     id?: boolean
     userId?: boolean
     unitId?: boolean
+    propertyId?: boolean
     title?: boolean
     description?: boolean
     location?: boolean
@@ -15466,6 +15513,7 @@ export namespace Prisma {
     completionCodeAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
+    property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
   }, ExtArgs["result"]["maintenanceRequest"]>
 
@@ -15473,6 +15521,7 @@ export namespace Prisma {
     id?: boolean
     userId?: boolean
     unitId?: boolean
+    propertyId?: boolean
     title?: boolean
     description?: boolean
     location?: boolean
@@ -15493,6 +15542,7 @@ export namespace Prisma {
     completionCodeAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
+    property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
   }, ExtArgs["result"]["maintenanceRequest"]>
 
@@ -15500,6 +15550,7 @@ export namespace Prisma {
     id?: boolean
     userId?: boolean
     unitId?: boolean
+    propertyId?: boolean
     title?: boolean
     description?: boolean
     location?: boolean
@@ -15520,10 +15571,11 @@ export namespace Prisma {
     completionCodeAt?: boolean
   }
 
-  export type MaintenanceRequestOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "unitId" | "title" | "description" | "location" | "priority" | "status" | "assignedToId" | "notes" | "createdAt" | "updatedAt" | "completedAt" | "enRouteAt" | "inProgressAt" | "holdReason" | "heldAt" | "heldFromStatus" | "resumeRequestedAt" | "completionCode" | "completionCodeAt", ExtArgs["result"]["maintenanceRequest"]>
+  export type MaintenanceRequestOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "unitId" | "propertyId" | "title" | "description" | "location" | "priority" | "status" | "assignedToId" | "notes" | "createdAt" | "updatedAt" | "completedAt" | "enRouteAt" | "inProgressAt" | "holdReason" | "heldAt" | "heldFromStatus" | "resumeRequestedAt" | "completionCode" | "completionCodeAt", ExtArgs["result"]["maintenanceRequest"]>
   export type MaintenanceRequestInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
+    property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
     attachments?: boolean | MaintenanceRequest$attachmentsArgs<ExtArgs>
     taskLogs?: boolean | MaintenanceRequest$taskLogsArgs<ExtArgs>
@@ -15535,11 +15587,13 @@ export namespace Prisma {
   export type MaintenanceRequestIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
+    property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
   }
   export type MaintenanceRequestIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
+    property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
   }
 
@@ -15548,6 +15602,7 @@ export namespace Prisma {
     objects: {
       user: Prisma.$UserPayload<ExtArgs>
       unit: Prisma.$UnitPayload<ExtArgs> | null
+      property: Prisma.$PropertyPayload<ExtArgs> | null
       assignedTo: Prisma.$UserPayload<ExtArgs> | null
       attachments: Prisma.$MaintenanceAttachmentPayload<ExtArgs>[]
       taskLogs: Prisma.$TaskLogPayload<ExtArgs>[]
@@ -15560,13 +15615,22 @@ export namespace Prisma {
       userId: string
       /**
        * The apartment the issue is in. This is what tells anyone which flat in which
-       * building to actually go to.
+       * building to actually go to. Null for a common-area request — one that
+       * belongs to the property as a whole (lobby, parking, garden) rather than
+       * a specific tenant's unit. Exactly one of unitId/propertyId is set.
        */
       unitId: string | null
+      /**
+       * Set only for a common-area request (unitId null) — which property the
+       * shared space belongs to. Redundant with unit.propertyId otherwise, so
+       * left null when unitId is set rather than duplicating it.
+       */
+      propertyId: string | null
       title: string
       description: string
       /**
-       * Room within the apartment, e.g. "Kitchen".
+       * Room within the apartment (e.g. "Kitchen"), or the common area itself
+       * (e.g. "Lobby", "Parking") when unitId is null.
        */
       location: string
       priority: $Enums.Priority
@@ -15992,6 +16056,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     unit<T extends MaintenanceRequest$unitArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$unitArgs<ExtArgs>>): Prisma__UnitClient<$Result.GetResult<Prisma.$UnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    property<T extends MaintenanceRequest$propertyArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$propertyArgs<ExtArgs>>): Prisma__PropertyClient<$Result.GetResult<Prisma.$PropertyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     assignedTo<T extends MaintenanceRequest$assignedToArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$assignedToArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     attachments<T extends MaintenanceRequest$attachmentsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MaintenanceAttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     taskLogs<T extends MaintenanceRequest$taskLogsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$taskLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -16030,6 +16095,7 @@ export namespace Prisma {
     readonly id: FieldRef<"MaintenanceRequest", 'String'>
     readonly userId: FieldRef<"MaintenanceRequest", 'String'>
     readonly unitId: FieldRef<"MaintenanceRequest", 'String'>
+    readonly propertyId: FieldRef<"MaintenanceRequest", 'String'>
     readonly title: FieldRef<"MaintenanceRequest", 'String'>
     readonly description: FieldRef<"MaintenanceRequest", 'String'>
     readonly location: FieldRef<"MaintenanceRequest", 'String'>
@@ -16465,6 +16531,25 @@ export namespace Prisma {
      */
     include?: UnitInclude<ExtArgs> | null
     where?: UnitWhereInput
+  }
+
+  /**
+   * MaintenanceRequest.property
+   */
+  export type MaintenanceRequest$propertyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Property
+     */
+    select?: PropertySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Property
+     */
+    omit?: PropertyOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyInclude<ExtArgs> | null
+    where?: PropertyWhereInput
   }
 
   /**
@@ -22716,6 +22801,7 @@ export namespace Prisma {
     id: 'id',
     userId: 'userId',
     unitId: 'unitId',
+    propertyId: 'propertyId',
     title: 'title',
     description: 'description',
     location: 'location',
@@ -23252,6 +23338,7 @@ export namespace Prisma {
     owner?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     units?: UnitListRelationFilter
     documents?: EntityDocumentListRelationFilter
+    commonAreaRequests?: MaintenanceRequestListRelationFilter
   }
 
   export type PropertyOrderByWithRelationInput = {
@@ -23280,6 +23367,7 @@ export namespace Prisma {
     owner?: UserOrderByWithRelationInput
     units?: UnitOrderByRelationAggregateInput
     documents?: EntityDocumentOrderByRelationAggregateInput
+    commonAreaRequests?: MaintenanceRequestOrderByRelationAggregateInput
   }
 
   export type PropertyWhereUniqueInput = Prisma.AtLeast<{
@@ -23311,6 +23399,7 @@ export namespace Prisma {
     owner?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     units?: UnitListRelationFilter
     documents?: EntityDocumentListRelationFilter
+    commonAreaRequests?: MaintenanceRequestListRelationFilter
   }, "id">
 
   export type PropertyOrderByWithAggregationInput = {
@@ -24266,6 +24355,7 @@ export namespace Prisma {
     id?: UuidFilter<"MaintenanceRequest"> | string
     userId?: UuidFilter<"MaintenanceRequest"> | string
     unitId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
+    propertyId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
     title?: StringFilter<"MaintenanceRequest"> | string
     description?: StringFilter<"MaintenanceRequest"> | string
     location?: StringFilter<"MaintenanceRequest"> | string
@@ -24286,6 +24376,7 @@ export namespace Prisma {
     completionCodeAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     unit?: XOR<UnitNullableScalarRelationFilter, UnitWhereInput> | null
+    property?: XOR<PropertyNullableScalarRelationFilter, PropertyWhereInput> | null
     assignedTo?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     attachments?: MaintenanceAttachmentListRelationFilter
     taskLogs?: TaskLogListRelationFilter
@@ -24298,6 +24389,7 @@ export namespace Prisma {
     id?: SortOrder
     userId?: SortOrder
     unitId?: SortOrderInput | SortOrder
+    propertyId?: SortOrderInput | SortOrder
     title?: SortOrder
     description?: SortOrder
     location?: SortOrder
@@ -24318,6 +24410,7 @@ export namespace Prisma {
     completionCodeAt?: SortOrderInput | SortOrder
     user?: UserOrderByWithRelationInput
     unit?: UnitOrderByWithRelationInput
+    property?: PropertyOrderByWithRelationInput
     assignedTo?: UserOrderByWithRelationInput
     attachments?: MaintenanceAttachmentOrderByRelationAggregateInput
     taskLogs?: TaskLogOrderByRelationAggregateInput
@@ -24333,6 +24426,7 @@ export namespace Prisma {
     NOT?: MaintenanceRequestWhereInput | MaintenanceRequestWhereInput[]
     userId?: UuidFilter<"MaintenanceRequest"> | string
     unitId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
+    propertyId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
     title?: StringFilter<"MaintenanceRequest"> | string
     description?: StringFilter<"MaintenanceRequest"> | string
     location?: StringFilter<"MaintenanceRequest"> | string
@@ -24353,6 +24447,7 @@ export namespace Prisma {
     completionCodeAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     unit?: XOR<UnitNullableScalarRelationFilter, UnitWhereInput> | null
+    property?: XOR<PropertyNullableScalarRelationFilter, PropertyWhereInput> | null
     assignedTo?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     attachments?: MaintenanceAttachmentListRelationFilter
     taskLogs?: TaskLogListRelationFilter
@@ -24365,6 +24460,7 @@ export namespace Prisma {
     id?: SortOrder
     userId?: SortOrder
     unitId?: SortOrderInput | SortOrder
+    propertyId?: SortOrderInput | SortOrder
     title?: SortOrder
     description?: SortOrder
     location?: SortOrder
@@ -24395,6 +24491,7 @@ export namespace Prisma {
     id?: UuidWithAggregatesFilter<"MaintenanceRequest"> | string
     userId?: UuidWithAggregatesFilter<"MaintenanceRequest"> | string
     unitId?: UuidNullableWithAggregatesFilter<"MaintenanceRequest"> | string | null
+    propertyId?: UuidNullableWithAggregatesFilter<"MaintenanceRequest"> | string | null
     title?: StringWithAggregatesFilter<"MaintenanceRequest"> | string
     description?: StringWithAggregatesFilter<"MaintenanceRequest"> | string
     location?: StringWithAggregatesFilter<"MaintenanceRequest"> | string
@@ -24948,6 +25045,7 @@ export namespace Prisma {
     owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
     units?: UnitCreateNestedManyWithoutPropertyInput
     documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateInput = {
@@ -24974,6 +25072,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUpdateInput = {
@@ -25000,6 +25099,7 @@ export namespace Prisma {
     owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
     units?: UnitUpdateManyWithoutPropertyNestedInput
     documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateInput = {
@@ -25026,6 +25126,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
     documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyCreateManyInput = {
@@ -26129,6 +26230,7 @@ export namespace Prisma {
     completionCodeAt?: Date | string | null
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
@@ -26141,6 +26243,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -26187,6 +26290,7 @@ export namespace Prisma {
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
@@ -26199,6 +26303,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -26228,6 +26333,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -26273,6 +26379,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -26977,11 +27084,21 @@ export namespace Prisma {
     none?: EntityDocumentWhereInput
   }
 
+  export type MaintenanceRequestListRelationFilter = {
+    every?: MaintenanceRequestWhereInput
+    some?: MaintenanceRequestWhereInput
+    none?: MaintenanceRequestWhereInput
+  }
+
   export type UnitOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
   export type EntityDocumentOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type MaintenanceRequestOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -27133,12 +27250,6 @@ export namespace Prisma {
     isNot?: PropertyWhereInput
   }
 
-  export type MaintenanceRequestListRelationFilter = {
-    every?: MaintenanceRequestWhereInput
-    some?: MaintenanceRequestWhereInput
-    none?: MaintenanceRequestWhereInput
-  }
-
   export type TenancyListRelationFilter = {
     every?: TenancyWhereInput
     some?: TenancyWhereInput
@@ -27149,10 +27260,6 @@ export namespace Prisma {
     every?: ChargeWhereInput
     some?: ChargeWhereInput
     none?: ChargeWhereInput
-  }
-
-  export type MaintenanceRequestOrderByRelationAggregateInput = {
-    _count?: SortOrder
   }
 
   export type TenancyOrderByRelationAggregateInput = {
@@ -28017,6 +28124,7 @@ export namespace Prisma {
     id?: SortOrder
     userId?: SortOrder
     unitId?: SortOrder
+    propertyId?: SortOrder
     title?: SortOrder
     description?: SortOrder
     location?: SortOrder
@@ -28041,6 +28149,7 @@ export namespace Prisma {
     id?: SortOrder
     userId?: SortOrder
     unitId?: SortOrder
+    propertyId?: SortOrder
     title?: SortOrder
     description?: SortOrder
     location?: SortOrder
@@ -28065,6 +28174,7 @@ export namespace Prisma {
     id?: SortOrder
     userId?: SortOrder
     unitId?: SortOrder
+    propertyId?: SortOrder
     title?: SortOrder
     description?: SortOrder
     location?: SortOrder
@@ -28454,6 +28564,13 @@ export namespace Prisma {
     connect?: EntityDocumentWhereUniqueInput | EntityDocumentWhereUniqueInput[]
   }
 
+  export type MaintenanceRequestCreateNestedManyWithoutPropertyInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutPropertyInput, MaintenanceRequestUncheckedCreateWithoutPropertyInput> | MaintenanceRequestCreateWithoutPropertyInput[] | MaintenanceRequestUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutPropertyInput | MaintenanceRequestCreateOrConnectWithoutPropertyInput[]
+    createMany?: MaintenanceRequestCreateManyPropertyInputEnvelope
+    connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+  }
+
   export type UnitUncheckedCreateNestedManyWithoutPropertyInput = {
     create?: XOR<UnitCreateWithoutPropertyInput, UnitUncheckedCreateWithoutPropertyInput> | UnitCreateWithoutPropertyInput[] | UnitUncheckedCreateWithoutPropertyInput[]
     connectOrCreate?: UnitCreateOrConnectWithoutPropertyInput | UnitCreateOrConnectWithoutPropertyInput[]
@@ -28466,6 +28583,13 @@ export namespace Prisma {
     connectOrCreate?: EntityDocumentCreateOrConnectWithoutPropertyInput | EntityDocumentCreateOrConnectWithoutPropertyInput[]
     createMany?: EntityDocumentCreateManyPropertyInputEnvelope
     connect?: EntityDocumentWhereUniqueInput | EntityDocumentWhereUniqueInput[]
+  }
+
+  export type MaintenanceRequestUncheckedCreateNestedManyWithoutPropertyInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutPropertyInput, MaintenanceRequestUncheckedCreateWithoutPropertyInput> | MaintenanceRequestCreateWithoutPropertyInput[] | MaintenanceRequestUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutPropertyInput | MaintenanceRequestCreateOrConnectWithoutPropertyInput[]
+    createMany?: MaintenanceRequestCreateManyPropertyInputEnvelope
+    connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
   }
 
   export type NullableDecimalFieldUpdateOperationsInput = {
@@ -28534,6 +28658,20 @@ export namespace Prisma {
     deleteMany?: EntityDocumentScalarWhereInput | EntityDocumentScalarWhereInput[]
   }
 
+  export type MaintenanceRequestUpdateManyWithoutPropertyNestedInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutPropertyInput, MaintenanceRequestUncheckedCreateWithoutPropertyInput> | MaintenanceRequestCreateWithoutPropertyInput[] | MaintenanceRequestUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutPropertyInput | MaintenanceRequestCreateOrConnectWithoutPropertyInput[]
+    upsert?: MaintenanceRequestUpsertWithWhereUniqueWithoutPropertyInput | MaintenanceRequestUpsertWithWhereUniqueWithoutPropertyInput[]
+    createMany?: MaintenanceRequestCreateManyPropertyInputEnvelope
+    set?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    disconnect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    delete?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    update?: MaintenanceRequestUpdateWithWhereUniqueWithoutPropertyInput | MaintenanceRequestUpdateWithWhereUniqueWithoutPropertyInput[]
+    updateMany?: MaintenanceRequestUpdateManyWithWhereWithoutPropertyInput | MaintenanceRequestUpdateManyWithWhereWithoutPropertyInput[]
+    deleteMany?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
+  }
+
   export type UnitUncheckedUpdateManyWithoutPropertyNestedInput = {
     create?: XOR<UnitCreateWithoutPropertyInput, UnitUncheckedCreateWithoutPropertyInput> | UnitCreateWithoutPropertyInput[] | UnitUncheckedCreateWithoutPropertyInput[]
     connectOrCreate?: UnitCreateOrConnectWithoutPropertyInput | UnitCreateOrConnectWithoutPropertyInput[]
@@ -28560,6 +28698,20 @@ export namespace Prisma {
     update?: EntityDocumentUpdateWithWhereUniqueWithoutPropertyInput | EntityDocumentUpdateWithWhereUniqueWithoutPropertyInput[]
     updateMany?: EntityDocumentUpdateManyWithWhereWithoutPropertyInput | EntityDocumentUpdateManyWithWhereWithoutPropertyInput[]
     deleteMany?: EntityDocumentScalarWhereInput | EntityDocumentScalarWhereInput[]
+  }
+
+  export type MaintenanceRequestUncheckedUpdateManyWithoutPropertyNestedInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutPropertyInput, MaintenanceRequestUncheckedCreateWithoutPropertyInput> | MaintenanceRequestCreateWithoutPropertyInput[] | MaintenanceRequestUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutPropertyInput | MaintenanceRequestCreateOrConnectWithoutPropertyInput[]
+    upsert?: MaintenanceRequestUpsertWithWhereUniqueWithoutPropertyInput | MaintenanceRequestUpsertWithWhereUniqueWithoutPropertyInput[]
+    createMany?: MaintenanceRequestCreateManyPropertyInputEnvelope
+    set?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    disconnect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    delete?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    update?: MaintenanceRequestUpdateWithWhereUniqueWithoutPropertyInput | MaintenanceRequestUpdateWithWhereUniqueWithoutPropertyInput[]
+    updateMany?: MaintenanceRequestUpdateManyWithWhereWithoutPropertyInput | MaintenanceRequestUpdateManyWithWhereWithoutPropertyInput[]
+    deleteMany?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
   }
 
   export type PropertyCreateNestedOneWithoutUnitsInput = {
@@ -29980,6 +30132,12 @@ export namespace Prisma {
     connect?: UnitWhereUniqueInput
   }
 
+  export type PropertyCreateNestedOneWithoutCommonAreaRequestsInput = {
+    create?: XOR<PropertyCreateWithoutCommonAreaRequestsInput, PropertyUncheckedCreateWithoutCommonAreaRequestsInput>
+    connectOrCreate?: PropertyCreateOrConnectWithoutCommonAreaRequestsInput
+    connect?: PropertyWhereUniqueInput
+  }
+
   export type UserCreateNestedOneWithoutAssignedRequestsInput = {
     create?: XOR<UserCreateWithoutAssignedRequestsInput, UserUncheckedCreateWithoutAssignedRequestsInput>
     connectOrCreate?: UserCreateOrConnectWithoutAssignedRequestsInput
@@ -30084,6 +30242,16 @@ export namespace Prisma {
     delete?: UnitWhereInput | boolean
     connect?: UnitWhereUniqueInput
     update?: XOR<XOR<UnitUpdateToOneWithWhereWithoutRequestsInput, UnitUpdateWithoutRequestsInput>, UnitUncheckedUpdateWithoutRequestsInput>
+  }
+
+  export type PropertyUpdateOneWithoutCommonAreaRequestsNestedInput = {
+    create?: XOR<PropertyCreateWithoutCommonAreaRequestsInput, PropertyUncheckedCreateWithoutCommonAreaRequestsInput>
+    connectOrCreate?: PropertyCreateOrConnectWithoutCommonAreaRequestsInput
+    upsert?: PropertyUpsertWithoutCommonAreaRequestsInput
+    disconnect?: PropertyWhereInput | boolean
+    delete?: PropertyWhereInput | boolean
+    connect?: PropertyWhereUniqueInput
+    update?: XOR<XOR<PropertyUpdateToOneWithWhereWithoutCommonAreaRequestsInput, PropertyUpdateWithoutCommonAreaRequestsInput>, PropertyUncheckedUpdateWithoutCommonAreaRequestsInput>
   }
 
   export type UserUpdateOneWithoutAssignedRequestsNestedInput = {
@@ -30999,6 +31167,7 @@ export namespace Prisma {
     owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
     units?: UnitCreateNestedManyWithoutPropertyInput
     documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutPropertyTypeInput = {
@@ -31024,6 +31193,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutPropertyTypeInput = {
@@ -31299,6 +31469,74 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type MaintenanceRequestCreateWithoutPropertyInput = {
+    id?: string
+    title: string
+    description: string
+    location: string
+    priority?: $Enums.Priority
+    status?: $Enums.RequestStatus
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    completedAt?: Date | string | null
+    enRouteAt?: Date | string | null
+    inProgressAt?: Date | string | null
+    holdReason?: string | null
+    heldAt?: Date | string | null
+    heldFromStatus?: $Enums.RequestStatus | null
+    resumeRequestedAt?: Date | string | null
+    completionCode?: string | null
+    completionCodeAt?: Date | string | null
+    user: UserCreateNestedOneWithoutRequestsInput
+    unit?: UnitCreateNestedOneWithoutRequestsInput
+    assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
+    taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
+    notifications?: NotificationCreateNestedManyWithoutRelatedInput
+    supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
+  }
+
+  export type MaintenanceRequestUncheckedCreateWithoutPropertyInput = {
+    id?: string
+    userId: string
+    unitId?: string | null
+    title: string
+    description: string
+    location: string
+    priority?: $Enums.Priority
+    status?: $Enums.RequestStatus
+    assignedToId?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    completedAt?: Date | string | null
+    enRouteAt?: Date | string | null
+    inProgressAt?: Date | string | null
+    holdReason?: string | null
+    heldAt?: Date | string | null
+    heldFromStatus?: $Enums.RequestStatus | null
+    resumeRequestedAt?: Date | string | null
+    completionCode?: string | null
+    completionCodeAt?: Date | string | null
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutRequestInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
+    supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
+  }
+
+  export type MaintenanceRequestCreateOrConnectWithoutPropertyInput = {
+    where: MaintenanceRequestWhereUniqueInput
+    create: XOR<MaintenanceRequestCreateWithoutPropertyInput, MaintenanceRequestUncheckedCreateWithoutPropertyInput>
+  }
+
+  export type MaintenanceRequestCreateManyPropertyInputEnvelope = {
+    data: MaintenanceRequestCreateManyPropertyInput | MaintenanceRequestCreateManyPropertyInput[]
+    skipDuplicates?: boolean
+  }
+
   export type PropertyTypeUpsertWithoutPropertiesInput = {
     update: XOR<PropertyTypeUpdateWithoutPropertiesInput, PropertyTypeUncheckedUpdateWithoutPropertiesInput>
     create: XOR<PropertyTypeCreateWithoutPropertiesInput, PropertyTypeUncheckedCreateWithoutPropertiesInput>
@@ -31521,6 +31759,50 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"EntityDocument"> | Date | string
   }
 
+  export type MaintenanceRequestUpsertWithWhereUniqueWithoutPropertyInput = {
+    where: MaintenanceRequestWhereUniqueInput
+    update: XOR<MaintenanceRequestUpdateWithoutPropertyInput, MaintenanceRequestUncheckedUpdateWithoutPropertyInput>
+    create: XOR<MaintenanceRequestCreateWithoutPropertyInput, MaintenanceRequestUncheckedCreateWithoutPropertyInput>
+  }
+
+  export type MaintenanceRequestUpdateWithWhereUniqueWithoutPropertyInput = {
+    where: MaintenanceRequestWhereUniqueInput
+    data: XOR<MaintenanceRequestUpdateWithoutPropertyInput, MaintenanceRequestUncheckedUpdateWithoutPropertyInput>
+  }
+
+  export type MaintenanceRequestUpdateManyWithWhereWithoutPropertyInput = {
+    where: MaintenanceRequestScalarWhereInput
+    data: XOR<MaintenanceRequestUpdateManyMutationInput, MaintenanceRequestUncheckedUpdateManyWithoutPropertyInput>
+  }
+
+  export type MaintenanceRequestScalarWhereInput = {
+    AND?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
+    OR?: MaintenanceRequestScalarWhereInput[]
+    NOT?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
+    id?: UuidFilter<"MaintenanceRequest"> | string
+    userId?: UuidFilter<"MaintenanceRequest"> | string
+    unitId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
+    propertyId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
+    title?: StringFilter<"MaintenanceRequest"> | string
+    description?: StringFilter<"MaintenanceRequest"> | string
+    location?: StringFilter<"MaintenanceRequest"> | string
+    priority?: EnumPriorityFilter<"MaintenanceRequest"> | $Enums.Priority
+    status?: EnumRequestStatusFilter<"MaintenanceRequest"> | $Enums.RequestStatus
+    assignedToId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
+    notes?: StringNullableFilter<"MaintenanceRequest"> | string | null
+    createdAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
+    updatedAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
+    completedAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
+    enRouteAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
+    inProgressAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
+    holdReason?: StringNullableFilter<"MaintenanceRequest"> | string | null
+    heldAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
+    heldFromStatus?: EnumRequestStatusNullableFilter<"MaintenanceRequest"> | $Enums.RequestStatus | null
+    resumeRequestedAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
+    completionCode?: StringNullableFilter<"MaintenanceRequest"> | string | null
+    completionCodeAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
+  }
+
   export type PropertyCreateWithoutUnitsInput = {
     id?: string
     name: string
@@ -31544,6 +31826,7 @@ export namespace Prisma {
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
     owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
     documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutUnitsInput = {
@@ -31569,6 +31852,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutUnitsInput = {
@@ -31709,6 +31993,7 @@ export namespace Prisma {
     completionCode?: string | null
     completionCodeAt?: Date | string | null
     user: UserCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
@@ -31720,6 +32005,7 @@ export namespace Prisma {
   export type MaintenanceRequestUncheckedCreateWithoutUnitInput = {
     id?: string
     userId: string
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -31891,6 +32177,7 @@ export namespace Prisma {
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
     owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
     documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutUnitsInput = {
@@ -31916,6 +32203,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type UserUpsertWithoutUnitInput = {
@@ -32053,33 +32341,6 @@ export namespace Prisma {
     data: XOR<MaintenanceRequestUpdateManyMutationInput, MaintenanceRequestUncheckedUpdateManyWithoutUnitInput>
   }
 
-  export type MaintenanceRequestScalarWhereInput = {
-    AND?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
-    OR?: MaintenanceRequestScalarWhereInput[]
-    NOT?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
-    id?: UuidFilter<"MaintenanceRequest"> | string
-    userId?: UuidFilter<"MaintenanceRequest"> | string
-    unitId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
-    title?: StringFilter<"MaintenanceRequest"> | string
-    description?: StringFilter<"MaintenanceRequest"> | string
-    location?: StringFilter<"MaintenanceRequest"> | string
-    priority?: EnumPriorityFilter<"MaintenanceRequest"> | $Enums.Priority
-    status?: EnumRequestStatusFilter<"MaintenanceRequest"> | $Enums.RequestStatus
-    assignedToId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
-    notes?: StringNullableFilter<"MaintenanceRequest"> | string | null
-    createdAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
-    updatedAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
-    completedAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
-    enRouteAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
-    inProgressAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
-    holdReason?: StringNullableFilter<"MaintenanceRequest"> | string | null
-    heldAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
-    heldFromStatus?: EnumRequestStatusNullableFilter<"MaintenanceRequest"> | $Enums.RequestStatus | null
-    resumeRequestedAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
-    completionCode?: StringNullableFilter<"MaintenanceRequest"> | string | null
-    completionCodeAt?: DateTimeNullableFilter<"MaintenanceRequest"> | Date | string | null
-  }
-
   export type TenancyUpsertWithWhereUniqueWithoutUnitInput = {
     where: TenancyWhereUniqueInput
     update: XOR<TenancyUpdateWithoutUnitInput, TenancyUncheckedUpdateWithoutUnitInput>
@@ -32208,6 +32469,7 @@ export namespace Prisma {
     completionCode?: string | null
     completionCodeAt?: Date | string | null
     unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
@@ -32219,6 +32481,7 @@ export namespace Prisma {
   export type MaintenanceRequestUncheckedCreateWithoutUserInput = {
     id?: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -32275,6 +32538,7 @@ export namespace Prisma {
     completionCodeAt?: Date | string | null
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -32286,6 +32550,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -32869,6 +33134,7 @@ export namespace Prisma {
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
     units?: UnitCreateNestedManyWithoutPropertyInput
     documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutOwnerInput = {
@@ -32894,6 +33160,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutOwnerInput = {
@@ -33801,6 +34068,7 @@ export namespace Prisma {
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
     owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
     units?: UnitCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutDocumentsInput = {
@@ -33826,6 +34094,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutDocumentsInput = {
@@ -34142,6 +34411,7 @@ export namespace Prisma {
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
     owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
     units?: UnitUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutDocumentsInput = {
@@ -34167,6 +34437,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenancyUpsertWithoutDocumentsInput = {
@@ -36366,6 +36637,63 @@ export namespace Prisma {
     create: XOR<UnitCreateWithoutRequestsInput, UnitUncheckedCreateWithoutRequestsInput>
   }
 
+  export type PropertyCreateWithoutCommonAreaRequestsInput = {
+    id?: string
+    name: string
+    address: string
+    governorate?: string | null
+    wilayat?: string | null
+    area?: string | null
+    wayNumber?: string | null
+    buildingNumber?: string | null
+    postalCode?: string | null
+    titleDeedNumber?: string | null
+    plotNumber?: string | null
+    notes?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
+    owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
+    units?: UnitCreateNestedManyWithoutPropertyInput
+    documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
+  }
+
+  export type PropertyUncheckedCreateWithoutCommonAreaRequestsInput = {
+    id?: string
+    name: string
+    propertyTypeId: string
+    address: string
+    governorate?: string | null
+    wilayat?: string | null
+    area?: string | null
+    wayNumber?: string | null
+    buildingNumber?: string | null
+    postalCode?: string | null
+    titleDeedNumber?: string | null
+    plotNumber?: string | null
+    notes?: string | null
+    ownerId?: string | null
+    approved?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
+  }
+
+  export type PropertyCreateOrConnectWithoutCommonAreaRequestsInput = {
+    where: PropertyWhereUniqueInput
+    create: XOR<PropertyCreateWithoutCommonAreaRequestsInput, PropertyUncheckedCreateWithoutCommonAreaRequestsInput>
+  }
+
   export type UserCreateWithoutAssignedRequestsInput = {
     id: string
     email: string
@@ -36799,6 +37127,69 @@ export namespace Prisma {
     charges?: ChargeUncheckedUpdateManyWithoutUnitNestedInput
   }
 
+  export type PropertyUpsertWithoutCommonAreaRequestsInput = {
+    update: XOR<PropertyUpdateWithoutCommonAreaRequestsInput, PropertyUncheckedUpdateWithoutCommonAreaRequestsInput>
+    create: XOR<PropertyCreateWithoutCommonAreaRequestsInput, PropertyUncheckedCreateWithoutCommonAreaRequestsInput>
+    where?: PropertyWhereInput
+  }
+
+  export type PropertyUpdateToOneWithWhereWithoutCommonAreaRequestsInput = {
+    where?: PropertyWhereInput
+    data: XOR<PropertyUpdateWithoutCommonAreaRequestsInput, PropertyUncheckedUpdateWithoutCommonAreaRequestsInput>
+  }
+
+  export type PropertyUpdateWithoutCommonAreaRequestsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    governorate?: NullableStringFieldUpdateOperationsInput | string | null
+    wilayat?: NullableStringFieldUpdateOperationsInput | string | null
+    area?: NullableStringFieldUpdateOperationsInput | string | null
+    wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
+    owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
+    units?: UnitUpdateManyWithoutPropertyNestedInput
+    documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
+  }
+
+  export type PropertyUncheckedUpdateWithoutCommonAreaRequestsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    propertyTypeId?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    governorate?: NullableStringFieldUpdateOperationsInput | string | null
+    wilayat?: NullableStringFieldUpdateOperationsInput | string | null
+    area?: NullableStringFieldUpdateOperationsInput | string | null
+    wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
+  }
+
   export type UserUpsertWithoutAssignedRequestsInput = {
     update: XOR<UserUpdateWithoutAssignedRequestsInput, UserUncheckedUpdateWithoutAssignedRequestsInput>
     create: XOR<UserCreateWithoutAssignedRequestsInput, UserUncheckedCreateWithoutAssignedRequestsInput>
@@ -37019,6 +37410,7 @@ export namespace Prisma {
     completionCodeAt?: Date | string | null
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
@@ -37030,6 +37422,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -37317,6 +37710,7 @@ export namespace Prisma {
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
@@ -37328,6 +37722,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -37611,6 +38006,7 @@ export namespace Prisma {
     completionCodeAt?: Date | string | null
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -37622,6 +38018,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -37796,6 +38193,7 @@ export namespace Prisma {
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -37807,6 +38205,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -37971,6 +38370,7 @@ export namespace Prisma {
     completionCodeAt?: Date | string | null
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -37982,6 +38382,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -38156,6 +38557,7 @@ export namespace Prisma {
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -38167,6 +38569,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -38444,6 +38847,7 @@ export namespace Prisma {
     completionCodeAt?: Date | string | null
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
@@ -38455,6 +38859,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -38635,6 +39040,7 @@ export namespace Prisma {
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
@@ -38646,6 +39052,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -38804,6 +39211,7 @@ export namespace Prisma {
     completionCodeAt?: Date | string | null
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
@@ -38815,6 +39223,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -38995,6 +39404,7 @@ export namespace Prisma {
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
@@ -39006,6 +39416,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -39076,6 +39487,7 @@ export namespace Prisma {
     owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
     units?: UnitUpdateManyWithoutPropertyNestedInput
     documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutPropertyTypeInput = {
@@ -39101,6 +39513,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
     documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateManyWithoutPropertyTypeInput = {
@@ -39148,6 +39561,30 @@ export namespace Prisma {
     fileSize: number
     uploadedById?: string | null
     createdAt?: Date | string
+  }
+
+  export type MaintenanceRequestCreateManyPropertyInput = {
+    id?: string
+    userId: string
+    unitId?: string | null
+    title: string
+    description: string
+    location: string
+    priority?: $Enums.Priority
+    status?: $Enums.RequestStatus
+    assignedToId?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    completedAt?: Date | string | null
+    enRouteAt?: Date | string | null
+    inProgressAt?: Date | string | null
+    holdReason?: string | null
+    heldAt?: Date | string | null
+    heldFromStatus?: $Enums.RequestStatus | null
+    resumeRequestedAt?: Date | string | null
+    completionCode?: string | null
+    completionCodeAt?: Date | string | null
   }
 
   export type UnitUpdateWithoutPropertyInput = {
@@ -39228,9 +39665,92 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type MaintenanceRequestUpdateWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    location?: StringFieldUpdateOperationsInput | string
+    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    enRouteAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inProgressAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    holdReason?: NullableStringFieldUpdateOperationsInput | string | null
+    heldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    heldFromStatus?: NullableEnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus | null
+    resumeRequestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completionCode?: NullableStringFieldUpdateOperationsInput | string | null
+    completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    user?: UserUpdateOneRequiredWithoutRequestsNestedInput
+    unit?: UnitUpdateOneWithoutRequestsNestedInput
+    assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
+    notifications?: NotificationUpdateManyWithoutRelatedNestedInput
+    supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
+  }
+
+  export type MaintenanceRequestUncheckedUpdateWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    location?: StringFieldUpdateOperationsInput | string
+    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    enRouteAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inProgressAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    holdReason?: NullableStringFieldUpdateOperationsInput | string | null
+    heldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    heldFromStatus?: NullableEnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus | null
+    resumeRequestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completionCode?: NullableStringFieldUpdateOperationsInput | string | null
+    completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutRequestNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
+    supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
+  }
+
+  export type MaintenanceRequestUncheckedUpdateManyWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    location?: StringFieldUpdateOperationsInput | string
+    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    enRouteAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inProgressAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    holdReason?: NullableStringFieldUpdateOperationsInput | string | null
+    heldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    heldFromStatus?: NullableEnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus | null
+    resumeRequestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completionCode?: NullableStringFieldUpdateOperationsInput | string | null
+    completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
   export type MaintenanceRequestCreateManyUnitInput = {
     id?: string
     userId: string
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -39308,6 +39828,7 @@ export namespace Prisma {
     completionCode?: NullableStringFieldUpdateOperationsInput | string | null
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
@@ -39319,6 +39840,7 @@ export namespace Prisma {
   export type MaintenanceRequestUncheckedUpdateWithoutUnitInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -39347,6 +39869,7 @@ export namespace Prisma {
   export type MaintenanceRequestUncheckedUpdateManyWithoutUnitInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -39489,6 +40012,7 @@ export namespace Prisma {
   export type MaintenanceRequestCreateManyUserInput = {
     id?: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -39513,6 +40037,7 @@ export namespace Prisma {
     id?: string
     userId: string
     unitId?: string | null
+    propertyId?: string | null
     title: string
     description: string
     location: string
@@ -39776,6 +40301,7 @@ export namespace Prisma {
     completionCode?: NullableStringFieldUpdateOperationsInput | string | null
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
@@ -39787,6 +40313,7 @@ export namespace Prisma {
   export type MaintenanceRequestUncheckedUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -39815,6 +40342,7 @@ export namespace Prisma {
   export type MaintenanceRequestUncheckedUpdateManyWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -39856,6 +40384,7 @@ export namespace Prisma {
     completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -39867,6 +40396,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -39895,6 +40425,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
     title?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     location?: StringFieldUpdateOperationsInput | string
@@ -40523,6 +41054,7 @@ export namespace Prisma {
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
     units?: UnitUpdateManyWithoutPropertyNestedInput
     documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutOwnerInput = {
@@ -40548,6 +41080,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
     documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateManyWithoutOwnerInput = {

@@ -56,7 +56,8 @@ const ROLE_LABEL: Record<UserType, string> = {
 const ROLE_FILTERS = [
   { value: "all", label: "Everyone" },
   { value: "user", label: "Tenants" },
-  { value: "worker", label: "Workers" },
+  { value: "worker_in_house", label: "In House Workers" },
+  { value: "worker_third_party", label: "3rd Party Vendors" },
   { value: "admin", label: "Admins" },
   { value: "owner", label: "Owners" },
 ] as const;
@@ -69,21 +70,34 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const query = params.query as string | undefined;
   const role = params.role as string | undefined;
 
-  const where: Prisma.UserWhereInput = {};
+  const andConditions: Prisma.UserWhereInput[] = [];
 
   if (query) {
-    where.OR = [
-      { email: { contains: query, mode: "insensitive" } },
-      { firstName: { contains: query, mode: "insensitive" } },
-      { lastName: { contains: query, mode: "insensitive" } },
-      { phone: { contains: query, mode: "insensitive" } },
-      { civilId: { contains: query, mode: "insensitive" } },
-    ];
+    andConditions.push({
+      OR: [
+        { email: { contains: query, mode: "insensitive" } },
+        { firstName: { contains: query, mode: "insensitive" } },
+        { lastName: { contains: query, mode: "insensitive" } },
+        { phone: { contains: query, mode: "insensitive" } },
+        { civilId: { contains: query, mode: "insensitive" } },
+      ],
+    });
   }
 
-  if (role && role !== "all" && role in UserType) {
-    where.userType = role as UserType;
+  if (role === "worker_in_house") {
+    andConditions.push(
+      { userType: UserType.worker },
+      { OR: [{ workerCategory: "in_house" }, { workerCategory: null }] },
+    );
+  } else if (role === "worker_third_party") {
+    andConditions.push({ userType: UserType.worker, workerCategory: "third_party" });
+  } else if (role && role !== "all" && role in UserType) {
+    andConditions.push({ userType: role as UserType });
   }
+
+  const where: Prisma.UserWhereInput = andConditions.length
+    ? { AND: andConditions }
+    : {};
 
   const [users, emptyUnits, inHouseWorkers] = await Promise.all([
     prisma.user.findMany({

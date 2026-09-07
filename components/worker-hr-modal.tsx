@@ -119,6 +119,15 @@ const STATUS_ICON_BADGE: Record<ExpiryStatus, string> = {
   not_set: "bg-white/15 text-white",
 };
 
+/** The modal's summary banner text — phrased as a call to action for the
+ * two states that actually need one, rather than a flat status readout. */
+const OVERALL_STATUS_TEXT: Record<ExpiryStatus, string> = {
+  expired: "Action needed: documents expired",
+  expiring: "Action needed: documents expiring soon",
+  valid: "All documents valid",
+  not_set: "No documents on file yet",
+};
+
 /** Converts a Date to the "yyyy-MM-dd" shape <input type="date"> needs,
  * without pulling in date-fns just for this. */
 function toDateInputValue(date: Date | null): string {
@@ -375,7 +384,7 @@ export function WorkerHrModal({
         )
       }
       title="HR document record"
-      description="Passport, driving license, work visa, Bataka, and — if applicable — vehicle documents required for employing this worker."
+      description="Passport, driving license, Bataka, and — if applicable — vehicle documents required for employing this worker."
       widthClassName="max-w-3xl"
       headerClassName="bg-gradient-to-r from-violet-700 to-indigo-600 border-transparent text-white [&_h2]:text-white [&_p]:text-white/70 [&_button]:text-white/70 [&_button:hover]:bg-white/15 [&_button:hover]:text-white"
       icon={
@@ -390,7 +399,7 @@ export function WorkerHrModal({
         className={`mb-5 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ring-1 ring-inset ${meta.pill}`}
       >
         <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-        Overall status: {meta.label}
+        {OVERALL_STATUS_TEXT[worstStatus]}
       </div>
 
       {/* Empty on purpose — every field below joins it via `form={formId}`
@@ -496,7 +505,7 @@ export function NewWorkerHrModal({ formId }: { formId: string }) {
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted hover:text-foreground"
         >
           <Paperclip className="h-3.5 w-3.5" />
-          Add HR documents (passport, visa, Bataka...)
+          Add HR documents (passport, Bataka...)
         </button>
       }
       title="HR document record"

@@ -169,7 +169,9 @@ export function AdminRequestCard({
                         request.unit.property.propertyType,
                         request.unit.label,
                       )}`
-                    : "No unit linked"}
+                    : request.property
+                      ? `${request.property.name} · Common area`
+                      : "No unit linked"}
                 </span>
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 shrink-0" />

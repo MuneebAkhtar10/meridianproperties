@@ -45,9 +45,9 @@ const USER_TYPES = Object.values(UserType) as string[];
 /**
  * True when `actor` may manage this maintenance request as if they were an
  * admin — either they ARE an admin, or they are the owner of the property
- * the request's unit belongs to. Always re-checked against the database;
- * never trust a client-supplied ownerId. Requests with no unit (rare, e.g. a
- * general report) have no property to own, so only an admin can manage them.
+ * the request belongs to (via its unit, or directly via propertyId for a
+ * common-area request with no unit). Always re-checked against the
+ * database; never trust a client-supplied ownerId.
  */
 async function canManageRequest(
   actor: { id: string; userType: UserType },
@@ -58,10 +58,14 @@ async function canManageRequest(
 
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: requestId },
-    select: { unit: { select: { property: { select: { ownerId: true } } } } },
+    select: {
+      unit: { select: { property: { select: { ownerId: true } } } },
+      property: { select: { ownerId: true } },
+    },
   });
 
-  return request?.unit?.property.ownerId === actor.id;
+  const ownerId = request?.unit?.property.ownerId ?? request?.property?.ownerId;
+  return ownerId === actor.id;
 }
 const HOLDABLE_STATUSES: RequestStatus[] = [
   RequestStatus.pending,
@@ -221,6 +225,7 @@ export const reportIssueAction = async (formData: FormData) => {
   const location = formData.get("location")?.toString().trim();
   const description = formData.get("description")?.toString().trim();
   const priority = parsePriority(formData.get("priority")?.toString());
+  const isCommonArea = formData.get("isCommonArea")?.toString() === "true";
   const attachments = formData.getAll("attachments");
 
   if (!title || !location || !description) {
@@ -235,7 +240,7 @@ export const reportIssueAction = async (formData: FormData) => {
   // raise an issue against someone else's apartment.
   const unit = await prisma.unit.findUnique({
     where: { tenantId: user.id },
-    select: { id: true },
+    select: { id: true, propertyId: true },
   });
 
   if (!unit) {
@@ -246,10 +251,19 @@ export const reportIssueAction = async (formData: FormData) => {
     );
   }
 
+  // A common-area request belongs to the whole property, not this tenant's
+  // own unit — a single-unit property has no shared space distinct from
+  // that unit, so this option is only offered when there's more than one.
+  const unitCount = isCommonArea
+    ? await prisma.unit.count({ where: { propertyId: unit.propertyId } })
+    : 0;
+  const isValidCommonArea = isCommonArea && unitCount > 1;
+
   const request = await prisma.maintenanceRequest.create({
     data: {
       userId: user.id,
-      unitId: unit.id,
+      unitId: isValidCommonArea ? null : unit.id,
+      propertyId: isValidCommonArea ? unit.propertyId : null,
       title,
       location,
       description,
@@ -1419,6 +1433,136 @@ export const cancelCompletionAction = async (
 
 /* ── Admin actions ─────────────────────────────────────────────────────────── */
 
+/** An admin (or owner, for their own properties) files a request directly —
+ * for a specific unit, or for a common area shared by the whole property —
+ * and can optionally assign a worker to it in the same step. */
+export const createRequestAction = async (formData: FormData) => {
+  const admin = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = admin.userType === UserType.owner;
+
+  const propertyId = formData.get("propertyId")?.toString();
+  const unitId = formData.get("unitId")?.toString() || undefined;
+  const isCommonArea = formData.get("isCommonArea")?.toString() === "true";
+  const title = formData.get("title")?.toString().trim();
+  const location = formData.get("location")?.toString().trim();
+  const description = formData.get("description")?.toString().trim();
+  const priority = parsePriority(formData.get("priority")?.toString());
+  const workerId = formData.get("workerId")?.toString() || undefined;
+
+  if (!propertyId || !title || !location || !description) {
+    return encodedRedirect(
+      "error",
+      "/protected/maintenance/new",
+      "Please fill in all required fields.",
+    );
+  }
+
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: { id: true, name: true, ownerId: true, units: { select: { id: true } } },
+  });
+
+  if (!property || (isOwner && property.ownerId !== admin.id)) {
+    return encodedRedirect(
+      "error",
+      "/protected/maintenance/new",
+      "Property not found.",
+    );
+  }
+
+  // Never trust the client's isCommonArea flag alone — a single-unit
+  // property has no shared space distinct from that one unit.
+  const useCommonArea = isCommonArea && property.units.length > 1;
+
+  if (!useCommonArea) {
+    if (!unitId || !property.units.some((u) => u.id === unitId)) {
+      return encodedRedirect(
+        "error",
+        "/protected/maintenance/new",
+        "Select a unit in this property.",
+      );
+    }
+  }
+
+  if (workerId) {
+    const worker = await prisma.user.findUnique({
+      where: { id: workerId },
+      select: { userType: true },
+    });
+    if (!worker || worker.userType !== UserType.worker) {
+      return encodedRedirect(
+        "error",
+        "/protected/maintenance/new",
+        "Select a valid worker.",
+      );
+    }
+  }
+
+  const request = await prisma.maintenanceRequest.create({
+    data: {
+      userId: admin.id,
+      unitId: useCommonArea ? null : unitId,
+      propertyId: useCommonArea ? property.id : null,
+      title,
+      location,
+      description,
+      priority,
+      status: RequestStatus.pending,
+      assignedToId: workerId,
+      taskLogs: {
+        create: {
+          status: RequestStatus.pending,
+          changedById: admin.id,
+          notes: `Request created by ${admin.email}${
+            useCommonArea ? " for a common area" : ""
+          }`,
+        },
+      },
+    },
+  });
+
+  if (workerId) {
+    const worker = await prisma.user.findUnique({
+      where: { id: workerId },
+      select: {
+        email: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        workerCategory: true,
+        companyName: true,
+      },
+    });
+
+    const place = useCommonArea
+      ? `${property.name} · ${location} (Common area)`
+      : `${property.name} (${location})`;
+
+    await notifyWorkerAssigned(
+      { id: request.id, title: request.title, userId: request.userId },
+      workerId,
+      worker,
+      place,
+    );
+  }
+
+  await publish({
+    kind: "request",
+    roles: [UserType.admin],
+    userIds: workerId ? [workerId] : [],
+  });
+
+  revalidatePath("/protected/maintenance");
+  revalidatePath("/protected/requests");
+  if (workerId) revalidatePath("/protected/tasks");
+
+  return encodedRedirect(
+    "success",
+    "/protected/maintenance",
+    "Request created.",
+  );
+};
+
 export const assignWorkerAction = async (formData: FormData) => {
   const admin = await requireAnyRole(UserType.admin, UserType.owner);
 
@@ -1452,6 +1596,7 @@ export const assignWorkerAction = async (formData: FormData) => {
           },
         },
       },
+      property: { select: { name: true } },
     },
   });
 
@@ -1552,7 +1697,9 @@ export const assignWorkerAction = async (formData: FormData) => {
             ? `${current.unit.property.propertyType.unitPrefix} ${current.unit.label}`
             : current.unit.label
         } (${current.location})`
-      : current.location;
+      : current.property
+        ? `${current.property.name} · ${current.location} (Common area)`
+        : current.location;
 
     await notifyWorkerAssigned(current, workerId, worker, place);
 

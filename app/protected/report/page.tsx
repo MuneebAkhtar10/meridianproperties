@@ -20,6 +20,13 @@ export default async function ReportIssuePage({ searchParams }: PageProps) {
     include: { property: { include: { propertyType: true } } },
   });
 
+  // A common-area option (lobby, parking, garden...) only makes sense when
+  // the property actually has more than one unit — a single-unit property
+  // has no shared space distinct from that one unit.
+  const unitCount = unit
+    ? await prisma.unit.count({ where: { propertyId: unit.propertyId } })
+    : 0;
+
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-8">
       <PageHeader
@@ -56,6 +63,7 @@ export default async function ReportIssuePage({ searchParams }: PageProps) {
           <ReportForm
             locationOptions={unit.property.propertyType.locationOptions}
             unitNoun={unit.property.propertyType.unitNounSingular.toLowerCase()}
+            allowCommonArea={unitCount > 1}
           />
         </>
       )}

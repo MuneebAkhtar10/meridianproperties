@@ -14,6 +14,7 @@ import {
 import { notFound } from "next/navigation";
 
 import {
+  resendChargeInvoiceEmailAction,
   reviewPaymentAction,
   submitPaymentAction,
   waiveChargeAction,
@@ -444,6 +445,30 @@ export default async function FinanceDetailPage({
                       {formatMoney(pending)} is already waiting for review.
                     </p>
                   )}
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {canManagePayments && (
+            <Card>
+              <CardContent className="space-y-3 p-5">
+                <p className="text-sm font-medium">Invoice email</p>
+                <p className="text-xs text-muted-foreground">
+                  Sends the tenant a fresh copy of this charge's invoice
+                  email, with the current amount and due date.
+                </p>
+                <form>
+                  <input type="hidden" name="chargeId" value={charge.id} />
+                  <SubmitButton
+                    formAction={resendChargeInvoiceEmailAction}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    pendingText="Sending..."
+                  >
+                    Resend invoice email
+                  </SubmitButton>
                 </form>
               </CardContent>
             </Card>

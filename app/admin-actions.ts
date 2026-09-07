@@ -11,6 +11,7 @@ import {
   notifyServiceChargeReceived,
 } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import { formatMoney } from "@/lib/finance";
 import { publish } from "@/lib/realtime";
 import { requireAnyRole, requireRole } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -111,6 +112,14 @@ export const createPropertyAction = async (formData: FormData) => {
     );
   }
 
+  if (!isOwner && !ownerId) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Select an owner for this property.",
+    );
+  }
+
   const propertyType = propertyTypeId
     ? await prisma.propertyType.findUnique({ where: { id: propertyTypeId } })
     : null;
@@ -170,6 +179,11 @@ export const createPropertyAction = async (formData: FormData) => {
       ownerId,
       propertyId: property.id,
       propertyName: property.name,
+      serviceCharge: {
+        amount: formatMoney(serviceCharge.amount),
+        cycleMonths: serviceCharge.cycleMonths,
+        dueDate: format(serviceCharge.dueDate, "d MMM yyyy"),
+      },
     });
   }
 

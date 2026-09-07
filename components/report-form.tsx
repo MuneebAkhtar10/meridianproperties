@@ -20,12 +20,16 @@ import {
 export function ReportForm({
   locationOptions: rawLocationOptions,
   unitNoun,
+  allowCommonArea = false,
 }: {
   /** Where-is-the-problem choices, tailored per property type (villa, shop,
    * office, or whatever an admin has configured). Always ends with "Other". */
   locationOptions: string[] | null | undefined;
   /** e.g. "apartment", "villa", "shop", "office" — used in the field label. */
   unitNoun: string;
+  /** Only true when the tenant's property has more than one unit — a
+   * single-unit property has no shared space distinct from that unit. */
+  allowCommonArea?: boolean;
 }) {
   // Falls back to a safe default if a property type predates this column
   // (e.g. its row was never re-saved after the migration ran).
@@ -34,6 +38,7 @@ export function ReportForm({
       ? rawLocationOptions
       : ["Other"];
 
+  const [isCommonArea, setIsCommonArea] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +109,41 @@ export function ReportForm({
     <Card>
       <CardContent className="p-6">
         <form className="space-y-5" onSubmit={handleSubmit}>
+          {allowCommonArea && (
+            <div className="space-y-1.5">
+              <Label>What is this about?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCommonArea(false)}
+                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                    !isCommonArea
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-input text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  My {unitNoun}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCommonArea(true)}
+                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                    isCommonArea
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-input text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  A common area
+                </button>
+              </div>
+              <input
+                type="hidden"
+                name="isCommonArea"
+                value={isCommonArea ? "true" : "false"}
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="title">What is the problem?</Label>
             <Input
@@ -116,18 +156,32 @@ export function ReportForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="location">Where in your {unitNoun}?</Label>
-              <Select
-                id="location"
-                name="location"
-                defaultValue={locationOptions[0]}
-              >
-                {locationOptions.map((location) => (
-                  <option key={location} value={location}>
-                    {location}
-                  </option>
-                ))}
-              </Select>
+              {isCommonArea ? (
+                <>
+                  <Label htmlFor="location">Which common area?</Label>
+                  <Input
+                    id="location"
+                    name="location"
+                    placeholder="e.g. Lobby, Parking, Garden, Elevator"
+                    required
+                  />
+                </>
+              ) : (
+                <>
+                  <Label htmlFor="location">Where in your {unitNoun}?</Label>
+                  <Select
+                    id="location"
+                    name="location"
+                    defaultValue={locationOptions[0]}
+                  >
+                    {locationOptions.map((location) => (
+                      <option key={location} value={location}>
+                        {location}
+                      </option>
+                    ))}
+                  </Select>
+                </>
+              )}
             </div>
 
             <div className="space-y-1.5">

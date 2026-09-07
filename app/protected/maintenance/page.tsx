@@ -47,26 +47,42 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
     where.status = status as RequestStatus;
   }
 
-  const unitWhere: Prisma.UnitWhereInput = {};
+  // A common-area request has no unit, so every scope below matches either
+  // the unit's property or the request's own propertyId — a plain
+  // `where.unit = {...}` would silently exclude every common-area request
+  // whenever a property or owner filter applies. Each scope is its own AND
+  // clause (rather than reusing `where.OR`) so property filter, owner
+  // scoping and text search can all apply together without clobbering
+  // each other.
+  const andConditions: Prisma.MaintenanceRequestWhereInput[] = [];
 
   if (propertyId && propertyId !== "all") {
-    unitWhere.propertyId = propertyId;
+    andConditions.push({
+      OR: [{ unit: { propertyId } }, { propertyId }],
+    });
   }
 
-  // An owner only ever sees requests for units in properties they own.
+  // An owner only ever sees requests for properties they own.
   if (isOwner) {
-    unitWhere.property = { ownerId: user.id };
-  }
-
-  if (Object.keys(unitWhere).length > 0) {
-    where.unit = unitWhere;
+    andConditions.push({
+      OR: [
+        { unit: { property: { ownerId: user.id } } },
+        { property: { ownerId: user.id } },
+      ],
+    });
   }
 
   if (query) {
-    where.OR = [
-      { title: { contains: query, mode: "insensitive" } },
-      { description: { contains: query, mode: "insensitive" } },
-    ];
+    andConditions.push({
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
   }
 
   const [requests, workers, properties] = await Promise.all([
@@ -88,6 +104,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
             },
           },
         },
+        property: { select: { name: true } },
         attachments: true,
         supplyRequests: {
           orderBy: { createdAt: "asc" },
@@ -132,7 +149,15 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
         description={`${requests.length} request${
           requests.length === 1 ? "" : "s"
         } matching your filters`}
-      />
+      >
+        <Link
+          href="/protected/maintenance/new"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+        >
+          <ClipboardList className="h-4 w-4" />
+          New request
+        </Link>
+      </PageHeader>
 
       {"error" in message || "success" in message ? (
         <FormMessage message={message} />

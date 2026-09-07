@@ -183,10 +183,11 @@ model Property {
   createdAt                DateTime  @default(now()) @map("created_at")
   updatedAt                DateTime  @updatedAt @map("updated_at")
 
-  propertyType PropertyType     @relation(fields: [propertyTypeId], references: [id], onDelete: Restrict)
-  owner        User?            @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  units        Unit[]
-  documents    EntityDocument[]
+  propertyType       PropertyType         @relation(fields: [propertyTypeId], references: [id], onDelete: Restrict)
+  owner              User?                @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  units              Unit[]
+  documents          EntityDocument[]
+  commonAreaRequests MaintenanceRequest[]
 
   @@index([propertyTypeId])
   @@index([ownerId])
@@ -445,11 +446,18 @@ model MaintenanceRequest {
   id                String         @id @default(uuid()) @db.Uuid
   userId            String         @map("user_id") @db.Uuid
   /// The apartment the issue is in. This is what tells anyone which flat in which
-  /// building to actually go to.
+  /// building to actually go to. Null for a common-area request — one that
+  /// belongs to the property as a whole (lobby, parking, garden) rather than
+  /// a specific tenant's unit. Exactly one of unitId/propertyId is set.
   unitId            String?        @map("unit_id") @db.Uuid
+  /// Set only for a common-area request (unitId null) — which property the
+  /// shared space belongs to. Redundant with unit.propertyId otherwise, so
+  /// left null when unitId is set rather than duplicating it.
+  propertyId        String?        @map("property_id") @db.Uuid
   title             String
   description       String
-  /// Room within the apartment, e.g. "Kitchen".
+  /// Room within the apartment (e.g. "Kitchen"), or the common area itself
+  /// (e.g. "Lobby", "Parking") when unitId is null.
   location          String
   priority          Priority       @default(medium)
   status            RequestStatus  @default(pending)
@@ -475,6 +483,7 @@ model MaintenanceRequest {
 
   user             User                    @relation("RequestOwner", fields: [userId], references: [id], onDelete: Cascade)
   unit             Unit?                   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  property         Property?               @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   assignedTo       User?                   @relation("AssignedWorker", fields: [assignedToId], references: [id], onDelete: SetNull)
   attachments      MaintenanceAttachment[]
   taskLogs         TaskLog[]
@@ -484,6 +493,7 @@ model MaintenanceRequest {
 
   @@index([userId])
   @@index([unitId])
+  @@index([propertyId])
   @@index([assignedToId])
   @@index([status])
   @@map("maintenance_requests")

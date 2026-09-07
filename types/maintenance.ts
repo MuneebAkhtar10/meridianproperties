@@ -30,6 +30,9 @@ export type UnitWithProperty = {
 export type RequestWithPlace = MaintenanceRequest & {
   user: { email: string };
   unit: UnitWithProperty | null;
+  /** Set only for a common-area request (unit is null) — which property the
+   * shared space (lobby, parking, garden...) belongs to. */
+  property: { name: string } | null;
   /** Only present on pages that fetch it — treat as empty if omitted. */
   supplyRequests?: SupplyRequestWithUsers[];
 };

@@ -10,6 +10,7 @@ import {
 
 import {
   endTenancyAction,
+  resendTenancyWelcomeEmailAction,
   startTenancyAction,
   updateTenancyAction,
 } from "@/app/finance-actions";
@@ -47,54 +48,69 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
   const isOwner = user.userType === UserType.owner;
   const isAdmin = user.userType === UserType.admin;
 
-  const [active, history, availableTenants, emptyUnits] = await Promise.all([
-    prisma.tenancy.findMany({
-      where: {
-        endDate: null,
-        ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      include: {
-        tenant: true,
-        unit: { include: { property: { include: { propertyType: true } } } },
-        documents: { orderBy: { createdAt: "desc" } },
-        charges: {
-          where: { status: ChargeStatus.open },
-          select: {
-            amount: true,
-            status: true,
-            payments: { select: { amount: true, status: true } },
+  const params = (await searchParams) as unknown as {
+    property?: string;
+  };
+  const propertyFilter = params.property || "all";
+  const propertyScope =
+    propertyFilter !== "all" ? { unit: { propertyId: propertyFilter } } : {};
+
+  const [active, history, availableTenants, emptyUnits, properties] =
+    await Promise.all([
+      prisma.tenancy.findMany({
+        where: {
+          endDate: null,
+          ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+          ...propertyScope,
+        },
+        orderBy: { createdAt: "desc" },
+        include: {
+          tenant: true,
+          unit: { include: { property: { include: { propertyType: true } } } },
+          documents: { orderBy: { createdAt: "desc" } },
+          charges: {
+            where: { status: ChargeStatus.open },
+            select: {
+              amount: true,
+              status: true,
+              payments: { select: { amount: true, status: true } },
+            },
           },
         },
-      },
-    }),
-    prisma.tenancy.findMany({
-      where: {
-        endDate: { not: null },
-        ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
-      },
-      orderBy: { endDate: "desc" },
-      take: 20,
-      include: {
-        tenant: { select: { email: true, firstName: true, lastName: true } },
-        unit: { include: { property: { include: { propertyType: true } } } },
-      },
-    }),
-    isAdmin
-      ? prisma.user.findMany({
-          where: { userType: UserType.user, unit: null },
-          orderBy: { email: "asc" },
-          select: { id: true, email: true, firstName: true, lastName: true },
-        })
-      : Promise.resolve([]),
-    isAdmin
-      ? prisma.unit.findMany({
-          where: { tenantId: null },
-          orderBy: [{ property: { name: "asc" } }, { label: "asc" }],
-          include: { property: { include: { propertyType: true } } },
-        })
-      : Promise.resolve([]),
-  ]);
+      }),
+      prisma.tenancy.findMany({
+        where: {
+          endDate: { not: null },
+          ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+          ...propertyScope,
+        },
+        orderBy: { endDate: "desc" },
+        take: 20,
+        include: {
+          tenant: { select: { email: true, firstName: true, lastName: true } },
+          unit: { include: { property: { include: { propertyType: true } } } },
+        },
+      }),
+      isAdmin
+        ? prisma.user.findMany({
+            where: { userType: UserType.user, unit: null },
+            orderBy: { email: "asc" },
+            select: { id: true, email: true, firstName: true, lastName: true },
+          })
+        : Promise.resolve([]),
+      isAdmin
+        ? prisma.unit.findMany({
+            where: { tenantId: null },
+            orderBy: [{ property: { name: "asc" } }, { label: "asc" }],
+            include: { property: { include: { propertyType: true } } },
+          })
+        : Promise.resolve([]),
+      prisma.property.findMany({
+        where: isOwner ? { ownerId: user.id } : {},
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+    ]);
   const pickableUnits: PickableUnit[] = emptyUnits.map((unit) => ({
     id: unit.id,
     label: unit.label,
@@ -120,6 +136,23 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
       {"error" in message || "success" in message ? (
         <FormMessage message={message} />
       ) : null}
+
+      <form className="flex flex-wrap items-end gap-2">
+        <div className="w-full max-w-xs space-y-1.5">
+          <Label htmlFor="property">Property</Label>
+          <Select id="property" name="property" defaultValue={propertyFilter}>
+            <option value="all">All properties</option>
+            {properties.map((property) => (
+              <option key={property.id} value={property.id}>
+                {property.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <SubmitButton variant="outline" pendingText="Filtering...">
+          Filter
+        </SubmitButton>
+      </form>
 
       <div className="flex flex-wrap gap-4">
         <Card className="relative w-full overflow-hidden border-border/60 shadow-sm sm:w-auto sm:min-w-64">
@@ -399,6 +432,31 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                                 Save tenancy details
                               </SubmitButton>
                             </div>
+                          </form>
+
+                          <form className="flex items-center justify-between gap-4 border-t p-4 sm:p-5">
+                            <input
+                              type="hidden"
+                              name="tenancyId"
+                              value={tenancy.id}
+                            />
+                            <div>
+                              <p className="text-sm font-medium">
+                                Welcome email
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Resends the move-in email with the tenancy's
+                                current terms.
+                              </p>
+                            </div>
+                            <SubmitButton
+                              formAction={resendTenancyWelcomeEmailAction}
+                              variant="outline"
+                              size="sm"
+                              pendingText="Sending..."
+                            >
+                              Resend
+                            </SubmitButton>
                           </form>
 
                           <div className="border-t p-4 sm:p-5">

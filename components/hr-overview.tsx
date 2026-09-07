@@ -78,7 +78,7 @@ export function HrOverview({ workers }: { workers: OverviewWorker[] }) {
         <div>
           <h2 className="text-sm font-semibold">HR documents dashboard</h2>
           <p className="text-xs text-muted-foreground">
-            In-house worker paperwork — passports, visas, Bataka, and vehicle
+            In-house worker paperwork — passports, Bataka, and vehicle
             documents.
           </p>
         </div>
@@ -132,7 +132,7 @@ export function HrOverview({ workers }: { workers: OverviewWorker[] }) {
                   </button>
                 }
                 title="Needs attention"
-                description="Every in-house worker with a passport, visa, Bataka, or vehicle document that's expiring soon or already expired."
+                description="Every in-house worker with a passport, Bataka, or vehicle document that's expiring soon or already expired."
                 widthClassName="max-w-2xl"
                 headerClassName="bg-gradient-to-r from-violet-700 to-indigo-600 border-transparent text-white [&_h2]:text-white [&_p]:text-white/70 [&_button]:text-white/70 [&_button:hover]:bg-white/15 [&_button:hover]:text-white"
                 icon={

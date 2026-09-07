@@ -131,17 +131,6 @@ export const HR_DOCUMENTS: HrDocumentConfig[] = [
     alertHint: "Alerts at 9, 6, 3 months before expiry",
   },
   {
-    key: "visa",
-    label: "Work Visa / Residency",
-    numberField: "visaNumber",
-    issuanceField: "visaIssuance",
-    expiryField: "visaExpiry",
-    numberLabel: "Visa number",
-    numberEditable: true,
-    expiringSoonDays: 2 * MONTH_DAYS,
-    alertHint: "Alerts at 2 months, 1 month, 15 days before expiry",
-  },
-  {
     key: "civilId",
     label: "Bataka (Residency Permit / ID)",
     numberField: "civilId",

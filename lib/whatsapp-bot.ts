@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
 import { notifyAdminsNewRequest, notifyStatusChange } from "@/lib/notifications";
 import { isValidPhone } from "@/lib/phone";
+import { generateFreeformReply } from "@/lib/gemini";
 import {
   getWhatsappSession,
   setWhatsappSession,
@@ -43,6 +44,26 @@ const CATEGORIES: { label: string; priority: Priority }[] = [
   { label: "Appliance", priority: Priority.medium },
   { label: "Other", priority: Priority.low },
 ];
+
+/** Session data is a flat string map, so the location options list picked
+ * for this tenant's property type is stashed as one delimited string
+ * between the "category" and "location" steps rather than re-derived from
+ * a hardcoded list — different property types have different rooms. */
+const LOCATION_OPTIONS_DELIMITER = "||";
+
+/** Same options shown in the web report form's room dropdown, so a tenant
+ * picks a number here instead of free-typing a room name (which risked
+ * typos ending up as the request's "location" field). Falls back to a
+ * single "Other" like the web form does for a property type with none set. */
+async function getTenantLocationOptions(userId: string): Promise<string[]> {
+  const unit = await prisma.unit.findUnique({
+    where: { tenantId: userId },
+    select: { property: { select: { propertyType: { select: { locationOptions: true } } } } },
+  });
+
+  const options = unit?.property.propertyType.locationOptions;
+  return options && options.length > 0 ? options : ["Other"];
+}
 
 function generateCode(): string {
   const n = randomBytes(4).readUInt32BE(0) % 10000;
@@ -109,7 +130,7 @@ async function tenantFlow(
     return listTenantRequests(userId);
   }
 
-  if (MENU_WORDS.includes(bodyLower) || !session?.flow) {
+  if (MENU_WORDS.includes(bodyLower)) {
     await setSession(phone, {
       userId,
       flow: WhatsappFlow.new_request,
@@ -120,6 +141,35 @@ async function tenantFlow(
       "Let's report a maintenance issue. What's it about?\n\n" +
       CATEGORIES.map((c, i) => `${i + 1}. ${c.label}`).join("\n") +
       "\n\nReply with a number. (Reply *status* any time to check your open requests.)"
+    );
+  }
+
+  if (!session?.flow) {
+    const openRequests = await prisma.maintenanceRequest.findMany({
+      where: { userId, status: { not: RequestStatus.completed } },
+      select: { title: true, status: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+
+    const context =
+      openRequests.length === 0
+        ? "No open requests right now."
+        : "Open requests:\n" +
+          openRequests
+            .map((r) => `- ${r.title} (${r.status.replace("_", " ")})`)
+            .join("\n");
+
+    const generated = await generateFreeformReply({
+      role: "tenant",
+      userMessage: body,
+      context,
+      validCommands: '"menu" to report a new issue, "status" to check open requests',
+    });
+
+    return (
+      generated ??
+      "Reply *menu* to report a new issue, or *status* to check your open requests."
     );
   }
 
@@ -134,21 +184,36 @@ async function tenantFlow(
         return `Please reply with a number from 1 to ${CATEGORIES.length}.`;
       }
 
+      const locationOptions = await getTenantLocationOptions(userId);
+
       await setSession(phone, {
         step: "location",
-        data: { ...data, category: category.label, priority: category.priority },
+        data: {
+          ...data,
+          category: category.label,
+          priority: category.priority,
+          locationOptions: locationOptions.join(LOCATION_OPTIONS_DELIMITER),
+        },
       });
-      return "Which room or area is this in? (e.g. Kitchen, Bedroom 1, Bathroom)";
+      return (
+        "Which room or area is this in?\n\n" +
+        locationOptions.map((option, i) => `${i + 1}. ${option}`).join("\n") +
+        "\n\nReply with a number."
+      );
     }
 
     case "location": {
-      if (!body) {
-        return "Please tell me which room or area is affected.";
+      const options = data.locationOptions?.split(LOCATION_OPTIONS_DELIMITER) ?? [];
+      const index = Number(body) - 1;
+      const location = options[index];
+
+      if (!location) {
+        return `Please reply with a number from 1 to ${options.length}.`;
       }
 
       await setSession(phone, {
         step: "description",
-        data: { ...data, location: body },
+        data: { ...data, location },
       });
       return "Got it. Briefly describe the issue.";
     }
@@ -438,10 +503,18 @@ async function handleWorkerTaskReply(
     return "Ask the tenant for their 4-digit completion code and reply with it here.";
   }
 
-  return (
+  const fallback =
     `"${task.title}" is currently ${task.status.replace("_", " ")}.\n` +
-    actionPromptFor(task.status)
-  );
+    actionPromptFor(task.status);
+
+  const generated = await generateFreeformReply({
+    role: "worker",
+    userMessage: bodyLower,
+    context: `Job: "${task.title}". Current status: ${task.status.replace("_", " ")}.`,
+    validCommands: actionPromptFor(task.status).replace(/^Reply /, ""),
+  });
+
+  return generated ?? fallback;
 }
 
 async function handleCompletionCode(

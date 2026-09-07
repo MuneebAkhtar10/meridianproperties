@@ -441,9 +441,11 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
 
                 {isAdmin && (
                   <div className="space-y-1.5">
-                    <Label htmlFor="ownerId">Owner (optional)</Label>
-                    <Select id="ownerId" name="ownerId" defaultValue="">
-                      <option value="">No owner assigned</option>
+                    <Label htmlFor="ownerId">Owner</Label>
+                    <Select id="ownerId" name="ownerId" defaultValue="" required>
+                      <option value="" disabled>
+                        Select an owner
+                      </option>
                       {owners.map((owner) => (
                         <option key={owner.id} value={owner.id}>
                           {owner.email}

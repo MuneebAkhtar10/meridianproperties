@@ -423,6 +423,67 @@ export const updateTenancyAction = async (formData: FormData) => {
   );
 };
 
+/** Re-sends the move-in welcome email, rebuilt from the tenancy's current
+ * terms — same use case as resendChargeInvoiceEmailAction: a bounced email,
+ * a fixed address, or a tenant who says they never got it. */
+export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
+  const tenancyId = formData.get("tenancyId")?.toString();
+
+  if (!tenancyId) {
+    return encodedRedirect("error", "/protected/tenancies", "Tenancy not found.");
+  }
+
+  const tenancy = await prisma.tenancy.findUnique({
+    where: { id: tenancyId },
+    include: {
+      tenant: {
+        select: { id: true, email: true, firstName: true, lastName: true },
+      },
+      unit: { include: { property: { include: { propertyType: true } } } },
+    },
+  });
+
+  if (!tenancy || (isOwner && tenancy.unit.property.ownerId !== actor.id)) {
+    return encodedRedirect("error", "/protected/tenancies", "Tenancy not found.");
+  }
+
+  try {
+    await notifyTenantAssigned({
+      tenantId: tenancy.tenantId,
+      propertyName: tenancy.unit.property.name,
+      unitLabel: formatUnitLabel(
+        tenancy.unit.property.propertyType,
+        tenancy.unit.label,
+      ),
+      moveInDate: format(tenancy.startDate, "d MMMM yyyy"),
+      monthlyRent: formatMoney(tenancy.monthlyRent),
+      rentDueDay: tenancy.rentDueDay,
+      securityDeposit:
+        Number(tenancy.securityDeposit) > 0
+          ? formatMoney(tenancy.securityDeposit)
+          : undefined,
+      leaseEndDate: tenancy.leaseEndDate
+        ? format(tenancy.leaseEndDate, "d MMMM yyyy")
+        : undefined,
+    });
+  } catch (error) {
+    console.error("Resend welcome email failed:", error);
+    return encodedRedirect(
+      "error",
+      "/protected/tenancies",
+      "Could not resend the email. Try again.",
+    );
+  }
+
+  return encodedRedirect(
+    "success",
+    "/protected/tenancies",
+    "Welcome email resent to the tenant.",
+  );
+};
+
 export const endTenancyAction = async (formData: FormData) => {
   const actor = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = actor.userType === UserType.owner;
@@ -1161,4 +1222,65 @@ export const waiveChargeAction = async (formData: FormData) => {
   revalidatePath("/protected/finances");
 
   return encodedRedirect("success", financeBack(chargeId), "Charge waived.");
+};
+
+/** Re-sends the invoice email for a single charge, rebuilt fresh from the
+ * charge's current data (so a corrected amount/due date is reflected) —
+ * not a replay of the original email. Useful when a tenant says they never
+ * got it, or their email address was wrong and has since been fixed. */
+export const resendChargeInvoiceEmailAction = async (formData: FormData) => {
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
+  const chargeId = formData.get("chargeId")?.toString();
+
+  if (!chargeId) {
+    return encodedRedirect("error", "/protected/finances", "Charge not found.");
+  }
+
+  const charge = await prisma.charge.findUnique({
+    where: { id: chargeId },
+    include: {
+      tenant: {
+        select: { id: true, email: true, firstName: true, lastName: true },
+      },
+      unit: { include: { property: { include: { propertyType: true } } } },
+    },
+  });
+
+  if (!charge || (isOwner && charge.unit.property.ownerId !== actor.id)) {
+    return encodedRedirect("error", "/protected/finances", "Charge not found.");
+  }
+
+  try {
+    await notifyTenantInvoice({
+      tenantId: charge.tenantId,
+      tenantName:
+        [charge.tenant.firstName, charge.tenant.lastName]
+          .filter(Boolean)
+          .join(" ") || charge.tenant.email,
+      propertyName: charge.unit.property.name,
+      unitLabel: formatUnitLabel(
+        charge.unit.property.propertyType,
+        charge.unit.label,
+      ),
+      invoiceRef: charge.id,
+      dueDate: format(charge.dueDate, "d MMMM yyyy"),
+      href: financeBack(charge.id),
+      lineItems: [{ label: charge.title, amount: formatMoney(charge.amount) }],
+      total: formatMoney(charge.amount),
+    });
+  } catch (error) {
+    console.error("Resend invoice email failed:", error);
+    return encodedRedirect(
+      "error",
+      financeBack(chargeId),
+      "Could not resend the email. Try again.",
+    );
+  }
+
+  return encodedRedirect(
+    "success",
+    financeBack(chargeId),
+    "Invoice email resent to the tenant.",
+  );
 };
