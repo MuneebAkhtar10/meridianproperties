@@ -112,7 +112,9 @@ export function HeldTaskCard({
                       task.unit.property.propertyType,
                       task.unit.label,
                     )}`
-                  : "No unit linked"}
+                  : task.property
+                    ? `${task.property.name} · Common area`
+                    : "No unit linked"}
               </span>
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" />

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import { WhatsappFlow } from "@/lib/generated/prisma/client";
+import { Prisma, WhatsappFlow } from "@/lib/generated/prisma/client";
 
 /**
  * Small shared helpers for reading/writing a WhatsApp conversation's state
@@ -17,7 +17,7 @@ export async function getWhatsappSession(phone: string) {
 
 export async function setWhatsappSession(
   phone: string,
-  data: {
+  input: {
     userId?: string | null;
     flow?: WhatsappFlow | null;
     step?: string | null;
@@ -25,10 +25,26 @@ export async function setWhatsappSession(
     taskId?: string | null;
   },
 ): Promise<void> {
+  // Uses the "unchecked" input variant explicitly (scalar userId/taskId
+  // rather than nested `user: { connect }` relation objects) — otherwise
+  // TS can't tell which of the checked/unchecked create-input halves this
+  // plain object is meant to satisfy. The `data` JSON column also needs
+  // Prisma's JsonNull sentinel to clear it; a plain `null` there means
+  // "set the database column to SQL NULL" only via that sentinel, not the
+  // TS value `null`.
+  const values: Prisma.WhatsappSessionUncheckedCreateInput = {
+    phone,
+    userId: input.userId,
+    flow: input.flow,
+    step: input.step,
+    taskId: input.taskId,
+    data: input.data === null ? Prisma.JsonNull : input.data,
+  };
+
   await prisma.whatsappSession.upsert({
     where: { phone },
-    create: { phone, ...data },
-    update: data,
+    create: values,
+    update: values,
   });
 }
 

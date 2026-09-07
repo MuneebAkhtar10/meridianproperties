@@ -55,6 +55,7 @@ export default async function WorkerTasksPage({ searchParams }: PageProps) {
             },
           },
         },
+        property: { select: { name: true } },
         attachments: true,
         // A hold can be resolved and the job resumed while a supply request
         // stays on the record — this is where the worker sees an approved
@@ -87,6 +88,7 @@ export default async function WorkerTasksPage({ searchParams }: PageProps) {
             },
           },
         },
+        property: { select: { name: true } },
         supplyRequests: {
           orderBy: { createdAt: "asc" },
           include: {

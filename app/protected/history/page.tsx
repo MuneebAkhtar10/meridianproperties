@@ -30,6 +30,7 @@ export default async function TaskHistoryPage() {
           },
         },
       },
+      property: { select: { name: true } },
       attachments: true,
     },
   });

@@ -132,7 +132,7 @@ export const startTenancyAction = async (formData: FormData) => {
           select: {
             name: true,
             ownerId: true,
-            propertyType: { select: { unitPrefix: true } },
+            propertyType: { select: { unitPrefix: true, hasFloors: true } },
           },
         },
       },
@@ -593,7 +593,7 @@ export const createChargeAction = async (formData: FormData) => {
             select: {
               ownerId: true,
               name: true,
-              propertyType: { select: { unitPrefix: true } },
+              propertyType: { select: { unitPrefix: true, hasFloors: true } },
             },
           },
         },
@@ -769,7 +769,7 @@ export const generateRentChargesAction = async (formData: FormData) => {
             property: {
               select: {
                 name: true,
-                propertyType: { select: { unitPrefix: true } },
+                propertyType: { select: { unitPrefix: true, hasFloors: true } },
               },
             },
           },

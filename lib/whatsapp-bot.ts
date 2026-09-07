@@ -173,7 +173,14 @@ async function tenantFlow(
     );
   }
 
-  const data = (session.data as Record<string, string>) ?? {};
+  // Annotated explicitly rather than relying on inference: `A ?? {}` where A
+  // is a cast (not a nullable type) makes TS union the result with the
+  // empty-object-literal type `{}`, and a later `{...data, x}` spread can
+  // then get typed as just `{x: ...}` — silently losing every other key.
+  const data: Record<string, string> = (session.data as Record<
+    string,
+    string
+  > | null) ?? {};
 
   switch (session.step) {
     case "category": {
@@ -223,7 +230,7 @@ async function tenantFlow(
         return "Please describe the issue in a few words.";
       }
 
-      const nextData = { ...data, description: body };
+      const nextData: Record<string, string> = { ...data, description: body };
       await setSession(phone, { step: "confirm", data: nextData });
 
       return (

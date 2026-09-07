@@ -689,7 +689,6 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
                   ? "view ledger or upload proof"
                   : "nothing outstanding"
               }
-              icon={<ReceiptText className="h-4 w-4" />}
             />
             <StatTile
               label="Open requests"
