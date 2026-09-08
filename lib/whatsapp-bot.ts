@@ -76,6 +76,13 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Strips trailing punctuation ("?", "!", ".", ",") so "Whats the status ?"
+ * matches the same as "whats the status" — every exact/direct-match list in
+ * this file is compared against the normalized form. */
+function stripTrailingPunctuation(value: string): string {
+  return value.replace(/[?!.,]+$/, "").trim();
+}
+
 /** Household items/problems that clearly point at one category or room even
  * though the word itself never appears in the option list — "stove" doesn't
  * contain "kitchen", but everyone means the same thing. Checked against
