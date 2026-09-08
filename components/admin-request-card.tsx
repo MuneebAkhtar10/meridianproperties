@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { format } from "date-fns";
 import {
   CheckCircle2,
@@ -10,8 +10,10 @@ import {
   Image as ImageIcon,
   LoaderCircle,
   MapPin,
+  Paperclip,
   PauseCircle,
   PlayCircle,
+  Receipt,
   User,
   UserCog,
   XCircle,
@@ -23,6 +25,7 @@ import {
   decideSupplyRequestAction,
   holdTaskAction,
   resumeHeldTaskAction,
+  uploadSupplyReceiptAction,
 } from "@/app/actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,7 @@ export function AdminRequestCard({
   request,
   workers,
   attachments = [],
+  isAdmin = true,
 }: {
   request: RequestWithPlace;
   workers: {
@@ -55,6 +59,8 @@ export function AdminRequestCard({
     companyName: string | null;
   }[];
   attachments?: Attachment[];
+  /** Property owners get a read-only view — no assign/hold/supply controls. */
+  isAdmin?: boolean;
 }) {
   const inHouseWorkers = workers.filter(
     (worker) => worker.workerCategory !== "third_party",
@@ -267,6 +273,7 @@ export function AdminRequestCard({
                 key={supplyRequest.id}
                 supplyRequest={supplyRequest}
                 onDecided={showResult}
+                isAdmin={isAdmin}
               />
             ))}
           </div>
@@ -304,7 +311,15 @@ export function AdminRequestCard({
           </div>
         )}
 
-        {expanded && (isHeld ? (
+        {expanded && !isAdmin && (
+          <p className="border-t pt-4 text-xs text-muted-foreground">
+            {isHeld
+              ? "On hold, pending admin review."
+              : `${assignedWorker ? workerLabel(assignedWorker) : "No worker"} assigned · ${STATUS_META[request.status].label}`}
+          </p>
+        )}
+
+        {expanded && isAdmin && (isHeld ? (
           <div className="space-y-4 border-t pt-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -527,9 +542,11 @@ export function AdminRequestCard({
 function SupplyRequestRow({
   supplyRequest,
   onDecided,
+  isAdmin = true,
 }: {
   supplyRequest: SupplyRequestWithUsers;
   onDecided: (result: { ok: boolean; message: string }) => void;
+  isAdmin?: boolean;
 }) {
   const [note, setNote] = useState("");
   const [cost, setCost] = useState(
@@ -537,6 +554,40 @@ function SupplyRequestRow({
   );
   const [denying, setDenying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [receiptCost, setReceiptCost] = useState(
+    supplyRequest.workerCost != null ? String(supplyRequest.workerCost) : "",
+  );
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadReceipt = async () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) {
+      onDecided({ ok: false, message: "Choose a receipt photo or PDF first." });
+      return;
+    }
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("supplyRequestId", supplyRequest.id);
+    formData.append("receipt", file);
+    if (receiptCost.trim()) {
+      formData.append("workerCost", receiptCost.trim());
+    }
+
+    try {
+      const result = await uploadSupplyReceiptAction(formData);
+      onDecided(result);
+      if (result.ok) {
+        setShowUpload(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    } catch {
+      onDecided({ ok: false, message: "Could not upload the receipt." });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const decide = async (decision: "approved" | "denied") => {
     setIsSaving(true);
@@ -597,18 +648,87 @@ function SupplyRequestRow({
         <p className="text-xs text-muted-foreground">{supplyRequest.notes}</p>
       )}
 
-      {supplyRequest.receiptPath && (
+      {supplyRequest.receiptPath ? (
         <a
           href={`/api/supply-receipt/${supplyRequest.id}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-xs font-medium text-primary underline"
         >
+          <Receipt className="h-3 w-3" />
           View uploaded receipt
           {supplyRequest.workerCost != null
-            ? ` · worker says they paid ${formatMoney(supplyRequest.workerCost)}`
+            ? ` · paid ${formatMoney(supplyRequest.workerCost)}`
             : ""}
         </a>
+      ) : (
+        isAdmin &&
+        supplyRequest.status === "pending" &&
+        (showUpload ? (
+          <div className="space-y-2 rounded-md bg-muted/40 p-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Receipt (photo or PDF)</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,application/pdf"
+                className="block w-full text-xs file:mr-2 file:rounded-md file:border-0 file:bg-secondary file:px-2 file:py-1 file:text-xs"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Amount paid (optional)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.001"
+                inputMode="decimal"
+                value={receiptCost}
+                onChange={(event) => setReceiptCost(event.target.value)}
+                placeholder="0.000"
+                className="h-8 w-32 text-xs"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowUpload(false);
+                  setReceiptCost(
+                    supplyRequest.workerCost != null
+                      ? String(supplyRequest.workerCost)
+                      : "",
+                  );
+                }}
+                disabled={isUploading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={uploadReceipt}
+                disabled={isUploading}
+              >
+                {isUploading && (
+                  <LoaderCircle className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+                )}
+                {isUploading ? "Uploading…" : "Upload"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowUpload(true)}
+          >
+            <Paperclip className="h-3.5 w-3.5" />
+            Attach receipt
+          </Button>
+        ))
       )}
 
       {supplyRequest.adminNote && (
@@ -623,7 +743,7 @@ function SupplyRequestRow({
         </p>
       )}
 
-      {supplyRequest.status === "pending" && (
+      {supplyRequest.status === "pending" && isAdmin && (
         <div className="space-y-2">
           <Textarea
             value={note}

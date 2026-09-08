@@ -15,6 +15,10 @@ import {
 
 import { updateWorkerHrAction } from "@/app/admin-actions";
 import { EntityDocumentManager } from "@/components/entity-document-manager";
+import {
+  FamilyMembersManager,
+  type FamilyMemberItem,
+} from "@/components/family-members-manager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -135,8 +139,14 @@ function toDateInputValue(date: Date | null): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function WorkerHrBadge({ record }: { record: WorkerHrRecord }) {
-  const status = getWorstHrStatus(record);
+export function WorkerHrBadge({
+  record,
+  familyMembers = [],
+}: {
+  record: WorkerHrRecord;
+  familyMembers?: FamilyMemberItem[];
+}) {
+  const status = getWorstHrStatus(record, familyMembers);
   const meta = EXPIRY_STATUS_META[status];
 
   return (
@@ -339,26 +349,71 @@ function VehicleToggle({
   );
 }
 
+/** Individual vs. family employee — mirrors VehicleToggle's look. A family
+ * employee gets a dependents section (spouse/father/mother) below the
+ * standard documents, each with their own Bataka record. */
+function EmployeeTypeToggle({
+  value,
+  onChange,
+  formId,
+}: {
+  value: "individual" | "family";
+  onChange: (value: "individual" | "family") => void;
+  formId: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">Employee type</Label>
+      <div className="grid grid-cols-2 gap-2">
+        {(["individual", "family"] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(option)}
+            className={`rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors ${
+              value === option
+                ? "border-teal-400 bg-teal-50 text-teal-700"
+                : "border-input text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+      <input type="hidden" name="employeeType" value={value} form={formId} />
+    </div>
+  );
+}
+
 export function WorkerHrModal({
   userId,
   record,
   documents,
+  employeeType = "individual",
+  familyMembers = [],
   trigger,
 }: {
   userId: string;
   record: WorkerHrRecord;
   documents: DocumentItem[];
+  /** "individual" (default) or "family" — a family employee's dependents
+   * get their own Bataka records tracked below. */
+  employeeType?: string;
+  familyMembers?: FamilyMemberItem[];
   /** Custom trigger element — used by the People page's HR overview to open
    * this same modal from a summary row instead of the default button. */
   trigger?: ReactNode;
 }) {
   const [hasVehicle, setHasVehicle] = useState(record.hasVehicle);
+  const [employeeTypeValue, setEmployeeTypeValue] = useState<
+    "individual" | "family"
+  >(employeeType === "family" ? "family" : "individual");
   // useFormStatus (what SubmitButton normally uses for its spinner) only
   // reports pending state for a <form> that's an actual React ancestor —
   // this button triggers a form it's not nested inside (see the note by
   // formId below), so the pending state is tracked by hand instead.
   const [saving, setSaving] = useState(false);
-  const worstStatus = getWorstHrStatus(record);
+  const worstStatus = getWorstHrStatus(record, familyMembers);
   const meta = EXPIRY_STATUS_META[worstStatus];
   // Each document's own file-attachment uploader is now inline inside its
   // card (see HrDocumentCard), and it renders its own real <form>. A
@@ -410,33 +465,16 @@ export function WorkerHrModal({
       <div className="space-y-5">
         <input type="hidden" name="userId" value={userId} form={formId} />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {HR_DOCUMENTS.filter((doc) => !doc.vehicleOnly).map((doc) => (
-            <HrDocumentCard
-              key={doc.key}
-              doc={doc}
-              idPrefix={`edit-${userId}`}
-              record={record}
-              formId={formId}
-              userId={userId}
-              documents={documents}
-            />
-          ))}
-        </div>
-
-        <VehicleToggle
-          checked={hasVehicle}
-          onChange={setHasVehicle}
+        <EmployeeTypeToggle
+          value={employeeTypeValue}
+          onChange={setEmployeeTypeValue}
           formId={formId}
         />
 
-        {hasVehicle && (
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Vehicle documents
-            </p>
+        {employeeTypeValue === "individual" ? (
+          <>
             <div className="grid gap-4 sm:grid-cols-2">
-              {HR_DOCUMENTS.filter((doc) => doc.vehicleOnly).map((doc) => (
+              {HR_DOCUMENTS.filter((doc) => !doc.vehicleOnly).map((doc) => (
                 <HrDocumentCard
                   key={doc.key}
                   doc={doc}
@@ -448,7 +486,36 @@ export function WorkerHrModal({
                 />
               ))}
             </div>
-          </div>
+
+            <VehicleToggle
+              checked={hasVehicle}
+              onChange={setHasVehicle}
+              formId={formId}
+            />
+
+            {hasVehicle && (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Vehicle documents
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {HR_DOCUMENTS.filter((doc) => doc.vehicleOnly).map((doc) => (
+                    <HrDocumentCard
+                      key={doc.key}
+                      doc={doc}
+                      idPrefix={`edit-${userId}`}
+                      record={record}
+                      formId={formId}
+                      userId={userId}
+                      documents={documents}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <FamilyMembersManager workerId={userId} members={familyMembers} />
         )}
 
         <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-4">

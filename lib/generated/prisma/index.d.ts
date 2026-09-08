@@ -39,6 +39,14 @@ export type Unit = $Result.DefaultSelection<Prisma.$UnitPayload>
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
+ * Model WorkerFamilyMember
+ * A dependent (spouse/father/mother) tracked for an in-house worker whose
+ * employeeType is "family" — mirrors the worker's own Bataka tracking, one
+ * record per dependent. Limits (up to 4 spouses, 1 father, 1 mother) are
+ * enforced in the server action, not here.
+ */
+export type WorkerFamilyMember = $Result.DefaultSelection<Prisma.$WorkerFamilyMemberPayload>
+/**
  * Model Tenancy
  * A historical occupancy record. Unit.tenantId remains the fast pointer to the
  * current occupant; this model preserves the commercial terms and move history.
@@ -237,6 +245,15 @@ export const EntityDocumentCategory: {
 export type EntityDocumentCategory = (typeof EntityDocumentCategory)[keyof typeof EntityDocumentCategory]
 
 
+export const FamilyRelationship: {
+  spouse: 'spouse',
+  father: 'father',
+  mother: 'mother'
+};
+
+export type FamilyRelationship = (typeof FamilyRelationship)[keyof typeof FamilyRelationship]
+
+
 export const WhatsappFlow: {
   new_request: 'new_request',
   worker_task: 'worker_task',
@@ -294,6 +311,10 @@ export const FinancialDocumentKind: typeof $Enums.FinancialDocumentKind
 export type EntityDocumentCategory = $Enums.EntityDocumentCategory
 
 export const EntityDocumentCategory: typeof $Enums.EntityDocumentCategory
+
+export type FamilyRelationship = $Enums.FamilyRelationship
+
+export const FamilyRelationship: typeof $Enums.FamilyRelationship
 
 export type WhatsappFlow = $Enums.WhatsappFlow
 
@@ -459,6 +480,16 @@ export class PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.workerFamilyMember`: Exposes CRUD operations for the **WorkerFamilyMember** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more WorkerFamilyMembers
+    * const workerFamilyMembers = await prisma.workerFamilyMember.findMany()
+    * ```
+    */
+  get workerFamilyMember(): Prisma.WorkerFamilyMemberDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.tenancy`: Exposes CRUD operations for the **Tenancy** model.
@@ -1020,6 +1051,7 @@ export namespace Prisma {
     Property: 'Property',
     Unit: 'Unit',
     User: 'User',
+    WorkerFamilyMember: 'WorkerFamilyMember',
     Tenancy: 'Tenancy',
     EntityDocument: 'EntityDocument',
     Charge: 'Charge',
@@ -1046,7 +1078,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "propertyType" | "property" | "unit" | "user" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession"
+      modelProps: "propertyType" | "property" | "unit" | "user" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1343,6 +1375,80 @@ export namespace Prisma {
           count: {
             args: Prisma.UserCountArgs<ExtArgs>
             result: $Utils.Optional<UserCountAggregateOutputType> | number
+          }
+        }
+      }
+      WorkerFamilyMember: {
+        payload: Prisma.$WorkerFamilyMemberPayload<ExtArgs>
+        fields: Prisma.WorkerFamilyMemberFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WorkerFamilyMemberFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WorkerFamilyMemberFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>
+          }
+          findFirst: {
+            args: Prisma.WorkerFamilyMemberFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WorkerFamilyMemberFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>
+          }
+          findMany: {
+            args: Prisma.WorkerFamilyMemberFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>[]
+          }
+          create: {
+            args: Prisma.WorkerFamilyMemberCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>
+          }
+          createMany: {
+            args: Prisma.WorkerFamilyMemberCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WorkerFamilyMemberCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>[]
+          }
+          delete: {
+            args: Prisma.WorkerFamilyMemberDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>
+          }
+          update: {
+            args: Prisma.WorkerFamilyMemberUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>
+          }
+          deleteMany: {
+            args: Prisma.WorkerFamilyMemberDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WorkerFamilyMemberUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.WorkerFamilyMemberUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>[]
+          }
+          upsert: {
+            args: Prisma.WorkerFamilyMemberUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkerFamilyMemberPayload>
+          }
+          aggregate: {
+            args: Prisma.WorkerFamilyMemberAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWorkerFamilyMember>
+          }
+          groupBy: {
+            args: Prisma.WorkerFamilyMemberGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WorkerFamilyMemberGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WorkerFamilyMemberCountArgs<ExtArgs>
+            result: $Utils.Optional<WorkerFamilyMemberCountAggregateOutputType> | number
           }
         }
       }
@@ -2287,6 +2393,7 @@ export namespace Prisma {
     property?: PropertyOmit
     unit?: UnitOmit
     user?: UserOmit
+    workerFamilyMember?: WorkerFamilyMemberOmit
     tenancy?: TenancyOmit
     entityDocument?: EntityDocumentOmit
     charge?: ChargeOmit
@@ -2524,6 +2631,7 @@ export namespace Prisma {
     supplyRequestsDecided: number
     ownedProperties: number
     whatsappSessions: number
+    familyMembers: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2544,6 +2652,7 @@ export namespace Prisma {
     supplyRequestsDecided?: boolean | UserCountOutputTypeCountSupplyRequestsDecidedArgs
     ownedProperties?: boolean | UserCountOutputTypeCountOwnedPropertiesArgs
     whatsappSessions?: boolean | UserCountOutputTypeCountWhatsappSessionsArgs
+    familyMembers?: boolean | UserCountOutputTypeCountFamilyMembersArgs
   }
 
   // Custom InputTypes
@@ -2674,6 +2783,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountWhatsappSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: WhatsappSessionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountFamilyMembersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkerFamilyMemberWhereInput
   }
 
 
@@ -6774,6 +6890,7 @@ export namespace Prisma {
     drivingLicenseNumber: string | null
     drivingLicenseIssuance: Date | null
     drivingLicenseExpiry: Date | null
+    employeeType: string | null
     hasVehicle: boolean | null
     vehicleRegistrationNumber: string | null
     vehicleRegistrationIssuance: Date | null
@@ -6810,6 +6927,7 @@ export namespace Prisma {
     drivingLicenseNumber: string | null
     drivingLicenseIssuance: Date | null
     drivingLicenseExpiry: Date | null
+    employeeType: string | null
     hasVehicle: boolean | null
     vehicleRegistrationNumber: string | null
     vehicleRegistrationIssuance: Date | null
@@ -6846,6 +6964,7 @@ export namespace Prisma {
     drivingLicenseNumber: number
     drivingLicenseIssuance: number
     drivingLicenseExpiry: number
+    employeeType: number
     hasVehicle: number
     vehicleRegistrationNumber: number
     vehicleRegistrationIssuance: number
@@ -6885,6 +7004,7 @@ export namespace Prisma {
     drivingLicenseNumber?: true
     drivingLicenseIssuance?: true
     drivingLicenseExpiry?: true
+    employeeType?: true
     hasVehicle?: true
     vehicleRegistrationNumber?: true
     vehicleRegistrationIssuance?: true
@@ -6921,6 +7041,7 @@ export namespace Prisma {
     drivingLicenseNumber?: true
     drivingLicenseIssuance?: true
     drivingLicenseExpiry?: true
+    employeeType?: true
     hasVehicle?: true
     vehicleRegistrationNumber?: true
     vehicleRegistrationIssuance?: true
@@ -6957,6 +7078,7 @@ export namespace Prisma {
     drivingLicenseNumber?: true
     drivingLicenseIssuance?: true
     drivingLicenseExpiry?: true
+    employeeType?: true
     hasVehicle?: true
     vehicleRegistrationNumber?: true
     vehicleRegistrationIssuance?: true
@@ -7067,6 +7189,7 @@ export namespace Prisma {
     drivingLicenseNumber: string | null
     drivingLicenseIssuance: Date | null
     drivingLicenseExpiry: Date | null
+    employeeType: string
     hasVehicle: boolean
     vehicleRegistrationNumber: string | null
     vehicleRegistrationIssuance: Date | null
@@ -7121,6 +7244,7 @@ export namespace Prisma {
     drivingLicenseNumber?: boolean
     drivingLicenseIssuance?: boolean
     drivingLicenseExpiry?: boolean
+    employeeType?: boolean
     hasVehicle?: boolean
     vehicleRegistrationNumber?: boolean
     vehicleRegistrationIssuance?: boolean
@@ -7149,6 +7273,7 @@ export namespace Prisma {
     supplyRequestsDecided?: boolean | User$supplyRequestsDecidedArgs<ExtArgs>
     ownedProperties?: boolean | User$ownedPropertiesArgs<ExtArgs>
     whatsappSessions?: boolean | User$whatsappSessionsArgs<ExtArgs>
+    familyMembers?: boolean | User$familyMembersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -7177,6 +7302,7 @@ export namespace Prisma {
     drivingLicenseNumber?: boolean
     drivingLicenseIssuance?: boolean
     drivingLicenseExpiry?: boolean
+    employeeType?: boolean
     hasVehicle?: boolean
     vehicleRegistrationNumber?: boolean
     vehicleRegistrationIssuance?: boolean
@@ -7214,6 +7340,7 @@ export namespace Prisma {
     drivingLicenseNumber?: boolean
     drivingLicenseIssuance?: boolean
     drivingLicenseExpiry?: boolean
+    employeeType?: boolean
     hasVehicle?: boolean
     vehicleRegistrationNumber?: boolean
     vehicleRegistrationIssuance?: boolean
@@ -7251,6 +7378,7 @@ export namespace Prisma {
     drivingLicenseNumber?: boolean
     drivingLicenseIssuance?: boolean
     drivingLicenseExpiry?: boolean
+    employeeType?: boolean
     hasVehicle?: boolean
     vehicleRegistrationNumber?: boolean
     vehicleRegistrationIssuance?: boolean
@@ -7263,7 +7391,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "userType" | "workerCategory" | "companyName" | "firstName" | "lastName" | "phone" | "civilId" | "nationality" | "employer" | "emergencyContactName" | "emergencyContactPhone" | "passportNumber" | "passportIssuance" | "passportExpiry" | "visaNumber" | "visaIssuance" | "visaExpiry" | "civilIdIssuance" | "civilIdExpiry" | "drivingLicenseNumber" | "drivingLicenseIssuance" | "drivingLicenseExpiry" | "hasVehicle" | "vehicleRegistrationNumber" | "vehicleRegistrationIssuance" | "vehicleRegistrationExpiry" | "carInsuranceNumber" | "carInsuranceIssuance" | "carInsuranceExpiry" | "hrReminderStages" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "userType" | "workerCategory" | "companyName" | "firstName" | "lastName" | "phone" | "civilId" | "nationality" | "employer" | "emergencyContactName" | "emergencyContactPhone" | "passportNumber" | "passportIssuance" | "passportExpiry" | "visaNumber" | "visaIssuance" | "visaExpiry" | "civilIdIssuance" | "civilIdExpiry" | "drivingLicenseNumber" | "drivingLicenseIssuance" | "drivingLicenseExpiry" | "employeeType" | "hasVehicle" | "vehicleRegistrationNumber" | "vehicleRegistrationIssuance" | "vehicleRegistrationExpiry" | "carInsuranceNumber" | "carInsuranceIssuance" | "carInsuranceExpiry" | "hrReminderStages" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     unit?: boolean | User$unitArgs<ExtArgs>
     requests?: boolean | User$requestsArgs<ExtArgs>
@@ -7283,6 +7411,7 @@ export namespace Prisma {
     supplyRequestsDecided?: boolean | User$supplyRequestsDecidedArgs<ExtArgs>
     ownedProperties?: boolean | User$ownedPropertiesArgs<ExtArgs>
     whatsappSessions?: boolean | User$whatsappSessionsArgs<ExtArgs>
+    familyMembers?: boolean | User$familyMembersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -7315,6 +7444,11 @@ export namespace Prisma {
        */
       ownedProperties: Prisma.$PropertyPayload<ExtArgs>[]
       whatsappSessions: Prisma.$WhatsappSessionPayload<ExtArgs>[]
+      /**
+       * Only populated when employeeType = "family" — the worker's tracked
+       * dependents (see WorkerFamilyMember).
+       */
+      familyMembers: Prisma.$WorkerFamilyMemberPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7366,6 +7500,12 @@ export namespace Prisma {
       drivingLicenseNumber: string | null
       drivingLicenseIssuance: Date | null
       drivingLicenseExpiry: Date | null
+      /**
+       * Only meaningful for in-house workers: "individual" (default) or
+       * "family" — a family employee's dependents (spouse/father/mother) get
+       * their own Bataka records tracked below via familyMembers.
+       */
+      employeeType: string
       /**
        * Whether this worker has/drives a vehicle for work — gates whether the
        * vehicle documents below are asked for at all.
@@ -7802,6 +7942,7 @@ export namespace Prisma {
     supplyRequestsDecided<T extends User$supplyRequestsDecidedArgs<ExtArgs> = {}>(args?: Subset<T, User$supplyRequestsDecidedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplyRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     ownedProperties<T extends User$ownedPropertiesArgs<ExtArgs> = {}>(args?: Subset<T, User$ownedPropertiesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     whatsappSessions<T extends User$whatsappSessionsArgs<ExtArgs> = {}>(args?: Subset<T, User$whatsappSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    familyMembers<T extends User$familyMembersArgs<ExtArgs> = {}>(args?: Subset<T, User$familyMembersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -7855,6 +7996,7 @@ export namespace Prisma {
     readonly drivingLicenseNumber: FieldRef<"User", 'String'>
     readonly drivingLicenseIssuance: FieldRef<"User", 'DateTime'>
     readonly drivingLicenseExpiry: FieldRef<"User", 'DateTime'>
+    readonly employeeType: FieldRef<"User", 'String'>
     readonly hasVehicle: FieldRef<"User", 'Boolean'>
     readonly vehicleRegistrationNumber: FieldRef<"User", 'String'>
     readonly vehicleRegistrationIssuance: FieldRef<"User", 'DateTime'>
@@ -8685,6 +8827,30 @@ export namespace Prisma {
   }
 
   /**
+   * User.familyMembers
+   */
+  export type User$familyMembersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    where?: WorkerFamilyMemberWhereInput
+    orderBy?: WorkerFamilyMemberOrderByWithRelationInput | WorkerFamilyMemberOrderByWithRelationInput[]
+    cursor?: WorkerFamilyMemberWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WorkerFamilyMemberScalarFieldEnum | WorkerFamilyMemberScalarFieldEnum[]
+  }
+
+  /**
    * User without action
    */
   export type UserDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8700,6 +8866,1194 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: UserInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model WorkerFamilyMember
+   */
+
+  export type AggregateWorkerFamilyMember = {
+    _count: WorkerFamilyMemberCountAggregateOutputType | null
+    _avg: WorkerFamilyMemberAvgAggregateOutputType | null
+    _sum: WorkerFamilyMemberSumAggregateOutputType | null
+    _min: WorkerFamilyMemberMinAggregateOutputType | null
+    _max: WorkerFamilyMemberMaxAggregateOutputType | null
+  }
+
+  export type WorkerFamilyMemberAvgAggregateOutputType = {
+    documentFileSize: number | null
+  }
+
+  export type WorkerFamilyMemberSumAggregateOutputType = {
+    documentFileSize: number | null
+  }
+
+  export type WorkerFamilyMemberMinAggregateOutputType = {
+    id: string | null
+    workerId: string | null
+    name: string | null
+    relationship: $Enums.FamilyRelationship | null
+    civilIdIssuance: Date | null
+    civilIdExpiry: Date | null
+    documentFileName: string | null
+    documentFilePath: string | null
+    documentFileType: string | null
+    documentFileSize: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type WorkerFamilyMemberMaxAggregateOutputType = {
+    id: string | null
+    workerId: string | null
+    name: string | null
+    relationship: $Enums.FamilyRelationship | null
+    civilIdIssuance: Date | null
+    civilIdExpiry: Date | null
+    documentFileName: string | null
+    documentFilePath: string | null
+    documentFileType: string | null
+    documentFileSize: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type WorkerFamilyMemberCountAggregateOutputType = {
+    id: number
+    workerId: number
+    name: number
+    relationship: number
+    civilIdIssuance: number
+    civilIdExpiry: number
+    documentFileName: number
+    documentFilePath: number
+    documentFileType: number
+    documentFileSize: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type WorkerFamilyMemberAvgAggregateInputType = {
+    documentFileSize?: true
+  }
+
+  export type WorkerFamilyMemberSumAggregateInputType = {
+    documentFileSize?: true
+  }
+
+  export type WorkerFamilyMemberMinAggregateInputType = {
+    id?: true
+    workerId?: true
+    name?: true
+    relationship?: true
+    civilIdIssuance?: true
+    civilIdExpiry?: true
+    documentFileName?: true
+    documentFilePath?: true
+    documentFileType?: true
+    documentFileSize?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type WorkerFamilyMemberMaxAggregateInputType = {
+    id?: true
+    workerId?: true
+    name?: true
+    relationship?: true
+    civilIdIssuance?: true
+    civilIdExpiry?: true
+    documentFileName?: true
+    documentFilePath?: true
+    documentFileType?: true
+    documentFileSize?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type WorkerFamilyMemberCountAggregateInputType = {
+    id?: true
+    workerId?: true
+    name?: true
+    relationship?: true
+    civilIdIssuance?: true
+    civilIdExpiry?: true
+    documentFileName?: true
+    documentFilePath?: true
+    documentFileType?: true
+    documentFileSize?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type WorkerFamilyMemberAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WorkerFamilyMember to aggregate.
+     */
+    where?: WorkerFamilyMemberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkerFamilyMembers to fetch.
+     */
+    orderBy?: WorkerFamilyMemberOrderByWithRelationInput | WorkerFamilyMemberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WorkerFamilyMemberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkerFamilyMembers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkerFamilyMembers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned WorkerFamilyMembers
+    **/
+    _count?: true | WorkerFamilyMemberCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: WorkerFamilyMemberAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: WorkerFamilyMemberSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WorkerFamilyMemberMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WorkerFamilyMemberMaxAggregateInputType
+  }
+
+  export type GetWorkerFamilyMemberAggregateType<T extends WorkerFamilyMemberAggregateArgs> = {
+        [P in keyof T & keyof AggregateWorkerFamilyMember]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWorkerFamilyMember[P]>
+      : GetScalarType<T[P], AggregateWorkerFamilyMember[P]>
+  }
+
+
+
+
+  export type WorkerFamilyMemberGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkerFamilyMemberWhereInput
+    orderBy?: WorkerFamilyMemberOrderByWithAggregationInput | WorkerFamilyMemberOrderByWithAggregationInput[]
+    by: WorkerFamilyMemberScalarFieldEnum[] | WorkerFamilyMemberScalarFieldEnum
+    having?: WorkerFamilyMemberScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WorkerFamilyMemberCountAggregateInputType | true
+    _avg?: WorkerFamilyMemberAvgAggregateInputType
+    _sum?: WorkerFamilyMemberSumAggregateInputType
+    _min?: WorkerFamilyMemberMinAggregateInputType
+    _max?: WorkerFamilyMemberMaxAggregateInputType
+  }
+
+  export type WorkerFamilyMemberGroupByOutputType = {
+    id: string
+    workerId: string
+    name: string
+    relationship: $Enums.FamilyRelationship
+    civilIdIssuance: Date | null
+    civilIdExpiry: Date | null
+    documentFileName: string | null
+    documentFilePath: string | null
+    documentFileType: string | null
+    documentFileSize: number | null
+    createdAt: Date
+    updatedAt: Date
+    _count: WorkerFamilyMemberCountAggregateOutputType | null
+    _avg: WorkerFamilyMemberAvgAggregateOutputType | null
+    _sum: WorkerFamilyMemberSumAggregateOutputType | null
+    _min: WorkerFamilyMemberMinAggregateOutputType | null
+    _max: WorkerFamilyMemberMaxAggregateOutputType | null
+  }
+
+  type GetWorkerFamilyMemberGroupByPayload<T extends WorkerFamilyMemberGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WorkerFamilyMemberGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WorkerFamilyMemberGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WorkerFamilyMemberGroupByOutputType[P]>
+            : GetScalarType<T[P], WorkerFamilyMemberGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WorkerFamilyMemberSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workerId?: boolean
+    name?: boolean
+    relationship?: boolean
+    civilIdIssuance?: boolean
+    civilIdExpiry?: boolean
+    documentFileName?: boolean
+    documentFilePath?: boolean
+    documentFileType?: boolean
+    documentFileSize?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    worker?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workerFamilyMember"]>
+
+  export type WorkerFamilyMemberSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workerId?: boolean
+    name?: boolean
+    relationship?: boolean
+    civilIdIssuance?: boolean
+    civilIdExpiry?: boolean
+    documentFileName?: boolean
+    documentFilePath?: boolean
+    documentFileType?: boolean
+    documentFileSize?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    worker?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workerFamilyMember"]>
+
+  export type WorkerFamilyMemberSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workerId?: boolean
+    name?: boolean
+    relationship?: boolean
+    civilIdIssuance?: boolean
+    civilIdExpiry?: boolean
+    documentFileName?: boolean
+    documentFilePath?: boolean
+    documentFileType?: boolean
+    documentFileSize?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    worker?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workerFamilyMember"]>
+
+  export type WorkerFamilyMemberSelectScalar = {
+    id?: boolean
+    workerId?: boolean
+    name?: boolean
+    relationship?: boolean
+    civilIdIssuance?: boolean
+    civilIdExpiry?: boolean
+    documentFileName?: boolean
+    documentFilePath?: boolean
+    documentFileType?: boolean
+    documentFileSize?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type WorkerFamilyMemberOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workerId" | "name" | "relationship" | "civilIdIssuance" | "civilIdExpiry" | "documentFileName" | "documentFilePath" | "documentFileType" | "documentFileSize" | "createdAt" | "updatedAt", ExtArgs["result"]["workerFamilyMember"]>
+  export type WorkerFamilyMemberInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    worker?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type WorkerFamilyMemberIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    worker?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type WorkerFamilyMemberIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    worker?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $WorkerFamilyMemberPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "WorkerFamilyMember"
+    objects: {
+      worker: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workerId: string
+      name: string
+      relationship: $Enums.FamilyRelationship
+      civilIdIssuance: Date | null
+      civilIdExpiry: Date | null
+      documentFileName: string | null
+      documentFilePath: string | null
+      documentFileType: string | null
+      documentFileSize: number | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["workerFamilyMember"]>
+    composites: {}
+  }
+
+  type WorkerFamilyMemberGetPayload<S extends boolean | null | undefined | WorkerFamilyMemberDefaultArgs> = $Result.GetResult<Prisma.$WorkerFamilyMemberPayload, S>
+
+  type WorkerFamilyMemberCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<WorkerFamilyMemberFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: WorkerFamilyMemberCountAggregateInputType | true
+    }
+
+  export interface WorkerFamilyMemberDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['WorkerFamilyMember'], meta: { name: 'WorkerFamilyMember' } }
+    /**
+     * Find zero or one WorkerFamilyMember that matches the filter.
+     * @param {WorkerFamilyMemberFindUniqueArgs} args - Arguments to find a WorkerFamilyMember
+     * @example
+     * // Get one WorkerFamilyMember
+     * const workerFamilyMember = await prisma.workerFamilyMember.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WorkerFamilyMemberFindUniqueArgs>(args: SelectSubset<T, WorkerFamilyMemberFindUniqueArgs<ExtArgs>>): Prisma__WorkerFamilyMemberClient<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one WorkerFamilyMember that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {WorkerFamilyMemberFindUniqueOrThrowArgs} args - Arguments to find a WorkerFamilyMember
+     * @example
+     * // Get one WorkerFamilyMember
+     * const workerFamilyMember = await prisma.workerFamilyMember.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WorkerFamilyMemberFindUniqueOrThrowArgs>(args: SelectSubset<T, WorkerFamilyMemberFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WorkerFamilyMemberClient<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WorkerFamilyMember that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkerFamilyMemberFindFirstArgs} args - Arguments to find a WorkerFamilyMember
+     * @example
+     * // Get one WorkerFamilyMember
+     * const workerFamilyMember = await prisma.workerFamilyMember.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WorkerFamilyMemberFindFirstArgs>(args?: SelectSubset<T, WorkerFamilyMemberFindFirstArgs<ExtArgs>>): Prisma__WorkerFamilyMemberClient<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WorkerFamilyMember that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkerFamilyMemberFindFirstOrThrowArgs} args - Arguments to find a WorkerFamilyMember
+     * @example
+     * // Get one WorkerFamilyMember
+     * const workerFamilyMember = await prisma.workerFamilyMember.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WorkerFamilyMemberFindFirstOrThrowArgs>(args?: SelectSubset<T, WorkerFamilyMemberFindFirstOrThrowArgs<ExtArgs>>): Prisma__WorkerFamilyMemberClient<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more WorkerFamilyMembers that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkerFamilyMemberFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all WorkerFamilyMembers
+     * const workerFamilyMembers = await prisma.workerFamilyMember.findMany()
+     * 
+     * // Get first 10 WorkerFamilyMembers
+     * const workerFamilyMembers = await prisma.workerFamilyMember.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const workerFamilyMemberWithIdOnly = await prisma.workerFamilyMember.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WorkerFamilyMemberFindManyArgs>(args?: SelectSubset<T, WorkerFamilyMemberFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a WorkerFamilyMember.
+     * @param {WorkerFamilyMemberCreateArgs} args - Arguments to create a WorkerFamilyMember.
+     * @example
+     * // Create one WorkerFamilyMember
+     * const WorkerFamilyMember = await prisma.workerFamilyMember.create({
+     *   data: {
+     *     // ... data to create a WorkerFamilyMember
+     *   }
+     * })
+     * 
+     */
+    create<T extends WorkerFamilyMemberCreateArgs>(args: SelectSubset<T, WorkerFamilyMemberCreateArgs<ExtArgs>>): Prisma__WorkerFamilyMemberClient<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many WorkerFamilyMembers.
+     * @param {WorkerFamilyMemberCreateManyArgs} args - Arguments to create many WorkerFamilyMembers.
+     * @example
+     * // Create many WorkerFamilyMembers
+     * const workerFamilyMember = await prisma.workerFamilyMember.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WorkerFamilyMemberCreateManyArgs>(args?: SelectSubset<T, WorkerFamilyMemberCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many WorkerFamilyMembers and returns the data saved in the database.
+     * @param {WorkerFamilyMemberCreateManyAndReturnArgs} args - Arguments to create many WorkerFamilyMembers.
+     * @example
+     * // Create many WorkerFamilyMembers
+     * const workerFamilyMember = await prisma.workerFamilyMember.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many WorkerFamilyMembers and only return the `id`
+     * const workerFamilyMemberWithIdOnly = await prisma.workerFamilyMember.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WorkerFamilyMemberCreateManyAndReturnArgs>(args?: SelectSubset<T, WorkerFamilyMemberCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a WorkerFamilyMember.
+     * @param {WorkerFamilyMemberDeleteArgs} args - Arguments to delete one WorkerFamilyMember.
+     * @example
+     * // Delete one WorkerFamilyMember
+     * const WorkerFamilyMember = await prisma.workerFamilyMember.delete({
+     *   where: {
+     *     // ... filter to delete one WorkerFamilyMember
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WorkerFamilyMemberDeleteArgs>(args: SelectSubset<T, WorkerFamilyMemberDeleteArgs<ExtArgs>>): Prisma__WorkerFamilyMemberClient<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one WorkerFamilyMember.
+     * @param {WorkerFamilyMemberUpdateArgs} args - Arguments to update one WorkerFamilyMember.
+     * @example
+     * // Update one WorkerFamilyMember
+     * const workerFamilyMember = await prisma.workerFamilyMember.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WorkerFamilyMemberUpdateArgs>(args: SelectSubset<T, WorkerFamilyMemberUpdateArgs<ExtArgs>>): Prisma__WorkerFamilyMemberClient<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more WorkerFamilyMembers.
+     * @param {WorkerFamilyMemberDeleteManyArgs} args - Arguments to filter WorkerFamilyMembers to delete.
+     * @example
+     * // Delete a few WorkerFamilyMembers
+     * const { count } = await prisma.workerFamilyMember.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WorkerFamilyMemberDeleteManyArgs>(args?: SelectSubset<T, WorkerFamilyMemberDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WorkerFamilyMembers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkerFamilyMemberUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many WorkerFamilyMembers
+     * const workerFamilyMember = await prisma.workerFamilyMember.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WorkerFamilyMemberUpdateManyArgs>(args: SelectSubset<T, WorkerFamilyMemberUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WorkerFamilyMembers and returns the data updated in the database.
+     * @param {WorkerFamilyMemberUpdateManyAndReturnArgs} args - Arguments to update many WorkerFamilyMembers.
+     * @example
+     * // Update many WorkerFamilyMembers
+     * const workerFamilyMember = await prisma.workerFamilyMember.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more WorkerFamilyMembers and only return the `id`
+     * const workerFamilyMemberWithIdOnly = await prisma.workerFamilyMember.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends WorkerFamilyMemberUpdateManyAndReturnArgs>(args: SelectSubset<T, WorkerFamilyMemberUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one WorkerFamilyMember.
+     * @param {WorkerFamilyMemberUpsertArgs} args - Arguments to update or create a WorkerFamilyMember.
+     * @example
+     * // Update or create a WorkerFamilyMember
+     * const workerFamilyMember = await prisma.workerFamilyMember.upsert({
+     *   create: {
+     *     // ... data to create a WorkerFamilyMember
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the WorkerFamilyMember we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WorkerFamilyMemberUpsertArgs>(args: SelectSubset<T, WorkerFamilyMemberUpsertArgs<ExtArgs>>): Prisma__WorkerFamilyMemberClient<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of WorkerFamilyMembers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkerFamilyMemberCountArgs} args - Arguments to filter WorkerFamilyMembers to count.
+     * @example
+     * // Count the number of WorkerFamilyMembers
+     * const count = await prisma.workerFamilyMember.count({
+     *   where: {
+     *     // ... the filter for the WorkerFamilyMembers we want to count
+     *   }
+     * })
+    **/
+    count<T extends WorkerFamilyMemberCountArgs>(
+      args?: Subset<T, WorkerFamilyMemberCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WorkerFamilyMemberCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a WorkerFamilyMember.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkerFamilyMemberAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WorkerFamilyMemberAggregateArgs>(args: Subset<T, WorkerFamilyMemberAggregateArgs>): Prisma.PrismaPromise<GetWorkerFamilyMemberAggregateType<T>>
+
+    /**
+     * Group by WorkerFamilyMember.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkerFamilyMemberGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WorkerFamilyMemberGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WorkerFamilyMemberGroupByArgs['orderBy'] }
+        : { orderBy?: WorkerFamilyMemberGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WorkerFamilyMemberGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWorkerFamilyMemberGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the WorkerFamilyMember model
+   */
+  readonly fields: WorkerFamilyMemberFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for WorkerFamilyMember.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WorkerFamilyMemberClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    worker<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the WorkerFamilyMember model
+   */
+  interface WorkerFamilyMemberFieldRefs {
+    readonly id: FieldRef<"WorkerFamilyMember", 'String'>
+    readonly workerId: FieldRef<"WorkerFamilyMember", 'String'>
+    readonly name: FieldRef<"WorkerFamilyMember", 'String'>
+    readonly relationship: FieldRef<"WorkerFamilyMember", 'FamilyRelationship'>
+    readonly civilIdIssuance: FieldRef<"WorkerFamilyMember", 'DateTime'>
+    readonly civilIdExpiry: FieldRef<"WorkerFamilyMember", 'DateTime'>
+    readonly documentFileName: FieldRef<"WorkerFamilyMember", 'String'>
+    readonly documentFilePath: FieldRef<"WorkerFamilyMember", 'String'>
+    readonly documentFileType: FieldRef<"WorkerFamilyMember", 'String'>
+    readonly documentFileSize: FieldRef<"WorkerFamilyMember", 'Int'>
+    readonly createdAt: FieldRef<"WorkerFamilyMember", 'DateTime'>
+    readonly updatedAt: FieldRef<"WorkerFamilyMember", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * WorkerFamilyMember findUnique
+   */
+  export type WorkerFamilyMemberFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkerFamilyMember to fetch.
+     */
+    where: WorkerFamilyMemberWhereUniqueInput
+  }
+
+  /**
+   * WorkerFamilyMember findUniqueOrThrow
+   */
+  export type WorkerFamilyMemberFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkerFamilyMember to fetch.
+     */
+    where: WorkerFamilyMemberWhereUniqueInput
+  }
+
+  /**
+   * WorkerFamilyMember findFirst
+   */
+  export type WorkerFamilyMemberFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkerFamilyMember to fetch.
+     */
+    where?: WorkerFamilyMemberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkerFamilyMembers to fetch.
+     */
+    orderBy?: WorkerFamilyMemberOrderByWithRelationInput | WorkerFamilyMemberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WorkerFamilyMembers.
+     */
+    cursor?: WorkerFamilyMemberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkerFamilyMembers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkerFamilyMembers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WorkerFamilyMembers.
+     */
+    distinct?: WorkerFamilyMemberScalarFieldEnum | WorkerFamilyMemberScalarFieldEnum[]
+  }
+
+  /**
+   * WorkerFamilyMember findFirstOrThrow
+   */
+  export type WorkerFamilyMemberFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkerFamilyMember to fetch.
+     */
+    where?: WorkerFamilyMemberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkerFamilyMembers to fetch.
+     */
+    orderBy?: WorkerFamilyMemberOrderByWithRelationInput | WorkerFamilyMemberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WorkerFamilyMembers.
+     */
+    cursor?: WorkerFamilyMemberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkerFamilyMembers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkerFamilyMembers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WorkerFamilyMembers.
+     */
+    distinct?: WorkerFamilyMemberScalarFieldEnum | WorkerFamilyMemberScalarFieldEnum[]
+  }
+
+  /**
+   * WorkerFamilyMember findMany
+   */
+  export type WorkerFamilyMemberFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkerFamilyMembers to fetch.
+     */
+    where?: WorkerFamilyMemberWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkerFamilyMembers to fetch.
+     */
+    orderBy?: WorkerFamilyMemberOrderByWithRelationInput | WorkerFamilyMemberOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing WorkerFamilyMembers.
+     */
+    cursor?: WorkerFamilyMemberWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkerFamilyMembers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkerFamilyMembers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WorkerFamilyMembers.
+     */
+    distinct?: WorkerFamilyMemberScalarFieldEnum | WorkerFamilyMemberScalarFieldEnum[]
+  }
+
+  /**
+   * WorkerFamilyMember create
+   */
+  export type WorkerFamilyMemberCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * The data needed to create a WorkerFamilyMember.
+     */
+    data: XOR<WorkerFamilyMemberCreateInput, WorkerFamilyMemberUncheckedCreateInput>
+  }
+
+  /**
+   * WorkerFamilyMember createMany
+   */
+  export type WorkerFamilyMemberCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many WorkerFamilyMembers.
+     */
+    data: WorkerFamilyMemberCreateManyInput | WorkerFamilyMemberCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WorkerFamilyMember createManyAndReturn
+   */
+  export type WorkerFamilyMemberCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * The data used to create many WorkerFamilyMembers.
+     */
+    data: WorkerFamilyMemberCreateManyInput | WorkerFamilyMemberCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WorkerFamilyMember update
+   */
+  export type WorkerFamilyMemberUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * The data needed to update a WorkerFamilyMember.
+     */
+    data: XOR<WorkerFamilyMemberUpdateInput, WorkerFamilyMemberUncheckedUpdateInput>
+    /**
+     * Choose, which WorkerFamilyMember to update.
+     */
+    where: WorkerFamilyMemberWhereUniqueInput
+  }
+
+  /**
+   * WorkerFamilyMember updateMany
+   */
+  export type WorkerFamilyMemberUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update WorkerFamilyMembers.
+     */
+    data: XOR<WorkerFamilyMemberUpdateManyMutationInput, WorkerFamilyMemberUncheckedUpdateManyInput>
+    /**
+     * Filter which WorkerFamilyMembers to update
+     */
+    where?: WorkerFamilyMemberWhereInput
+    /**
+     * Limit how many WorkerFamilyMembers to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * WorkerFamilyMember updateManyAndReturn
+   */
+  export type WorkerFamilyMemberUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * The data used to update WorkerFamilyMembers.
+     */
+    data: XOR<WorkerFamilyMemberUpdateManyMutationInput, WorkerFamilyMemberUncheckedUpdateManyInput>
+    /**
+     * Filter which WorkerFamilyMembers to update
+     */
+    where?: WorkerFamilyMemberWhereInput
+    /**
+     * Limit how many WorkerFamilyMembers to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WorkerFamilyMember upsert
+   */
+  export type WorkerFamilyMemberUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * The filter to search for the WorkerFamilyMember to update in case it exists.
+     */
+    where: WorkerFamilyMemberWhereUniqueInput
+    /**
+     * In case the WorkerFamilyMember found by the `where` argument doesn't exist, create a new WorkerFamilyMember with this data.
+     */
+    create: XOR<WorkerFamilyMemberCreateInput, WorkerFamilyMemberUncheckedCreateInput>
+    /**
+     * In case the WorkerFamilyMember was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WorkerFamilyMemberUpdateInput, WorkerFamilyMemberUncheckedUpdateInput>
+  }
+
+  /**
+   * WorkerFamilyMember delete
+   */
+  export type WorkerFamilyMemberDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
+    /**
+     * Filter which WorkerFamilyMember to delete.
+     */
+    where: WorkerFamilyMemberWhereUniqueInput
+  }
+
+  /**
+   * WorkerFamilyMember deleteMany
+   */
+  export type WorkerFamilyMemberDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WorkerFamilyMembers to delete
+     */
+    where?: WorkerFamilyMemberWhereInput
+    /**
+     * Limit how many WorkerFamilyMembers to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * WorkerFamilyMember without action
+   */
+  export type WorkerFamilyMemberDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkerFamilyMember
+     */
+    select?: WorkerFamilyMemberSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkerFamilyMember
+     */
+    omit?: WorkerFamilyMemberOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkerFamilyMemberInclude<ExtArgs> | null
   }
 
 
@@ -22683,6 +24037,7 @@ export namespace Prisma {
     drivingLicenseNumber: 'drivingLicenseNumber',
     drivingLicenseIssuance: 'drivingLicenseIssuance',
     drivingLicenseExpiry: 'drivingLicenseExpiry',
+    employeeType: 'employeeType',
     hasVehicle: 'hasVehicle',
     vehicleRegistrationNumber: 'vehicleRegistrationNumber',
     vehicleRegistrationIssuance: 'vehicleRegistrationIssuance',
@@ -22696,6 +24051,24 @@ export namespace Prisma {
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+  export const WorkerFamilyMemberScalarFieldEnum: {
+    id: 'id',
+    workerId: 'workerId',
+    name: 'name',
+    relationship: 'relationship',
+    civilIdIssuance: 'civilIdIssuance',
+    civilIdExpiry: 'civilIdExpiry',
+    documentFileName: 'documentFileName',
+    documentFilePath: 'documentFilePath',
+    documentFileType: 'documentFileType',
+    documentFileSize: 'documentFileSize',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type WorkerFamilyMemberScalarFieldEnum = (typeof WorkerFamilyMemberScalarFieldEnum)[keyof typeof WorkerFamilyMemberScalarFieldEnum]
 
 
   export const TenancyScalarFieldEnum: {
@@ -23050,6 +24423,20 @@ export namespace Prisma {
    * Reference to a field of type 'QueryMode'
    */
   export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+  /**
+   * Reference to a field of type 'FamilyRelationship'
+   */
+  export type EnumFamilyRelationshipFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FamilyRelationship'>
+    
+
+
+  /**
+   * Reference to a field of type 'FamilyRelationship[]'
+   */
+  export type ListEnumFamilyRelationshipFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FamilyRelationship[]'>
     
 
 
@@ -23571,6 +24958,7 @@ export namespace Prisma {
     drivingLicenseNumber?: StringNullableFilter<"User"> | string | null
     drivingLicenseIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
     drivingLicenseExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    employeeType?: StringFilter<"User"> | string
     hasVehicle?: BoolFilter<"User"> | boolean
     vehicleRegistrationNumber?: StringNullableFilter<"User"> | string | null
     vehicleRegistrationIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -23599,6 +24987,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestListRelationFilter
     ownedProperties?: PropertyListRelationFilter
     whatsappSessions?: WhatsappSessionListRelationFilter
+    familyMembers?: WorkerFamilyMemberListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -23626,6 +25015,7 @@ export namespace Prisma {
     drivingLicenseNumber?: SortOrderInput | SortOrder
     drivingLicenseIssuance?: SortOrderInput | SortOrder
     drivingLicenseExpiry?: SortOrderInput | SortOrder
+    employeeType?: SortOrder
     hasVehicle?: SortOrder
     vehicleRegistrationNumber?: SortOrderInput | SortOrder
     vehicleRegistrationIssuance?: SortOrderInput | SortOrder
@@ -23654,6 +25044,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestOrderByRelationAggregateInput
     ownedProperties?: PropertyOrderByRelationAggregateInput
     whatsappSessions?: WhatsappSessionOrderByRelationAggregateInput
+    familyMembers?: WorkerFamilyMemberOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -23685,6 +25076,7 @@ export namespace Prisma {
     drivingLicenseNumber?: StringNullableFilter<"User"> | string | null
     drivingLicenseIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
     drivingLicenseExpiry?: DateTimeNullableFilter<"User"> | Date | string | null
+    employeeType?: StringFilter<"User"> | string
     hasVehicle?: BoolFilter<"User"> | boolean
     vehicleRegistrationNumber?: StringNullableFilter<"User"> | string | null
     vehicleRegistrationIssuance?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -23713,6 +25105,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestListRelationFilter
     ownedProperties?: PropertyListRelationFilter
     whatsappSessions?: WhatsappSessionListRelationFilter
+    familyMembers?: WorkerFamilyMemberListRelationFilter
   }, "id" | "phone" | "civilId" | "email_userType">
 
   export type UserOrderByWithAggregationInput = {
@@ -23740,6 +25133,7 @@ export namespace Prisma {
     drivingLicenseNumber?: SortOrderInput | SortOrder
     drivingLicenseIssuance?: SortOrderInput | SortOrder
     drivingLicenseExpiry?: SortOrderInput | SortOrder
+    employeeType?: SortOrder
     hasVehicle?: SortOrder
     vehicleRegistrationNumber?: SortOrderInput | SortOrder
     vehicleRegistrationIssuance?: SortOrderInput | SortOrder
@@ -23783,6 +25177,7 @@ export namespace Prisma {
     drivingLicenseNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
     drivingLicenseIssuance?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     drivingLicenseExpiry?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    employeeType?: StringWithAggregatesFilter<"User"> | string
     hasVehicle?: BoolWithAggregatesFilter<"User"> | boolean
     vehicleRegistrationNumber?: StringNullableWithAggregatesFilter<"User"> | string | null
     vehicleRegistrationIssuance?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
@@ -23793,6 +25188,98 @@ export namespace Prisma {
     hrReminderStages?: JsonNullableWithAggregatesFilter<"User">
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
+  }
+
+  export type WorkerFamilyMemberWhereInput = {
+    AND?: WorkerFamilyMemberWhereInput | WorkerFamilyMemberWhereInput[]
+    OR?: WorkerFamilyMemberWhereInput[]
+    NOT?: WorkerFamilyMemberWhereInput | WorkerFamilyMemberWhereInput[]
+    id?: UuidFilter<"WorkerFamilyMember"> | string
+    workerId?: UuidFilter<"WorkerFamilyMember"> | string
+    name?: StringFilter<"WorkerFamilyMember"> | string
+    relationship?: EnumFamilyRelationshipFilter<"WorkerFamilyMember"> | $Enums.FamilyRelationship
+    civilIdIssuance?: DateTimeNullableFilter<"WorkerFamilyMember"> | Date | string | null
+    civilIdExpiry?: DateTimeNullableFilter<"WorkerFamilyMember"> | Date | string | null
+    documentFileName?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFilePath?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFileType?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFileSize?: IntNullableFilter<"WorkerFamilyMember"> | number | null
+    createdAt?: DateTimeFilter<"WorkerFamilyMember"> | Date | string
+    updatedAt?: DateTimeFilter<"WorkerFamilyMember"> | Date | string
+    worker?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type WorkerFamilyMemberOrderByWithRelationInput = {
+    id?: SortOrder
+    workerId?: SortOrder
+    name?: SortOrder
+    relationship?: SortOrder
+    civilIdIssuance?: SortOrderInput | SortOrder
+    civilIdExpiry?: SortOrderInput | SortOrder
+    documentFileName?: SortOrderInput | SortOrder
+    documentFilePath?: SortOrderInput | SortOrder
+    documentFileType?: SortOrderInput | SortOrder
+    documentFileSize?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    worker?: UserOrderByWithRelationInput
+  }
+
+  export type WorkerFamilyMemberWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: WorkerFamilyMemberWhereInput | WorkerFamilyMemberWhereInput[]
+    OR?: WorkerFamilyMemberWhereInput[]
+    NOT?: WorkerFamilyMemberWhereInput | WorkerFamilyMemberWhereInput[]
+    workerId?: UuidFilter<"WorkerFamilyMember"> | string
+    name?: StringFilter<"WorkerFamilyMember"> | string
+    relationship?: EnumFamilyRelationshipFilter<"WorkerFamilyMember"> | $Enums.FamilyRelationship
+    civilIdIssuance?: DateTimeNullableFilter<"WorkerFamilyMember"> | Date | string | null
+    civilIdExpiry?: DateTimeNullableFilter<"WorkerFamilyMember"> | Date | string | null
+    documentFileName?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFilePath?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFileType?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFileSize?: IntNullableFilter<"WorkerFamilyMember"> | number | null
+    createdAt?: DateTimeFilter<"WorkerFamilyMember"> | Date | string
+    updatedAt?: DateTimeFilter<"WorkerFamilyMember"> | Date | string
+    worker?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type WorkerFamilyMemberOrderByWithAggregationInput = {
+    id?: SortOrder
+    workerId?: SortOrder
+    name?: SortOrder
+    relationship?: SortOrder
+    civilIdIssuance?: SortOrderInput | SortOrder
+    civilIdExpiry?: SortOrderInput | SortOrder
+    documentFileName?: SortOrderInput | SortOrder
+    documentFilePath?: SortOrderInput | SortOrder
+    documentFileType?: SortOrderInput | SortOrder
+    documentFileSize?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: WorkerFamilyMemberCountOrderByAggregateInput
+    _avg?: WorkerFamilyMemberAvgOrderByAggregateInput
+    _max?: WorkerFamilyMemberMaxOrderByAggregateInput
+    _min?: WorkerFamilyMemberMinOrderByAggregateInput
+    _sum?: WorkerFamilyMemberSumOrderByAggregateInput
+  }
+
+  export type WorkerFamilyMemberScalarWhereWithAggregatesInput = {
+    AND?: WorkerFamilyMemberScalarWhereWithAggregatesInput | WorkerFamilyMemberScalarWhereWithAggregatesInput[]
+    OR?: WorkerFamilyMemberScalarWhereWithAggregatesInput[]
+    NOT?: WorkerFamilyMemberScalarWhereWithAggregatesInput | WorkerFamilyMemberScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"WorkerFamilyMember"> | string
+    workerId?: UuidWithAggregatesFilter<"WorkerFamilyMember"> | string
+    name?: StringWithAggregatesFilter<"WorkerFamilyMember"> | string
+    relationship?: EnumFamilyRelationshipWithAggregatesFilter<"WorkerFamilyMember"> | $Enums.FamilyRelationship
+    civilIdIssuance?: DateTimeNullableWithAggregatesFilter<"WorkerFamilyMember"> | Date | string | null
+    civilIdExpiry?: DateTimeNullableWithAggregatesFilter<"WorkerFamilyMember"> | Date | string | null
+    documentFileName?: StringNullableWithAggregatesFilter<"WorkerFamilyMember"> | string | null
+    documentFilePath?: StringNullableWithAggregatesFilter<"WorkerFamilyMember"> | string | null
+    documentFileType?: StringNullableWithAggregatesFilter<"WorkerFamilyMember"> | string | null
+    documentFileSize?: IntNullableWithAggregatesFilter<"WorkerFamilyMember"> | number | null
+    createdAt?: DateTimeWithAggregatesFilter<"WorkerFamilyMember"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"WorkerFamilyMember"> | Date | string
   }
 
   export type TenancyWhereInput = {
@@ -25311,6 +26798,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -25339,6 +26827,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -25366,6 +26855,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -25394,6 +26884,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUpdateInput = {
@@ -25421,6 +26912,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -25449,6 +26941,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -25476,6 +26969,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -25504,6 +26998,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -25531,6 +27026,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -25568,6 +27064,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -25605,6 +27102,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -25613,6 +27111,110 @@ export namespace Prisma {
     carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkerFamilyMemberCreateInput = {
+    id?: string
+    name: string
+    relationship: $Enums.FamilyRelationship
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    documentFileName?: string | null
+    documentFilePath?: string | null
+    documentFileType?: string | null
+    documentFileSize?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    worker: UserCreateNestedOneWithoutFamilyMembersInput
+  }
+
+  export type WorkerFamilyMemberUncheckedCreateInput = {
+    id?: string
+    workerId: string
+    name: string
+    relationship: $Enums.FamilyRelationship
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    documentFileName?: string | null
+    documentFilePath?: string | null
+    documentFileType?: string | null
+    documentFileSize?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WorkerFamilyMemberUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    relationship?: EnumFamilyRelationshipFieldUpdateOperationsInput | $Enums.FamilyRelationship
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    documentFileName?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFilePath?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileType?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    worker?: UserUpdateOneRequiredWithoutFamilyMembersNestedInput
+  }
+
+  export type WorkerFamilyMemberUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workerId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    relationship?: EnumFamilyRelationshipFieldUpdateOperationsInput | $Enums.FamilyRelationship
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    documentFileName?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFilePath?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileType?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkerFamilyMemberCreateManyInput = {
+    id?: string
+    workerId: string
+    name: string
+    relationship: $Enums.FamilyRelationship
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    documentFileName?: string | null
+    documentFilePath?: string | null
+    documentFileType?: string | null
+    documentFileSize?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WorkerFamilyMemberUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    relationship?: EnumFamilyRelationshipFieldUpdateOperationsInput | $Enums.FamilyRelationship
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    documentFileName?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFilePath?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileType?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkerFamilyMemberUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workerId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    relationship?: EnumFamilyRelationshipFieldUpdateOperationsInput | $Enums.FamilyRelationship
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    documentFileName?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFilePath?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileType?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileSize?: NullableIntFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -27402,6 +29004,12 @@ export namespace Prisma {
     none?: WhatsappSessionWhereInput
   }
 
+  export type WorkerFamilyMemberListRelationFilter = {
+    every?: WorkerFamilyMemberWhereInput
+    some?: WorkerFamilyMemberWhereInput
+    none?: WorkerFamilyMemberWhereInput
+  }
+
   export type MaintenanceAttachmentOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -27427,6 +29035,10 @@ export namespace Prisma {
   }
 
   export type WhatsappSessionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type WorkerFamilyMemberOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -27460,6 +29072,7 @@ export namespace Prisma {
     drivingLicenseNumber?: SortOrder
     drivingLicenseIssuance?: SortOrder
     drivingLicenseExpiry?: SortOrder
+    employeeType?: SortOrder
     hasVehicle?: SortOrder
     vehicleRegistrationNumber?: SortOrder
     vehicleRegistrationIssuance?: SortOrder
@@ -27497,6 +29110,7 @@ export namespace Prisma {
     drivingLicenseNumber?: SortOrder
     drivingLicenseIssuance?: SortOrder
     drivingLicenseExpiry?: SortOrder
+    employeeType?: SortOrder
     hasVehicle?: SortOrder
     vehicleRegistrationNumber?: SortOrder
     vehicleRegistrationIssuance?: SortOrder
@@ -27533,6 +29147,7 @@ export namespace Prisma {
     drivingLicenseNumber?: SortOrder
     drivingLicenseIssuance?: SortOrder
     drivingLicenseExpiry?: SortOrder
+    employeeType?: SortOrder
     hasVehicle?: SortOrder
     vehicleRegistrationNumber?: SortOrder
     vehicleRegistrationIssuance?: SortOrder
@@ -27590,6 +29205,81 @@ export namespace Prisma {
     _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
+  export type EnumFamilyRelationshipFilter<$PrismaModel = never> = {
+    equals?: $Enums.FamilyRelationship | EnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    in?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    not?: NestedEnumFamilyRelationshipFilter<$PrismaModel> | $Enums.FamilyRelationship
+  }
+
+  export type UserScalarRelationFilter = {
+    is?: UserWhereInput
+    isNot?: UserWhereInput
+  }
+
+  export type WorkerFamilyMemberCountOrderByAggregateInput = {
+    id?: SortOrder
+    workerId?: SortOrder
+    name?: SortOrder
+    relationship?: SortOrder
+    civilIdIssuance?: SortOrder
+    civilIdExpiry?: SortOrder
+    documentFileName?: SortOrder
+    documentFilePath?: SortOrder
+    documentFileType?: SortOrder
+    documentFileSize?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type WorkerFamilyMemberAvgOrderByAggregateInput = {
+    documentFileSize?: SortOrder
+  }
+
+  export type WorkerFamilyMemberMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workerId?: SortOrder
+    name?: SortOrder
+    relationship?: SortOrder
+    civilIdIssuance?: SortOrder
+    civilIdExpiry?: SortOrder
+    documentFileName?: SortOrder
+    documentFilePath?: SortOrder
+    documentFileType?: SortOrder
+    documentFileSize?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type WorkerFamilyMemberMinOrderByAggregateInput = {
+    id?: SortOrder
+    workerId?: SortOrder
+    name?: SortOrder
+    relationship?: SortOrder
+    civilIdIssuance?: SortOrder
+    civilIdExpiry?: SortOrder
+    documentFileName?: SortOrder
+    documentFilePath?: SortOrder
+    documentFileType?: SortOrder
+    documentFileSize?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type WorkerFamilyMemberSumOrderByAggregateInput = {
+    documentFileSize?: SortOrder
+  }
+
+  export type EnumFamilyRelationshipWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FamilyRelationship | EnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    in?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    not?: NestedEnumFamilyRelationshipWithAggregatesFilter<$PrismaModel> | $Enums.FamilyRelationship
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumFamilyRelationshipFilter<$PrismaModel>
+    _max?: NestedEnumFamilyRelationshipFilter<$PrismaModel>
+  }
+
   export type DecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -27622,11 +29312,6 @@ export namespace Prisma {
   export type UnitScalarRelationFilter = {
     is?: UnitWhereInput
     isNot?: UnitWhereInput
-  }
-
-  export type UserScalarRelationFilter = {
-    is?: UserWhereInput
-    isNot?: UserWhereInput
   }
 
   export type TenancyCountOrderByAggregateInput = {
@@ -28995,6 +30680,13 @@ export namespace Prisma {
     connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
   }
 
+  export type WorkerFamilyMemberCreateNestedManyWithoutWorkerInput = {
+    create?: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput> | WorkerFamilyMemberCreateWithoutWorkerInput[] | WorkerFamilyMemberUncheckedCreateWithoutWorkerInput[]
+    connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
+    createMany?: WorkerFamilyMemberCreateManyWorkerInputEnvelope
+    connect?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+  }
+
   export type UnitUncheckedCreateNestedOneWithoutTenantInput = {
     create?: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenantInput
@@ -29118,6 +30810,13 @@ export namespace Prisma {
     connectOrCreate?: WhatsappSessionCreateOrConnectWithoutUserInput | WhatsappSessionCreateOrConnectWithoutUserInput[]
     createMany?: WhatsappSessionCreateManyUserInputEnvelope
     connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
+  }
+
+  export type WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput = {
+    create?: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput> | WorkerFamilyMemberCreateWithoutWorkerInput[] | WorkerFamilyMemberUncheckedCreateWithoutWorkerInput[]
+    connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
+    createMany?: WorkerFamilyMemberCreateManyWorkerInputEnvelope
+    connect?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
   }
 
   export type EnumUserTypeFieldUpdateOperationsInput = {
@@ -29376,6 +31075,20 @@ export namespace Prisma {
     deleteMany?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
   }
 
+  export type WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput = {
+    create?: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput> | WorkerFamilyMemberCreateWithoutWorkerInput[] | WorkerFamilyMemberUncheckedCreateWithoutWorkerInput[]
+    connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
+    upsert?: WorkerFamilyMemberUpsertWithWhereUniqueWithoutWorkerInput | WorkerFamilyMemberUpsertWithWhereUniqueWithoutWorkerInput[]
+    createMany?: WorkerFamilyMemberCreateManyWorkerInputEnvelope
+    set?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+    disconnect?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+    delete?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+    connect?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+    update?: WorkerFamilyMemberUpdateWithWhereUniqueWithoutWorkerInput | WorkerFamilyMemberUpdateWithWhereUniqueWithoutWorkerInput[]
+    updateMany?: WorkerFamilyMemberUpdateManyWithWhereWithoutWorkerInput | WorkerFamilyMemberUpdateManyWithWhereWithoutWorkerInput[]
+    deleteMany?: WorkerFamilyMemberScalarWhereInput | WorkerFamilyMemberScalarWhereInput[]
+  }
+
   export type UnitUncheckedUpdateOneWithoutTenantNestedInput = {
     create?: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenantInput
@@ -29622,6 +31335,38 @@ export namespace Prisma {
     update?: WhatsappSessionUpdateWithWhereUniqueWithoutUserInput | WhatsappSessionUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: WhatsappSessionUpdateManyWithWhereWithoutUserInput | WhatsappSessionUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
+  }
+
+  export type WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput = {
+    create?: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput> | WorkerFamilyMemberCreateWithoutWorkerInput[] | WorkerFamilyMemberUncheckedCreateWithoutWorkerInput[]
+    connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
+    upsert?: WorkerFamilyMemberUpsertWithWhereUniqueWithoutWorkerInput | WorkerFamilyMemberUpsertWithWhereUniqueWithoutWorkerInput[]
+    createMany?: WorkerFamilyMemberCreateManyWorkerInputEnvelope
+    set?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+    disconnect?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+    delete?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+    connect?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+    update?: WorkerFamilyMemberUpdateWithWhereUniqueWithoutWorkerInput | WorkerFamilyMemberUpdateWithWhereUniqueWithoutWorkerInput[]
+    updateMany?: WorkerFamilyMemberUpdateManyWithWhereWithoutWorkerInput | WorkerFamilyMemberUpdateManyWithWhereWithoutWorkerInput[]
+    deleteMany?: WorkerFamilyMemberScalarWhereInput | WorkerFamilyMemberScalarWhereInput[]
+  }
+
+  export type UserCreateNestedOneWithoutFamilyMembersInput = {
+    create?: XOR<UserCreateWithoutFamilyMembersInput, UserUncheckedCreateWithoutFamilyMembersInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFamilyMembersInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumFamilyRelationshipFieldUpdateOperationsInput = {
+    set?: $Enums.FamilyRelationship
+  }
+
+  export type UserUpdateOneRequiredWithoutFamilyMembersNestedInput = {
+    create?: XOR<UserCreateWithoutFamilyMembersInput, UserUncheckedCreateWithoutFamilyMembersInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFamilyMembersInput
+    upsert?: UserUpsertWithoutFamilyMembersInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutFamilyMembersInput, UserUpdateWithoutFamilyMembersInput>, UserUncheckedUpdateWithoutFamilyMembersInput>
   }
 
   export type UnitCreateNestedOneWithoutTenanciesInput = {
@@ -30886,6 +32631,23 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type NestedEnumFamilyRelationshipFilter<$PrismaModel = never> = {
+    equals?: $Enums.FamilyRelationship | EnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    in?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    not?: NestedEnumFamilyRelationshipFilter<$PrismaModel> | $Enums.FamilyRelationship
+  }
+
+  export type NestedEnumFamilyRelationshipWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FamilyRelationship | EnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    in?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
+    not?: NestedEnumFamilyRelationshipWithAggregatesFilter<$PrismaModel> | $Enums.FamilyRelationship
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumFamilyRelationshipFilter<$PrismaModel>
+    _max?: NestedEnumFamilyRelationshipFilter<$PrismaModel>
+  }
+
   export type NestedDecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -31307,6 +33069,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -31334,6 +33097,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutOwnedPropertiesInput = {
@@ -31361,6 +33125,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -31388,6 +33153,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutOwnedPropertiesInput = {
@@ -31612,6 +33378,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -31639,6 +33406,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOwnedPropertiesInput = {
@@ -31666,6 +33434,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -31693,6 +33462,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UnitUpsertWithWhereUniqueWithoutPropertyInput = {
@@ -31885,6 +33655,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -31912,6 +33683,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutUnitInput = {
@@ -31939,6 +33711,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -31966,6 +33739,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutUnitInput = {
@@ -32242,6 +34016,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -32269,6 +34044,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutUnitInput = {
@@ -32296,6 +34072,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -32323,6 +34100,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type MaintenanceRequestUpsertWithWhereUniqueWithoutUnitInput = {
@@ -33205,6 +34983,44 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type WorkerFamilyMemberCreateWithoutWorkerInput = {
+    id?: string
+    name: string
+    relationship: $Enums.FamilyRelationship
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    documentFileName?: string | null
+    documentFilePath?: string | null
+    documentFileType?: string | null
+    documentFileSize?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WorkerFamilyMemberUncheckedCreateWithoutWorkerInput = {
+    id?: string
+    name: string
+    relationship: $Enums.FamilyRelationship
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    documentFileName?: string | null
+    documentFilePath?: string | null
+    documentFileType?: string | null
+    documentFileSize?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WorkerFamilyMemberCreateOrConnectWithoutWorkerInput = {
+    where: WorkerFamilyMemberWhereUniqueInput
+    create: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput>
+  }
+
+  export type WorkerFamilyMemberCreateManyWorkerInputEnvelope = {
+    data: WorkerFamilyMemberCreateManyWorkerInput | WorkerFamilyMemberCreateManyWorkerInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UnitUpsertWithoutTenantInput = {
     update: XOR<UnitUpdateWithoutTenantInput, UnitUncheckedUpdateWithoutTenantInput>
     create: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
@@ -33627,6 +35443,280 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"WhatsappSession"> | Date | string
   }
 
+  export type WorkerFamilyMemberUpsertWithWhereUniqueWithoutWorkerInput = {
+    where: WorkerFamilyMemberWhereUniqueInput
+    update: XOR<WorkerFamilyMemberUpdateWithoutWorkerInput, WorkerFamilyMemberUncheckedUpdateWithoutWorkerInput>
+    create: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput>
+  }
+
+  export type WorkerFamilyMemberUpdateWithWhereUniqueWithoutWorkerInput = {
+    where: WorkerFamilyMemberWhereUniqueInput
+    data: XOR<WorkerFamilyMemberUpdateWithoutWorkerInput, WorkerFamilyMemberUncheckedUpdateWithoutWorkerInput>
+  }
+
+  export type WorkerFamilyMemberUpdateManyWithWhereWithoutWorkerInput = {
+    where: WorkerFamilyMemberScalarWhereInput
+    data: XOR<WorkerFamilyMemberUpdateManyMutationInput, WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerInput>
+  }
+
+  export type WorkerFamilyMemberScalarWhereInput = {
+    AND?: WorkerFamilyMemberScalarWhereInput | WorkerFamilyMemberScalarWhereInput[]
+    OR?: WorkerFamilyMemberScalarWhereInput[]
+    NOT?: WorkerFamilyMemberScalarWhereInput | WorkerFamilyMemberScalarWhereInput[]
+    id?: UuidFilter<"WorkerFamilyMember"> | string
+    workerId?: UuidFilter<"WorkerFamilyMember"> | string
+    name?: StringFilter<"WorkerFamilyMember"> | string
+    relationship?: EnumFamilyRelationshipFilter<"WorkerFamilyMember"> | $Enums.FamilyRelationship
+    civilIdIssuance?: DateTimeNullableFilter<"WorkerFamilyMember"> | Date | string | null
+    civilIdExpiry?: DateTimeNullableFilter<"WorkerFamilyMember"> | Date | string | null
+    documentFileName?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFilePath?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFileType?: StringNullableFilter<"WorkerFamilyMember"> | string | null
+    documentFileSize?: IntNullableFilter<"WorkerFamilyMember"> | number | null
+    createdAt?: DateTimeFilter<"WorkerFamilyMember"> | Date | string
+    updatedAt?: DateTimeFilter<"WorkerFamilyMember"> | Date | string
+  }
+
+  export type UserCreateWithoutFamilyMembersInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutFamilyMembersInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutFamilyMembersInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutFamilyMembersInput, UserUncheckedCreateWithoutFamilyMembersInput>
+  }
+
+  export type UserUpsertWithoutFamilyMembersInput = {
+    update: XOR<UserUpdateWithoutFamilyMembersInput, UserUncheckedUpdateWithoutFamilyMembersInput>
+    create: XOR<UserCreateWithoutFamilyMembersInput, UserUncheckedCreateWithoutFamilyMembersInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutFamilyMembersInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutFamilyMembersInput, UserUncheckedUpdateWithoutFamilyMembersInput>
+  }
+
+  export type UserUpdateWithoutFamilyMembersInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutFamilyMembersInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
   export type UnitCreateWithoutTenanciesInput = {
     id?: string
     label: string
@@ -33683,6 +35773,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -33710,6 +35801,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutTenanciesInput = {
@@ -33737,6 +35829,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -33764,6 +35857,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutTenanciesInput = {
@@ -33930,6 +36024,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -33957,6 +36052,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTenanciesInput = {
@@ -33984,6 +36080,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -34011,6 +36108,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type ChargeUpsertWithWhereUniqueWithoutTenancyInput = {
@@ -34176,6 +36274,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -34203,6 +36302,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutDocumentsInput = {
@@ -34230,6 +36330,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -34257,6 +36358,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutDocumentsInput = {
@@ -34289,6 +36391,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -34316,6 +36419,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutDocumentUploadsInput = {
@@ -34343,6 +36447,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -34370,6 +36475,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutDocumentUploadsInput = {
@@ -34531,6 +36637,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -34558,6 +36665,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDocumentsInput = {
@@ -34585,6 +36693,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -34612,6 +36721,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUpsertWithoutDocumentUploadsInput = {
@@ -34650,6 +36760,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -34677,6 +36788,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDocumentUploadsInput = {
@@ -34704,6 +36816,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -34731,6 +36844,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type TenancyCreateWithoutChargesInput = {
@@ -34838,6 +36952,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -34865,6 +36980,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutChargesInput = {
@@ -34892,6 +37008,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -34919,6 +37036,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutChargesInput = {
@@ -34951,6 +37069,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -34978,6 +37097,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutCreatedChargesInput = {
@@ -35005,6 +37125,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -35032,6 +37153,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutCreatedChargesInput = {
@@ -35245,6 +37367,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35272,6 +37395,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutChargesInput = {
@@ -35299,6 +37423,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35326,6 +37451,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUpsertWithoutCreatedChargesInput = {
@@ -35364,6 +37490,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35391,6 +37518,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedChargesInput = {
@@ -35418,6 +37546,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35445,6 +37574,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type PaymentUpsertWithWhereUniqueWithoutChargeInput = {
@@ -35547,6 +37677,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -35574,6 +37705,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutSubmittedPaymentsInput = {
@@ -35601,6 +37733,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -35628,6 +37761,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutSubmittedPaymentsInput = {
@@ -35660,6 +37794,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -35687,6 +37822,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutReviewedPaymentsInput = {
@@ -35714,6 +37850,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -35741,6 +37878,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutReviewedPaymentsInput = {
@@ -35867,6 +38005,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35894,6 +38033,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSubmittedPaymentsInput = {
@@ -35921,6 +38061,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35948,6 +38089,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUpsertWithoutReviewedPaymentsInput = {
@@ -35986,6 +38128,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36013,6 +38156,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReviewedPaymentsInput = {
@@ -36040,6 +38184,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36067,6 +38212,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type FinancialAttachmentUpsertWithWhereUniqueWithoutPaymentInput = {
@@ -36192,6 +38338,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -36219,6 +38366,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutFinancialUploadsInput = {
@@ -36246,6 +38394,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -36273,6 +38422,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutFinancialUploadsInput = {
@@ -36410,6 +38560,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36437,6 +38588,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinancialUploadsInput = {
@@ -36464,6 +38616,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36491,6 +38644,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserCreateWithoutRequestsInput = {
@@ -36518,6 +38672,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -36545,6 +38700,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutRequestsInput = {
@@ -36572,6 +38728,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -36599,6 +38756,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutRequestsInput = {
@@ -36719,6 +38877,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -36746,6 +38905,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutAssignedRequestsInput = {
@@ -36773,6 +38933,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -36800,6 +38961,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutAssignedRequestsInput = {
@@ -37007,6 +39169,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37034,6 +39197,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRequestsInput = {
@@ -37061,6 +39225,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37088,6 +39253,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UnitUpsertWithoutRequestsInput = {
@@ -37226,6 +39392,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37253,6 +39420,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedRequestsInput = {
@@ -37280,6 +39448,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37307,6 +39476,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type MaintenanceAttachmentUpsertWithWhereUniqueWithoutRequestInput = {
@@ -37477,6 +39647,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -37504,6 +39675,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutSupplyRequestsMadeInput = {
@@ -37531,6 +39703,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -37558,6 +39731,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutSupplyRequestsMadeInput = {
@@ -37590,6 +39764,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -37617,6 +39792,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutSupplyRequestsDecidedInput = {
@@ -37644,6 +39820,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -37671,6 +39848,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutSupplyRequestsDecidedInput = {
@@ -37783,6 +39961,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37810,6 +39989,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSupplyRequestsMadeInput = {
@@ -37837,6 +40017,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37864,6 +40045,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUpsertWithoutSupplyRequestsDecidedInput = {
@@ -37902,6 +40084,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37929,6 +40112,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSupplyRequestsDecidedInput = {
@@ -37956,6 +40140,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37983,6 +40168,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type MaintenanceRequestCreateWithoutAttachmentsInput = {
@@ -38073,6 +40259,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -38100,6 +40287,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutAttachmentsInput = {
@@ -38127,6 +40315,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -38154,6 +40343,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutAttachmentsInput = {
@@ -38266,6 +40456,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38293,6 +40484,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAttachmentsInput = {
@@ -38320,6 +40512,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38347,6 +40540,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type MaintenanceRequestCreateWithoutTaskLogsInput = {
@@ -38437,6 +40631,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -38464,6 +40659,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutTaskLogsInput = {
@@ -38491,6 +40687,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -38518,6 +40715,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutTaskLogsInput = {
@@ -38630,6 +40828,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38657,6 +40856,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTaskLogsInput = {
@@ -38684,6 +40884,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38711,6 +40912,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserCreateWithoutNotificationsInput = {
@@ -38738,6 +40940,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -38765,6 +40968,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -38792,6 +40996,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -38819,6 +41024,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -38925,6 +41131,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38952,6 +41159,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -38979,6 +41187,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -39006,6 +41215,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type MaintenanceRequestUpsertWithoutNotificationsInput = {
@@ -39102,6 +41312,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -39129,6 +41340,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
   export type UserUncheckedCreateWithoutWhatsappSessionsInput = {
@@ -39156,6 +41368,7 @@ export namespace Prisma {
     drivingLicenseNumber?: string | null
     drivingLicenseIssuance?: Date | string | null
     drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
     hasVehicle?: boolean
     vehicleRegistrationNumber?: string | null
     vehicleRegistrationIssuance?: Date | string | null
@@ -39183,6 +41396,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutWhatsappSessionsInput = {
@@ -39289,6 +41503,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -39316,6 +41531,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWhatsappSessionsInput = {
@@ -39343,6 +41559,7 @@ export namespace Prisma {
     drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
     drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
     hasVehicle?: BoolFieldUpdateOperationsInput | boolean
     vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -39370,6 +41587,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
   export type MaintenanceRequestUpsertWithoutWhatsappSessionsInput = {
@@ -40281,6 +42499,20 @@ export namespace Prisma {
     createdAt?: Date | string
   }
 
+  export type WorkerFamilyMemberCreateManyWorkerInput = {
+    id?: string
+    name: string
+    relationship: $Enums.FamilyRelationship
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    documentFileName?: string | null
+    documentFilePath?: string | null
+    documentFileType?: string | null
+    documentFileSize?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type MaintenanceRequestUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
@@ -41137,6 +43369,48 @@ export namespace Prisma {
     taskId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkerFamilyMemberUpdateWithoutWorkerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    relationship?: EnumFamilyRelationshipFieldUpdateOperationsInput | $Enums.FamilyRelationship
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    documentFileName?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFilePath?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileType?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkerFamilyMemberUncheckedUpdateWithoutWorkerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    relationship?: EnumFamilyRelationshipFieldUpdateOperationsInput | $Enums.FamilyRelationship
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    documentFileName?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFilePath?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileType?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    relationship?: EnumFamilyRelationshipFieldUpdateOperationsInput | $Enums.FamilyRelationship
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    documentFileName?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFilePath?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileType?: NullableStringFieldUpdateOperationsInput | string | null
+    documentFileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ChargeCreateManyTenancyInput = {

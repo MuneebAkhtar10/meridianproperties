@@ -107,10 +107,9 @@ export default async function FinanceDetailPage({
     notFound();
   }
 
-  // Owners get full admin-equivalent write access on their own properties'
-  // charges — the ownership check above already confirmed they own this one.
-  const canManagePayments =
-    user.userType === UserType.admin || user.userType === UserType.owner;
+  // Property owners have read-only access to everything except creating a
+  // new property — all charge management is admin-only.
+  const canManagePayments = user.userType === UserType.admin;
 
   const balance = chargeBalance(charge);
   const approved = approvedTotal(charge.payments);

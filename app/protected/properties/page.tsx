@@ -118,26 +118,28 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
             </div>
           </CardContent>
         </Card>
-        <Card className="relative w-full overflow-hidden border-border/60 shadow-sm sm:w-auto sm:min-w-56">
-          <span className="absolute inset-x-0 top-0 h-1 bg-emerald-500" />
-          <CardContent className="flex items-center gap-4 p-5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Users className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="whitespace-nowrap text-xs text-muted-foreground">
-                Occupied
-              </p>
-              <p className="whitespace-nowrap text-2xl font-semibold">
-                {totalOccupied}
-                <span className="text-sm font-normal text-muted-foreground">
-                  {" "}
-                  / {totalUnits}
-                </span>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <Link href="/protected/tenancies" className="block w-full sm:w-auto">
+          <Card className="relative w-full overflow-hidden border-border/60 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:min-w-56">
+            <span className="absolute inset-x-0 top-0 h-1 bg-emerald-500" />
+            <CardContent className="flex items-center gap-4 p-5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <Users className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="whitespace-nowrap text-xs text-muted-foreground">
+                  Occupied
+                </p>
+                <p className="whitespace-nowrap text-2xl font-semibold">
+                  {totalOccupied}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {" "}
+                    / {totalUnits}
+                  </span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {isAdmin && pendingProperties.length > 0 && (
@@ -330,8 +332,34 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
           <CardContent className="pt-5">
             <UploadBudgetProvider>
               <form className="space-y-4" encType="multipart/form-data">
+                {isAdmin && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ownerId">Owner</Label>
+                    <Select id="ownerId" name="ownerId" defaultValue="" required>
+                      <option value="" disabled>
+                        Select an owner
+                      </option>
+                      {owners.map((owner) => (
+                        <option key={owner.id} value={owner.id}>
+                          {owner.email}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Don&rsquo;t see the owner you need?{" "}
+                      <Link
+                        href="/protected/users?newPersonRole=owner#add-person"
+                        className="font-medium underline"
+                      >
+                        Create the owner first
+                      </Link>
+                      , then come back here.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Property Name</Label>
                   <Input
                     id="name"
                     name="name"
@@ -438,22 +466,6 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                     />
                   </div>
                 </div>
-
-                {isAdmin && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ownerId">Owner</Label>
-                    <Select id="ownerId" name="ownerId" defaultValue="" required>
-                      <option value="" disabled>
-                        Select an owner
-                      </option>
-                      {owners.map((owner) => (
-                        <option key={owner.id} value={owner.id}>
-                          {owner.email}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                )}
 
                 <div className="space-y-1.5">
                   <Label htmlFor="titleDeedDocuments">

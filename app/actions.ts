@@ -21,7 +21,6 @@ import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
 import {
   getCurrentUser,
-  requireAnyRole,
   requireRole,
   requireUser,
 } from "@/lib/session";
@@ -43,29 +42,15 @@ const STATUSES = Object.values(RequestStatus) as string[];
 const USER_TYPES = Object.values(UserType) as string[];
 
 /**
- * True when `actor` may manage this maintenance request as if they were an
- * admin — either they ARE an admin, or they are the owner of the property
- * the request belongs to (via its unit, or directly via propertyId for a
- * common-area request with no unit). Always re-checked against the
- * database; never trust a client-supplied ownerId.
- */
+ * True when `actor` may manage this maintenance request as an admin.
+ * Property owners are read-only everywhere except creating a new property
+ * (see createPropertyAction) — they never get management rights here, even
+ * over their own properties' requests. */
 async function canManageRequest(
   actor: { id: string; userType: UserType },
-  requestId: string,
+  _requestId: string,
 ): Promise<boolean> {
-  if (actor.userType === UserType.admin) return true;
-  if (actor.userType !== UserType.owner) return false;
-
-  const request = await prisma.maintenanceRequest.findUnique({
-    where: { id: requestId },
-    select: {
-      unit: { select: { property: { select: { ownerId: true } } } },
-      property: { select: { ownerId: true } },
-    },
-  });
-
-  const ownerId = request?.unit?.property.ownerId ?? request?.property?.ownerId;
-  return ownerId === actor.id;
+  return actor.userType === UserType.admin;
 }
 const HOLDABLE_STATUSES: RequestStatus[] = [
   RequestStatus.pending,
@@ -806,7 +791,10 @@ export const uploadSupplyReceiptAction = async (
     return { ok: false, message: "Request not found." };
   }
 
-  if (supplyRequest.requestedById !== actor.id) {
+  if (
+    supplyRequest.requestedById !== actor.id &&
+    actor.userType !== UserType.admin
+  ) {
     return { ok: false, message: "You can only attach a receipt to your own request." };
   }
 
@@ -858,7 +846,9 @@ export const uploadSupplyReceiptAction = async (
 export const decideSupplyRequestAction = async (
   formData: FormData,
 ): Promise<TaskStatusResult> => {
-  const admin = await requireAnyRole(UserType.admin, UserType.owner);
+  // Admin-only — property owners have read-only access to everything
+  // except creating a new property (see createPropertyAction).
+  const admin = await requireRole(UserType.admin);
 
   const supplyRequestId = formData.get("supplyRequestId")?.toString() ?? "";
   const decision = formData.get("decision")?.toString();
@@ -1100,7 +1090,8 @@ export const workerReadyToResumeAction = async (
 export const resumeHeldTaskAction = async (
   formData: FormData,
 ): Promise<TaskStatusResult> => {
-  const admin = await requireAnyRole(UserType.admin, UserType.owner);
+  // Admin-only — see decideSupplyRequestAction's note above.
+  const admin = await requireRole(UserType.admin);
   const taskId = formData.get("taskId")?.toString() ?? "";
   const workerId = formData.get("workerId")?.toString() ?? "";
   const notes = formData.get("notes")?.toString().trim() ?? "";
@@ -1276,6 +1267,7 @@ export const requestCompletionAction = async (
       userId: true,
       assignedToId: true,
       status: true,
+      completionCode: true,
     },
   });
 
@@ -1285,6 +1277,17 @@ export const requestCompletionAction = async (
 
   if (task.status !== RequestStatus.in_progress) {
     return { ok: false, message: "Start work before requesting completion" };
+  }
+
+  // A code is already pending (e.g. a double-tap before the page refreshed,
+  // or the worker also asked via WhatsApp) — reuse it instead of minting a
+  // new one, which would silently invalidate the code the tenant was
+  // already given and produce a confusing "doesn't match" a moment later.
+  if (task.completionCode) {
+    return {
+      ok: true,
+      message: "Ask the tenant for their 4-digit code, then enter it below.",
+    };
   }
 
   const code = generateCode();
@@ -1433,12 +1436,12 @@ export const cancelCompletionAction = async (
 
 /* ── Admin actions ─────────────────────────────────────────────────────────── */
 
-/** An admin (or owner, for their own properties) files a request directly —
- * for a specific unit, or for a common area shared by the whole property —
- * and can optionally assign a worker to it in the same step. */
+/** An admin files a request directly — for a specific unit, or for a
+ * common area shared by the whole property — and can optionally assign a
+ * worker to it in the same step. Admin-only — property owners have
+ * read-only access to everything except creating a new property. */
 export const createRequestAction = async (formData: FormData) => {
-  const admin = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = admin.userType === UserType.owner;
+  const admin = await requireRole(UserType.admin);
 
   const propertyId = formData.get("propertyId")?.toString();
   const unitId = formData.get("unitId")?.toString() || undefined;
@@ -1459,10 +1462,15 @@ export const createRequestAction = async (formData: FormData) => {
 
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
-    select: { id: true, name: true, ownerId: true, units: { select: { id: true } } },
+    select: {
+      id: true,
+      name: true,
+      ownerId: true,
+      units: { select: { id: true, tenantId: true } },
+    },
   });
 
-  if (!property || (isOwner && property.ownerId !== admin.id)) {
+  if (!property) {
     return encodedRedirect(
       "error",
       "/protected/maintenance/new",
@@ -1498,9 +1506,16 @@ export const createRequestAction = async (formData: FormData) => {
     }
   }
 
+  // Attribute the request to the unit's tenant (if it has one) so they're
+  // the one notified of status changes and see it under "My requests" —
+  // not the admin who merely filed it on their behalf.
+  const tenantId = useCommonArea
+    ? null
+    : (property.units.find((u) => u.id === unitId)?.tenantId ?? null);
+
   const request = await prisma.maintenanceRequest.create({
     data: {
-      userId: admin.id,
+      userId: tenantId ?? admin.id,
       unitId: useCommonArea ? null : unitId,
       propertyId: useCommonArea ? property.id : null,
       title,
@@ -1564,7 +1579,9 @@ export const createRequestAction = async (formData: FormData) => {
 };
 
 export const assignWorkerAction = async (formData: FormData) => {
-  const admin = await requireAnyRole(UserType.admin, UserType.owner);
+  // Admin-only — property owners have read-only access to everything
+  // except creating a new property (see createPropertyAction).
+  const admin = await requireRole(UserType.admin);
 
   const requestId = formData.get("requestId")?.toString();
   const workerId = formData.get("workerId")?.toString() || undefined;
@@ -1723,6 +1740,7 @@ export const assignWorkerAction = async (formData: FormData) => {
 
   revalidatePath("/protected/maintenance");
   revalidatePath(`/protected/maintenance/${requestId}`);
+  revalidatePath("/protected/tasks");
 
   return { success: true };
 };

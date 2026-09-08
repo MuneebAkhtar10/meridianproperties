@@ -40,8 +40,24 @@ import "server-only";
  *      that's almost always a first contact and benefits from real
  *      variables rather than one big paragraph.)
  *      Create the generic template in WhatsApp Manager → Message
- *      Templates: category Utility, body exactly `{{1}}` (nothing else),
- *      and set WHATSAPP_TEMPLATE_GENERIC to its name once approved.
+ *      Templates: category Utility, with a single {{1}} variable. Meta
+ *      rejects a body that's only the variable with no surrounding text,
+ *      but the wording matters too — anything that reads as a generic
+ *      "you have an update" blurb gets silently reclassified to Marketing
+ *      after approval (which then blocks sends to anyone who hasn't opted
+ *      in to marketing messages, breaking this exact use case). Word it as
+ *      an account/service notification instead, e.g. "PropertyCare account
+ *      notification: {{1}} This message relates to your existing tenancy,
+ *      maintenance request, or property account." — tying it explicitly to
+ *      an existing relationship is what keeps it in Utility. Check the
+ *      template's category in WhatsApp Manager after approval, not just its
+ *      approval status, since the reclassification can happen after the
+ *      fact. Set WHATSAPP_TEMPLATE_GENERIC to its name once approved. This
+ *      is the path that matters most for workers specifically: an admin
+ *      assigns them a job, so they're a business-initiated recipient almost
+ *      every time (they rarely message the bot first) — the free-text send
+ *      will routinely hit the 24h-window error and fall back to this
+ *      template.
  */
 
 const GRAPH_API_VERSION = "v21.0";

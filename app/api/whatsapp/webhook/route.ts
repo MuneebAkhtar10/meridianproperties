@@ -72,8 +72,46 @@ type WhatsappWebhookPayload = {
   }[];
 };
 
+/**
+ * Meta only accepts one callback URL per app subscription, so there's no
+ * way to register both a local (ngrok) and live URL with Meta at once. This
+ * is the workaround: the live webhook — the one actually registered — fans
+ * out a copy of every raw payload to a second URL (your ngrok tunnel) for
+ * local observation. Best-effort: a slow or dead mirror target is swallowed
+ * and never breaks handling the live request, since only production ever
+ * replies to WhatsApp. Deliberately awaited (not true fire-and-forget) —
+ * on Vercel, a serverless function can freeze the instant it returns its
+ * response, killing any promise still in flight, so this has to finish
+ * before POST returns. Capped at 4s so a dead mirror (e.g. ngrok not
+ * running) can't meaningfully delay the real response Meta is waiting on.
+ * Unset (or leave WHATSAPP_WEBHOOK_MIRROR_URL empty) to disable.
+ */
+async function mirrorWebhookPayload(
+  rawBody: string,
+  headers: Headers,
+): Promise<void> {
+  const mirrorUrl = process.env.WHATSAPP_WEBHOOK_MIRROR_URL;
+  if (!mirrorUrl) return;
+
+  try {
+    await fetch(mirrorUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Hub-Signature-256": headers.get("X-Hub-Signature-256") ?? "",
+      },
+      body: rawBody,
+      signal: AbortSignal.timeout(4000),
+    });
+  } catch (error) {
+    console.warn("[whatsapp webhook] Mirror send failed (non-fatal):", error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
+
+  await mirrorWebhookPayload(rawBody, request.headers);
 
   const appSecret = process.env.WHATSAPP_APP_SECRET;
 

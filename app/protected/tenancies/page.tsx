@@ -304,6 +304,21 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                         )}
                       </div>
 
+                      {!isAdmin && (
+                        <div className="border-t pt-4">
+                          <EntityDocumentManager
+                            documents={tenancy.documents}
+                            targetType="tenancy"
+                            targetId={tenancy.id}
+                            back="/protected/tenancies"
+                            title="Tenancy documents"
+                            readOnly
+                            description="Signed agreement, municipality registration, handover report and other supporting documents."
+                          />
+                        </div>
+                      )}
+
+                      {isAdmin && (
                       <ManageToggle
                         label="Manage tenancy"
                         hint="Terms, Oman records and move-out"
@@ -509,6 +524,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                           </form>
                         </div>
                       </ManageToggle>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -575,6 +591,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
           )}
         </div>
 
+        {isAdmin && (
         <Card
           className={`h-fit overflow-hidden border-border/60 shadow-sm ${
             availableTenants.length === 0 || emptyUnits.length === 0
@@ -780,6 +797,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );

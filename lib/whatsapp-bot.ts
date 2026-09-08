@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
 import { notifyAdminsNewRequest, notifyStatusChange } from "@/lib/notifications";
 import { isValidPhone } from "@/lib/phone";
-import { generateFreeformReply } from "@/lib/gemini";
+import { classifyChoice, generateFreeformReply } from "@/lib/gemini";
 import {
   getWhatsappSession,
   setWhatsappSession,
@@ -65,6 +65,119 @@ async function getTenantLocationOptions(userId: string): Promise<string[]> {
   return options && options.length > 0 ? options : ["Other"];
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Household items/problems that clearly point at one category or room even
+ * though the word itself never appears in the option list — "stove" doesn't
+ * contain "kitchen", but everyone means the same thing. Checked against
+ * every word in the message, case-insensitively. Not exhaustive by design:
+ * this only needs to cover the common cases fast and for free; anything it
+ * doesn't recognize still falls through to classifyChoice. */
+const SYNONYMS: Record<string, string> = {
+  // Plumbing
+  leak: "Plumbing",
+  leaking: "Plumbing",
+  tap: "Plumbing",
+  faucet: "Plumbing",
+  pipe: "Plumbing",
+  drain: "Plumbing",
+  toilet: "Plumbing",
+  clog: "Plumbing",
+  clogged: "Plumbing",
+  // Electrical
+  socket: "Electrical",
+  outlet: "Electrical",
+  switch: "Electrical",
+  wire: "Electrical",
+  wiring: "Electrical",
+  light: "Electrical",
+  bulb: "Electrical",
+  power: "Electrical",
+  // AC / Cooling
+  ac: "AC / Cooling",
+  aircon: "AC / Cooling",
+  "a/c": "AC / Cooling",
+  cooling: "AC / Cooling",
+  hvac: "AC / Cooling",
+  // Appliance
+  fridge: "Appliance",
+  refrigerator: "Appliance",
+  stove: "Appliance",
+  oven: "Appliance",
+  microwave: "Appliance",
+  washer: "Appliance",
+  dryer: "Appliance",
+  dishwasher: "Appliance",
+  // Rooms — for the location step
+  bed: "Bedroom",
+  shower: "Bathroom",
+  sink: "Kitchen",
+  cabinet: "Kitchen",
+  car: "Garage",
+  lawn: "Garden / yard",
+  plant: "Garden / yard",
+  yard: "Garden / yard",
+};
+
+function levenshtein(a: string, b: string): number {
+  const dp: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
+  );
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      dp[i][j] =
+        a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+
+  return dp[a.length][b.length];
+}
+
+/** Case-insensitive exact, whole-word, synonym, or near-miss-typo match
+ * against a list of options — instant and works with zero network
+ * dependency, so replies like "electrical", "stove", or "kitcen" (typo)
+ * all resolve immediately instead of waiting on (and depending on) an AI
+ * call. Tried before classifyChoice everywhere, which only ever has to
+ * handle genuinely free-form phrasing this can't cover. */
+function findDirectMatch(bodyLower: string, options: string[]): string | undefined {
+  const exact = options.find((o) => o.toLowerCase() === bodyLower);
+  if (exact) return exact;
+
+  const wordBoundary = options.find((o) => {
+    const optionLower = o.toLowerCase();
+    return new RegExp(`\\b${escapeRegExp(optionLower)}\\b`).test(bodyLower);
+  });
+  if (wordBoundary) return wordBoundary;
+
+  const words = bodyLower.split(/[^a-z0-9/]+/i).filter(Boolean);
+
+  for (const word of words) {
+    const synonymLabel = SYNONYMS[word];
+    const synonymMatch = synonymLabel && options.find((o) => o === synonymLabel);
+    if (synonymMatch) return synonymMatch;
+  }
+
+  // Typo tolerance: a short edit distance relative to word length catches
+  // "kitcen" → "kitchen" without being loose enough to conflate unrelated
+  // short words.
+  for (const word of words) {
+    if (word.length < 4) continue;
+    const closest = options.find((o) => {
+      const optionLower = o.toLowerCase();
+      const maxDistance = optionLower.length <= 5 ? 1 : 2;
+      return levenshtein(word, optionLower) <= maxDistance;
+    });
+    if (closest) return closest;
+  }
+
+  return undefined;
+}
+
 function generateCode(): string {
   const n = randomBytes(4).readUInt32BE(0) % 10000;
   return String(n).padStart(4, "0");
@@ -83,6 +196,24 @@ const setSession = setWhatsappSession;
 const clearSession = clearWhatsappSession;
 
 const MENU_WORDS = ["menu", "hi", "hello", "hey", "start", "new"];
+// A plain greeting isn't the same as "I want to report something" — jumping
+// straight to a category list on "hi" is presumptuous. Greetings get an
+// open question instead; only these actually start the report flow.
+const GREETING_WORDS = ["hi", "hello", "hey", "hiya", "yo"];
+const REPORT_TRIGGER_WORDS = [
+  "menu",
+  "start",
+  "new",
+  "report",
+  "report an issue",
+  "report a problem",
+  "problem",
+  "issue",
+  "new request",
+  "new issue",
+];
+const YES_WORDS = ["yes", "y", "yeah", "yep", "yup", "sure", "go ahead", "confirm", "correct", "submit", "ok", "okay"];
+const NO_WORDS = ["no", "n", "nope", "nah", "cancel", "stop"];
 
 export async function handleIncomingWhatsapp(
   rawFrom: string,
@@ -130,7 +261,11 @@ async function tenantFlow(
     return listTenantRequests(userId);
   }
 
-  if (MENU_WORDS.includes(bodyLower)) {
+  if (GREETING_WORDS.includes(bodyLower)) {
+    return "Hey there! I can help you report a maintenance issue or check on an existing one — what do you need?";
+  }
+
+  if (REPORT_TRIGGER_WORDS.includes(bodyLower)) {
     await setSession(phone, {
       userId,
       flow: WhatsappFlow.new_request,
@@ -138,13 +273,53 @@ async function tenantFlow(
       data: {},
     });
     return (
-      "Let's report a maintenance issue. What's it about?\n\n" +
+      "Sure — what kind of issue is it?\n\n" +
       CATEGORIES.map((c, i) => `${i + 1}. ${c.label}`).join("\n") +
-      "\n\nReply with a number. (Reply *status* any time to check your open requests.)"
+      "\n\nJust send the number, or tell me what's wrong and I'll figure it out. (Send *status* any time to check your open requests.)"
     );
   }
 
   if (!session?.flow) {
+    // No "menu" needed — if they just described a problem outright ("my AC
+    // stopped working"), jump straight into the flow with the category
+    // already inferred instead of making them repeat themselves. Direct
+    // match first (instant, no AI needed), then classify free-form phrasing.
+    const directCategoryLabel = findDirectMatch(
+      bodyLower,
+      CATEGORIES.map((c) => c.label),
+    );
+    const matchedCategoryLabel =
+      directCategoryLabel ??
+      (await classifyChoice({
+        question: "Are they reporting a maintenance problem, and if so what kind?",
+        userMessage: body,
+        options: CATEGORIES.map((c) => c.label),
+      }));
+    const matchedCategory = CATEGORIES.find(
+      (c) => c.label === matchedCategoryLabel,
+    );
+
+    if (matchedCategory) {
+      const locationOptions = await getTenantLocationOptions(userId);
+
+      await setSession(phone, {
+        userId,
+        flow: WhatsappFlow.new_request,
+        step: "location",
+        data: {
+          category: matchedCategory.label,
+          priority: matchedCategory.priority,
+          locationOptions: locationOptions.join(LOCATION_OPTIONS_DELIMITER),
+        },
+      });
+
+      return (
+        `Sounds like a ${matchedCategory.label.toLowerCase()} issue — I'll get that logged. Which room or area?\n\n` +
+        locationOptions.map((option, i) => `${i + 1}. ${option}`).join("\n") +
+        "\n\nA number works, or just tell me where."
+      );
+    }
+
     const openRequests = await prisma.maintenanceRequest.findMany({
       where: { userId, status: { not: RequestStatus.completed } },
       select: { title: true, status: true },
@@ -169,7 +344,7 @@ async function tenantFlow(
 
     return (
       generated ??
-      "Reply *menu* to report a new issue, or *status* to check your open requests."
+      "Send *menu* to report a new issue, or *status* to check your open requests."
     );
   }
 
@@ -185,10 +360,34 @@ async function tenantFlow(
   switch (session.step) {
     case "category": {
       const index = Number(body) - 1;
-      const category = CATEGORIES[index];
+      let category: { label: string; priority: Priority } | undefined =
+        CATEGORIES[index];
+
+      // Fast path (a plain number) failed — try a direct match on the
+      // category name itself (instant, no AI needed), then fall back to
+      // classifying free-form phrasing ("my sink won't stop leaking").
+      if (!category) {
+        const directLabel = findDirectMatch(
+          bodyLower,
+          CATEGORIES.map((c) => c.label),
+        );
+        category = CATEGORIES.find((c) => c.label === directLabel);
+      }
 
       if (!category) {
-        return `Please reply with a number from 1 to ${CATEGORIES.length}.`;
+        const matchedLabel = await classifyChoice({
+          question: "What kind of issue is it?",
+          userMessage: body,
+          options: CATEGORIES.map((c) => c.label),
+        });
+        category = CATEGORIES.find((c) => c.label === matchedLabel);
+      }
+
+      if (!category) {
+        return (
+          "Hmm, I didn't quite catch that. Pick a number, or describe it a bit more:\n\n" +
+          CATEGORIES.map((c, i) => `${i + 1}. ${c.label}`).join("\n")
+        );
       }
 
       const locationOptions = await getTenantLocationOptions(userId);
@@ -203,61 +402,94 @@ async function tenantFlow(
         },
       });
       return (
-        "Which room or area is this in?\n\n" +
+        `Got it, ${category.label.toLowerCase()} it is. Which room or area?\n\n` +
         locationOptions.map((option, i) => `${i + 1}. ${option}`).join("\n") +
-        "\n\nReply with a number."
+        "\n\nA number works, or just tell me where."
       );
     }
 
     case "location": {
       const options = data.locationOptions?.split(LOCATION_OPTIONS_DELIMITER) ?? [];
       const index = Number(body) - 1;
-      const location = options[index];
+      let location: string | undefined = options[index];
 
       if (!location) {
-        return `Please reply with a number from 1 to ${options.length}.`;
+        location = findDirectMatch(bodyLower, options);
+      }
+
+      if (!location) {
+        const matched = await classifyChoice({
+          question: "Which room or area is the issue in?",
+          userMessage: body,
+          options,
+        });
+        location = matched ?? undefined;
+      }
+
+      if (!location) {
+        return (
+          "Sorry, which of these is it closest to?\n\n" +
+          options.map((option, i) => `${i + 1}. ${option}`).join("\n")
+        );
       }
 
       await setSession(phone, {
         step: "description",
         data: { ...data, location },
       });
-      return "Got it. Briefly describe the issue.";
+      return "Perfect. What's going on — give me a quick description.";
     }
 
     case "description": {
       if (!body) {
-        return "Please describe the issue in a few words.";
+        return "I'll need a few words on what's happening before I can log this.";
       }
 
       const nextData: Record<string, string> = { ...data, description: body };
       await setSession(phone, { step: "confirm", data: nextData });
 
       return (
-        "Please confirm:\n\n" +
+        "Here's what I've got:\n\n" +
         `Issue: ${nextData.category}\n` +
         `Location: ${nextData.location}\n` +
         `Description: ${nextData.description}\n\n` +
-        "Reply *YES* to submit this request, or *NO* to cancel."
+        "Look right? Reply *yes* to send it in, or *no* to cancel."
       );
     }
 
     case "confirm": {
-      if (bodyLower === "yes" || bodyLower === "y") {
+      const YES = "yes";
+      const NO = "no";
+      let choice: string | undefined = YES_WORDS.includes(bodyLower)
+        ? YES
+        : NO_WORDS.includes(bodyLower)
+          ? NO
+          : undefined;
+
+      if (!choice) {
+        choice =
+          (await classifyChoice({
+            question: "Should I submit this maintenance request?",
+            userMessage: body,
+            options: [YES, NO],
+          })) ?? undefined;
+      }
+
+      if (choice === YES) {
         return submitTenantRequest(userId, phone, data);
       }
 
-      if (bodyLower === "no" || bodyLower === "n") {
+      if (choice === NO) {
         await clearSession(phone);
-        return "Cancelled. Reply *menu* any time to start a new request.";
+        return "No problem, cancelled. Send *menu* whenever you want to start again.";
       }
 
-      return "Reply *YES* to submit this request, or *NO* to cancel.";
+      return "Just need a yes or no — should I go ahead and submit this?";
     }
 
     default:
       await clearSession(phone);
-      return "Sorry, something went wrong. Reply *menu* to start over.";
+      return "Sorry, I lost track of that. Send *menu* to start fresh.";
   }
 }
 
@@ -315,8 +547,8 @@ async function submitTenantRequest(
   revalidatePath("/protected/maintenance");
 
   return (
-    `Thanks! Your request "${request.title}" has been submitted. ` +
-    "We'll notify you here as soon as a worker is assigned."
+    `Done! Your request "${request.title}" is in. ` +
+    "I'll message you here the moment someone's assigned."
   );
 }
 
@@ -329,11 +561,11 @@ async function listTenantRequests(userId: string): Promise<string> {
   });
 
   if (requests.length === 0) {
-    return "You have no open requests. Reply *menu* to report a new issue.";
+    return "Nothing open right now. Send *menu* if something needs fixing.";
   }
 
   return (
-    "Your open requests:\n\n" +
+    "Here's what's open:\n\n" +
     requests
       .map((r) => `• ${r.title} — ${r.status.replace("_", " ")}`)
       .join("\n")
@@ -342,9 +574,42 @@ async function listTenantRequests(userId: string): Promise<string> {
 
 /* ── Worker: act on an assigned task ─────────────────────────────────────── */
 
-const START_WORDS = ["1", "start", "on my way", "en route", "yes"];
-const ARRIVED_WORDS = ["1", "arrived", "in progress", "start work", "yes"];
-const DONE_WORDS = ["1", "done", "complete", "completed", "finished"];
+const START_WORDS = [
+  "1",
+  "start",
+  "on my way",
+  "on the way",
+  "heading over",
+  "heading there",
+  "coming now",
+  "en route",
+  "yes",
+];
+const ARRIVED_WORDS = [
+  "1",
+  "arrived",
+  "here now",
+  "just got here",
+  "just arrived",
+  "in progress",
+  "start work",
+  "starting now",
+  "yes",
+];
+const DONE_WORDS = [
+  "1",
+  "done",
+  "complete",
+  "completed",
+  "finished",
+  "all done",
+  "all finished",
+  "wrapped up",
+  "job's done",
+  "job done",
+  "task done",
+  "task complete",
+];
 
 async function workerFlow(
   workerId: string,
@@ -380,7 +645,7 @@ async function listWorkerTasks(workerId: string, phone: string): Promise<string>
   });
 
   if (tasks.length === 0) {
-    return "You have no active jobs right now.";
+    return "Nothing on your plate right now — enjoy the quiet!";
   }
 
   // Whichever job is most recently touched becomes "the" active job for
@@ -406,14 +671,44 @@ async function listWorkerTasks(workerId: string, phone: string): Promise<string>
 function actionPromptFor(status: RequestStatus): string {
   switch (status) {
     case RequestStatus.pending:
-      return 'Reply *1* when you\'re on your way for the most recent job above.';
+      return "Heading over? Just say so, or send *1*.";
     case RequestStatus.en_route:
-      return "Reply *1* once you've arrived and started work.";
+      return "Let me know when you've arrived and started — send *1* or tell me.";
     case RequestStatus.in_progress:
-      return "Reply *1* when the job is done to request the completion code.";
+      return "Reply *1* (or just tell me) once it's done and I'll grab the completion code.";
     default:
       return "";
   }
+}
+
+/** True on an exact keyword hit (instant, no AI call) or, failing that, when
+ * the free text they sent clearly means the same thing ("heading over now",
+ * "just got here", "all wrapped up") — checked one status at a time so a
+ * reply is only ever classified against the single action that's actually
+ * valid right now. */
+async function matchesAction(
+  bodyLower: string,
+  words: string[],
+  question: string,
+): Promise<boolean> {
+  // Exact hit, or one of the phrases appears in a longer reply ("yeah on my
+  // way now") — both instant, no AI needed. Word-boundary, not a naive
+  // substring check — otherwise the short entry "1" would match any message
+  // that merely contains a "1" somewhere (e.g. "call me at 1pm").
+  if (
+    words.some(
+      (w) => bodyLower === w || new RegExp(`\\b${escapeRegExp(w)}\\b`).test(bodyLower),
+    )
+  ) {
+    return true;
+  }
+
+  const match = await classifyChoice({
+    question,
+    userMessage: bodyLower,
+    options: ["yes"],
+  });
+  return match === "yes";
 }
 
 async function handleWorkerTaskReply(
@@ -424,7 +719,14 @@ async function handleWorkerTaskReply(
 ): Promise<string> {
   const task = await prisma.maintenanceRequest.findUnique({
     where: { id: taskId },
-    select: { id: true, title: true, userId: true, assignedToId: true, status: true },
+    select: {
+      id: true,
+      title: true,
+      userId: true,
+      assignedToId: true,
+      status: true,
+      completionCode: true,
+    },
   });
 
   if (!task || task.assignedToId !== workerId) {
@@ -432,7 +734,14 @@ async function handleWorkerTaskReply(
     return "That job isn't assigned to you anymore. Reply *tasks* to see your active jobs.";
   }
 
-  if (task.status === RequestStatus.pending && START_WORDS.includes(bodyLower)) {
+  if (
+    task.status === RequestStatus.pending &&
+    (await matchesAction(
+      bodyLower,
+      START_WORDS,
+      `Are they saying they're heading to / on their way to a job now? They wrote: "${bodyLower}"`,
+    ))
+  ) {
     await prisma.maintenanceRequest.update({
       where: { id: taskId },
       data: {
@@ -453,10 +762,17 @@ async function handleWorkerTaskReply(
     revalidatePath("/protected/tasks");
     revalidatePath(`/protected/maintenance/${taskId}`);
 
-    return `Marked as on your way for "${task.title}". ${actionPromptFor(RequestStatus.en_route)}`;
+    return `On it! Marked as on your way for "${task.title}". ${actionPromptFor(RequestStatus.en_route)}`;
   }
 
-  if (task.status === RequestStatus.en_route && ARRIVED_WORDS.includes(bodyLower)) {
+  if (
+    task.status === RequestStatus.en_route &&
+    (await matchesAction(
+      bodyLower,
+      ARRIVED_WORDS,
+      `Are they saying they've arrived and started working on the job? They wrote: "${bodyLower}"`,
+    ))
+  ) {
     await prisma.maintenanceRequest.update({
       where: { id: taskId },
       data: {
@@ -477,25 +793,39 @@ async function handleWorkerTaskReply(
     revalidatePath("/protected/tasks");
     revalidatePath(`/protected/maintenance/${taskId}`);
 
-    return `Marked "${task.title}" as in progress. ${actionPromptFor(RequestStatus.in_progress)}`;
+    return `Got it, marked "${task.title}" as in progress. ${actionPromptFor(RequestStatus.in_progress)}`;
   }
 
-  if (task.status === RequestStatus.in_progress && DONE_WORDS.includes(bodyLower)) {
-    const code = generateCode();
+  if (
+    task.status === RequestStatus.in_progress &&
+    (await matchesAction(
+      bodyLower,
+      DONE_WORDS,
+      `Are they saying the job is finished / done / complete? They wrote: "${bodyLower}"`,
+    ))
+  ) {
+    // A code may already be pending — from this same worker tapping "done"
+    // on the web dashboard, or a duplicate WhatsApp reply. Reuse it instead
+    // of minting a new one, which would silently invalidate the code the
+    // tenant was already given (see the matching guard in
+    // app/actions.ts's requestCompletionAction).
+    if (!task.completionCode) {
+      const code = generateCode();
 
-    await prisma.maintenanceRequest.update({
-      where: { id: taskId },
-      data: { completionCode: code, completionCodeAt: new Date() },
-    });
+      await prisma.maintenanceRequest.update({
+        where: { id: taskId },
+        data: { completionCode: code, completionCodeAt: new Date() },
+      });
 
-    await prisma.notification.create({
-      data: {
-        userId: task.userId,
-        title: "Give this code to the worker",
-        message: `Work on "${task.title}" is ready. Share code ${code} with the worker to confirm completion.`,
-        relatedId: taskId,
-      },
-    });
+      await prisma.notification.create({
+        data: {
+          userId: task.userId,
+          title: "Give this code to the worker",
+          message: `Work on "${task.title}" is ready. Share code ${code} with the worker to confirm completion.`,
+          relatedId: taskId,
+        },
+      });
+    }
 
     await setSession(phone, {
       flow: WhatsappFlow.awaiting_completion_code,
@@ -507,7 +837,7 @@ async function handleWorkerTaskReply(
     await publish({ kind: "request", roles: [UserType.admin], userIds: [task.userId, workerId] });
     revalidatePath("/protected/tasks");
 
-    return "Ask the tenant for their 4-digit completion code and reply with it here.";
+    return "Nice work! Just grab the 4-digit code from the tenant and send it here to wrap it up.";
   }
 
   const fallback =
@@ -549,13 +879,13 @@ async function handleCompletionCode(
 
   if (!task.completionCode) {
     await setSession(phone, { flow: WhatsappFlow.worker_task, taskId });
-    return "No completion code is pending. Reply *tasks* to see the current status.";
+    return "There's no code pending right now. Send *tasks* to see where things stand.";
   }
 
   const code = body.trim();
 
   if (code !== task.completionCode) {
-    return "That code doesn't match. Ask the tenant again, or reply *tasks* to cancel.";
+    return "That doesn't match what I have — double-check with the tenant, or send *tasks* to cancel.";
   }
 
   await prisma.maintenanceRequest.update({

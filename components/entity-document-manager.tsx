@@ -39,6 +39,9 @@ export function EntityDocumentManager({
    * embedding directly inside another card (e.g. one HR document's own
    * card) instead of as a standalone block. */
   compact = false,
+  /** Hides upload and delete controls entirely — for viewers (e.g. property
+   * owners) who can see documents but never manage them. */
+  readOnly = false,
 }: {
   documents: DocumentItem[];
   targetType: EntityDocumentTargetType;
@@ -48,6 +51,7 @@ export function EntityDocumentManager({
   description?: string;
   categories?: readonly EntityDocumentCategory[];
   compact?: boolean;
+  readOnly?: boolean;
 }) {
   const fieldPrefix = `${targetType}-${targetId}`;
   // A single fixed category (the common case when embedded in a specific
@@ -84,7 +88,7 @@ export function EntityDocumentManager({
                 <span className="shrink-0 text-[10px] text-muted-foreground">
                   {formatFileSize(document.fileSize)}
                 </span>
-                {document.canDelete !== false && (
+                {!readOnly && document.canDelete !== false && (
                   <form>
                     <input
                       type="hidden"
@@ -108,6 +112,7 @@ export function EntityDocumentManager({
             ))}
           </div>
         )}
+        {!readOnly && (
         <form
           className="flex items-center gap-2"
           encType="multipart/form-data"
@@ -136,6 +141,7 @@ export function EntityDocumentManager({
             <Upload className="h-3.5 w-3.5" />
           </SubmitButton>
         </form>
+        )}
       </div>
     );
   }
@@ -168,7 +174,7 @@ export function EntityDocumentManager({
                   {document.createdAt.toLocaleDateString("en-OM")}
                 </p>
               </div>
-              {document.canDelete !== false && (
+              {!readOnly && document.canDelete !== false && (
                 <form>
                   <input type="hidden" name="documentId" value={document.id} />
                   <input type="hidden" name="back" value={back} />
@@ -193,6 +199,7 @@ export function EntityDocumentManager({
         </p>
       )}
 
+      {!readOnly && (
       <form className="space-y-3" encType="multipart/form-data">
         <input type="hidden" name="targetType" value={targetType} />
         <input type="hidden" name="targetId" value={targetId} />
@@ -255,6 +262,7 @@ export function EntityDocumentManager({
           Upload documents
         </SubmitButton>
       </form>
+      )}
     </>
   );
 
