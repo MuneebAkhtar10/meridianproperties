@@ -602,6 +602,7 @@ export const markServiceChargeReceivedAction = async (formData: FormData) => {
     data: {
       serviceChargeDueDate: nextDueDate,
       serviceChargeLastStage: null,
+      serviceChargeLastReceivedAt: new Date(),
     },
   });
 

@@ -180,6 +180,10 @@ model Property {
   /// Which reminder was last sent for the CURRENT due date, so the daily job
   /// never sends the same stage twice ("upcoming" | "due" | "overdue").
   serviceChargeLastStage   String?   @map("service_charge_last_stage")
+  /// When an admin last marked the service charge as received — shown as a
+  /// confirmation tick on the property page. Cleared implicitly by simply
+  /// being stale once a new due date has since passed.
+  serviceChargeLastReceivedAt DateTime? @map("service_charge_last_received_at")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 

@@ -4197,6 +4197,7 @@ export namespace Prisma {
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
     serviceChargeLastStage: string | null
+    serviceChargeLastReceivedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -4221,6 +4222,7 @@ export namespace Prisma {
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
     serviceChargeLastStage: string | null
+    serviceChargeLastReceivedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -4245,6 +4247,7 @@ export namespace Prisma {
     serviceChargeCycleMonths: number
     serviceChargeDueDate: number
     serviceChargeLastStage: number
+    serviceChargeLastReceivedAt: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -4281,6 +4284,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
     serviceChargeLastStage?: true
+    serviceChargeLastReceivedAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -4305,6 +4309,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
     serviceChargeLastStage?: true
+    serviceChargeLastReceivedAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -4329,6 +4334,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
     serviceChargeLastStage?: true
+    serviceChargeLastReceivedAt?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -4440,6 +4446,7 @@ export namespace Prisma {
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
     serviceChargeLastStage: string | null
+    serviceChargeLastReceivedAt: Date | null
     createdAt: Date
     updatedAt: Date
     _count: PropertyCountAggregateOutputType | null
@@ -4483,6 +4490,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
     serviceChargeLastStage?: boolean
+    serviceChargeLastReceivedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
@@ -4513,6 +4521,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
     serviceChargeLastStage?: boolean
+    serviceChargeLastReceivedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
@@ -4539,6 +4548,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
     serviceChargeLastStage?: boolean
+    serviceChargeLastReceivedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
@@ -4565,11 +4575,12 @@ export namespace Prisma {
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
     serviceChargeLastStage?: boolean
+    serviceChargeLastReceivedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "ownerId" | "approved" | "serviceChargeAmount" | "serviceChargeCycleMonths" | "serviceChargeDueDate" | "serviceChargeLastStage" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
+  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "ownerId" | "approved" | "serviceChargeAmount" | "serviceChargeCycleMonths" | "serviceChargeDueDate" | "serviceChargeLastStage" | "serviceChargeLastReceivedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
   export type PropertyInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
     owner?: boolean | Property$ownerArgs<ExtArgs>
@@ -4638,6 +4649,12 @@ export namespace Prisma {
        * never sends the same stage twice ("upcoming" | "due" | "overdue").
        */
       serviceChargeLastStage: string | null
+      /**
+       * When an admin last marked the service charge as received — shown as a
+       * confirmation tick on the property page. Cleared implicitly by simply
+       * being stale once a new due date has since passed.
+       */
+      serviceChargeLastReceivedAt: Date | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["property"]>
@@ -5087,6 +5104,7 @@ export namespace Prisma {
     readonly serviceChargeCycleMonths: FieldRef<"Property", 'Int'>
     readonly serviceChargeDueDate: FieldRef<"Property", 'DateTime'>
     readonly serviceChargeLastStage: FieldRef<"Property", 'String'>
+    readonly serviceChargeLastReceivedAt: FieldRef<"Property", 'DateTime'>
     readonly createdAt: FieldRef<"Property", 'DateTime'>
     readonly updatedAt: FieldRef<"Property", 'DateTime'>
   }
@@ -23991,6 +24009,7 @@ export namespace Prisma {
     serviceChargeCycleMonths: 'serviceChargeCycleMonths',
     serviceChargeDueDate: 'serviceChargeDueDate',
     serviceChargeLastStage: 'serviceChargeLastStage',
+    serviceChargeLastReceivedAt: 'serviceChargeLastReceivedAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -24719,6 +24738,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
     serviceChargeLastStage?: StringNullableFilter<"Property"> | string | null
+    serviceChargeLastReceivedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
     createdAt?: DateTimeFilter<"Property"> | Date | string
     updatedAt?: DateTimeFilter<"Property"> | Date | string
     propertyType?: XOR<PropertyTypeScalarRelationFilter, PropertyTypeWhereInput>
@@ -24748,6 +24768,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: SortOrderInput | SortOrder
     serviceChargeDueDate?: SortOrderInput | SortOrder
     serviceChargeLastStage?: SortOrderInput | SortOrder
+    serviceChargeLastReceivedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     propertyType?: PropertyTypeOrderByWithRelationInput
@@ -24780,6 +24801,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
     serviceChargeLastStage?: StringNullableFilter<"Property"> | string | null
+    serviceChargeLastReceivedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
     createdAt?: DateTimeFilter<"Property"> | Date | string
     updatedAt?: DateTimeFilter<"Property"> | Date | string
     propertyType?: XOR<PropertyTypeScalarRelationFilter, PropertyTypeWhereInput>
@@ -24809,6 +24831,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: SortOrderInput | SortOrder
     serviceChargeDueDate?: SortOrderInput | SortOrder
     serviceChargeLastStage?: SortOrderInput | SortOrder
+    serviceChargeLastReceivedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: PropertyCountOrderByAggregateInput
@@ -24841,6 +24864,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: IntNullableWithAggregatesFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableWithAggregatesFilter<"Property"> | Date | string | null
     serviceChargeLastStage?: StringNullableWithAggregatesFilter<"Property"> | string | null
+    serviceChargeLastReceivedAt?: DateTimeNullableWithAggregatesFilter<"Property"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Property"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Property"> | Date | string
   }
@@ -26526,6 +26550,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
@@ -26555,6 +26580,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
@@ -26580,6 +26606,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
@@ -26609,6 +26636,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
@@ -26636,6 +26664,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -26658,6 +26687,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -26682,6 +26712,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -28724,6 +28755,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
     serviceChargeLastStage?: SortOrder
+    serviceChargeLastReceivedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -28753,6 +28785,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
     serviceChargeLastStage?: SortOrder
+    serviceChargeLastReceivedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -28777,6 +28810,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
     serviceChargeLastStage?: SortOrder
+    serviceChargeLastReceivedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -32924,6 +32958,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner?: UserCreateNestedOneWithoutOwnedPropertiesInput
@@ -32951,6 +32986,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
@@ -33007,6 +33043,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
     serviceChargeLastStage?: StringNullableFilter<"Property"> | string | null
+    serviceChargeLastReceivedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
     createdAt?: DateTimeFilter<"Property"> | Date | string
     updatedAt?: DateTimeFilter<"Property"> | Date | string
   }
@@ -33591,6 +33628,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
@@ -33619,6 +33657,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
@@ -33946,6 +33985,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
@@ -33974,6 +34014,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
@@ -34907,6 +34948,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
@@ -34934,6 +34976,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
@@ -36161,6 +36204,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
@@ -36189,6 +36233,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
@@ -36512,6 +36557,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
@@ -36540,6 +36586,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
@@ -38813,6 +38860,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
@@ -38841,6 +38889,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
@@ -39322,6 +39371,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
@@ -39350,6 +39400,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
@@ -41678,6 +41729,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -41700,6 +41752,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneWithoutOwnedPropertiesNestedInput
@@ -41727,6 +41780,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
@@ -41753,6 +41807,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -42484,6 +42539,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
     serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -43281,6 +43337,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
@@ -43308,6 +43365,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
@@ -43334,6 +43392,7 @@ export namespace Prisma {
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

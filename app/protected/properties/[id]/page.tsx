@@ -20,7 +20,7 @@ import {
   updateServiceChargeAction,
   updateUnitAction,
 } from "@/app/admin-actions";
-import { CalendarClock, Pencil } from "lucide-react";
+import { CalendarClock, Check, Pencil } from "lucide-react";
 import { differenceInCalendarDays, format } from "date-fns";
 import { EmptyState } from "@/components/empty-state";
 import { EntityDocumentManager } from "@/components/entity-document-manager";
@@ -570,6 +570,16 @@ export default async function PropertyDetailPage({
                             Due in {daysUntilDue} day{daysUntilDue === 1 ? "" : "s"}
                           </p>
                         ) : null}
+                        {property.serviceChargeLastReceivedAt && (
+                          <p className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                            <Check className="h-3 w-3" />
+                            Last payment received{" "}
+                            {format(
+                              property.serviceChargeLastReceivedAt,
+                              "d MMM yyyy",
+                            )}
+                          </p>
+                        )}
                         {/* Owners can see the charge but not act on it —
                             marking it received or resending the reminder
                             are both admin-only operations. */}

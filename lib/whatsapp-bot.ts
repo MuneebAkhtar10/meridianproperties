@@ -1,6 +1,6 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 
@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
 import {
   notifyAdminsNewRequest,
+  notifyAdminsPaymentProof,
   notifyRequestHeld,
   notifyStatusChange,
   notifyTenantCompletionCode,
@@ -15,13 +16,20 @@ import {
 import { isValidPhone } from "@/lib/phone";
 import { classifyChoice, generateFreeformReply } from "@/lib/gemini";
 import { downloadWhatsappMedia } from "@/lib/whatsapp";
-import { uploadAttachment } from "@/lib/storage";
+import { uploadAttachment, uploadFinancialDocument } from "@/lib/storage";
+import { chargeBalance, formatMoney } from "@/lib/finance";
+import { formatOmanAddress } from "@/lib/oman";
+import { formatUnitLabel } from "@/lib/property-types";
 import {
   getWhatsappSession,
   setWhatsappSession,
   clearWhatsappSession,
 } from "@/lib/whatsapp-session";
 import {
+  ChargeStatus,
+  FinancialDocumentKind,
+  PaymentMethod,
+  PaymentStatus,
   Priority,
   RequestStatus,
   UserType,
@@ -304,6 +312,84 @@ function isReportTrigger(bodyLower: string): boolean {
 const YES_WORDS = ["yes", "y", "yeah", "yep", "yup", "sure", "go ahead", "confirm", "correct", "submit", "ok", "okay"];
 const NO_WORDS = ["no", "n", "nope", "nah", "cancel", "stop"];
 
+// Common phrasings for "what's going on with my request" that should
+// actually run the status check, not just be told to type *status*.
+const STATUS_TRIGGER_PHRASES = [
+  "status",
+  "check status",
+  "check the status",
+  "my status",
+  "check my status",
+  "whats the status",
+  "what's the status",
+  "what is the status",
+  "any update",
+  "any updates",
+  "check my request",
+  "check my requests",
+  "check on my request",
+  "check on my requests",
+  "my request",
+  "my requests",
+  "hows it going",
+  "how's it going",
+  "how is it going",
+  "hows my request",
+  "how's my request",
+  "where things stand",
+  "wheres my request",
+  "where's my request",
+  "where is my request",
+  "did anyone look at my request",
+  "has anyone looked at my request",
+];
+
+function isDirectStatusCheck(bodyLower: string): boolean {
+  const normalized = stripTrailingPunctuation(bodyLower);
+  return STATUS_TRIGGER_PHRASES.some(
+    (phrase) => normalized === phrase || normalized.includes(phrase),
+  );
+}
+
+// Phrasings for "how much do I owe" — checked before falling through to the
+// report/category flow, same principle as status checks above.
+const DUES_TRIGGER_PHRASES = [
+  "dues",
+  "how much do i owe",
+  "what do i owe",
+  "my balance",
+  "outstanding balance",
+  "whats my balance",
+  "what's my balance",
+  "how much rent",
+  "pending payment",
+  "pending dues",
+  "rent due",
+  "how much do i need to pay",
+  "how much i owe",
+  "what i owe",
+];
+
+function isDuesCheck(bodyLower: string): boolean {
+  const normalized = stripTrailingPunctuation(bodyLower);
+  return DUES_TRIGGER_PHRASES.some((phrase) => normalized.includes(phrase));
+}
+
+// "I paid 300 for the deposit" / "I have paid rent" — a payment claim, not a
+// maintenance report. Deliberately narrow (needs "paid"/"payment" plus a
+// number or a known charge-type word) so an unrelated message mentioning
+// money in passing doesn't get swept into the payment-proof flow.
+function isPaymentClaim(bodyLower: string): boolean {
+  const mentionsPaying = /\b(paid|payment|pay)\b/.test(bodyLower);
+  if (!mentionsPaying) return false;
+  const mentionsAmount = /\d/.test(bodyLower);
+  const mentionsChargeWord =
+    /\b(rent|deposit|electricity|water|gas|internet|maintenance|municipality|bill|charge|dues?)\b/.test(
+      bodyLower,
+    );
+  return mentionsAmount || mentionsChargeWord;
+}
+
 export async function handleIncomingWhatsapp(
   rawFrom: string,
   rawBody: string,
@@ -329,7 +415,7 @@ export async function handleIncomingWhatsapp(
   }
 
   if (user.userType === UserType.user) {
-    return tenantFlow(user.id, phone, body, bodyLower);
+    return tenantFlow(user.id, phone, body, bodyLower, imageId);
   }
 
   if (user.userType === UserType.worker) {
@@ -346,11 +432,25 @@ async function tenantFlow(
   phone: string,
   body: string,
   bodyLower: string,
+  imageId?: string,
 ): Promise<string> {
   const session = await getSession(phone);
 
-  if (bodyLower === "status") {
-    return listTenantRequests(userId);
+  // Checked ahead of everything else that isn't already mid-flow — a
+  // payment claim or a dues question should never get swallowed by the
+  // maintenance-report matching below just because it mentions a number.
+  if (!session?.flow) {
+    if (isDuesCheck(bodyLower)) {
+      return describeTenantDues(userId);
+    }
+
+    if (isPaymentClaim(bodyLower)) {
+      return startPaymentClaim(userId, phone, body);
+    }
+  }
+
+  if (isDirectStatusCheck(bodyLower)) {
+    return describeTenantRequests(userId, bodyLower);
   }
 
   if (isSmallTalk(bodyLower)) {
@@ -361,7 +461,7 @@ async function tenantFlow(
     return "Hey there! I can help you report a maintenance issue or check on an existing one — what do you need?";
   }
 
-  if (REPORT_TRIGGER_WORDS.includes(bodyLower)) {
+  if (!session?.flow && isReportTrigger(bodyLower)) {
     await setSession(phone, {
       userId,
       flow: WhatsappFlow.new_request,
@@ -467,6 +567,9 @@ async function tenantFlow(
   }
 
   switch (session.step) {
+    case "awaiting_payment_proof":
+      return handlePaymentProofPhoto(userId, phone, data, imageId);
+
     case "category": {
       const index = Number(body) - 1;
       let category: { label: string; priority: Priority } | undefined =
@@ -661,10 +764,58 @@ async function submitTenantRequest(
   );
 }
 
-async function listTenantRequests(userId: string): Promise<string> {
+/** "the first one", "my last request", "newest" → an index into the list as
+ * shown (0 = top/most-recent — "last"/"oldest" mean the bottom of that same
+ * list). Returns null when nothing in the message points at a position. */
+function findOrdinalIndex(bodyLower: string, length: number): number | null {
+  if (length === 0) return null;
+  if (bodyLower.includes("oldest") || bodyLower.includes("last")) {
+    return length - 1;
+  }
+
+  const ordinals: [string, number][] = [
+    ["most recent", 0],
+    ["newest", 0],
+    ["latest", 0],
+    ["1st", 0],
+    ["first", 0],
+    ["2nd", 1],
+    ["second", 1],
+    ["3rd", 2],
+    ["third", 2],
+    ["4th", 3],
+    ["fourth", 3],
+    ["5th", 4],
+    ["fifth", 4],
+  ];
+
+  for (const [phrase, index] of ordinals) {
+    if (bodyLower.includes(phrase)) {
+      return index < length ? index : null;
+    }
+  }
+
+  return null;
+}
+
+/** Handles both "what's open?" (show the list) and "status on the first
+ * issue" / "what's up with the electrical one" (pick out one specific
+ * request and actually describe it). */
+async function describeTenantRequests(
+  userId: string,
+  bodyLower: string,
+): Promise<string> {
   const requests = await prisma.maintenanceRequest.findMany({
     where: { userId, status: { not: RequestStatus.completed } },
-    select: { title: true, status: true },
+    select: {
+      title: true,
+      status: true,
+      location: true,
+      description: true,
+      assignedTo: {
+        select: { firstName: true, lastName: true, email: true, phone: true },
+      },
+    },
     orderBy: { createdAt: "desc" },
     take: 5,
   });
@@ -673,12 +824,258 @@ async function listTenantRequests(userId: string): Promise<string> {
     return "You're all clear — nothing open right now. Just tell me if something comes up.";
   }
 
-  return (
-    "Here's what's open:\n\n" +
-    requests
-      .map((r) => `• ${r.title} — ${r.status.replace("_", " ")}`)
-      .join("\n")
-  );
+  const ordinalIndex = findOrdinalIndex(bodyLower, requests.length);
+  let target = ordinalIndex !== null ? requests[ordinalIndex] : undefined;
+
+  if (!target) {
+    const titleMatches = requests.filter((r) =>
+      bodyLower.includes(r.title.toLowerCase()),
+    );
+    if (titleMatches.length === 1) {
+      target = titleMatches[0];
+    }
+  }
+
+  if (!target && requests.length === 1) {
+    target = requests[0];
+  }
+
+  if (!target) {
+    return (
+      "Here's what's open:\n\n" +
+      requests
+        .map((r) => `• ${r.title} — ${r.status.replace("_", " ")}`)
+        .join("\n")
+    );
+  }
+
+  const workerName = target.assignedTo
+    ? [target.assignedTo.firstName, target.assignedTo.lastName]
+        .filter(Boolean)
+        .join(" ") || target.assignedTo.email
+    : null;
+
+  return [
+    `Here's where "${target.title}" stands: ${target.status.replace("_", " ")}.`,
+    `Location: ${target.location}.`,
+    target.description ? `What you told us: "${target.description}"` : null,
+    workerName
+      ? `${workerName} is on it${target.assignedTo?.phone ? ` — you can reach them at ${target.assignedTo.phone}` : ""}.`
+      : "No one's been assigned yet — should be soon.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** "How much do I owe" — a real balance lookup against open charges, not a
+ * canned reply. */
+async function describeTenantDues(userId: string): Promise<string> {
+  const charges = await prisma.charge.findMany({
+    where: { tenantId: userId, status: { not: ChargeStatus.waived } },
+    select: {
+      title: true,
+      type: true,
+      amount: true,
+      dueDate: true,
+      status: true,
+      payments: { select: { amount: true, status: true } },
+    },
+    orderBy: { dueDate: "asc" },
+  });
+
+  const outstanding = charges.filter((c) => chargeBalance(c) > 0);
+
+  if (outstanding.length === 0) {
+    return "You're all paid up — no outstanding dues right now.";
+  }
+
+  const total = outstanding.reduce((sum, c) => sum + chargeBalance(c), 0);
+
+  const lines = outstanding
+    .slice(0, 5)
+    .map(
+      (c) =>
+        `• ${c.title} — ${formatMoney(chargeBalance(c))} (due ${c.dueDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })})`,
+    );
+
+  return [
+    `You have ${formatMoney(total)} outstanding across ${outstanding.length} charge${outstanding.length === 1 ? "" : "s"}:`,
+    ...lines,
+    outstanding.length > 5 ? `...and ${outstanding.length - 5} more.` : null,
+    "Say something like \"I paid <amount> for <charge>\" once you've sent it, and I'll get your proof over to the admin.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** "I paid 300 for the deposit" — finds the matching open charge (by
+ * mentioned type keyword, or by the exact amount if only one matches),
+ * asks for proof (a photo of the receipt), and creates a pending Payment
+ * once it arrives — mirrors app/finance-actions.ts's submitPaymentAction's
+ * tenant path (proof required, status starts pending, admin notified). */
+async function startPaymentClaim(
+  userId: string,
+  phone: string,
+  body: string,
+): Promise<string> {
+  const bodyLower = body.toLowerCase();
+
+  const charges = await prisma.charge.findMany({
+    where: { tenantId: userId, status: ChargeStatus.open },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      amount: true,
+      status: true,
+      payments: { select: { amount: true, status: true } },
+    },
+  });
+
+  const open = charges.filter((c) => chargeBalance(c) > 0);
+
+  if (open.length === 0) {
+    return "I don't see any open charges on your account right now — nothing to log a payment against.";
+  }
+
+  const amountMatch = body.match(/(\d+(?:\.\d+)?)/);
+  const claimedAmount = amountMatch ? Number(amountMatch[1]) : null;
+
+  const typeKeywords: [RegExp, string][] = [
+    [/deposit/, "deposit"],
+    [/rent/, "rent"],
+    [/electric/, "electricity"],
+    [/\bgas\b/, "gas"],
+    [/water/, "water"],
+    [/internet/, "internet"],
+    [/maintenance/, "maintenance"],
+    [/municipal/, "municipality_fee"],
+  ];
+  const matchedType = typeKeywords.find(([re]) => re.test(bodyLower))?.[1];
+
+  let candidates = matchedType
+    ? open.filter((c) => c.type === matchedType)
+    : open;
+
+  if (candidates.length > 1 && claimedAmount !== null) {
+    const byAmount = candidates.filter(
+      (c) => Math.abs(chargeBalance(c) - claimedAmount) < 0.5,
+    );
+    if (byAmount.length > 0) candidates = byAmount;
+  }
+
+  if (candidates.length === 0) candidates = open;
+
+  if (candidates.length > 1) {
+    return (
+      "Which charge is this for?\n\n" +
+      candidates
+        .map((c) => `• ${c.title} — ${formatMoney(chargeBalance(c))}`)
+        .join("\n") +
+      "\n\nJust tell me which one."
+    );
+  }
+
+  const charge = candidates[0];
+
+  await setSession(phone, {
+    userId,
+    flow: WhatsappFlow.new_request,
+    step: "awaiting_payment_proof",
+    data: {
+      chargeId: charge.id,
+      chargeTitle: charge.title,
+      claimedAmount: (claimedAmount ?? chargeBalance(charge)).toString(),
+    },
+  });
+
+  return `Got it — for "${charge.title}". Send a photo of the receipt or payment screenshot and I'll pass it to the admin for review.`;
+}
+
+/** The tenant just sent the receipt photo for a claimed payment — creates
+ * the pending Payment record (same as the web upload flow) and notifies
+ * admins. */
+async function handlePaymentProofPhoto(
+  userId: string,
+  phone: string,
+  data: Record<string, string>,
+  imageId?: string,
+): Promise<string> {
+  if (!imageId) {
+    return "I'll need an actual photo of the receipt or payment screenshot — go ahead and send one.";
+  }
+
+  const chargeId = data.chargeId;
+  const claimedAmount = Number(data.claimedAmount ?? "0");
+
+  const charge = await prisma.charge.findUnique({
+    where: { id: chargeId },
+    select: { id: true, title: true, tenantId: true, status: true },
+  });
+
+  if (!charge || charge.tenantId !== userId || charge.status !== ChargeStatus.open) {
+    await clearSession(phone);
+    return "That charge isn't available anymore — check your dues again if this is still pending.";
+  }
+
+  const media = await downloadWhatsappMedia(imageId);
+  if (!media) {
+    return "Hmm, that photo didn't come through — mind sending it again?";
+  }
+
+  const paymentId = randomUUID();
+
+  try {
+    const extension = media.mimeType.split("/")[1]?.split(";")[0] || "jpg";
+    const file = new File([media.buffer], `payment-proof.${extension}`, {
+      type: media.mimeType,
+    });
+    const uploaded = await uploadFinancialDocument(file, paymentId);
+
+    const tenant = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    await prisma.payment.create({
+      data: {
+        id: paymentId,
+        chargeId,
+        amount: claimedAmount,
+        paidAt: new Date(),
+        method: PaymentMethod.other,
+        notes: "Submitted via WhatsApp",
+        status: PaymentStatus.pending,
+        submittedById: userId,
+        attachments: {
+          create: {
+            kind: FinancialDocumentKind.receipt,
+            fileName: uploaded.fileName,
+            filePath: uploaded.objectKey,
+            fileType: uploaded.fileType,
+            fileSize: uploaded.fileSize,
+            uploadedById: userId,
+          },
+        },
+      },
+    });
+
+    await clearSession(phone);
+
+    await notifyAdminsPaymentProof({
+      chargeId,
+      tenantEmail: tenant?.email ?? phone,
+      title: charge.title,
+    });
+
+    revalidatePath("/protected/finances");
+    revalidatePath(`/protected/finances/${chargeId}`);
+
+    return `Thanks — your proof for "${charge.title}" is in and marked as under review. You'll hear back once an admin checks it.`;
+  } catch (error) {
+    console.error("[whatsapp] Failed to save payment proof:", error);
+    return "Something went wrong saving that photo — mind trying again?";
+  }
 }
 
 /* ── Worker: act on an assigned task ─────────────────────────────────────── */
@@ -897,6 +1294,7 @@ async function handleWorkerTaskReply(
       assignedToId: true,
       status: true,
       completionCode: true,
+      location: true,
     },
   });
 
@@ -1092,6 +1490,23 @@ async function handleWorkerTaskReply(
     return `Sent — the tenant should have the code for "${task.title}" now. Once they give it to you, send it here.`;
   }
 
+  const ADDRESS_TRIGGER_PHRASES = [
+    "address",
+    "share address",
+    "share me address",
+    "send address",
+    "whats the address",
+    "what's the address",
+    "where is it",
+    "where is this",
+    "location",
+    "directions",
+    "where do i go",
+  ];
+  if (ADDRESS_TRIGGER_PHRASES.some((p) => bodyLower.includes(p))) {
+    return describeTaskAddress(taskId, task.title, task.location);
+  }
+
   const fallback =
     `"${task.title}" is currently ${task.status.replace("_", " ")}.\n` +
     actionPromptFor(task.status);
@@ -1104,6 +1519,69 @@ async function handleWorkerTaskReply(
   });
 
   return generated ?? fallback;
+}
+
+/** The worker asked where the job actually is — the tenant's unit-level room
+ * ("Kitchen") isn't enough to physically get there, so this pulls the real
+ * property address (and unit number) the same way the web dashboard shows
+ * it, whether it's a specific unit or a common-area job. */
+async function describeTaskAddress(
+  taskId: string,
+  title: string,
+  roomLocation: string,
+): Promise<string> {
+  const task = await prisma.maintenanceRequest.findUnique({
+    where: { id: taskId },
+    select: {
+      unit: {
+        select: {
+          label: true,
+          property: {
+            select: {
+              name: true,
+              address: true,
+              governorate: true,
+              wilayat: true,
+              area: true,
+              wayNumber: true,
+              buildingNumber: true,
+              postalCode: true,
+              propertyType: { select: { unitPrefix: true } },
+            },
+          },
+        },
+      },
+      property: {
+        select: {
+          name: true,
+          address: true,
+          governorate: true,
+          wilayat: true,
+          area: true,
+          wayNumber: true,
+          buildingNumber: true,
+          postalCode: true,
+        },
+      },
+    },
+  });
+
+  const property = task?.unit?.property ?? task?.property;
+
+  if (!task || !property) {
+    return `I don't have an address on file for "${title}" — worth checking with the admin.`;
+  }
+
+  const unitLine = task.unit
+    ? `${property.name} · ${formatUnitLabel({ unitPrefix: task.unit.property.propertyType.unitPrefix, hasFloors: false }, task.unit.label)}`
+    : property.name;
+
+  return [
+    `Here's where "${title}" is:`,
+    unitLine,
+    formatOmanAddress(property),
+    `Room/area: ${roomLocation}`,
+  ].join("\n");
 }
 
 /** Downloads a photo the worker just sent and attaches it to the job, the
