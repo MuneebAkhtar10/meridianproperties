@@ -70,7 +70,12 @@ async function callGemini(
       `/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
       {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 200 },
+        // This model spends output tokens on an internal reasoning trace
+        // before the visible reply, so a low cap here truncates even a
+        // one-sentence answer (finishReason: MAX_TOKENS) well before any
+        // real text comes out. 1024 leaves enough room for that trace plus
+        // the actual short reply we ask for.
+        generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
       },
       15000,
     );
@@ -194,7 +199,7 @@ export async function generateFreeformReply(input: {
   /** The valid commands to steer them back to if relevant. */
   validCommands: string;
 }): Promise<string | null> {
-  const prompt = `You are a WhatsApp assistant for a property management app called PropertyCare. You're replying to a ${input.role} who just texted the business number. This is a simple menu-driven bot, not a general chatbot — it only understands specific commands.
+  const prompt = `You're texting back on WhatsApp as PropertyCare's assistant, chatting with a ${input.role}. Write like a helpful person replying from their phone — contractions, casual and warm, zero corporate or robotic phrasing ("please be advised", "I am unable to", "kindly note"). This is a simple menu-driven bot underneath, not a general chatbot, so it only actually understands specific commands — but that should never show through as stiffness in how you write.
 
 Their situation right now (only use these facts, never invent anything else):
 ${input.context}
@@ -203,7 +208,7 @@ Valid commands they can send: ${input.validCommands}
 
 They wrote: "${input.userMessage}"
 
-Reply in 1-2 short sentences, friendly and plain text (no markdown headers or lists). Acknowledge what they said if relevant, then remind them of the exact valid command(s) they should use. Do not promise any action you can't confirm from the facts above (e.g. don't say "I've notified the worker" — you can't do that). Output only the reply text, nothing else.`;
+Reply in 1-2 short sentences. If they asked something specific the facts above don't cover (like an exact arrival time), don't dump the raw facts at them — just give a short, generic, reassuring answer ("I don't have an exact time, but I'll let you know the moment things move") and only mention a valid command if it's naturally relevant, not as a bolted-on instruction. Never promise an action you can't confirm from the facts above (e.g. don't say "I've notified the worker" — you can't do that). Output only the reply text, nothing else.`;
 
   return callGemini(prompt);
 }
