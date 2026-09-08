@@ -770,6 +770,9 @@ export async function notifyTenantAssigned(input: {
   rentDueDay: number;
   securityDeposit?: string;
   leaseEndDate?: string;
+  /** The property's owner, if it has one — they get their own "new tenant
+   * moved in" notice alongside the tenant's welcome email. */
+  ownerId?: string | null;
 }): Promise<void> {
   const details = [
     { label: "Property", value: input.propertyName },
@@ -809,7 +812,24 @@ export async function notifyTenantAssigned(input: {
     },
   });
 
-  await publish({ kind: "notification", userIds: [input.tenantId] });
+  if (input.ownerId) {
+    await createNotification({
+      data: {
+        userId: input.ownerId,
+        title: "New Tenant Moved In",
+        message: `A new tenant has been assigned to ${input.unitLabel} at ${input.propertyName}.`,
+        href: "/protected/tenancies",
+        details,
+      },
+    });
+  }
+
+  await publish({
+    kind: "notification",
+    userIds: input.ownerId
+      ? [input.tenantId, input.ownerId]
+      : [input.tenantId],
+  });
 }
 
 function ordinal(n: number): string {
@@ -914,13 +934,29 @@ export async function notifyPropertyApproved(input: {
   ownerId: string;
   propertyId: string;
   propertyName: string;
+  /** Included when the property already has a service charge configured at
+   * the time it's approved, so the owner learns what they owe in the same
+   * email rather than finding out only when the first reminder fires. */
+  serviceCharge?: { amount: string; cycleMonths: number; dueDate: string };
 }): Promise<void> {
+  const details = input.serviceCharge
+    ? [
+        { label: "Service charge", value: input.serviceCharge.amount },
+        {
+          label: "Billing cycle",
+          value: `Every ${input.serviceCharge.cycleMonths} month${input.serviceCharge.cycleMonths === 1 ? "" : "s"}`,
+        },
+        { label: "Due date", value: input.serviceCharge.dueDate },
+      ]
+    : undefined;
+
   await createNotification({
     data: {
       userId: input.ownerId,
       title: "Property Approved",
       message: `“${input.propertyName}” has been approved and is now live.`,
       href: `/protected/properties/${input.propertyId}`,
+      ...(details && { details }),
     },
   });
 

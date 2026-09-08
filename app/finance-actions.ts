@@ -250,6 +250,7 @@ export const startTenancyAction = async (formData: FormData) => {
       securityDeposit:
         Number(securityDeposit) > 0 ? formatMoney(securityDeposit) : undefined,
       leaseEndDate: leaseEndDate ? format(leaseEndDate, "d MMMM yyyy") : undefined,
+      ownerId: unit.property.ownerId,
     });
   } catch (error) {
     console.error("Tenant-assigned notification failed:", error);
@@ -448,6 +449,7 @@ export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
       leaseEndDate: tenancy.leaseEndDate
         ? format(tenancy.leaseEndDate, "d MMMM yyyy")
         : undefined,
+      ownerId: tenancy.unit.property.ownerId,
     });
   } catch (error) {
     console.error("Resend welcome email failed:", error);

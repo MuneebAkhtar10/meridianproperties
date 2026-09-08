@@ -12,9 +12,11 @@ import {
   notifyServiceChargeOverdue,
   notifyServiceChargeReceived,
   notifyServiceChargeUpcoming,
+  notifyTenantAssigned,
 } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/finance";
+import { formatUnitLabel } from "@/lib/property-types";
 import { publish } from "@/lib/realtime";
 import { requireAnyRole, requireRole } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -327,6 +329,11 @@ export const updatePropertyAction = async (formData: FormData) => {
       ownerId,
       propertyId: id,
       propertyName: name,
+      serviceCharge: {
+        amount: formatMoney(serviceCharge.amount),
+        cycleMonths: serviceCharge.cycleMonths,
+        dueDate: format(serviceCharge.dueDate, "d MMM yyyy"),
+      },
     });
   }
 
@@ -419,14 +426,32 @@ export const approvePropertyAction = async (formData: FormData) => {
   const property = await prisma.property.update({
     where: { id },
     data: { approved: true },
-    select: { name: true, ownerId: true },
+    select: {
+      name: true,
+      ownerId: true,
+      serviceChargeAmount: true,
+      serviceChargeCycleMonths: true,
+      serviceChargeDueDate: true,
+    },
   });
 
   if (property.ownerId) {
+    const hasServiceCharge =
+      property.serviceChargeAmount &&
+      property.serviceChargeCycleMonths &&
+      property.serviceChargeDueDate;
+
     await notifyPropertyApproved({
       ownerId: property.ownerId,
       propertyId: id,
       propertyName: property.name,
+      serviceCharge: hasServiceCharge
+        ? {
+            amount: formatMoney(property.serviceChargeAmount!),
+            cycleMonths: property.serviceChargeCycleMonths!,
+            dueDate: format(property.serviceChargeDueDate!, "d MMM yyyy"),
+          }
+        : undefined,
     });
   }
 
@@ -1169,7 +1194,18 @@ export const assignTenantAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { propertyId: true, label: true, tenantId: true },
+    select: {
+      propertyId: true,
+      label: true,
+      tenantId: true,
+      property: {
+        select: {
+          name: true,
+          ownerId: true,
+          propertyType: { select: { unitPrefix: true, hasFloors: true } },
+        },
+      },
+    },
   });
 
   if (!unit) {
@@ -1181,6 +1217,7 @@ export const assignTenantAction = async (formData: FormData) => {
   }
 
   const back = `/protected/properties/${unit.propertyId}`;
+  const isNewAssignment = Boolean(tenantId) && tenantId !== unit.tenantId;
 
   if (tenantId !== unit.tenantId) {
     const today = new Date(
@@ -1228,6 +1265,26 @@ export const assignTenantAction = async (formData: FormData) => {
         });
       }
     });
+  }
+
+  // Not a rich lease-terms email like startTenancyAction's — this quick
+  // assignment has none yet (zero-rent placeholder, see above) — but the
+  // tenant and owner still deserve to know a move-in happened at all,
+  // which previously sent nothing.
+  if (isNewAssignment && tenantId) {
+    try {
+      await notifyTenantAssigned({
+        tenantId,
+        propertyName: unit.property.name,
+        unitLabel: formatUnitLabel(unit.property.propertyType, unit.label),
+        moveInDate: format(new Date(), "d MMMM yyyy"),
+        monthlyRent: formatMoney(0),
+        rentDueDay: 5,
+        ownerId: unit.property.ownerId,
+      });
+    } catch (error) {
+      console.error("Tenant-assigned notification failed:", error);
+    }
   }
 
   // Whoever just moved in, and whoever just lost the apartment, both have a
