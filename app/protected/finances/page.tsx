@@ -635,7 +635,7 @@ function AdminTools({
                   ))}
                 </Select>
               </Field>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Type">
                   <Select name="type" defaultValue={ChargeType.other}>
                     {NON_UTILITY_CHARGE_TYPES.map((type) => (

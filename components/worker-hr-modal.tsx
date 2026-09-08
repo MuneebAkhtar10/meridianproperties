@@ -243,7 +243,7 @@ function HrDocumentCard({
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label
               htmlFor={`${idPrefix}-${doc.key}-issuance`}
@@ -364,7 +364,7 @@ function EmployeeTypeToggle({
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">Employee type</Label>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {(["individual", "family"] as const).map((option) => (
           <button
             key={option}

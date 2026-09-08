@@ -215,7 +215,7 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
                   units should just show their own label, like "Villa 2".
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="new-singular">Unit noun (singular)</Label>
                   <Input

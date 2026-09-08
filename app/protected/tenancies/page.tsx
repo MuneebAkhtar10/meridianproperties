@@ -616,7 +616,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                   Create tenant accounts under People and units under
                   Properties.
                 </p>
-                <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                   <ButtonLink
                     href="/protected/users"
                     variant="outline"
@@ -668,7 +668,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
 
                   <StartFormHeading>Lease details</StartFormHeading>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Move-in">
                       <Input
                         name="startDate"
@@ -682,7 +682,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                     </Field>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Monthly rent">
                       <Input
                         name="monthlyRent"

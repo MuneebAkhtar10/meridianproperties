@@ -78,7 +78,7 @@ export function NewPersonFields({
         <NewWorkerHrModal formId="new-person-form" />
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="firstName">First name</Label>
           <Input id="firstName" name="firstName" placeholder="Ali" />
@@ -109,7 +109,7 @@ export function NewPersonFields({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="civilId">Civil ID / Resident Card</Label>
           <Input id="civilId" name="civilId" placeholder="Optional" />
@@ -125,7 +125,7 @@ export function NewPersonFields({
         <Input id="employer" name="employer" placeholder="Optional" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="emergencyContactName">Emergency contact</Label>
           <Input
