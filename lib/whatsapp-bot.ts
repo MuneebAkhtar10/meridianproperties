@@ -6,9 +6,16 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
-import { notifyAdminsNewRequest, notifyStatusChange } from "@/lib/notifications";
+import {
+  notifyAdminsNewRequest,
+  notifyRequestHeld,
+  notifyStatusChange,
+  notifyTenantCompletionCode,
+} from "@/lib/notifications";
 import { isValidPhone } from "@/lib/phone";
 import { classifyChoice, generateFreeformReply } from "@/lib/gemini";
+import { downloadWhatsappMedia } from "@/lib/whatsapp";
+import { uploadAttachment } from "@/lib/storage";
 import {
   getWhatsappSession,
   setWhatsappSession,
@@ -199,7 +206,67 @@ const MENU_WORDS = ["menu", "hi", "hello", "hey", "start", "new"];
 // A plain greeting isn't the same as "I want to report something" — jumping
 // straight to a category list on "hi" is presumptuous. Greetings get an
 // open question instead; only these actually start the report flow.
-const GREETING_WORDS = ["hi", "hello", "hey", "hiya", "yo"];
+const GREETING_WORDS = [
+  "hi",
+  "hello",
+  "hey",
+  "hiya",
+  "yo",
+  "sup",
+  "wassup",
+  "whatsup",
+  "howdy",
+  "heyy",
+  "hii",
+  "hiii",
+];
+// Small talk isn't a greeting-word exact match ("how are you?" isn't "hi"),
+// but it's the same "no real request yet" case — deserves a warm, direct
+// reply of its own rather than falling through to the AI path (and its
+// generic fallback if that call happens to fail). An exact-phrase list can
+// never keep up with every casual contraction ("hows you", "you good?",
+// "how u doin"), so this matches on the *shape* of a wellbeing check
+// instead of specific wording — any "how" ... "you"/"u" combination, or
+// "you"/"u" followed by a wellness word, plus the handful of set phrases
+// (time-of-day greetings) that pattern wouldn't catch.
+const SMALL_TALK_PHRASES = [
+  "good morning",
+  "good afternoon",
+  "good evening",
+  "good night",
+  "hru",
+  "hbu",
+];
+
+function isSmallTalk(bodyLower: string): boolean {
+  const normalized = stripTrailingPunctuation(bodyLower);
+  if (
+    SMALL_TALK_PHRASES.some(
+      (phrase) => normalized === phrase || normalized.includes(phrase),
+    )
+  ) {
+    return true;
+  }
+
+  // "how are you", "hows you", "how's u doing", "how u doin" — "how"
+  // anywhere before "you"/"u".
+  if (/\bhow'?s?\b[\s\S]*\b(you|u)\b/.test(normalized)) return true;
+
+  // "you good", "u ok", "you alright", "you doing well" — "you"/"u" near a
+  // wellness word (order-independent, short phrases only).
+  if (
+    /\b(you|u)\b[\s\S]{0,15}\b(good|well|okay|ok|alright|fine|doing)\b/.test(
+      normalized,
+    ) ||
+    /\b(good|well|okay|ok|alright|fine|doing)\b[\s\S]{0,15}\b(you|u)\b/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
 const REPORT_TRIGGER_WORDS = [
   "menu",
   "start",
@@ -212,12 +279,30 @@ const REPORT_TRIGGER_WORDS = [
   "new request",
   "new issue",
 ];
+
+/** Exact-list matching above misses anything phrased slightly differently
+ * ("report a issue" — wrong article, "report now", "got a new problem") —
+ * this catches those. Only ever checked with no session already in
+ * progress (see tenantFlow), so loosely matching on the bare verb "report"
+ * can't accidentally hijack an active flow step. */
+function isReportTrigger(bodyLower: string): boolean {
+  const normalized = stripTrailingPunctuation(bodyLower);
+  if (REPORT_TRIGGER_WORDS.includes(normalized)) return true;
+  return (
+    /\breport(ing)?\b/.test(normalized) ||
+    /\bnew\b[\s\S]*\b(issue|problem|request)\b/.test(normalized)
+  );
+}
+
 const YES_WORDS = ["yes", "y", "yeah", "yep", "yup", "sure", "go ahead", "confirm", "correct", "submit", "ok", "okay"];
 const NO_WORDS = ["no", "n", "nope", "nah", "cancel", "stop"];
 
 export async function handleIncomingWhatsapp(
   rawFrom: string,
   rawBody: string,
+  /** Meta media id when the inbound message was a photo — used for the
+   * worker's "photo of the finished work" completion step. */
+  imageId?: string,
 ): Promise<string> {
   const phone = normalizeWhatsappPhone(rawFrom);
   const body = rawBody.trim();
@@ -241,7 +326,7 @@ export async function handleIncomingWhatsapp(
   }
 
   if (user.userType === UserType.worker) {
-    return workerFlow(user.id, phone, body, bodyLower);
+    return workerFlow(user.id, phone, body, bodyLower, imageId);
   }
 
   return "You're signed up as staff — please use the PropertyCare dashboard on the web for this.";
@@ -261,7 +346,11 @@ async function tenantFlow(
     return listTenantRequests(userId);
   }
 
-  if (GREETING_WORDS.includes(bodyLower)) {
+  if (isSmallTalk(bodyLower)) {
+    return "Doing well, thanks for asking! I can help you report a maintenance issue or check on an existing one — what do you need?";
+  }
+
+  if (GREETING_WORDS.includes(stripTrailingPunctuation(bodyLower))) {
     return "Hey there! I can help you report a maintenance issue or check on an existing one — what do you need?";
   }
 
@@ -275,7 +364,7 @@ async function tenantFlow(
     return (
       "Sure — what kind of issue is it?\n\n" +
       CATEGORIES.map((c, i) => `${i + 1}. ${c.label}`).join("\n") +
-      "\n\nJust send the number, or tell me what's wrong and I'll figure it out. (Send *status* any time to check your open requests.)"
+      "\n\nJust send the number, or tell me what's wrong and I'll figure it out. And you can ask me how things are going with an existing request any time."
     );
   }
 
@@ -344,7 +433,7 @@ async function tenantFlow(
 
     return (
       generated ??
-      "Send *menu* to report a new issue, or *status* to check your open requests."
+      "Sorry, I'm not quite sure what you need — are you looking to report a new issue, or check on one you've already sent in?"
     );
   }
 
@@ -356,6 +445,19 @@ async function tenantFlow(
     string,
     string
   > | null) ?? {};
+
+  // "no"/"cancel" only means "don't submit" at the confirm step (handled in
+  // its own case below, since a NO there resumes nothing) — everywhere
+  // earlier in the flow (category/location/description), the same words
+  // mean "abandon this entirely", and previously weren't recognized at all,
+  // leaving the retry prompt looping forever on "dismiss it"/"never mind".
+  if (
+    session.step !== "confirm" &&
+    NO_WORDS.includes(stripTrailingPunctuation(bodyLower))
+  ) {
+    await clearSession(phone);
+    return "No problem, all cancelled. Just let me know whenever you want to start again.";
+  }
 
   switch (session.step) {
     case "category": {
@@ -453,7 +555,7 @@ async function tenantFlow(
         `Issue: ${nextData.category}\n` +
         `Location: ${nextData.location}\n` +
         `Description: ${nextData.description}\n\n` +
-        "Look right? Reply *yes* to send it in, or *no* to cancel."
+        "Does that look right? Just let me know and I'll send it in — or say so if you'd rather cancel."
       );
     }
 
@@ -481,7 +583,7 @@ async function tenantFlow(
 
       if (choice === NO) {
         await clearSession(phone);
-        return "No problem, cancelled. Send *menu* whenever you want to start again.";
+        return "No problem, all cancelled. Just let me know whenever you want to start again.";
       }
 
       return "Just need a yes or no — should I go ahead and submit this?";
@@ -489,7 +591,7 @@ async function tenantFlow(
 
     default:
       await clearSession(phone);
-      return "Sorry, I lost track of that. Send *menu* to start fresh.";
+      return "Sorry, I lost my place there — just tell me what you need and we'll start fresh.";
   }
 }
 
@@ -561,7 +663,7 @@ async function listTenantRequests(userId: string): Promise<string> {
   });
 
   if (requests.length === 0) {
-    return "Nothing open right now. Send *menu* if something needs fixing.";
+    return "You're all clear — nothing open right now. Just tell me if something comes up.";
   }
 
   return (
@@ -594,6 +696,14 @@ const ARRIVED_WORDS = [
   "in progress",
   "start work",
   "starting now",
+  "started",
+  "start",
+  "begun",
+  "beginning",
+  "on it",
+  "working on it",
+  "im here",
+  "i'm here",
   "yes",
 ];
 const DONE_WORDS = [
@@ -610,12 +720,58 @@ const DONE_WORDS = [
   "task done",
   "task complete",
 ];
+// Applies across pending/en_route/in_progress alike — a worker can hit a
+// blocker at any stage of a job, not just one specific status.
+const HOLD_WORDS = [
+  "hold",
+  "put on hold",
+  "pause",
+  "paused",
+  "cant do this",
+  "can't do this",
+  "cant continue",
+  "can't continue",
+  "need to pause",
+  "im blocked",
+  "i'm blocked",
+  "blocked",
+  "stuck",
+  "need help with this",
+];
+const SKIP_WORDS = [
+  "no",
+  "none",
+  "skip",
+  "nah",
+  "n/a",
+  "na",
+  "nothing",
+  "not really",
+  "no notes",
+  "nope",
+];
+// "I'm done adding photos" — deliberately its own list rather than reusing
+// DONE_WORDS, since a couple of DONE_WORDS entries ("1", "complete") read
+// oddly as an answer to "any more photos?" specifically.
+const PHOTO_DONE_WORDS = [
+  "done",
+  "that's all",
+  "thats all",
+  "no more",
+  "finished",
+  "that's it",
+  "thats it",
+  "all set",
+  "ok done",
+  "no more photos",
+];
 
 async function workerFlow(
   workerId: string,
   phone: string,
   body: string,
   bodyLower: string,
+  imageId?: string,
 ): Promise<string> {
   if (bodyLower === "tasks" || bodyLower === "status" || MENU_WORDS.includes(bodyLower)) {
     return listWorkerTasks(workerId, phone);
@@ -624,7 +780,15 @@ async function workerFlow(
   const session = await getSession(phone);
 
   if (session?.flow === WhatsappFlow.awaiting_completion_code && session.taskId) {
-    return handleCompletionCode(workerId, phone, session.taskId, body);
+    return handleCompletionStep(workerId, phone, session, body, bodyLower, imageId);
+  }
+
+  if (
+    session?.flow === WhatsappFlow.worker_task &&
+    session.step === "awaiting_hold_reason" &&
+    session.taskId
+  ) {
+    return handleHoldReason(workerId, phone, session.taskId, body);
   }
 
   if (session?.flow === WhatsappFlow.worker_task && session.taskId) {
@@ -671,11 +835,11 @@ async function listWorkerTasks(workerId: string, phone: string): Promise<string>
 function actionPromptFor(status: RequestStatus): string {
   switch (status) {
     case RequestStatus.pending:
-      return "Heading over? Just say so, or send *1*.";
+      return "Just let me know once you're heading over.";
     case RequestStatus.en_route:
-      return "Let me know when you've arrived and started — send *1* or tell me.";
+      return "Let me know once you've arrived and gotten started.";
     case RequestStatus.in_progress:
-      return "Reply *1* (or just tell me) once it's done and I'll grab the completion code.";
+      return "Let me know once it's done and I'll grab the completion code from the tenant.";
     default:
       return "";
   }
@@ -731,7 +895,52 @@ async function handleWorkerTaskReply(
 
   if (!task || task.assignedToId !== workerId) {
     await clearSession(phone);
-    return "That job isn't assigned to you anymore. Reply *tasks* to see your active jobs.";
+    return "Looks like that job's moved on without you — just ask and I'll show you what's actually on your plate.";
+  }
+
+  // The session only ever tracks one "active" job (whichever was touched
+  // most recently), so a worker juggling several open jobs has no way to
+  // act on a different one just by naming it — "start the sewerage issue"
+  // while "Electrical" is the tracked job silently got evaluated against
+  // Electrical and ignored. If the message clearly names a *different* job
+  // they're also assigned, switch to that one first.
+  if (task.status !== RequestStatus.on_hold) {
+    const otherActiveJobs = await prisma.maintenanceRequest.findMany({
+      where: {
+        assignedToId: workerId,
+        id: { not: taskId },
+        status: {
+          in: [RequestStatus.pending, RequestStatus.en_route, RequestStatus.in_progress],
+        },
+      },
+      select: { id: true, title: true },
+    });
+
+    const mentioned = otherActiveJobs.find((job) =>
+      bodyLower.includes(job.title.toLowerCase()),
+    );
+
+    if (mentioned) {
+      await setSession(phone, { taskId: mentioned.id });
+      return handleWorkerTaskReply(workerId, phone, mentioned.id, bodyLower);
+    }
+  }
+
+  // Checked before any status-specific transition — a worker can hit a
+  // blocker at any stage (heading over, on site, mid-repair), not just one.
+  if (
+    task.status !== RequestStatus.completed &&
+    HOLD_WORDS.some(
+      (w) => bodyLower === w || new RegExp(`\\b${escapeRegExp(w)}\\b`).test(bodyLower),
+    )
+  ) {
+    await setSession(phone, {
+      flow: WhatsappFlow.worker_task,
+      step: "awaiting_hold_reason",
+      data: null,
+      taskId,
+    });
+    return `What's blocking you on "${task.title}"? Give me a quick reason and I'll flag it for the admin to review.`;
   }
 
   if (
@@ -817,27 +1026,63 @@ async function handleWorkerTaskReply(
         data: { completionCode: code, completionCodeAt: new Date() },
       });
 
-      await prisma.notification.create({
-        data: {
-          userId: task.userId,
-          title: "Give this code to the worker",
-          message: `Work on "${task.title}" is ready. Share code ${code} with the worker to confirm completion.`,
-          relatedId: taskId,
-        },
+      await notifyTenantCompletionCode({
+        taskId,
+        taskTitle: task.title,
+        tenantId: task.userId,
+        code,
       });
     }
 
     await setSession(phone, {
       flow: WhatsappFlow.awaiting_completion_code,
-      step: null,
-      data: null,
+      step: "notes",
+      data: {},
       taskId,
     });
 
     await publish({ kind: "request", roles: [UserType.admin], userIds: [task.userId, workerId] });
     revalidatePath("/protected/tasks");
 
-    return "Nice work! Just grab the 4-digit code from the tenant and send it here to wrap it up.";
+    return `Nice work! Anything worth noting about "${task.title}" before we wrap up? Just tell me, or say "no" if there's nothing to add.`;
+  }
+
+  // A code can already be sitting on the job (they said "done" earlier in a
+  // different session, or the tenant says they never got it) without the
+  // current session actually being in the code-collection state — this
+  // lets them re-trigger delivery, or catch up into that state, either way.
+  const RESEND_CODE_PHRASES = [
+    "send code",
+    "send the code",
+    "resend code",
+    "resend the code",
+    "send code to tenant",
+    "give me the code",
+    "what's the code",
+    "whats the code",
+    "share the code",
+    "code again",
+  ];
+  if (RESEND_CODE_PHRASES.some((p) => bodyLower.includes(p))) {
+    if (!task.completionCode) {
+      return `There's no code pending for "${task.title}" yet — say "done" once you've finished and I'll get one sent over to the tenant.`;
+    }
+
+    await notifyTenantCompletionCode({
+      taskId,
+      taskTitle: task.title,
+      tenantId: task.userId,
+      code: task.completionCode,
+    });
+
+    await setSession(phone, {
+      flow: WhatsappFlow.awaiting_completion_code,
+      step: "code",
+      data: {},
+      taskId,
+    });
+
+    return `Sent — the tenant should have the code for "${task.title}" now. Once they give it to you, send it here.`;
   }
 
   const fallback =
@@ -848,18 +1093,150 @@ async function handleWorkerTaskReply(
     role: "worker",
     userMessage: bodyLower,
     context: `Job: "${task.title}". Current status: ${task.status.replace("_", " ")}.`,
-    validCommands: actionPromptFor(task.status).replace(/^Reply /, ""),
+    validCommands: actionPromptFor(task.status),
   });
 
   return generated ?? fallback;
 }
 
-async function handleCompletionCode(
+/** Downloads a photo the worker just sent and attaches it to the job, the
+ * same way a photo uploaded from the web dashboard's completion form would
+ * be. Returns false (never throws) on any failure — a bad download or a
+ * storage hiccup shouldn't derail the conversation, just that one photo. */
+async function saveWhatsappPhoto(
+  taskId: string,
+  workerId: string,
+  mediaId: string,
+): Promise<boolean> {
+  const media = await downloadWhatsappMedia(mediaId);
+  if (!media) return false;
+
+  try {
+    const extension = media.mimeType.split("/")[1]?.split(";")[0] || "jpg";
+    const file = new File([media.buffer], `whatsapp-photo.${extension}`, {
+      type: media.mimeType,
+    });
+
+    const uploaded = await uploadAttachment(file, taskId);
+
+    await prisma.maintenanceAttachment.create({
+      data: {
+        requestId: taskId,
+        fileName: uploaded.fileName,
+        filePath: uploaded.objectKey,
+        fileType: uploaded.fileType,
+        fileSize: uploaded.fileSize,
+        createdById: workerId,
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error("[whatsapp] Failed to save photo for task", taskId, error);
+    return false;
+  }
+}
+
+/** The worker put a job on hold and just gave the reason — mirrors
+ * app/actions.ts's holdTaskAction (status → on_hold, admin review queue),
+ * re-applied here directly since WhatsApp replies don't carry a web
+ * session (see the file header comment for why). */
+async function handleHoldReason(
   workerId: string,
   phone: string,
   taskId: string,
   body: string,
 ): Promise<string> {
+  const reason = body.trim();
+
+  if (!reason || SKIP_WORDS.includes(stripTrailingPunctuation(reason.toLowerCase()))) {
+    return "I'll need an actual reason so the admin knows what's going on — what's blocking you?";
+  }
+
+  const task = await prisma.maintenanceRequest.findUnique({
+    where: { id: taskId },
+    select: { id: true, title: true, userId: true, assignedToId: true, status: true },
+  });
+
+  const holdableStatuses: RequestStatus[] = [
+    RequestStatus.pending,
+    RequestStatus.en_route,
+    RequestStatus.in_progress,
+  ];
+
+  if (!task || task.assignedToId !== workerId) {
+    await clearSession(phone);
+    return "Looks like that job's moved on without you — just ask and I'll show you what's actually on your plate.";
+  }
+
+  if (!holdableStatuses.includes(task.status)) {
+    await setSession(phone, { flow: WhatsappFlow.worker_task, step: null, data: null, taskId });
+    return task.status === RequestStatus.on_hold
+      ? "That one's already on hold — I'll let you know once it's ready to pick back up."
+      : "That job's already completed, so there's nothing to hold.";
+  }
+
+  await prisma.maintenanceRequest.update({
+    where: { id: taskId },
+    data: {
+      status: RequestStatus.on_hold,
+      holdReason: reason,
+      heldAt: new Date(),
+      heldFromStatus: task.status,
+      resumeRequestedAt: null,
+      completionCode: null,
+      completionCodeAt: null,
+      taskLogs: {
+        create: {
+          status: RequestStatus.on_hold,
+          changedById: workerId,
+          notes: `Put on hold via WhatsApp: ${reason}`,
+        },
+      },
+    },
+  });
+
+  await clearSession(phone);
+
+  await notifyRequestHeld({
+    id: task.id,
+    title: task.title,
+    tenantId: task.userId,
+    reason,
+    actorId: workerId,
+  });
+
+  await publish({ kind: "request", roles: [UserType.admin], userIds: [task.userId, workerId] });
+
+  revalidatePath("/protected/tasks");
+  revalidatePath("/protected/maintenance");
+  revalidatePath(`/protected/maintenance/${taskId}`);
+  revalidatePath("/protected/requests");
+  revalidatePath(`/protected/requests/${taskId}`);
+
+  return `Got it — "${task.title}" is on hold and flagged for admin review. I'll let you know once it's ready to pick back up.`;
+}
+
+/** Everything after the worker says "done": optional notes, at least one
+ * photo of the finished work, then the tenant's completion code — mirrors
+ * the web dashboard's completion form (see components/task-card.tsx), just
+ * spread across a few messages instead of one form. `session` carries which
+ * of those steps they're on. */
+async function handleCompletionStep(
+  workerId: string,
+  phone: string,
+  session: { step: string | null; data: unknown; taskId: string | null },
+  body: string,
+  bodyLower: string,
+  imageId?: string,
+): Promise<string> {
+  const taskId = session.taskId;
+
+  if (!taskId) {
+    await clearSession(phone);
+    return "Looks like that job's moved on without you — just ask and I'll show you what's actually on your plate.";
+  }
+
   const task = await prisma.maintenanceRequest.findUnique({
     where: { id: taskId },
     select: {
@@ -874,18 +1251,116 @@ async function handleCompletionCode(
 
   if (!task || task.assignedToId !== workerId) {
     await clearSession(phone);
-    return "That job isn't assigned to you anymore. Reply *tasks* to see your active jobs.";
+    return "Looks like that job's moved on without you — just ask and I'll show you what's actually on your plate.";
   }
 
+  const normalized = stripTrailingPunctuation(bodyLower);
+
+  // An escape hatch from anywhere in this sub-flow — previously only exact
+  // code entry did anything at all here, so "cancel"/small talk/anything
+  // else just silently got compared against the code and failed. Kept
+  // deliberately narrow to unambiguous "abandon this" words: a bare "no" is
+  // NOT one of these, since it's the legitimate answer to each step's own
+  // question ("any notes?", "more photos?") and is handled per-step below —
+  // treating it as a global cancel here caused those steps to bounce back
+  // to the very start on every "no", looping the same question forever.
+  const CANCEL_WORDS = [
+    "cancel",
+    "dismiss",
+    "dismiss it",
+    "nevermind",
+    "never mind",
+    "forget it",
+    "quit",
+    "exit",
+    "stop",
+  ];
+  if (CANCEL_WORDS.includes(normalized)) {
+    await setSession(phone, {
+      flow: WhatsappFlow.worker_task,
+      step: null,
+      data: null,
+      taskId,
+    });
+    return "No problem, backed out of that. Just let me know when you're ready to wrap this one up.";
+  }
+
+  if (
+    HOLD_WORDS.some(
+      (w) => normalized === w || new RegExp(`\\b${escapeRegExp(w)}\\b`).test(normalized),
+    )
+  ) {
+    await setSession(phone, {
+      flow: WhatsappFlow.worker_task,
+      step: "awaiting_hold_reason",
+      data: null,
+      taskId,
+    });
+    return `What's blocking you on "${task.title}"? Give me a quick reason and I'll flag it for the admin to review.`;
+  }
+
+  if (isSmallTalk(bodyLower)) {
+    return "Doing well, thanks for asking! Whenever you're ready, let's finish wrapping this job up.";
+  }
+
+  const data: Record<string, string> =
+    (session.data as Record<string, string> | null) ?? {};
+  const step = session.step ?? "notes";
+
+  if (step === "notes") {
+    if (SKIP_WORDS.includes(normalized)) {
+      await setSession(phone, { step: "photo", data });
+      return "No worries. Now send at least one photo of the finished work.";
+    }
+
+    await setSession(phone, { step: "photo", data: { ...data, notes: body } });
+    return "Got it, noted. Now send at least one photo of the finished work.";
+  }
+
+  if (step === "photo") {
+    if (imageId) {
+      const saved = await saveWhatsappPhoto(taskId, workerId, imageId);
+      const photoCount = (
+        Number(data.photoCount ?? "0") + (saved ? 1 : 0)
+      ).toString();
+      await setSession(phone, { step: "photo", data: { ...data, photoCount } });
+      return saved
+        ? "Got that photo. Send another if you want, or just let me know once you're done."
+        : "Hmm, that photo didn't come through — mind sending it again?";
+    }
+
+    const photoCount = Number(data.photoCount ?? "0");
+    const saidDone =
+      PHOTO_DONE_WORDS.some((w) => normalized === w || normalized.includes(w)) ||
+      SKIP_WORDS.includes(normalized) ||
+      NO_WORDS.includes(normalized);
+
+    if (saidDone) {
+      if (photoCount === 0) {
+        return "I'll need at least one photo of the finished work before we wrap this up — go ahead and send one.";
+      }
+      await setSession(phone, { step: "code", data });
+      return "Perfect. Now just grab the 4-digit code from the tenant and send it here.";
+    }
+
+    return "Send a photo of the finished work when you're ready — that's the last thing I need before the code.";
+  }
+
+  // step === "code"
   if (!task.completionCode) {
-    await setSession(phone, { flow: WhatsappFlow.worker_task, taskId });
-    return "There's no code pending right now. Send *tasks* to see where things stand.";
+    await setSession(phone, {
+      flow: WhatsappFlow.worker_task,
+      step: null,
+      data: null,
+      taskId,
+    });
+    return "I don't have a code waiting for this one right now — just ask and we'll see where things stand.";
   }
 
   const code = body.trim();
 
   if (code !== task.completionCode) {
-    return "That doesn't match what I have — double-check with the tenant, or send *tasks* to cancel.";
+    return "That code doesn't match what I've got — worth double-checking with the tenant. Or just let me know if you want to back out of this.";
   }
 
   await prisma.maintenanceRequest.update({
@@ -899,7 +1374,9 @@ async function handleCompletionCode(
         create: {
           status: RequestStatus.completed,
           changedById: workerId,
-          notes: "Completed and verified by tenant code (via WhatsApp)",
+          notes: data.notes
+            ? `${data.notes} (verified by tenant code, via WhatsApp)`
+            : "Completed and verified by tenant code (via WhatsApp)",
         },
       },
     },

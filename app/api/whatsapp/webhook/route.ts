@@ -62,6 +62,7 @@ type WhatsappWebhookPayload = {
           from?: string;
           type?: string;
           text?: { body?: string };
+          image?: { id?: string; caption?: string };
           interactive?: {
             button_reply?: { id?: string; title?: string };
             list_reply?: { id?: string; title?: string };
@@ -147,12 +148,15 @@ export async function POST(request: NextRequest) {
     message.text?.body ??
     message.interactive?.button_reply?.title ??
     message.interactive?.list_reply?.title ??
+    message.image?.caption ??
     "";
+
+  const imageId = message.type === "image" ? message.image?.id : undefined;
 
   const from = normalizeWhatsappPhone(message.from);
 
   try {
-    const reply = await handleIncomingWhatsapp(message.from, body);
+    const reply = await handleIncomingWhatsapp(message.from, body, imageId);
     // Unlike Twilio's TwiML, Meta's webhook response body is ignored — a
     // reply has to be sent back out as its own API call.
     await sendWhatsApp({ to: from, body: reply });

@@ -254,6 +254,28 @@ export async function notifyStatusChange(request: {
   await publish({ kind: "notification", userIds: [request.userId] });
 }
 
+/** The worker says the job's done and is waiting on the tenant's 4-digit
+ * code — tenant needs this in hand to actually give it to the worker, so
+ * (unlike a plain in-app-only notice) this has to reach them wherever
+ * they'll see it fastest, which for most tenants is WhatsApp. */
+export async function notifyTenantCompletionCode(input: {
+  taskId: string;
+  taskTitle: string;
+  tenantId: string;
+  code: string;
+}): Promise<void> {
+  await createNotification({
+    data: {
+      userId: input.tenantId,
+      title: "Give this code to the worker",
+      message: `Work on "${input.taskTitle}" is ready. Share code ${input.code} with the worker to confirm completion.`,
+      relatedId: input.taskId,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.tenantId] });
+}
+
 /** A held job belongs to the admin queue, so both the tenant and admins are told. */
 export async function notifyRequestHeld(input: {
   id: string;
@@ -348,7 +370,7 @@ export async function notifyRequestResumed(input: {
           (input.workerChanged
             ? `"${input.title}" has been assigned to you after an admin review.${input.place ? ` Location: ${input.place}.` : ""}`
             : `You can continue work on "${input.title}".`) +
-          ` Reply *done* here on WhatsApp once it's finished, or open My Tasks.`,
+          ` Just let me know here once it's finished, or open My Tasks.`,
         relatedId: input.id,
         href: "/protected/tasks",
       },
@@ -423,7 +445,7 @@ export async function notifyWorkerAssigned(
     (place
       ? `You've been assigned a maintenance job: "${request.title}" at ${place}.`
       : `You have been assigned to work on a maintenance request: "${request.title}".`) +
-    ` Reply *1* here on WhatsApp when you're on your way, or open My Tasks for full details.`;
+    ` Just let me know here once you're heading over, or open My Tasks for full details.`;
 
   const workerName =
     [worker?.firstName, worker?.lastName].filter(Boolean).join(" ") ||

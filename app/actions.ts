@@ -14,6 +14,7 @@ import {
   notifySupplyReceiptUploaded,
   notifySupplyRequestDecided,
   notifySupplyRequested,
+  notifyTenantCompletionCode,
   notifyWorkerAssigned,
   notifyWorkerUnassigned,
 } from "@/lib/notifications";
@@ -1297,14 +1298,13 @@ export const requestCompletionAction = async (
     data: { completionCode: code, completionCodeAt: new Date() },
   });
 
-  // Tell the tenant a code is waiting for the worker.
-  await prisma.notification.create({
-    data: {
-      userId: task.userId,
-      title: "Give this code to the worker",
-      message: `Work on "${task.title}" is ready. Share code ${code} with the worker to confirm completion.`,
-      relatedId: taskId,
-    },
+  // Tell the tenant a code is waiting for the worker — including on
+  // WhatsApp, since they need this in hand before the worker can finish up.
+  await notifyTenantCompletionCode({
+    taskId,
+    taskTitle: task.title,
+    tenantId: task.userId,
+    code,
   });
 
   await publish({

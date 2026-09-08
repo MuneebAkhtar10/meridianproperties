@@ -222,3 +222,65 @@ export async function sendWhatsAppTemplate(input: {
     console.error(`[whatsapp] Failed to send template to ${input.to}:`, error);
   }
 }
+
+/**
+ * Downloads a photo/file a user sent on WhatsApp — used for the worker's
+ * "photo of the finished work" step (see lib/whatsapp-bot.ts). Meta's inbound
+ * media isn't a plain URL: the webhook payload only carries a media *id*,
+ * which has to be exchanged for a short-lived download URL first (both
+ * calls need the same access token — the download URL isn't public on its
+ * own). Returns null on any failure so a bad/expired media id never crashes
+ * the conversation.
+ */
+export async function downloadWhatsappMedia(
+  mediaId: string,
+): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  if (!accessToken) {
+    console.warn("[whatsapp] WHATSAPP_ACCESS_TOKEN not set — cannot download media");
+    return null;
+  }
+
+  try {
+    const metaResponse = await fetch(
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${mediaId}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+
+    if (!metaResponse.ok) {
+      console.error(
+        `[whatsapp] Media lookup failed (${metaResponse.status}) for ${mediaId}`,
+      );
+      return null;
+    }
+
+    const meta = (await metaResponse.json()) as {
+      url?: string;
+      mime_type?: string;
+    };
+
+    if (!meta.url) {
+      console.error(`[whatsapp] Media lookup for ${mediaId} had no url`);
+      return null;
+    }
+
+    // The download URL itself also requires the same bearer token — it's
+    // not a public link.
+    const fileResponse = await fetch(meta.url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!fileResponse.ok) {
+      console.error(
+        `[whatsapp] Media download failed (${fileResponse.status}) for ${mediaId}`,
+      );
+      return null;
+    }
+
+    const buffer = Buffer.from(await fileResponse.arrayBuffer());
+    return { buffer, mimeType: meta.mime_type ?? "application/octet-stream" };
+  } catch (error) {
+    console.error(`[whatsapp] Failed to download media ${mediaId}:`, error);
+    return null;
+  }
+}
