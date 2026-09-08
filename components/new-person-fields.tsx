@@ -15,8 +15,16 @@ import { NewWorkerHrModal } from "@/components/worker-hr-modal";
  * split via a render-prop) because a function can't be passed as a prop from
  * a Server Component — it has to be defined inside the client boundary.
  */
-export function NewPersonFields({ units }: { units: PickableUnit[] }) {
-  const [role, setRole] = useState("user");
+export function NewPersonFields({
+  units,
+  initialRole = "user",
+}: {
+  units: PickableUnit[];
+  /** Preselects the role — e.g. arriving here from the property form's
+   * "create an owner first" link with `?newPersonRole=owner`. */
+  initialRole?: string;
+}) {
+  const [role, setRole] = useState(initialRole);
   const [workerCategory, setWorkerCategory] = useState("in_house");
 
   const isWorker = role === "worker";

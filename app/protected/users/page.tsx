@@ -69,6 +69,12 @@ export default async function PeoplePage({ searchParams }: PageProps) {
 
   const query = params.query as string | undefined;
   const role = params.role as string | undefined;
+  const newPersonRoleParam = params.newPersonRole as string | undefined;
+  const newPersonRole =
+    newPersonRoleParam &&
+    (Object.values(UserType) as string[]).includes(newPersonRoleParam)
+      ? newPersonRoleParam
+      : "user";
 
   const andConditions: Prisma.UserWhereInput[] = [];
 
@@ -106,6 +112,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       include: {
         unit: { include: { property: { include: { propertyType: true } } } },
         documents: { orderBy: { createdAt: "desc" } },
+        familyMembers: { orderBy: { createdAt: "asc" } },
       },
     }),
     prisma.unit.findMany({
@@ -118,7 +125,10 @@ export default async function PeoplePage({ searchParams }: PageProps) {
     prisma.user.findMany({
       where: { userType: UserType.worker, workerCategory: "in_house" },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-      include: { documents: { orderBy: { createdAt: "desc" } } },
+      include: {
+        documents: { orderBy: { createdAt: "desc" } },
+        familyMembers: { orderBy: { createdAt: "asc" } },
+      },
     }),
   ]);
 
@@ -152,6 +162,8 @@ export default async function PeoplePage({ searchParams }: PageProps) {
             worker.email,
           record: worker,
           documents: worker.documents,
+          employeeType: worker.employeeType,
+          familyMembers: worker.familyMembers,
         }))}
       />
 
@@ -296,7 +308,10 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                           )}
                           {user.userType === UserType.worker &&
                             user.workerCategory !== "third_party" && (
-                              <WorkerHrBadge record={user} />
+                              <WorkerHrBadge
+                                record={user}
+                                familyMembers={user.familyMembers}
+                              />
                             )}
                         </div>
                       </div>
@@ -308,6 +323,8 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                               userId={user.id}
                               record={user}
                               documents={user.documents}
+                              employeeType={user.employeeType}
+                              familyMembers={user.familyMembers}
                             />
                           </div>
                         )}
@@ -345,6 +362,21 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                                 id={`last-${user.id}`}
                                 name="lastName"
                                 defaultValue={user.lastName ?? ""}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label
+                                htmlFor={`email-${user.id}`}
+                                className="text-xs"
+                              >
+                                Email
+                              </Label>
+                              <Input
+                                id={`email-${user.id}`}
+                                name="email"
+                                type="email"
+                                defaultValue={user.email}
+                                required
                               />
                             </div>
                             <div className="space-y-1">
@@ -562,7 +594,10 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         </div>
 
         {/* ── Create a user ────────────────────────────────────────────────── */}
-        <Card className="h-fit overflow-hidden border-border/60 shadow-sm lg:sticky lg:top-24">
+        <Card
+          id="add-person"
+          className="h-fit overflow-hidden border-border/60 shadow-sm lg:sticky lg:top-24"
+        >
           <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-white">
               <UserPlus className="h-4 w-4" />
@@ -594,7 +629,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                 />
               </div>
 
-              <NewPersonFields units={pickableUnits} />
+              <NewPersonFields units={pickableUnits} initialRole={newPersonRole} />
 
               <SubmitButton
                 formAction={createUserAction}

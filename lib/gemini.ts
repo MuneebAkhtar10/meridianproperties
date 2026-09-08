@@ -53,7 +53,15 @@ function postJson(
   });
 }
 
-async function callGemini(prompt: string): Promise<string | null> {
+async function callGemini(
+  prompt: string,
+  options?: {
+    /** Skip the "looks like real prose" sanity check — for classification
+     * calls, a valid answer can legitimately be a short exact-match string
+     * like "no" or "none", which that check would otherwise reject. */
+    expectShortAnswer?: boolean;
+  },
+): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
@@ -79,15 +87,16 @@ async function callGemini(prompt: string): Promise<string | null> {
 
     if (!trimmed) return null;
 
-    // A truncated response (cut off by maxOutputTokens) or one with no
-    // actual words (e.g. a bare number) is worse than no AI text at all —
-    // better to fall back to the plain-text message than send that to a
-    // tenant or worker.
+    // A truncated response (cut off by maxOutputTokens) is worse than no AI
+    // response at all — better to fall back than send a chopped-off reply.
     if (candidate?.finishReason === "MAX_TOKENS") {
       console.error("[gemini] Response was truncated, discarding:", trimmed);
       return null;
     }
-    if (!/[a-zA-Z]{3,}/.test(trimmed)) {
+    // For free-generated prose, a response with no real words (e.g. a bare
+    // number) usually means something went wrong — but a classification
+    // call's valid answer can legitimately be that short.
+    if (!options?.expectShortAnswer && !/[a-zA-Z]{3,}/.test(trimmed)) {
       console.error("[gemini] Response has no real words, discarding:", trimmed);
       return null;
     }
@@ -119,6 +128,51 @@ Message: ${input.message}
 ${detailLines ? `Details:\n${detailLines}` : ""}`;
 
   return callGemini(prompt);
+}
+
+/**
+ * Matches free-text against a fixed, known set of options — e.g. "the
+ * kitchen sink is leaking" → the "Plumbing" category, or "yep go ahead" →
+ * "yes". This is classification, not generation: the model can only return
+ * one of the option keys handed to it (or null), never invent a new one, so
+ * a wrong guess is a wrong pick among known-safe choices rather than
+ * fabricated text reaching a business action. Used as a fallback after a
+ * plain number/keyword match fails — never the only way to make a choice.
+ */
+export async function classifyChoice(input: {
+  /** What the bot just asked them. */
+  question: string;
+  /** What they replied. */
+  userMessage: string;
+  /** Valid choices, in order — the model must reply with one of these
+   * exact strings (case-sensitive) or the literal word "none". */
+  options: string[];
+}): Promise<string | null> {
+  if (input.options.length === 0) return null;
+
+  const prompt = `A WhatsApp bot for a property management app asked: "${input.question}"
+
+The person replied: "${input.userMessage}"
+
+Which of these options did they mean?
+${input.options.map((o) => `- ${o}`).join("\n")}
+
+Reply with the exact option text from the list above, character-for-character, and nothing else. If their reply doesn't clearly match any option, reply with exactly: none`;
+
+  const result = await callGemini(prompt, { expectShortAnswer: true });
+  if (!result) return null;
+
+  // Lenient on purpose: models don't always follow "reply with exactly X"
+  // to the letter (trailing periods, a restated sentence, etc.) — matching
+  // is still constrained to the fixed option list either way, so being
+  // forgiving here only helps a real match through, it can't let anything
+  // arbitrary in.
+  const cleaned = result.toLowerCase().trim().replace(/[.!?"']+$/, "");
+  return (
+    input.options.find((o) => o.toLowerCase() === cleaned) ??
+    input.options.find((o) => cleaned.includes(o.toLowerCase())) ??
+    null
+  );
 }
 
 /**

@@ -259,6 +259,10 @@ model User {
   drivingLicenseNumber        String?         @map("driving_license_number")
   drivingLicenseIssuance      DateTime?       @map("driving_license_issuance")
   drivingLicenseExpiry        DateTime?       @map("driving_license_expiry")
+  /// Only meaningful for in-house workers: "individual" (default) or
+  /// "family" — a family employee's dependents (spouse/father/mother) get
+  /// their own Bataka records tracked below via familyMembers.
+  employeeType                String          @default("individual") @map("employee_type")
   /// Whether this worker has/drives a vehicle for work — gates whether the
   /// vehicle documents below are asked for at all.
   hasVehicle                  Boolean         @default(false) @map("has_vehicle")
@@ -298,9 +302,42 @@ model User {
   /// Set only for owners: the properties they were assigned or created.
   ownedProperties       Property[]              @relation("PropertyOwner")
   whatsappSessions      WhatsappSession[]
+  /// Only populated when employeeType = "family" — the worker's tracked
+  /// dependents (see WorkerFamilyMember).
+  familyMembers         WorkerFamilyMember[]
 
   @@unique([email, userType])
   @@map("users")
+}
+
+enum FamilyRelationship {
+  spouse
+  father
+  mother
+}
+
+/// A dependent (spouse/father/mother) tracked for an in-house worker whose
+/// employeeType is "family" — mirrors the worker's own Bataka tracking, one
+/// record per dependent. Limits (up to 4 spouses, 1 father, 1 mother) are
+/// enforced in the server action, not here.
+model WorkerFamilyMember {
+  id               String             @id @default(uuid()) @db.Uuid
+  workerId         String             @map("worker_id") @db.Uuid
+  name             String
+  relationship     FamilyRelationship
+  civilIdIssuance  DateTime?          @map("civil_id_issuance")
+  civilIdExpiry    DateTime?          @map("civil_id_expiry")
+  documentFileName String?            @map("document_file_name")
+  documentFilePath String?            @map("document_file_path")
+  documentFileType String?            @map("document_file_type")
+  documentFileSize Int?               @map("document_file_size")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  worker User @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+  @@map("worker_family_members")
 }
 
 /// A historical occupancy record. Unit.tenantId remains the fast pointer to the

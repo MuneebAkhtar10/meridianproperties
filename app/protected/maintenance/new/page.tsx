@@ -2,7 +2,7 @@ import { AdminCreateRequestForm } from "@/components/admin-create-request-form";
 import { PageHeader } from "@/components/page-header";
 import { FormMessage, Message } from "@/components/form-message";
 import { prisma } from "@/lib/prisma";
-import { requireAnyRole } from "@/lib/session";
+import { requireRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -10,12 +10,11 @@ export default async function NewMaintenanceRequestPage({
   searchParams,
 }: PageProps) {
   const message = (await searchParams) as unknown as Message;
-  const user = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = user.userType === UserType.owner;
+  await requireRole(UserType.admin);
 
   const [properties, workers] = await Promise.all([
     prisma.property.findMany({
-      where: isOwner ? { ownerId: user.id } : {},
+      where: {},
       orderBy: { name: "asc" },
       select: {
         id: true,

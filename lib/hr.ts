@@ -167,42 +167,97 @@ export const HR_DOCUMENTS: HrDocumentConfig[] = [
   },
 ];
 
-/** The single worst status across all of a worker's HR documents — drives
- * the summary badge shown on their card. Documents with no date on file are
- * ignored for this rollup, and vehicle documents are skipped entirely for a
- * worker who doesn't have `hasVehicle` set, so a driver-only requirement
- * never alarms an admin about a worker who was never asked for it. */
-export function getWorstHrStatus(record: WorkerHrRecord): ExpiryStatus {
-  const statuses = HR_DOCUMENTS.filter(
-    (doc) => !doc.vehicleOnly || record.hasVehicle,
-  )
-    .map(
+/** A family member's Bataka is tracked the same way as the worker's own —
+ * same expiring-soon window as the worker's own civilId document, just kept
+ * as its own constant since WorkerFamilyMinimal below doesn't carry a full
+ * HrDocumentConfig entry. */
+export const FAMILY_CIVIL_ID_EXPIRING_SOON_DAYS =
+  HR_DOCUMENTS.find((doc) => doc.key === "civilId")?.expiringSoonDays ??
+  2 * MONTH_DAYS;
+
+/** Just enough of a WorkerFamilyMember row to compute expiry status —
+ * avoids this module depending on the generated Prisma types directly. */
+export type WorkerFamilyMinimal = {
+  id: string;
+  name: string;
+  relationship: string;
+  civilIdExpiry: Date | null;
+};
+
+/** The single worst status across all of a worker's HR documents, plus any
+ * tracked family members' Bataka — drives the summary badge shown on their
+ * card. Documents with no date on file are ignored for this rollup, and
+ * vehicle documents are skipped entirely for a worker who doesn't have
+ * `hasVehicle` set, so a driver-only requirement never alarms an admin
+ * about a worker who was never asked for it. */
+export function getWorstHrStatus(
+  record: WorkerHrRecord,
+  familyMembers: WorkerFamilyMinimal[] = [],
+): ExpiryStatus {
+  const statuses = [
+    ...HR_DOCUMENTS.filter((doc) => !doc.vehicleOnly || record.hasVehicle).map(
       (doc) =>
         getExpiryStatus(
           record[doc.expiryField] as Date | null,
           doc.expiringSoonDays,
         ).status,
-    )
-    .filter((status) => status !== "not_set");
+    ),
+    ...familyMembers.map(
+      (member) =>
+        getExpiryStatus(
+          member.civilIdExpiry,
+          FAMILY_CIVIL_ID_EXPIRING_SOON_DAYS,
+        ).status,
+    ),
+  ].filter((status) => status !== "not_set");
 
   if (statuses.includes("expired")) return "expired";
   if (statuses.includes("expiring")) return "expiring";
   return "valid";
 }
 
-/** Every document on a worker's record that is expired or expiring soon —
- * feeds the People page's HR overview so admins can see, at a glance, which
- * specific documents (not just which workers) need attention. */
+export type HrIssue = {
+  key: string;
+  label: string;
+  status: ExpiryStatus;
+  daysUntil: number | null;
+};
+
+/** Every document on a worker's record — plus any tracked family members'
+ * Bataka — that is expired or expiring soon. Feeds the People page's HR
+ * overview so admins can see, at a glance, which specific documents (not
+ * just which workers) need attention. */
 export function getHrIssues(
   record: WorkerHrRecord,
-): { doc: HrDocumentConfig; status: ExpiryStatus; daysUntil: number | null }[] {
-  return HR_DOCUMENTS.filter((doc) => !doc.vehicleOnly || record.hasVehicle)
-    .map((doc) => ({
-      doc,
-      ...getExpiryStatus(
-        record[doc.expiryField] as Date | null,
-        doc.expiringSoonDays,
-      ),
-    }))
-    .filter((entry) => entry.status === "expired" || entry.status === "expiring");
+  familyMembers: WorkerFamilyMinimal[] = [],
+): HrIssue[] {
+  const documentIssues: HrIssue[] = HR_DOCUMENTS.filter(
+    (doc) => !doc.vehicleOnly || record.hasVehicle,
+  ).map((doc) => ({
+    key: doc.key,
+    label: doc.label,
+    ...getExpiryStatus(
+      record[doc.expiryField] as Date | null,
+      doc.expiringSoonDays,
+    ),
+  }));
+
+  const familyIssues: HrIssue[] = familyMembers.map((member) => ({
+    key: `family-${member.id}`,
+    label: `${member.name || RELATIONSHIP_LABEL[member.relationship] || "Family member"} (Bataka)`,
+    ...getExpiryStatus(
+      member.civilIdExpiry,
+      FAMILY_CIVIL_ID_EXPIRING_SOON_DAYS,
+    ),
+  }));
+
+  return [...documentIssues, ...familyIssues].filter(
+    (entry) => entry.status === "expired" || entry.status === "expiring",
+  );
 }
+
+const RELATIONSHIP_LABEL: Record<string, string> = {
+  spouse: "Spouse",
+  father: "Father",
+  mother: "Mother",
+};

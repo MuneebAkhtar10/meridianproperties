@@ -28,7 +28,7 @@ import {
 } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
-import { requireAnyRole, requireUser } from "@/lib/session";
+import { requireRole, requireUser } from "@/lib/session";
 import { uploadFinancialDocument } from "@/lib/storage";
 import { encodedRedirect } from "@/utils/utils";
 import {
@@ -68,8 +68,10 @@ async function publishFinance(userIds: Array<string | null | undefined> = []) {
 /* ── Tenancies ────────────────────────────────────────────────────────────── */
 
 export const startTenancyAction = async (formData: FormData) => {
-  const admin = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = admin.userType === UserType.owner;
+  // Admin-only — property owners have read-only access to everything
+  // except creating a new property (see admin-actions.ts's
+  // createPropertyAction).
+  const admin = await requireRole(UserType.admin);
 
   const unitId = formData.get("unitId")?.toString();
   const tenantId = formData.get("tenantId")?.toString();
@@ -150,12 +152,7 @@ export const startTenancyAction = async (formData: FormData) => {
     }),
   ]);
 
-  if (
-    !unit ||
-    !tenant ||
-    tenant.userType !== UserType.user ||
-    (isOwner && unit.property.ownerId !== admin.id)
-  ) {
+  if (!unit || !tenant || tenant.userType !== UserType.user) {
     return encodedRedirect(
       "error",
       "/protected/tenancies",
@@ -341,8 +338,7 @@ export const startTenancyAction = async (formData: FormData) => {
 };
 
 export const updateTenancyAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = actor.userType === UserType.owner;
+  await requireRole(UserType.admin);
 
   const tenancyId = formData.get("tenancyId")?.toString();
   const startDate = parseDate(formData.get("startDate")?.toString());
@@ -384,20 +380,6 @@ export const updateTenancyAction = async (formData: FormData) => {
     );
   }
 
-  if (isOwner) {
-    const owned = await prisma.tenancy.findFirst({
-      where: { id: tenancyId, unit: { property: { ownerId: actor.id } } },
-      select: { id: true },
-    });
-    if (!owned) {
-      return encodedRedirect(
-        "error",
-        "/protected/tenancies",
-        "Tenancy not found.",
-      );
-    }
-  }
-
   const tenancy = await prisma.tenancy.update({
     where: { id: tenancyId },
     data: {
@@ -427,8 +409,7 @@ export const updateTenancyAction = async (formData: FormData) => {
  * terms — same use case as resendChargeInvoiceEmailAction: a bounced email,
  * a fixed address, or a tenant who says they never got it. */
 export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = actor.userType === UserType.owner;
+  await requireRole(UserType.admin);
   const tenancyId = formData.get("tenancyId")?.toString();
 
   if (!tenancyId) {
@@ -445,7 +426,7 @@ export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
     },
   });
 
-  if (!tenancy || (isOwner && tenancy.unit.property.ownerId !== actor.id)) {
+  if (!tenancy) {
     return encodedRedirect("error", "/protected/tenancies", "Tenancy not found.");
   }
 
@@ -485,8 +466,7 @@ export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
 };
 
 export const endTenancyAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = actor.userType === UserType.owner;
+  await requireRole(UserType.admin);
 
   const tenancyId = formData.get("tenancyId")?.toString();
   const endDate = parseDate(formData.get("endDate")?.toString());
@@ -501,13 +481,8 @@ export const endTenancyAction = async (formData: FormData) => {
 
   const tenancy = await prisma.tenancy.findUnique({
     where: { id: tenancyId },
-    include: { unit: { select: { property: { select: { ownerId: true } } } } },
   });
-  if (
-    !tenancy ||
-    tenancy.endDate ||
-    (isOwner && tenancy.unit.property.ownerId !== actor.id)
-  ) {
+  if (!tenancy || tenancy.endDate) {
     return encodedRedirect(
       "error",
       "/protected/tenancies",
@@ -551,8 +526,7 @@ export const endTenancyAction = async (formData: FormData) => {
 /* ── Charges and rent generation ──────────────────────────────────────────── */
 
 export const createChargeAction = async (formData: FormData) => {
-  const admin = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = admin.userType === UserType.owner;
+  const admin = await requireRole(UserType.admin);
 
   const tenancyId = formData.get("tenancyId")?.toString();
   const type = formData.get("type")?.toString();
@@ -601,10 +575,7 @@ export const createChargeAction = async (formData: FormData) => {
     },
   });
 
-  if (
-    !tenancy ||
-    (isOwner && tenancy.unit.property.ownerId !== admin.id)
-  ) {
+  if (!tenancy) {
     return encodedRedirect(
       "error",
       "/protected/finances",
@@ -687,8 +658,7 @@ export const createChargeAction = async (formData: FormData) => {
 };
 
 export const generateRentChargesAction = async (formData: FormData) => {
-  const admin = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = admin.userType === UserType.owner;
+  const admin = await requireRole(UserType.admin);
   const period = monthStart(formData.get("month")?.toString() || "");
 
   if (!period) {
@@ -707,7 +677,6 @@ export const generateRentChargesAction = async (formData: FormData) => {
       monthlyRent: { gt: 0 },
       startDate: { lte: periodEnd },
       OR: [{ endDate: null }, { endDate: { gte: period } }],
-      ...(isOwner ? { unit: { property: { ownerId: admin.id } } } : {}),
     },
     select: {
       id: true,
@@ -1037,8 +1006,7 @@ export const reviewPaymentAction = async (
   decision: "approve" | "reject",
   formData: FormData,
 ) => {
-  const admin = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = admin.userType === UserType.owner;
+  const admin = await requireRole(UserType.admin);
   const paymentId = formData.get("paymentId")?.toString();
   const reviewNotes = formData.get("reviewNotes")?.toString().trim() || null;
 
@@ -1063,11 +1031,7 @@ export const reviewPaymentAction = async (
     },
   });
 
-  if (
-    !payment ||
-    payment.status !== PaymentStatus.pending ||
-    (isOwner && payment.charge.unit.property.ownerId !== admin.id)
-  ) {
+  if (!payment || payment.status !== PaymentStatus.pending) {
     return encodedRedirect(
       "error",
       "/protected/finances",
@@ -1160,8 +1124,7 @@ export const reviewPaymentAction = async (
 };
 
 export const waiveChargeAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = actor.userType === UserType.owner;
+  await requireRole(UserType.admin);
   const chargeId = formData.get("chargeId")?.toString();
 
   if (!chargeId) {
@@ -1175,11 +1138,7 @@ export const waiveChargeAction = async (formData: FormData) => {
       unit: { select: { property: { select: { ownerId: true } } } },
     },
   });
-  if (
-    !charge ||
-    charge.status !== ChargeStatus.open ||
-    (isOwner && charge.unit.property.ownerId !== actor.id)
-  ) {
+  if (!charge || charge.status !== ChargeStatus.open) {
     return encodedRedirect(
       "error",
       financeBack(chargeId),
@@ -1229,8 +1188,7 @@ export const waiveChargeAction = async (formData: FormData) => {
  * not a replay of the original email. Useful when a tenant says they never
  * got it, or their email address was wrong and has since been fixed. */
 export const resendChargeInvoiceEmailAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = actor.userType === UserType.owner;
+  await requireRole(UserType.admin);
   const chargeId = formData.get("chargeId")?.toString();
 
   if (!chargeId) {
@@ -1247,7 +1205,7 @@ export const resendChargeInvoiceEmailAction = async (formData: FormData) => {
     },
   });
 
-  if (!charge || (isOwner && charge.unit.property.ownerId !== actor.id)) {
+  if (!charge) {
     return encodedRedirect("error", "/protected/finances", "Charge not found.");
   }
 

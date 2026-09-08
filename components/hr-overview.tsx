@@ -11,6 +11,7 @@ import {
 
 import { Modal } from "@/components/ui/modal";
 import { WorkerHrModal } from "@/components/worker-hr-modal";
+import type { FamilyMemberItem } from "@/components/family-members-manager";
 import { EXPIRY_STATUS_META, getHrIssues, type WorkerHrRecord } from "@/lib/hr";
 import type { EntityDocumentCategory } from "@/lib/generated/prisma/client";
 
@@ -29,6 +30,8 @@ type OverviewWorker = {
   name: string;
   record: WorkerHrRecord;
   documents: DocumentItem[];
+  employeeType?: string;
+  familyMembers?: FamilyMemberItem[];
 };
 
 type Row = {
@@ -47,7 +50,10 @@ const VISIBLE_ROWS = 3;
  */
 export function HrOverview({ workers }: { workers: OverviewWorker[] }) {
   const rows: Row[] = workers
-    .map((worker) => ({ worker, issues: getHrIssues(worker.record) }))
+    .map((worker) => ({
+      worker,
+      issues: getHrIssues(worker.record, worker.familyMembers ?? []),
+    }))
     .filter((row) => row.issues.length > 0)
     .sort((a, b) => {
       const worst = (issues: Row["issues"]) =>
@@ -179,6 +185,8 @@ function AttentionRow({ row: { worker, issues } }: { row: Row }) {
       userId={worker.id}
       record={worker.record}
       documents={worker.documents}
+      employeeType={worker.employeeType}
+      familyMembers={worker.familyMembers}
       trigger={
         <button
           type="button"
@@ -196,12 +204,12 @@ function AttentionRow({ row: { worker, issues } }: { row: Row }) {
             </span>
           </span>
           <span className="hidden flex-wrap justify-end gap-1.5 sm:flex">
-            {issues.map(({ doc, status }) => (
+            {issues.map(({ key, label, status }) => (
               <span
-                key={doc.key}
+                key={key}
                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${EXPIRY_STATUS_META[status].pill}`}
               >
-                {doc.label}
+                {label}
               </span>
             ))}
           </span>

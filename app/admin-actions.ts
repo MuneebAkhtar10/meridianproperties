@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
-import { addMonths, format } from "date-fns";
+import { addMonths, differenceInCalendarDays, format } from "date-fns";
 
 import {
   notifyPropertyApproved,
   notifyPropertyAssigned,
   notifyPropertyRejected,
+  notifyServiceChargeDue,
+  notifyServiceChargeOverdue,
   notifyServiceChargeReceived,
+  notifyServiceChargeUpcoming,
 } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/finance";
@@ -21,10 +24,11 @@ import {
 } from "@/lib/entity-document-service";
 import { OMAN_GOVERNORATES } from "@/lib/oman";
 import { isValidPhone } from "@/lib/phone";
-import { deleteAttachment } from "@/lib/storage";
+import { deleteAttachment, uploadEntityDocument } from "@/lib/storage";
 import { encodedRedirect } from "@/utils/utils";
 import {
   EntityDocumentCategory,
+  FamilyRelationship,
   UserType,
   WorkerCategory,
 } from "@/lib/generated/prisma/client";
@@ -230,8 +234,9 @@ export const createPropertyAction = async (formData: FormData) => {
 };
 
 export const updatePropertyAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = actor.userType === UserType.owner;
+  // Admin-only — property owners have read-only access to everything
+  // except creating a new property (see createPropertyAction above).
+  await requireRole(UserType.admin);
 
   const id = formData.get("propertyId")?.toString();
   const name = formData.get("name")?.toString().trim();
@@ -247,20 +252,6 @@ export const updatePropertyAction = async (formData: FormData) => {
   const notes = formData.get("notes")?.toString().trim() || null;
   // Only an admin may reassign a property's owner from this form.
   const ownerId = formData.get("ownerId")?.toString().trim() || null;
-
-  if (isOwner) {
-    const owned = await prisma.property.findFirst({
-      where: { id, ownerId: actor.id },
-      select: { id: true },
-    });
-    if (!owned) {
-      return encodedRedirect(
-        "error",
-        "/protected/properties",
-        "Property not found.",
-      );
-    }
-  }
 
   if (!id || !name || !address) {
     return encodedRedirect(
@@ -299,17 +290,15 @@ export const updatePropertyAction = async (formData: FormData) => {
     return encodedRedirect("error", `/protected/properties/${id}`, serviceCharge.error);
   }
 
-  // Only admins can change ownerId (see the ...(isOwner ? {} : ...) below), so
-  // this comparison only matters for them — fetch the prior owner first to
-  // tell whether this update is actually a (re)assignment.
-  const previousOwnerId = isOwner
-    ? null
-    : (
-        await prisma.property.findUnique({
-          where: { id },
-          select: { ownerId: true },
-        })
-      )?.ownerId ?? null;
+  // Fetch the prior owner first to tell whether this update is actually a
+  // (re)assignment worth notifying about.
+  const previousOwnerId =
+    (
+      await prisma.property.findUnique({
+        where: { id },
+        select: { ownerId: true },
+      })
+    )?.ownerId ?? null;
 
   await prisma.property.update({
     where: { id },
@@ -324,7 +313,7 @@ export const updatePropertyAction = async (formData: FormData) => {
       buildingNumber,
       postalCode,
       notes,
-      ...(isOwner ? {} : { ownerId }),
+      ownerId,
       serviceChargeAmount: serviceCharge.amount,
       serviceChargeCycleMonths: serviceCharge.cycleMonths,
       serviceChargeDueDate: serviceCharge.dueDate,
@@ -333,7 +322,7 @@ export const updatePropertyAction = async (formData: FormData) => {
     },
   });
 
-  if (!isOwner && ownerId && ownerId !== previousOwnerId) {
+  if (ownerId && ownerId !== previousOwnerId) {
     await notifyPropertyAssigned({
       ownerId,
       propertyId: id,
@@ -513,9 +502,61 @@ export const rejectPropertyAction = async (formData: FormData) => {
  * ledger for it (reminder-only feature) — this just rolls the due date
  * forward by the property's cycle and notifies the owner + admins.
  */
+/** Edits just the service charge (amount/cycle/due date) from its own card
+ * on the property page, without needing the full property edit form below
+ * it. Admin-only — an owner can view the charge but not change it. */
+export const updateServiceChargeAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+
+  const id = formData.get("propertyId")?.toString();
+  if (!id) {
+    return encodedRedirect("error", "/protected/properties", "Invalid property");
+  }
+
+  const property = await prisma.property.findUnique({
+    where: { id },
+    select: { id: true },
+  });
+  if (!property) {
+    return encodedRedirect("error", "/protected/properties", "Property not found.");
+  }
+
+  const serviceCharge = parseServiceCharge(formData);
+  if (!serviceCharge.ok) {
+    return encodedRedirect(
+      "error",
+      `/protected/properties/${id}`,
+      serviceCharge.error,
+    );
+  }
+
+  await prisma.property.update({
+    where: { id },
+    data: {
+      serviceChargeAmount: serviceCharge.amount,
+      serviceChargeCycleMonths: serviceCharge.cycleMonths,
+      serviceChargeDueDate: serviceCharge.dueDate,
+      // Editing the charge starts a fresh reminder cycle, same as the full
+      // property edit form does.
+      serviceChargeLastStage: null,
+    },
+  });
+
+  revalidatePath(`/protected/properties/${id}`);
+  revalidatePath("/protected/properties");
+
+  return encodedRedirect(
+    "success",
+    `/protected/properties/${id}`,
+    "Service charge updated.",
+  );
+};
+
 export const markServiceChargeReceivedAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
-  const isOwner = actor.userType === UserType.owner;
+  // Admin-only — an owner can see the service charge on their property but
+  // can't mark it received or resend its reminder themselves (see the
+  // matching UI gate in app/protected/properties/[id]/page.tsx).
+  const actor = await requireRole(UserType.admin);
 
   const id = formData.get("propertyId")?.toString();
   if (!id) {
@@ -533,7 +574,7 @@ export const markServiceChargeReceivedAction = async (formData: FormData) => {
     },
   });
 
-  if (!property || (isOwner && property.ownerId !== actor.id)) {
+  if (!property) {
     return encodedRedirect("error", "/protected/properties", "Property not found.");
   }
 
@@ -591,6 +632,91 @@ export const markServiceChargeReceivedAction = async (formData: FormData) => {
     "success",
     `/protected/properties/${id}`,
     "Service charge marked as received. Next due date updated.",
+  );
+};
+
+/** Re-sends the service charge reminder for whatever stage it's actually
+ * in right now (upcoming/due/overdue) — mirrors the daily cron's own logic
+ * in lib/service-charge-reminders.ts rather than always sending the same
+ * one, so the wording matches what the owner would already be expecting. */
+export const resendServiceChargeReminderAction = async (formData: FormData) => {
+  // Admin-only, same as markServiceChargeReceivedAction above.
+  const actor = await requireRole(UserType.admin);
+
+  const id = formData.get("propertyId")?.toString();
+  if (!id) {
+    return encodedRedirect("error", "/protected/properties", "Invalid property");
+  }
+
+  const property = await prisma.property.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      ownerId: true,
+      serviceChargeAmount: true,
+      serviceChargeDueDate: true,
+    },
+  });
+
+  if (!property) {
+    return encodedRedirect("error", "/protected/properties", "Property not found.");
+  }
+
+  if (!property.serviceChargeAmount || !property.serviceChargeDueDate) {
+    return encodedRedirect(
+      "error",
+      `/protected/properties/${id}`,
+      "This property has no service charge set up.",
+    );
+  }
+
+  const admins = await prisma.user.findMany({
+    where: { userType: UserType.admin, id: { not: actor.id } },
+    select: { id: true },
+  });
+  const recipientIds = Array.from(
+    new Set(
+      [property.ownerId, ...admins.map((admin) => admin.id)].filter(
+        (recipientId): recipientId is string => Boolean(recipientId),
+      ),
+    ),
+  );
+
+  const amount = `OMR ${Number(property.serviceChargeAmount).toFixed(3)}`;
+  const daysUntilDue = differenceInCalendarDays(
+    property.serviceChargeDueDate,
+    new Date(),
+  );
+
+  if (daysUntilDue < 0) {
+    await notifyServiceChargeOverdue({
+      propertyId: id,
+      propertyName: property.name,
+      amount,
+      daysOverdue: Math.abs(daysUntilDue),
+      recipientIds,
+    });
+  } else if (daysUntilDue === 0) {
+    await notifyServiceChargeDue({
+      propertyId: id,
+      propertyName: property.name,
+      amount,
+      recipientIds,
+    });
+  } else {
+    await notifyServiceChargeUpcoming({
+      propertyId: id,
+      propertyName: property.name,
+      amount,
+      dueDate: format(property.serviceChargeDueDate, "d MMM yyyy"),
+      recipientIds,
+    });
+  }
+
+  return encodedRedirect(
+    "success",
+    `/protected/properties/${id}`,
+    "Service charge reminder resent.",
   );
 };
 
@@ -703,9 +829,30 @@ export const updatePropertyTypeAction = async (formData: FormData) => {
     );
   }
 
+  // `name` is a stable machine key derived from the label at creation time
+  // (see createPropertyTypeAction) — it has to be re-derived on rename too,
+  // or the old key stays permanently reserved and blocks anyone from later
+  // creating a new type with the label this one used to have.
+  const name = slugifyTypeName(label);
+  if (!name) {
+    return encodedRedirect("error", back, "Enter a valid label.");
+  }
+
+  const nameTaken = await prisma.propertyType.findFirst({
+    where: { name, id: { not: id } },
+  });
+  if (nameTaken) {
+    return encodedRedirect(
+      "error",
+      back,
+      `A property type named "${label}" already exists.`,
+    );
+  }
+
   await prisma.propertyType.update({
     where: { id },
     data: {
+      name,
       label,
       unitNounSingular,
       unitNounPlural,
@@ -755,7 +902,7 @@ export const deletePropertyTypeAction = async (formData: FormData) => {
  * Floors 1–10 with 5 per floor gives 101–105, 201–205 … 1001–1005.
  */
 export const generateUnitsAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  await requireRole(UserType.admin);
 
   const propertyId = formData.get("propertyId")?.toString();
   const floors = Number(formData.get("floors"));
@@ -776,21 +923,9 @@ export const generateUnitsAction = async (formData: FormData) => {
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
     select: {
-      ownerId: true,
       propertyType: { select: { hasFloors: true, unitNounPlural: true } },
     },
   });
-
-  if (
-    actor.userType === UserType.owner &&
-    property?.ownerId !== actor.id
-  ) {
-    return encodedRedirect(
-      "error",
-      "/protected/properties",
-      "Property not found.",
-    );
-  }
 
   if (property && !property.propertyType.hasFloors) {
     return encodedRedirect(
@@ -850,7 +985,7 @@ export const generateUnitsAction = async (formData: FormData) => {
 };
 
 export const createUnitAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  await requireRole(UserType.admin);
 
   const propertyId = formData.get("propertyId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -868,16 +1003,6 @@ export const createUnitAction = async (formData: FormData) => {
   }
 
   const back = `/protected/properties/${propertyId}`;
-
-  if (actor.userType === UserType.owner) {
-    const owned = await prisma.property.findFirst({
-      where: { id: propertyId, ownerId: actor.id },
-      select: { id: true },
-    });
-    if (!owned) {
-      return encodedRedirect("error", "/protected/properties", "Property not found.");
-    }
-  }
 
   const exists = await prisma.unit.findUnique({
     where: { propertyId_label: { propertyId, label } },
@@ -900,7 +1025,7 @@ export const createUnitAction = async (formData: FormData) => {
 
 /** Edits a unit's number, floor and bedroom count in place. */
 export const updateUnitAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  await requireRole(UserType.admin);
 
   const unitId = formData.get("unitId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -917,17 +1042,10 @@ export const updateUnitAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: {
-      propertyId: true,
-      label: true,
-      property: { select: { ownerId: true } },
-    },
+    select: { propertyId: true, label: true },
   });
 
-  if (
-    !unit ||
-    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
-  ) {
+  if (!unit) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -980,7 +1098,7 @@ export const updateUnitAction = async (formData: FormData) => {
 };
 
 export const deleteUnitAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  await requireRole(UserType.admin);
 
   const unitId = formData.get("unitId")?.toString();
 
@@ -994,18 +1112,10 @@ export const deleteUnitAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: {
-      propertyId: true,
-      label: true,
-      tenantId: true,
-      property: { select: { ownerId: true } },
-    },
+    select: { propertyId: true, label: true, tenantId: true },
   });
 
-  if (
-    !unit ||
-    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
-  ) {
+  if (!unit) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -1043,7 +1153,7 @@ export const deleteUnitAction = async (formData: FormData) => {
 
 /** Assigns a tenant to a unit, or clears it when no tenant is picked. */
 export const assignTenantAction = async (formData: FormData) => {
-  const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  await requireRole(UserType.admin);
 
   const unitId = formData.get("unitId")?.toString();
   const tenantId = formData.get("tenantId")?.toString() || null;
@@ -1058,18 +1168,10 @@ export const assignTenantAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: {
-      propertyId: true,
-      label: true,
-      tenantId: true,
-      property: { select: { ownerId: true } },
-    },
+    select: { propertyId: true, label: true, tenantId: true },
   });
 
-  if (
-    !unit ||
-    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
-  ) {
+  if (!unit) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -1477,6 +1579,7 @@ export const updateUserProfileAction = async (formData: FormData) => {
   await requireRole(UserType.admin);
 
   const userId = formData.get("userId")?.toString();
+  const email = formData.get("email")?.toString().trim().toLowerCase();
   const firstName = formData.get("firstName")?.toString().trim() || null;
   const lastName = formData.get("lastName")?.toString().trim() || null;
   const phone = formData.get("phone")?.toString().trim() || null;
@@ -1490,6 +1593,37 @@ export const updateUserProfileAction = async (formData: FormData) => {
 
   if (!userId) {
     return encodedRedirect("error", "/protected/users", "Invalid person.");
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { userType: true, email: true },
+  });
+  if (!target) {
+    return encodedRedirect("error", "/protected/users", "Invalid person.");
+  }
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return encodedRedirect(
+      "error",
+      "/protected/users",
+      "Enter a valid email address.",
+    );
+  }
+
+  // Email is unique per role (@@unique([email, userType])) — a tenant and a
+  // worker can share an email, but not two of the same role.
+  if (
+    await prisma.user.findFirst({
+      where: { email, userType: target.userType, id: { not: userId } },
+      select: { id: true },
+    })
+  ) {
+    return encodedRedirect(
+      "error",
+      "/protected/users",
+      "That email is already used by another account with the same role.",
+    );
   }
 
   if (!phone) {
@@ -1544,9 +1678,29 @@ export const updateUserProfileAction = async (formData: FormData) => {
     );
   }
 
+  // Login is via Supabase Auth, keyed by email — changing the profile's
+  // email without updating the auth record too would let this person keep
+  // signing in with the old address while the app shows a different one
+  // everywhere, or lock them out entirely. Sync auth first: if it fails
+  // (e.g. another Supabase Auth user already has this email), the profile
+  // update below never runs, so the two can't drift apart.
+  if (email !== target.email) {
+    const { error: authError } =
+      await createAdminClient().auth.admin.updateUserById(userId, { email });
+
+    if (authError) {
+      return encodedRedirect(
+        "error",
+        "/protected/users",
+        "Could not update the login email — it may already be in use.",
+      );
+    }
+  }
+
   await prisma.user.update({
     where: { id: userId },
     data: {
+      email,
       firstName,
       lastName,
       phone,
@@ -1596,8 +1750,11 @@ function parseIssuanceDateInput(value: FormDataEntryValue | null): Date | null {
  * rather than leaving stale Mulkiya/insurance dates behind. */
 function parseHrFields(formData: FormData) {
   const hasVehicle = formData.get("hasVehicle") === "on";
+  const employeeTypeRaw = formData.get("employeeType")?.toString();
+  const employeeType = employeeTypeRaw === "family" ? "family" : "individual";
 
   return {
+    employeeType,
     passportNumber: formData.get("passportNumber")?.toString().trim() || null,
     passportIssuance: parseIssuanceDateInput(
       formData.get("passportIssuance"),
@@ -1662,6 +1819,204 @@ export const updateWorkerHrAction = async (formData: FormData) => {
     "/protected/users",
     "HR document record updated.",
   );
+};
+
+/** Per-relationship dependent limits — a worker can list up to 4 spouses
+ * (common under some Gulf employment/visa arrangements), one father, one
+ * mother. Enforced here rather than in the schema since it's a business
+ * rule, not a data-integrity one. */
+const FAMILY_MEMBER_LIMITS: Record<FamilyRelationship, number> = {
+  spouse: 4,
+  father: 1,
+  mother: 1,
+};
+
+function parseRelationship(value: FormDataEntryValue | null): FamilyRelationship | null {
+  const str = value?.toString();
+  return str && (Object.values(FamilyRelationship) as string[]).includes(str)
+    ? (str as FamilyRelationship)
+    : null;
+}
+
+export type FamilyMemberActionResult = { ok: boolean; message: string };
+
+/** These three intentionally return a plain result instead of using
+ * encodedRedirect — a redirect means a full page navigation, which would
+ * close the HR modal the family member list lives in. The client component
+ * (components/family-members-manager.tsx) calls these directly, shows the
+ * button's own pending state, and refreshes the route on success instead —
+ * so adding/editing/removing a dependent never knocks the admin out of the
+ * modal they were just working in. */
+export const addFamilyMemberAction = async (
+  formData: FormData,
+): Promise<FamilyMemberActionResult> => {
+  await requireRole(UserType.admin);
+
+  const workerId = formData.get("workerId")?.toString();
+  const name = formData.get("name")?.toString().trim();
+  const relationship = parseRelationship(formData.get("relationship"));
+  const civilIdIssuance = parseIssuanceDateInput(
+    formData.get("civilIdIssuance"),
+  );
+  const civilIdExpiry = parseDateInput(formData.get("civilIdExpiry"));
+  const document = formData.get("document");
+
+  if (!workerId || !name || !relationship) {
+    return { ok: false, message: "Name and relationship are required." };
+  }
+
+  const existingCount = await prisma.workerFamilyMember.count({
+    where: { workerId, relationship },
+  });
+  if (existingCount >= FAMILY_MEMBER_LIMITS[relationship]) {
+    return {
+      ok: false,
+      message: `You can only add up to ${FAMILY_MEMBER_LIMITS[relationship]} ${relationship}${
+        FAMILY_MEMBER_LIMITS[relationship] > 1 ? "s" : ""
+      }.`,
+    };
+  }
+
+  const member = await prisma.workerFamilyMember.create({
+    data: { workerId, name, relationship, civilIdIssuance, civilIdExpiry },
+  });
+
+  if (document instanceof File && document.size > 0) {
+    try {
+      const uploaded = await uploadEntityDocument(
+        document,
+        "family_member",
+        member.id,
+      );
+      await prisma.workerFamilyMember.update({
+        where: { id: member.id },
+        data: {
+          documentFileName: uploaded.fileName,
+          documentFilePath: uploaded.objectKey,
+          documentFileType: uploaded.fileType,
+          documentFileSize: uploaded.fileSize,
+        },
+      });
+    } catch (error) {
+      unstable_rethrow(error);
+      console.error("Family member document upload failed:", error);
+    }
+  }
+
+  await publishDirectoryChange([workerId]);
+  revalidatePath("/protected/users");
+
+  return { ok: true, message: "Family member added." };
+};
+
+export const updateFamilyMemberAction = async (
+  formData: FormData,
+): Promise<FamilyMemberActionResult> => {
+  await requireRole(UserType.admin);
+
+  const memberId = formData.get("memberId")?.toString();
+  const name = formData.get("name")?.toString().trim();
+  const relationship = parseRelationship(formData.get("relationship"));
+  const civilIdIssuance = parseIssuanceDateInput(
+    formData.get("civilIdIssuance"),
+  );
+  const civilIdExpiry = parseDateInput(formData.get("civilIdExpiry"));
+  const document = formData.get("document");
+
+  if (!memberId || !name || !relationship) {
+    return { ok: false, message: "Name and relationship are required." };
+  }
+
+  const existing = await prisma.workerFamilyMember.findUnique({
+    where: { id: memberId },
+    select: { workerId: true, relationship: true, documentFilePath: true },
+  });
+  if (!existing) {
+    return { ok: false, message: "Family member not found." };
+  }
+
+  if (relationship !== existing.relationship) {
+    const existingCount = await prisma.workerFamilyMember.count({
+      where: { workerId: existing.workerId, relationship, id: { not: memberId } },
+    });
+    if (existingCount >= FAMILY_MEMBER_LIMITS[relationship]) {
+      return {
+        ok: false,
+        message: `You can only add up to ${FAMILY_MEMBER_LIMITS[relationship]} ${relationship}${
+          FAMILY_MEMBER_LIMITS[relationship] > 1 ? "s" : ""
+        }.`,
+      };
+    }
+  }
+
+  let documentFields: {
+    documentFileName?: string;
+    documentFilePath?: string;
+    documentFileType?: string;
+    documentFileSize?: number;
+  } = {};
+
+  if (document instanceof File && document.size > 0) {
+    try {
+      const uploaded = await uploadEntityDocument(
+        document,
+        "family_member",
+        memberId,
+      );
+      documentFields = {
+        documentFileName: uploaded.fileName,
+        documentFilePath: uploaded.objectKey,
+        documentFileType: uploaded.fileType,
+        documentFileSize: uploaded.fileSize,
+      };
+      if (existing.documentFilePath) {
+        await deleteAttachment(existing.documentFilePath);
+      }
+    } catch (error) {
+      unstable_rethrow(error);
+      console.error("Family member document upload failed:", error);
+    }
+  }
+
+  await prisma.workerFamilyMember.update({
+    where: { id: memberId },
+    data: { name, relationship, civilIdIssuance, civilIdExpiry, ...documentFields },
+  });
+
+  await publishDirectoryChange([existing.workerId]);
+  revalidatePath("/protected/users");
+
+  return { ok: true, message: "Family member updated." };
+};
+
+export const deleteFamilyMemberAction = async (
+  formData: FormData,
+): Promise<FamilyMemberActionResult> => {
+  await requireRole(UserType.admin);
+
+  const memberId = formData.get("memberId")?.toString();
+  if (!memberId) {
+    return { ok: false, message: "Family member not found." };
+  }
+
+  const existing = await prisma.workerFamilyMember.findUnique({
+    where: { id: memberId },
+    select: { workerId: true, documentFilePath: true },
+  });
+  if (!existing) {
+    return { ok: false, message: "Family member not found." };
+  }
+
+  await prisma.workerFamilyMember.delete({ where: { id: memberId } });
+
+  if (existing.documentFilePath) {
+    await deleteAttachment(existing.documentFilePath);
+  }
+
+  await publishDirectoryChange([existing.workerId]);
+  revalidatePath("/protected/users");
+
+  return { ok: true, message: "Family member removed." };
 };
 
 export const deleteUserAction = async (formData: FormData) => {

@@ -547,7 +547,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
           )}
         </div>
 
-        {(isAdmin || isOwner) && (
+        {isAdmin && (
           <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
             <AdminTools tenancies={activeTenancies} />
           </div>

@@ -15,14 +15,17 @@ import {
   deleteUnitAction,
   generateUnitsAction,
   markServiceChargeReceivedAction,
+  resendServiceChargeReminderAction,
   updatePropertyAction,
+  updateServiceChargeAction,
   updateUnitAction,
 } from "@/app/admin-actions";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, Pencil } from "lucide-react";
 import { differenceInCalendarDays, format } from "date-fns";
 import { EmptyState } from "@/components/empty-state";
 import { EntityDocumentManager } from "@/components/entity-document-manager";
 import { FormMessage, Message } from "@/components/form-message";
+import { ManageToggle } from "@/components/manage-toggle";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,7 +134,7 @@ export default async function PropertyDetailPage({
           <span>
             {isAdmin
               ? "This property was submitted by its owner and isn't live yet. Approve or reject it from the properties list."
-              : "Your property is waiting for an admin to approve it. You can still set it up in the meantime — units, documents, and everything else here — but it won't appear anywhere else in the system until it's approved."}
+              : "Your property is waiting for an admin to approve it. An admin will set up units, documents, and everything else here."}
           </span>
         </div>
       )}
@@ -213,59 +216,73 @@ export default async function PropertyDetailPage({
                           className="border-b last:border-b-0 hover:bg-muted/30"
                         >
                           <td className="py-2.5 pl-4 pr-3">
-                            <form className="flex flex-nowrap items-end gap-2 rounded-md border bg-muted/10 px-2 py-1.5">
-                              <input
-                                type="hidden"
-                                name="unitId"
-                                value={unit.id}
-                              />
-                              <Field
-                                label={
-                                  propertyType.unitPrefix
-                                    ? `${propertyType.unitPrefix} #`
-                                    : "Number"
-                                }
-                              >
-                                <Input
-                                  name="label"
-                                  defaultValue={unit.label}
-                                  className="h-8 w-20 text-xs font-medium"
-                                  aria-label={`${unitNounCap} number, currently ${unit.label}`}
+                            {isAdmin ? (
+                              <form className="flex flex-nowrap items-end gap-2 rounded-md border bg-muted/10 px-2 py-1.5">
+                                <input
+                                  type="hidden"
+                                  name="unitId"
+                                  value={unit.id}
                                 />
-                              </Field>
-                              {hasFloors && (
-                                <Field label="Floor">
+                                <Field
+                                  label={
+                                    propertyType.unitPrefix
+                                      ? `${propertyType.unitPrefix} #`
+                                      : "Number"
+                                  }
+                                >
                                   <Input
-                                    name="floor"
-                                    type="number"
-                                    defaultValue={unit.floor ?? ""}
-                                    className="h-8 w-20 text-xs"
-                                    aria-label={`Floor for ${unitNoun} ${unit.label}`}
+                                    name="label"
+                                    defaultValue={unit.label}
+                                    className="h-8 w-20 text-xs font-medium"
+                                    aria-label={`${unitNounCap} number, currently ${unit.label}`}
                                   />
                                 </Field>
-                              )}
-                              {hasBedrooms && (
-                                <Field label="Bedrooms">
-                                  <Input
-                                    name="bedrooms"
-                                    type="number"
-                                    min={0}
-                                    defaultValue={unit.bedrooms ?? ""}
-                                    className="h-8 w-20 text-xs"
-                                    aria-label={`Bedrooms for ${unitNoun} ${unit.label}`}
-                                  />
-                                </Field>
-                              )}
-                              <SubmitButton
-                                formAction={updateUnitAction}
-                                variant="outline"
-                                size="sm"
-                                pendingText="…"
-                                className="h-8 shrink-0"
-                              >
-                                Save
-                              </SubmitButton>
-                            </form>
+                                {hasFloors && (
+                                  <Field label="Floor">
+                                    <Input
+                                      name="floor"
+                                      type="number"
+                                      defaultValue={unit.floor ?? ""}
+                                      className="h-8 w-20 text-xs"
+                                      aria-label={`Floor for ${unitNoun} ${unit.label}`}
+                                    />
+                                  </Field>
+                                )}
+                                {hasBedrooms && (
+                                  <Field label="Bedrooms">
+                                    <Input
+                                      name="bedrooms"
+                                      type="number"
+                                      min={0}
+                                      defaultValue={unit.bedrooms ?? ""}
+                                      className="h-8 w-20 text-xs"
+                                      aria-label={`Bedrooms for ${unitNoun} ${unit.label}`}
+                                    />
+                                  </Field>
+                                )}
+                                <SubmitButton
+                                  formAction={updateUnitAction}
+                                  variant="outline"
+                                  size="sm"
+                                  pendingText="…"
+                                  className="h-8 shrink-0"
+                                >
+                                  Save
+                                </SubmitButton>
+                              </form>
+                            ) : (
+                              <p className="text-sm font-medium">
+                                {propertyType.unitPrefix
+                                  ? `${propertyType.unitPrefix} ${unit.label}`
+                                  : unit.label}
+                                {hasFloors && unit.floor !== null
+                                  ? ` · Floor ${unit.floor}`
+                                  : ""}
+                                {hasBedrooms && unit.bedrooms
+                                  ? ` · ${unit.bedrooms} bed`
+                                  : ""}
+                              </p>
+                            )}
                             {unit._count.requests > 0 && (
                               <p className="mt-1.5 text-[11px] text-muted-foreground">
                                 {unit._count.requests} request
@@ -287,45 +304,52 @@ export default async function PropertyDetailPage({
                           </td>
 
                           <td className="px-3 py-2.5">
-                            <form className="flex items-center gap-2">
-                              <input
-                                type="hidden"
-                                name="unitId"
-                                value={unit.id}
-                              />
-                              <Select
-                                name="tenantId"
-                                defaultValue={unit.tenant?.id ?? ""}
-                                className="h-8 min-w-44 text-xs"
-                                aria-label={`Tenant for ${unitNoun} ${unit.label}`}
-                              >
-                                <option value="">— Empty —</option>
-                                {/* The current tenant has to stay selectable. */}
-                                {unit.tenant && (
-                                  <option value={unit.tenant.id}>
-                                    {unit.tenant.email}
-                                  </option>
-                                )}
-                                {availableTenants.map((tenant) => (
-                                  <option key={tenant.id} value={tenant.id}>
-                                    {tenant.email}
-                                  </option>
-                                ))}
-                              </Select>
+                            {isAdmin ? (
+                              <form className="flex items-center gap-2">
+                                <input
+                                  type="hidden"
+                                  name="unitId"
+                                  value={unit.id}
+                                />
+                                <Select
+                                  name="tenantId"
+                                  defaultValue={unit.tenant?.id ?? ""}
+                                  className="h-8 min-w-44 text-xs"
+                                  aria-label={`Tenant for ${unitNoun} ${unit.label}`}
+                                >
+                                  <option value="">— Empty —</option>
+                                  {/* The current tenant has to stay selectable. */}
+                                  {unit.tenant && (
+                                    <option value={unit.tenant.id}>
+                                      {unit.tenant.email}
+                                    </option>
+                                  )}
+                                  {availableTenants.map((tenant) => (
+                                    <option key={tenant.id} value={tenant.id}>
+                                      {tenant.email}
+                                    </option>
+                                  ))}
+                                </Select>
 
-                              <SubmitButton
-                                formAction={assignTenantAction}
-                                variant="outline"
-                                size="sm"
-                                pendingText="…"
-                                className="h-8"
-                              >
-                                Save
-                              </SubmitButton>
-                            </form>
+                                <SubmitButton
+                                  formAction={assignTenantAction}
+                                  variant="outline"
+                                  size="sm"
+                                  pendingText="…"
+                                  className="h-8"
+                                >
+                                  Save
+                                </SubmitButton>
+                              </form>
+                            ) : (
+                              <span className="text-sm">
+                                {unit.tenant?.email ?? "—"}
+                              </span>
+                            )}
                           </td>
 
                           <td className="py-2 pl-3 pr-4 text-right">
+                            {isAdmin && (
                             <form>
                               <input
                                 type="hidden"
@@ -343,6 +367,7 @@ export default async function PropertyDetailPage({
                                 <Trash2 className="h-4 w-4" />
                               </SubmitButton>
                             </form>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -356,7 +381,7 @@ export default async function PropertyDetailPage({
 
         {/* ── Tools ──────────────────────────────────────────────────────── */}
         <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
-          {hasFloors && (
+          {isAdmin && hasFloors && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -433,6 +458,7 @@ export default async function PropertyDetailPage({
             </Card>
           )}
 
+          {isAdmin && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Add {unitNoun}</CardTitle>
@@ -500,6 +526,7 @@ export default async function PropertyDetailPage({
               </form>
             </CardContent>
           </Card>
+          )}
 
           {(property.serviceChargeAmount ||
             isAdmin ||
@@ -543,25 +570,170 @@ export default async function PropertyDetailPage({
                             Due in {daysUntilDue} day{daysUntilDue === 1 ? "" : "s"}
                           </p>
                         ) : null}
-                        <form>
-                          <input type="hidden" name="propertyId" value={property.id} />
-                          <SubmitButton
-                            formAction={markServiceChargeReceivedAction}
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            pendingText="Recording..."
+                        {/* Owners can see the charge but not act on it —
+                            marking it received or resending the reminder
+                            are both admin-only operations. */}
+                        {isAdmin && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <form>
+                              <input type="hidden" name="propertyId" value={property.id} />
+                              <SubmitButton
+                                formAction={markServiceChargeReceivedAction}
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                pendingText="Recording..."
+                              >
+                                Mark received
+                              </SubmitButton>
+                            </form>
+                            <form>
+                              <input type="hidden" name="propertyId" value={property.id} />
+                              <SubmitButton
+                                formAction={resendServiceChargeReminderAction}
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                pendingText="Sending..."
+                              >
+                                Resend email
+                              </SubmitButton>
+                            </form>
+                          </div>
+                        )}
+
+                        {isAdmin && (
+                          <ManageToggle
+                            label="Edit service charge"
+                            icon={<Pencil className="h-3.5 w-3.5" />}
                           >
-                            Mark received
-                          </SubmitButton>
-                        </form>
+                            <form className="space-y-3">
+                              <input
+                                type="hidden"
+                                name="propertyId"
+                                value={property.id}
+                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label
+                                    htmlFor="sc-amount"
+                                    className="text-xs"
+                                  >
+                                    Amount (OMR)
+                                  </Label>
+                                  <Input
+                                    id="sc-amount"
+                                    name="serviceChargeAmount"
+                                    type="number"
+                                    step="0.001"
+                                    min="0"
+                                    defaultValue={property.serviceChargeAmount?.toString()}
+                                    required
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label htmlFor="sc-cycle" className="text-xs">
+                                    Repeats every
+                                  </Label>
+                                  <Select
+                                    id="sc-cycle"
+                                    name="serviceChargeCycleMonths"
+                                    defaultValue={property.serviceChargeCycleMonths?.toString()}
+                                    required
+                                  >
+                                    <option value="1">1 month</option>
+                                    <option value="3">3 months</option>
+                                    <option value="6">6 months</option>
+                                    <option value="12">12 months</option>
+                                  </Select>
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <Label htmlFor="sc-due" className="text-xs">
+                                  Due date
+                                </Label>
+                                <Input
+                                  id="sc-due"
+                                  name="serviceChargeDueDate"
+                                  type="date"
+                                  defaultValue={property.serviceChargeDueDate
+                                    ?.toISOString()
+                                    .slice(0, 10)}
+                                  required
+                                />
+                              </div>
+                              <SubmitButton
+                                formAction={updateServiceChargeAction}
+                                size="sm"
+                                className="w-full"
+                                pendingText="Saving..."
+                              >
+                                Save service charge
+                              </SubmitButton>
+                            </form>
+                          </ManageToggle>
+                        )}
                       </>
                     );
                   })()
+                ) : isAdmin ? (
+                  <ManageToggle
+                    label="Add service charge"
+                    icon={<Pencil className="h-3.5 w-3.5" />}
+                    defaultOpen
+                  >
+                    <form className="space-y-3">
+                      <input type="hidden" name="propertyId" value={property.id} />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label htmlFor="sc-amount" className="text-xs">
+                            Amount (OMR)
+                          </Label>
+                          <Input
+                            id="sc-amount"
+                            name="serviceChargeAmount"
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="sc-cycle" className="text-xs">
+                            Repeats every
+                          </Label>
+                          <Select
+                            id="sc-cycle"
+                            name="serviceChargeCycleMonths"
+                            defaultValue="12"
+                            required
+                          >
+                            <option value="1">1 month</option>
+                            <option value="3">3 months</option>
+                            <option value="6">6 months</option>
+                            <option value="12">12 months</option>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="sc-due" className="text-xs">
+                          Due date
+                        </Label>
+                        <Input id="sc-due" name="serviceChargeDueDate" type="date" required />
+                      </div>
+                      <SubmitButton
+                        formAction={updateServiceChargeAction}
+                        size="sm"
+                        className="w-full"
+                        pendingText="Saving..."
+                      >
+                        Save service charge
+                      </SubmitButton>
+                    </form>
+                  </ManageToggle>
                 ) : (
                   <p className="text-muted-foreground">
-                    No service charge set up yet. Add one from the edit form
-                    below.
+                    No service charge set up yet.
                   </p>
                 )}
               </CardContent>
@@ -580,6 +752,7 @@ export default async function PropertyDetailPage({
               {property.notes && (
                 <p className="text-muted-foreground">{property.notes}</p>
               )}
+              {isAdmin && (
               <details className="group rounded-lg border">
                 <summary className="cursor-pointer list-none px-3 py-2 text-center text-xs font-medium">
                   Edit Oman address & records
@@ -791,6 +964,7 @@ export default async function PropertyDetailPage({
                   </SubmitButton>
                 </form>
               </details>
+              )}
               <ButtonLink
                 href={`/protected/maintenance?property=${property.id}`}
                 variant="outline"
@@ -808,6 +982,7 @@ export default async function PropertyDetailPage({
             targetId={property.id}
             back={`/protected/properties/${property.id}`}
             title="Property documents"
+            readOnly={!isAdmin}
             description="Title deed, ownership certificate, building approvals, insurance and other private property records."
           />
         </div>

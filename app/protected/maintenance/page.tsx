@@ -150,13 +150,15 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
           requests.length === 1 ? "" : "s"
         } matching your filters`}
       >
-        <Link
-          href="/protected/maintenance/new"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-        >
-          <ClipboardList className="h-4 w-4" />
-          New request
-        </Link>
+        {!isOwner && (
+          <Link
+            href="/protected/maintenance/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          >
+            <ClipboardList className="h-4 w-4" />
+            New request
+          </Link>
+        )}
       </PageHeader>
 
       {"error" in message || "success" in message ? (
@@ -251,6 +253,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
               request={request}
               workers={workers}
               attachments={request.attachments}
+              isAdmin={!isOwner}
             />
           ))}
         </div>
