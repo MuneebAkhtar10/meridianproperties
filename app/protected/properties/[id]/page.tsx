@@ -168,7 +168,7 @@ export default async function PropertyDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
         {/* ── Apartments ─────────────────────────────────────────────────── */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {property.units.length === 0 ? (
             <EmptyState
               icon={DoorOpen}
@@ -393,7 +393,7 @@ export default async function PropertyDetailPage({
                 <form className="space-y-4">
                   <input type="hidden" name="propertyId" value={property.id} />
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="floors">Floors</Label>
                       <Input
@@ -584,7 +584,7 @@ export default async function PropertyDetailPage({
                             marking it received or resending the reminder
                             are both admin-only operations. */}
                         {isAdmin && (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <form>
                               <input type="hidden" name="propertyId" value={property.id} />
                               <SubmitButton
@@ -623,7 +623,7 @@ export default async function PropertyDetailPage({
                                 name="propertyId"
                                 value={property.id}
                               />
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div className="space-y-1">
                                   <Label
                                     htmlFor="sc-amount"
@@ -694,7 +694,7 @@ export default async function PropertyDetailPage({
                   >
                     <form className="space-y-3">
                       <input type="hidden" name="propertyId" value={property.id} />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="space-y-1">
                           <Label htmlFor="sc-amount" className="text-xs">
                             Amount (OMR)
@@ -808,7 +808,7 @@ export default async function PropertyDetailPage({
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label htmlFor="property-governorate" className="text-xs">
                         Governorate
@@ -847,7 +847,7 @@ export default async function PropertyDetailPage({
                       defaultValue={property.area ?? ""}
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <Label htmlFor="property-way" className="text-xs">
                         Way
@@ -900,7 +900,7 @@ export default async function PropertyDetailPage({
                   )}
                   <div className="space-y-1 rounded-lg border p-2">
                     <p className="text-xs font-medium">Service charge</p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label htmlFor="property-service-amount" className="text-xs">
                           Amount (OMR)

@@ -223,7 +223,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
       ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[1fr_23rem]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {properties.length === 0 ? (
             <EmptyState
               icon={Building2}
@@ -418,7 +418,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="governorate">Governorate</Label>
                     <Select
@@ -444,7 +444,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   <Input id="area" name="area" placeholder="Al Khuwair" />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="wayNumber">Way no.</Label>
                     <Input id="wayNumber" name="wayNumber" placeholder="3521" />
@@ -506,7 +506,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                     The recurring maintenance budget for this property, and
                     when it&apos;s next due.
                   </p>
-                  <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div className="space-y-1.5">
                       <Label htmlFor="serviceChargeAmount">Amount (OMR)</Label>
                       <Input

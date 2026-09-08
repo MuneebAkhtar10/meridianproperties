@@ -40,7 +40,7 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
       ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {propertyTypes.length === 0 ? (
             <EmptyState
               icon={Building2}
@@ -51,7 +51,7 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
             propertyTypes.map((propertyType) => (
               <Card key={propertyType.id}>
                 <CardContent className="space-y-4 p-5">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h3 className="font-semibold">{propertyType.label}</h3>
                       <p className="text-sm text-muted-foreground">
@@ -60,7 +60,7 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
                         using this type
                       </p>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
+                    <div className="flex flex-wrap items-center gap-1 sm:shrink-0 sm:flex-col sm:items-end">
                       <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                         {propertyType.hasFloors
                           ? "Organized by floor"
@@ -215,7 +215,7 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
                   units should just show their own label, like "Villa 2".
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="new-singular">Unit noun (singular)</Label>
                   <Input

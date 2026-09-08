@@ -168,7 +168,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {/* Filters */}
           <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-1">
@@ -229,7 +229,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                 return (
                   <Card key={user.id} className="border-border/60 shadow-sm">
                     <CardContent className="flex flex-col gap-4 p-5">
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex items-start gap-3">
                           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
                             {user.email.charAt(0).toUpperCase()}
@@ -289,7 +289,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                           </div>
                         </div>
 
-                        <div className="flex shrink-0 flex-col items-end gap-1">
+                        <div className="flex flex-wrap items-center gap-1 sm:shrink-0 sm:flex-col sm:items-end">
                           <span
                             className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
                               ROLE_PILL[user.userType]
