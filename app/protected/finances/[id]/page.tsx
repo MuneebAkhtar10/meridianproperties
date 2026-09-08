@@ -156,7 +156,7 @@ export default async function FinanceDetailPage({
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Charge details</CardTitle>

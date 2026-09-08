@@ -168,7 +168,7 @@ export default async function PropertyDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
         {/* ── Apartments ─────────────────────────────────────────────────── */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {property.units.length === 0 ? (
             <EmptyState
               icon={DoorOpen}

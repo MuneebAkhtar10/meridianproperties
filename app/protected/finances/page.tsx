@@ -375,7 +375,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
             : "grid scroll-mt-24"
         }
       >
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="space-y-3 rounded-xl border border-border/60 bg-card p-3 shadow-sm">
             <div className="flex flex-wrap gap-1 rounded-lg bg-muted/50 p-1">
               {STATUS_FILTERS.map((filter) => (
@@ -548,7 +548,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         </div>
 
         {isAdmin && (
-          <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
+          <div className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:h-fit">
             <AdminTools tenancies={activeTenancies} />
           </div>
         )}

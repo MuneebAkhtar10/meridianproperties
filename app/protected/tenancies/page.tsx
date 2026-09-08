@@ -186,7 +186,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {active.length === 0 ? (
             <EmptyState
               icon={Users}

@@ -40,7 +40,7 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
       ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {propertyTypes.length === 0 ? (
             <EmptyState
               icon={Building2}

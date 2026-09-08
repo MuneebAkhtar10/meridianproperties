@@ -168,7 +168,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {/* Filters */}
           <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-1">
