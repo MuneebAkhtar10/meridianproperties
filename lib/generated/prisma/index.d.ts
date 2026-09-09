@@ -106,6 +106,14 @@ export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
  * 
  */
 export type WhatsappSession = $Result.DefaultSelection<Prisma.$WhatsappSessionPayload>
+/**
+ * Model RejectionLog
+ * A permanent audit trail entry for a rejection, written at the moment of
+ * rejection. Required for `property` (whose row is deleted right after), and
+ * written for `payment`/`supply_request` too so the admin rejections page has
+ * one single table to query instead of merging three different models.
+ */
+export type RejectionLog = $Result.DefaultSelection<Prisma.$RejectionLogPayload>
 
 /**
  * Enums
@@ -263,6 +271,15 @@ export const WhatsappFlow: {
 
 export type WhatsappFlow = (typeof WhatsappFlow)[keyof typeof WhatsappFlow]
 
+
+export const RejectionKind: {
+  property: 'property',
+  payment: 'payment',
+  supply_request: 'supply_request'
+};
+
+export type RejectionKind = (typeof RejectionKind)[keyof typeof RejectionKind]
+
 }
 
 export type UserType = $Enums.UserType
@@ -320,6 +337,10 @@ export const FamilyRelationship: typeof $Enums.FamilyRelationship
 export type WhatsappFlow = $Enums.WhatsappFlow
 
 export const WhatsappFlow: typeof $Enums.WhatsappFlow
+
+export type RejectionKind = $Enums.RejectionKind
+
+export const RejectionKind: typeof $Enums.RejectionKind
 
 /**
  * ##  Prisma Client ʲˢ
@@ -601,6 +622,16 @@ export class PrismaClient<
     * ```
     */
   get whatsappSession(): Prisma.WhatsappSessionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.rejectionLog`: Exposes CRUD operations for the **RejectionLog** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RejectionLogs
+    * const rejectionLogs = await prisma.rejectionLog.findMany()
+    * ```
+    */
+  get rejectionLog(): Prisma.RejectionLogDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -1063,7 +1094,8 @@ export namespace Prisma {
     MaintenanceAttachment: 'MaintenanceAttachment',
     TaskLog: 'TaskLog',
     Notification: 'Notification',
-    WhatsappSession: 'WhatsappSession'
+    WhatsappSession: 'WhatsappSession',
+    RejectionLog: 'RejectionLog'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1079,7 +1111,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "propertyType" | "property" | "unit" | "user" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession"
+      modelProps: "propertyType" | "property" | "unit" | "user" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession" | "rejectionLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2267,6 +2299,80 @@ export namespace Prisma {
           }
         }
       }
+      RejectionLog: {
+        payload: Prisma.$RejectionLogPayload<ExtArgs>
+        fields: Prisma.RejectionLogFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RejectionLogFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RejectionLogFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>
+          }
+          findFirst: {
+            args: Prisma.RejectionLogFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RejectionLogFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>
+          }
+          findMany: {
+            args: Prisma.RejectionLogFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>[]
+          }
+          create: {
+            args: Prisma.RejectionLogCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>
+          }
+          createMany: {
+            args: Prisma.RejectionLogCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.RejectionLogCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>[]
+          }
+          delete: {
+            args: Prisma.RejectionLogDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>
+          }
+          update: {
+            args: Prisma.RejectionLogUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>
+          }
+          deleteMany: {
+            args: Prisma.RejectionLogDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RejectionLogUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.RejectionLogUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>[]
+          }
+          upsert: {
+            args: Prisma.RejectionLogUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RejectionLogPayload>
+          }
+          aggregate: {
+            args: Prisma.RejectionLogAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRejectionLog>
+          }
+          groupBy: {
+            args: Prisma.RejectionLogGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RejectionLogGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RejectionLogCountArgs<ExtArgs>
+            result: $Utils.Optional<RejectionLogCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -2406,6 +2512,7 @@ export namespace Prisma {
     taskLog?: TaskLogOmit
     notification?: NotificationOmit
     whatsappSession?: WhatsappSessionOmit
+    rejectionLog?: RejectionLogOmit
   }
 
   /* Types for Logging */
@@ -2617,6 +2724,7 @@ export namespace Prisma {
   export type UserCountOutputType = {
     requests: number
     assignedRequests: number
+    createdRequests: number
     attachments: number
     taskLogs: number
     notifications: number
@@ -2632,12 +2740,14 @@ export namespace Prisma {
     supplyRequestsDecided: number
     ownedProperties: number
     whatsappSessions: number
+    rejectionLogs: number
     familyMembers: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     requests?: boolean | UserCountOutputTypeCountRequestsArgs
     assignedRequests?: boolean | UserCountOutputTypeCountAssignedRequestsArgs
+    createdRequests?: boolean | UserCountOutputTypeCountCreatedRequestsArgs
     attachments?: boolean | UserCountOutputTypeCountAttachmentsArgs
     taskLogs?: boolean | UserCountOutputTypeCountTaskLogsArgs
     notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
@@ -2653,6 +2763,7 @@ export namespace Prisma {
     supplyRequestsDecided?: boolean | UserCountOutputTypeCountSupplyRequestsDecidedArgs
     ownedProperties?: boolean | UserCountOutputTypeCountOwnedPropertiesArgs
     whatsappSessions?: boolean | UserCountOutputTypeCountWhatsappSessionsArgs
+    rejectionLogs?: boolean | UserCountOutputTypeCountRejectionLogsArgs
     familyMembers?: boolean | UserCountOutputTypeCountFamilyMembersArgs
   }
 
@@ -2678,6 +2789,13 @@ export namespace Prisma {
    * UserCountOutputType without action
    */
   export type UserCountOutputTypeCountAssignedRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MaintenanceRequestWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountCreatedRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: MaintenanceRequestWhereInput
   }
 
@@ -2784,6 +2902,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountWhatsappSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: WhatsappSessionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountRejectionLogsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RejectionLogWhereInput
   }
 
   /**
@@ -4194,6 +4319,7 @@ export namespace Prisma {
     notes: string | null
     ownerId: string | null
     approved: boolean | null
+    submittedAt: Date | null
     serviceChargeAmount: Decimal | null
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
@@ -4219,6 +4345,7 @@ export namespace Prisma {
     notes: string | null
     ownerId: string | null
     approved: boolean | null
+    submittedAt: Date | null
     serviceChargeAmount: Decimal | null
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
@@ -4244,6 +4371,7 @@ export namespace Prisma {
     notes: number
     ownerId: number
     approved: number
+    submittedAt: number
     serviceChargeAmount: number
     serviceChargeCycleMonths: number
     serviceChargeDueDate: number
@@ -4281,6 +4409,7 @@ export namespace Prisma {
     notes?: true
     ownerId?: true
     approved?: true
+    submittedAt?: true
     serviceChargeAmount?: true
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
@@ -4306,6 +4435,7 @@ export namespace Prisma {
     notes?: true
     ownerId?: true
     approved?: true
+    submittedAt?: true
     serviceChargeAmount?: true
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
@@ -4331,6 +4461,7 @@ export namespace Prisma {
     notes?: true
     ownerId?: true
     approved?: true
+    submittedAt?: true
     serviceChargeAmount?: true
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
@@ -4443,6 +4574,7 @@ export namespace Prisma {
     notes: string | null
     ownerId: string | null
     approved: boolean
+    submittedAt: Date | null
     serviceChargeAmount: Decimal | null
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
@@ -4487,6 +4619,7 @@ export namespace Prisma {
     notes?: boolean
     ownerId?: boolean
     approved?: boolean
+    submittedAt?: boolean
     serviceChargeAmount?: boolean
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
@@ -4518,6 +4651,7 @@ export namespace Prisma {
     notes?: boolean
     ownerId?: boolean
     approved?: boolean
+    submittedAt?: boolean
     serviceChargeAmount?: boolean
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
@@ -4545,6 +4679,7 @@ export namespace Prisma {
     notes?: boolean
     ownerId?: boolean
     approved?: boolean
+    submittedAt?: boolean
     serviceChargeAmount?: boolean
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
@@ -4572,6 +4707,7 @@ export namespace Prisma {
     notes?: boolean
     ownerId?: boolean
     approved?: boolean
+    submittedAt?: boolean
     serviceChargeAmount?: boolean
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
@@ -4581,7 +4717,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "ownerId" | "approved" | "serviceChargeAmount" | "serviceChargeCycleMonths" | "serviceChargeDueDate" | "serviceChargeLastStage" | "serviceChargeLastReceivedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
+  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "ownerId" | "approved" | "submittedAt" | "serviceChargeAmount" | "serviceChargeCycleMonths" | "serviceChargeDueDate" | "serviceChargeLastStage" | "serviceChargeLastReceivedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
   export type PropertyInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
     owner?: boolean | Property$ownerArgs<ExtArgs>
@@ -4636,6 +4772,14 @@ export namespace Prisma {
        * them. Defaults to true so every pre-existing row stays live.
        */
       approved: boolean
+      /**
+       * When the owner submitted this property for admin review, after setting
+       * up its units. Null means it's still a draft — the owner is adding
+       * units and hasn't asked for approval yet, so it does NOT show up in the
+       * admin's pending-review queue even though approved is false. Only
+       * meaningful while approved is false; irrelevant once approved.
+       */
+      submittedAt: Date | null
       /**
        * Recurring maintenance budget the owner collects from/for this property
        * (e.g. 400 OMR every 3 months). All three are null until someone sets
@@ -5101,6 +5245,7 @@ export namespace Prisma {
     readonly notes: FieldRef<"Property", 'String'>
     readonly ownerId: FieldRef<"Property", 'String'>
     readonly approved: FieldRef<"Property", 'Boolean'>
+    readonly submittedAt: FieldRef<"Property", 'DateTime'>
     readonly serviceChargeAmount: FieldRef<"Property", 'Decimal'>
     readonly serviceChargeCycleMonths: FieldRef<"Property", 'Int'>
     readonly serviceChargeDueDate: FieldRef<"Property", 'DateTime'>
@@ -7277,6 +7422,7 @@ export namespace Prisma {
     unit?: boolean | User$unitArgs<ExtArgs>
     requests?: boolean | User$requestsArgs<ExtArgs>
     assignedRequests?: boolean | User$assignedRequestsArgs<ExtArgs>
+    createdRequests?: boolean | User$createdRequestsArgs<ExtArgs>
     attachments?: boolean | User$attachmentsArgs<ExtArgs>
     taskLogs?: boolean | User$taskLogsArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
@@ -7292,6 +7438,7 @@ export namespace Prisma {
     supplyRequestsDecided?: boolean | User$supplyRequestsDecidedArgs<ExtArgs>
     ownedProperties?: boolean | User$ownedPropertiesArgs<ExtArgs>
     whatsappSessions?: boolean | User$whatsappSessionsArgs<ExtArgs>
+    rejectionLogs?: boolean | User$rejectionLogsArgs<ExtArgs>
     familyMembers?: boolean | User$familyMembersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
@@ -7415,6 +7562,7 @@ export namespace Prisma {
     unit?: boolean | User$unitArgs<ExtArgs>
     requests?: boolean | User$requestsArgs<ExtArgs>
     assignedRequests?: boolean | User$assignedRequestsArgs<ExtArgs>
+    createdRequests?: boolean | User$createdRequestsArgs<ExtArgs>
     attachments?: boolean | User$attachmentsArgs<ExtArgs>
     taskLogs?: boolean | User$taskLogsArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
@@ -7430,6 +7578,7 @@ export namespace Prisma {
     supplyRequestsDecided?: boolean | User$supplyRequestsDecidedArgs<ExtArgs>
     ownedProperties?: boolean | User$ownedPropertiesArgs<ExtArgs>
     whatsappSessions?: boolean | User$whatsappSessionsArgs<ExtArgs>
+    rejectionLogs?: boolean | User$rejectionLogsArgs<ExtArgs>
     familyMembers?: boolean | User$familyMembersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -7445,6 +7594,7 @@ export namespace Prisma {
       unit: Prisma.$UnitPayload<ExtArgs> | null
       requests: Prisma.$MaintenanceRequestPayload<ExtArgs>[]
       assignedRequests: Prisma.$MaintenanceRequestPayload<ExtArgs>[]
+      createdRequests: Prisma.$MaintenanceRequestPayload<ExtArgs>[]
       attachments: Prisma.$MaintenanceAttachmentPayload<ExtArgs>[]
       taskLogs: Prisma.$TaskLogPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
@@ -7463,6 +7613,10 @@ export namespace Prisma {
        */
       ownedProperties: Prisma.$PropertyPayload<ExtArgs>[]
       whatsappSessions: Prisma.$WhatsappSessionPayload<ExtArgs>[]
+      /**
+       * Rejections this admin issued (property, payment, or supply request).
+       */
+      rejectionLogs: Prisma.$RejectionLogPayload<ExtArgs>[]
       /**
        * Only populated when employeeType = "family" — the worker's tracked
        * dependents (see WorkerFamilyMember).
@@ -7946,6 +8100,7 @@ export namespace Prisma {
     unit<T extends User$unitArgs<ExtArgs> = {}>(args?: Subset<T, User$unitArgs<ExtArgs>>): Prisma__UnitClient<$Result.GetResult<Prisma.$UnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     requests<T extends User$requestsArgs<ExtArgs> = {}>(args?: Subset<T, User$requestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MaintenanceRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     assignedRequests<T extends User$assignedRequestsArgs<ExtArgs> = {}>(args?: Subset<T, User$assignedRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MaintenanceRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    createdRequests<T extends User$createdRequestsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MaintenanceRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     attachments<T extends User$attachmentsArgs<ExtArgs> = {}>(args?: Subset<T, User$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MaintenanceAttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     taskLogs<T extends User$taskLogsArgs<ExtArgs> = {}>(args?: Subset<T, User$taskLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     notifications<T extends User$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -7961,6 +8116,7 @@ export namespace Prisma {
     supplyRequestsDecided<T extends User$supplyRequestsDecidedArgs<ExtArgs> = {}>(args?: Subset<T, User$supplyRequestsDecidedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplyRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     ownedProperties<T extends User$ownedPropertiesArgs<ExtArgs> = {}>(args?: Subset<T, User$ownedPropertiesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     whatsappSessions<T extends User$whatsappSessionsArgs<ExtArgs> = {}>(args?: Subset<T, User$whatsappSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    rejectionLogs<T extends User$rejectionLogsArgs<ExtArgs> = {}>(args?: Subset<T, User$rejectionLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     familyMembers<T extends User$familyMembersArgs<ExtArgs> = {}>(args?: Subset<T, User$familyMembersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -8486,6 +8642,30 @@ export namespace Prisma {
   }
 
   /**
+   * User.createdRequests
+   */
+  export type User$createdRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MaintenanceRequest
+     */
+    select?: MaintenanceRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MaintenanceRequest
+     */
+    omit?: MaintenanceRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MaintenanceRequestInclude<ExtArgs> | null
+    where?: MaintenanceRequestWhereInput
+    orderBy?: MaintenanceRequestOrderByWithRelationInput | MaintenanceRequestOrderByWithRelationInput[]
+    cursor?: MaintenanceRequestWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: MaintenanceRequestScalarFieldEnum | MaintenanceRequestScalarFieldEnum[]
+  }
+
+  /**
    * User.attachments
    */
   export type User$attachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8843,6 +9023,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: WhatsappSessionScalarFieldEnum | WhatsappSessionScalarFieldEnum[]
+  }
+
+  /**
+   * User.rejectionLogs
+   */
+  export type User$rejectionLogsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    where?: RejectionLogWhereInput
+    orderBy?: RejectionLogOrderByWithRelationInput | RejectionLogOrderByWithRelationInput[]
+    cursor?: RejectionLogWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RejectionLogScalarFieldEnum | RejectionLogScalarFieldEnum[]
   }
 
   /**
@@ -16570,6 +16774,7 @@ export namespace Prisma {
     priority: $Enums.Priority | null
     status: $Enums.RequestStatus | null
     assignedToId: string | null
+    createdById: string | null
     notes: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -16595,6 +16800,7 @@ export namespace Prisma {
     priority: $Enums.Priority | null
     status: $Enums.RequestStatus | null
     assignedToId: string | null
+    createdById: string | null
     notes: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -16620,6 +16826,7 @@ export namespace Prisma {
     priority: number
     status: number
     assignedToId: number
+    createdById: number
     notes: number
     createdAt: number
     updatedAt: number
@@ -16647,6 +16854,7 @@ export namespace Prisma {
     priority?: true
     status?: true
     assignedToId?: true
+    createdById?: true
     notes?: true
     createdAt?: true
     updatedAt?: true
@@ -16672,6 +16880,7 @@ export namespace Prisma {
     priority?: true
     status?: true
     assignedToId?: true
+    createdById?: true
     notes?: true
     createdAt?: true
     updatedAt?: true
@@ -16697,6 +16906,7 @@ export namespace Prisma {
     priority?: true
     status?: true
     assignedToId?: true
+    createdById?: true
     notes?: true
     createdAt?: true
     updatedAt?: true
@@ -16795,6 +17005,7 @@ export namespace Prisma {
     priority: $Enums.Priority
     status: $Enums.RequestStatus
     assignedToId: string | null
+    createdById: string | null
     notes: string | null
     createdAt: Date
     updatedAt: Date
@@ -16837,6 +17048,7 @@ export namespace Prisma {
     priority?: boolean
     status?: boolean
     assignedToId?: boolean
+    createdById?: boolean
     notes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -16853,6 +17065,7 @@ export namespace Prisma {
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
     property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
+    createdBy?: boolean | MaintenanceRequest$createdByArgs<ExtArgs>
     attachments?: boolean | MaintenanceRequest$attachmentsArgs<ExtArgs>
     taskLogs?: boolean | MaintenanceRequest$taskLogsArgs<ExtArgs>
     notifications?: boolean | MaintenanceRequest$notificationsArgs<ExtArgs>
@@ -16872,6 +17085,7 @@ export namespace Prisma {
     priority?: boolean
     status?: boolean
     assignedToId?: boolean
+    createdById?: boolean
     notes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -16888,6 +17102,7 @@ export namespace Prisma {
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
     property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
+    createdBy?: boolean | MaintenanceRequest$createdByArgs<ExtArgs>
   }, ExtArgs["result"]["maintenanceRequest"]>
 
   export type MaintenanceRequestSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -16901,6 +17116,7 @@ export namespace Prisma {
     priority?: boolean
     status?: boolean
     assignedToId?: boolean
+    createdById?: boolean
     notes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -16917,6 +17133,7 @@ export namespace Prisma {
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
     property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
+    createdBy?: boolean | MaintenanceRequest$createdByArgs<ExtArgs>
   }, ExtArgs["result"]["maintenanceRequest"]>
 
   export type MaintenanceRequestSelectScalar = {
@@ -16930,6 +17147,7 @@ export namespace Prisma {
     priority?: boolean
     status?: boolean
     assignedToId?: boolean
+    createdById?: boolean
     notes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -16944,12 +17162,13 @@ export namespace Prisma {
     completionCodeAt?: boolean
   }
 
-  export type MaintenanceRequestOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "unitId" | "propertyId" | "title" | "description" | "location" | "priority" | "status" | "assignedToId" | "notes" | "createdAt" | "updatedAt" | "completedAt" | "enRouteAt" | "inProgressAt" | "holdReason" | "heldAt" | "heldFromStatus" | "resumeRequestedAt" | "completionCode" | "completionCodeAt", ExtArgs["result"]["maintenanceRequest"]>
+  export type MaintenanceRequestOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "unitId" | "propertyId" | "title" | "description" | "location" | "priority" | "status" | "assignedToId" | "createdById" | "notes" | "createdAt" | "updatedAt" | "completedAt" | "enRouteAt" | "inProgressAt" | "holdReason" | "heldAt" | "heldFromStatus" | "resumeRequestedAt" | "completionCode" | "completionCodeAt", ExtArgs["result"]["maintenanceRequest"]>
   export type MaintenanceRequestInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
     property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
+    createdBy?: boolean | MaintenanceRequest$createdByArgs<ExtArgs>
     attachments?: boolean | MaintenanceRequest$attachmentsArgs<ExtArgs>
     taskLogs?: boolean | MaintenanceRequest$taskLogsArgs<ExtArgs>
     notifications?: boolean | MaintenanceRequest$notificationsArgs<ExtArgs>
@@ -16962,12 +17181,14 @@ export namespace Prisma {
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
     property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
+    createdBy?: boolean | MaintenanceRequest$createdByArgs<ExtArgs>
   }
   export type MaintenanceRequestIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     unit?: boolean | MaintenanceRequest$unitArgs<ExtArgs>
     property?: boolean | MaintenanceRequest$propertyArgs<ExtArgs>
     assignedTo?: boolean | MaintenanceRequest$assignedToArgs<ExtArgs>
+    createdBy?: boolean | MaintenanceRequest$createdByArgs<ExtArgs>
   }
 
   export type $MaintenanceRequestPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -16977,6 +17198,7 @@ export namespace Prisma {
       unit: Prisma.$UnitPayload<ExtArgs> | null
       property: Prisma.$PropertyPayload<ExtArgs> | null
       assignedTo: Prisma.$UserPayload<ExtArgs> | null
+      createdBy: Prisma.$UserPayload<ExtArgs> | null
       attachments: Prisma.$MaintenanceAttachmentPayload<ExtArgs>[]
       taskLogs: Prisma.$TaskLogPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
@@ -17009,6 +17231,14 @@ export namespace Prisma {
       priority: $Enums.Priority
       status: $Enums.RequestStatus
       assignedToId: string | null
+      /**
+       * Who actually filed this — set only when an admin creates it on a
+       * tenant's behalf (via the maintenance dashboard), so the UI can show
+       * "Added by <admin>" distinct from `user` (the tenant it's for). Left
+       * null for a tenant's own self-reported request; nothing to distinguish
+       * there since userId already is the reporter in that case.
+       */
+      createdById: string | null
       notes: string | null
       createdAt: Date
       updatedAt: Date
@@ -17431,6 +17661,7 @@ export namespace Prisma {
     unit<T extends MaintenanceRequest$unitArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$unitArgs<ExtArgs>>): Prisma__UnitClient<$Result.GetResult<Prisma.$UnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     property<T extends MaintenanceRequest$propertyArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$propertyArgs<ExtArgs>>): Prisma__PropertyClient<$Result.GetResult<Prisma.$PropertyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     assignedTo<T extends MaintenanceRequest$assignedToArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$assignedToArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    createdBy<T extends MaintenanceRequest$createdByArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$createdByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     attachments<T extends MaintenanceRequest$attachmentsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MaintenanceAttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     taskLogs<T extends MaintenanceRequest$taskLogsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$taskLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     notifications<T extends MaintenanceRequest$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, MaintenanceRequest$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -17475,6 +17706,7 @@ export namespace Prisma {
     readonly priority: FieldRef<"MaintenanceRequest", 'Priority'>
     readonly status: FieldRef<"MaintenanceRequest", 'RequestStatus'>
     readonly assignedToId: FieldRef<"MaintenanceRequest", 'String'>
+    readonly createdById: FieldRef<"MaintenanceRequest", 'String'>
     readonly notes: FieldRef<"MaintenanceRequest", 'String'>
     readonly createdAt: FieldRef<"MaintenanceRequest", 'DateTime'>
     readonly updatedAt: FieldRef<"MaintenanceRequest", 'DateTime'>
@@ -17929,6 +18161,25 @@ export namespace Prisma {
    * MaintenanceRequest.assignedTo
    */
   export type MaintenanceRequest$assignedToArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * MaintenanceRequest.createdBy
+   */
+  export type MaintenanceRequest$createdByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -23960,6 +24211,1154 @@ export namespace Prisma {
 
 
   /**
+   * Model RejectionLog
+   */
+
+  export type AggregateRejectionLog = {
+    _count: RejectionLogCountAggregateOutputType | null
+    _avg: RejectionLogAvgAggregateOutputType | null
+    _sum: RejectionLogSumAggregateOutputType | null
+    _min: RejectionLogMinAggregateOutputType | null
+    _max: RejectionLogMaxAggregateOutputType | null
+  }
+
+  export type RejectionLogAvgAggregateOutputType = {
+    amount: Decimal | null
+  }
+
+  export type RejectionLogSumAggregateOutputType = {
+    amount: Decimal | null
+  }
+
+  export type RejectionLogMinAggregateOutputType = {
+    id: string | null
+    kind: $Enums.RejectionKind | null
+    entityLabel: string | null
+    affectedUser: string | null
+    amount: Decimal | null
+    reason: string | null
+    rejectedById: string | null
+    createdAt: Date | null
+  }
+
+  export type RejectionLogMaxAggregateOutputType = {
+    id: string | null
+    kind: $Enums.RejectionKind | null
+    entityLabel: string | null
+    affectedUser: string | null
+    amount: Decimal | null
+    reason: string | null
+    rejectedById: string | null
+    createdAt: Date | null
+  }
+
+  export type RejectionLogCountAggregateOutputType = {
+    id: number
+    kind: number
+    entityLabel: number
+    affectedUser: number
+    amount: number
+    reason: number
+    rejectedById: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type RejectionLogAvgAggregateInputType = {
+    amount?: true
+  }
+
+  export type RejectionLogSumAggregateInputType = {
+    amount?: true
+  }
+
+  export type RejectionLogMinAggregateInputType = {
+    id?: true
+    kind?: true
+    entityLabel?: true
+    affectedUser?: true
+    amount?: true
+    reason?: true
+    rejectedById?: true
+    createdAt?: true
+  }
+
+  export type RejectionLogMaxAggregateInputType = {
+    id?: true
+    kind?: true
+    entityLabel?: true
+    affectedUser?: true
+    amount?: true
+    reason?: true
+    rejectedById?: true
+    createdAt?: true
+  }
+
+  export type RejectionLogCountAggregateInputType = {
+    id?: true
+    kind?: true
+    entityLabel?: true
+    affectedUser?: true
+    amount?: true
+    reason?: true
+    rejectedById?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type RejectionLogAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RejectionLog to aggregate.
+     */
+    where?: RejectionLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RejectionLogs to fetch.
+     */
+    orderBy?: RejectionLogOrderByWithRelationInput | RejectionLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RejectionLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RejectionLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RejectionLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RejectionLogs
+    **/
+    _count?: true | RejectionLogCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: RejectionLogAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: RejectionLogSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RejectionLogMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RejectionLogMaxAggregateInputType
+  }
+
+  export type GetRejectionLogAggregateType<T extends RejectionLogAggregateArgs> = {
+        [P in keyof T & keyof AggregateRejectionLog]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRejectionLog[P]>
+      : GetScalarType<T[P], AggregateRejectionLog[P]>
+  }
+
+
+
+
+  export type RejectionLogGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RejectionLogWhereInput
+    orderBy?: RejectionLogOrderByWithAggregationInput | RejectionLogOrderByWithAggregationInput[]
+    by: RejectionLogScalarFieldEnum[] | RejectionLogScalarFieldEnum
+    having?: RejectionLogScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RejectionLogCountAggregateInputType | true
+    _avg?: RejectionLogAvgAggregateInputType
+    _sum?: RejectionLogSumAggregateInputType
+    _min?: RejectionLogMinAggregateInputType
+    _max?: RejectionLogMaxAggregateInputType
+  }
+
+  export type RejectionLogGroupByOutputType = {
+    id: string
+    kind: $Enums.RejectionKind
+    entityLabel: string
+    affectedUser: string | null
+    amount: Decimal | null
+    reason: string | null
+    rejectedById: string
+    createdAt: Date
+    _count: RejectionLogCountAggregateOutputType | null
+    _avg: RejectionLogAvgAggregateOutputType | null
+    _sum: RejectionLogSumAggregateOutputType | null
+    _min: RejectionLogMinAggregateOutputType | null
+    _max: RejectionLogMaxAggregateOutputType | null
+  }
+
+  type GetRejectionLogGroupByPayload<T extends RejectionLogGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RejectionLogGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RejectionLogGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RejectionLogGroupByOutputType[P]>
+            : GetScalarType<T[P], RejectionLogGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RejectionLogSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    kind?: boolean
+    entityLabel?: boolean
+    affectedUser?: boolean
+    amount?: boolean
+    reason?: boolean
+    rejectedById?: boolean
+    createdAt?: boolean
+    rejectedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["rejectionLog"]>
+
+  export type RejectionLogSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    kind?: boolean
+    entityLabel?: boolean
+    affectedUser?: boolean
+    amount?: boolean
+    reason?: boolean
+    rejectedById?: boolean
+    createdAt?: boolean
+    rejectedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["rejectionLog"]>
+
+  export type RejectionLogSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    kind?: boolean
+    entityLabel?: boolean
+    affectedUser?: boolean
+    amount?: boolean
+    reason?: boolean
+    rejectedById?: boolean
+    createdAt?: boolean
+    rejectedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["rejectionLog"]>
+
+  export type RejectionLogSelectScalar = {
+    id?: boolean
+    kind?: boolean
+    entityLabel?: boolean
+    affectedUser?: boolean
+    amount?: boolean
+    reason?: boolean
+    rejectedById?: boolean
+    createdAt?: boolean
+  }
+
+  export type RejectionLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "kind" | "entityLabel" | "affectedUser" | "amount" | "reason" | "rejectedById" | "createdAt", ExtArgs["result"]["rejectionLog"]>
+  export type RejectionLogInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    rejectedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type RejectionLogIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    rejectedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type RejectionLogIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    rejectedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $RejectionLogPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RejectionLog"
+    objects: {
+      rejectedBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      kind: $Enums.RejectionKind
+      /**
+       * Human-readable label for the rejected thing, e.g. the property name or
+       * the charge title — captured as text since the underlying row (property)
+       * may no longer exist.
+       */
+      entityLabel: string
+      /**
+       * Who the rejection affects, e.g. "owner@x.com" or "tenant@x.com" —
+       * captured as text for the same reason as entityLabel.
+       */
+      affectedUser: string | null
+      /**
+       * Amount involved, if any (payment rejections only).
+       */
+      amount: Prisma.Decimal | null
+      reason: string | null
+      rejectedById: string
+      createdAt: Date
+    }, ExtArgs["result"]["rejectionLog"]>
+    composites: {}
+  }
+
+  type RejectionLogGetPayload<S extends boolean | null | undefined | RejectionLogDefaultArgs> = $Result.GetResult<Prisma.$RejectionLogPayload, S>
+
+  type RejectionLogCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RejectionLogFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RejectionLogCountAggregateInputType | true
+    }
+
+  export interface RejectionLogDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RejectionLog'], meta: { name: 'RejectionLog' } }
+    /**
+     * Find zero or one RejectionLog that matches the filter.
+     * @param {RejectionLogFindUniqueArgs} args - Arguments to find a RejectionLog
+     * @example
+     * // Get one RejectionLog
+     * const rejectionLog = await prisma.rejectionLog.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RejectionLogFindUniqueArgs>(args: SelectSubset<T, RejectionLogFindUniqueArgs<ExtArgs>>): Prisma__RejectionLogClient<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one RejectionLog that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RejectionLogFindUniqueOrThrowArgs} args - Arguments to find a RejectionLog
+     * @example
+     * // Get one RejectionLog
+     * const rejectionLog = await prisma.rejectionLog.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RejectionLogFindUniqueOrThrowArgs>(args: SelectSubset<T, RejectionLogFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RejectionLogClient<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RejectionLog that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RejectionLogFindFirstArgs} args - Arguments to find a RejectionLog
+     * @example
+     * // Get one RejectionLog
+     * const rejectionLog = await prisma.rejectionLog.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RejectionLogFindFirstArgs>(args?: SelectSubset<T, RejectionLogFindFirstArgs<ExtArgs>>): Prisma__RejectionLogClient<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RejectionLog that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RejectionLogFindFirstOrThrowArgs} args - Arguments to find a RejectionLog
+     * @example
+     * // Get one RejectionLog
+     * const rejectionLog = await prisma.rejectionLog.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RejectionLogFindFirstOrThrowArgs>(args?: SelectSubset<T, RejectionLogFindFirstOrThrowArgs<ExtArgs>>): Prisma__RejectionLogClient<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more RejectionLogs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RejectionLogFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RejectionLogs
+     * const rejectionLogs = await prisma.rejectionLog.findMany()
+     * 
+     * // Get first 10 RejectionLogs
+     * const rejectionLogs = await prisma.rejectionLog.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const rejectionLogWithIdOnly = await prisma.rejectionLog.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RejectionLogFindManyArgs>(args?: SelectSubset<T, RejectionLogFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a RejectionLog.
+     * @param {RejectionLogCreateArgs} args - Arguments to create a RejectionLog.
+     * @example
+     * // Create one RejectionLog
+     * const RejectionLog = await prisma.rejectionLog.create({
+     *   data: {
+     *     // ... data to create a RejectionLog
+     *   }
+     * })
+     * 
+     */
+    create<T extends RejectionLogCreateArgs>(args: SelectSubset<T, RejectionLogCreateArgs<ExtArgs>>): Prisma__RejectionLogClient<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many RejectionLogs.
+     * @param {RejectionLogCreateManyArgs} args - Arguments to create many RejectionLogs.
+     * @example
+     * // Create many RejectionLogs
+     * const rejectionLog = await prisma.rejectionLog.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RejectionLogCreateManyArgs>(args?: SelectSubset<T, RejectionLogCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many RejectionLogs and returns the data saved in the database.
+     * @param {RejectionLogCreateManyAndReturnArgs} args - Arguments to create many RejectionLogs.
+     * @example
+     * // Create many RejectionLogs
+     * const rejectionLog = await prisma.rejectionLog.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many RejectionLogs and only return the `id`
+     * const rejectionLogWithIdOnly = await prisma.rejectionLog.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends RejectionLogCreateManyAndReturnArgs>(args?: SelectSubset<T, RejectionLogCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a RejectionLog.
+     * @param {RejectionLogDeleteArgs} args - Arguments to delete one RejectionLog.
+     * @example
+     * // Delete one RejectionLog
+     * const RejectionLog = await prisma.rejectionLog.delete({
+     *   where: {
+     *     // ... filter to delete one RejectionLog
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RejectionLogDeleteArgs>(args: SelectSubset<T, RejectionLogDeleteArgs<ExtArgs>>): Prisma__RejectionLogClient<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one RejectionLog.
+     * @param {RejectionLogUpdateArgs} args - Arguments to update one RejectionLog.
+     * @example
+     * // Update one RejectionLog
+     * const rejectionLog = await prisma.rejectionLog.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RejectionLogUpdateArgs>(args: SelectSubset<T, RejectionLogUpdateArgs<ExtArgs>>): Prisma__RejectionLogClient<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more RejectionLogs.
+     * @param {RejectionLogDeleteManyArgs} args - Arguments to filter RejectionLogs to delete.
+     * @example
+     * // Delete a few RejectionLogs
+     * const { count } = await prisma.rejectionLog.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RejectionLogDeleteManyArgs>(args?: SelectSubset<T, RejectionLogDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RejectionLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RejectionLogUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RejectionLogs
+     * const rejectionLog = await prisma.rejectionLog.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RejectionLogUpdateManyArgs>(args: SelectSubset<T, RejectionLogUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RejectionLogs and returns the data updated in the database.
+     * @param {RejectionLogUpdateManyAndReturnArgs} args - Arguments to update many RejectionLogs.
+     * @example
+     * // Update many RejectionLogs
+     * const rejectionLog = await prisma.rejectionLog.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more RejectionLogs and only return the `id`
+     * const rejectionLogWithIdOnly = await prisma.rejectionLog.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends RejectionLogUpdateManyAndReturnArgs>(args: SelectSubset<T, RejectionLogUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one RejectionLog.
+     * @param {RejectionLogUpsertArgs} args - Arguments to update or create a RejectionLog.
+     * @example
+     * // Update or create a RejectionLog
+     * const rejectionLog = await prisma.rejectionLog.upsert({
+     *   create: {
+     *     // ... data to create a RejectionLog
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RejectionLog we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RejectionLogUpsertArgs>(args: SelectSubset<T, RejectionLogUpsertArgs<ExtArgs>>): Prisma__RejectionLogClient<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of RejectionLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RejectionLogCountArgs} args - Arguments to filter RejectionLogs to count.
+     * @example
+     * // Count the number of RejectionLogs
+     * const count = await prisma.rejectionLog.count({
+     *   where: {
+     *     // ... the filter for the RejectionLogs we want to count
+     *   }
+     * })
+    **/
+    count<T extends RejectionLogCountArgs>(
+      args?: Subset<T, RejectionLogCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RejectionLogCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RejectionLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RejectionLogAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RejectionLogAggregateArgs>(args: Subset<T, RejectionLogAggregateArgs>): Prisma.PrismaPromise<GetRejectionLogAggregateType<T>>
+
+    /**
+     * Group by RejectionLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RejectionLogGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RejectionLogGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RejectionLogGroupByArgs['orderBy'] }
+        : { orderBy?: RejectionLogGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RejectionLogGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRejectionLogGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RejectionLog model
+   */
+  readonly fields: RejectionLogFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RejectionLog.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RejectionLogClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    rejectedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RejectionLog model
+   */
+  interface RejectionLogFieldRefs {
+    readonly id: FieldRef<"RejectionLog", 'String'>
+    readonly kind: FieldRef<"RejectionLog", 'RejectionKind'>
+    readonly entityLabel: FieldRef<"RejectionLog", 'String'>
+    readonly affectedUser: FieldRef<"RejectionLog", 'String'>
+    readonly amount: FieldRef<"RejectionLog", 'Decimal'>
+    readonly reason: FieldRef<"RejectionLog", 'String'>
+    readonly rejectedById: FieldRef<"RejectionLog", 'String'>
+    readonly createdAt: FieldRef<"RejectionLog", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RejectionLog findUnique
+   */
+  export type RejectionLogFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * Filter, which RejectionLog to fetch.
+     */
+    where: RejectionLogWhereUniqueInput
+  }
+
+  /**
+   * RejectionLog findUniqueOrThrow
+   */
+  export type RejectionLogFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * Filter, which RejectionLog to fetch.
+     */
+    where: RejectionLogWhereUniqueInput
+  }
+
+  /**
+   * RejectionLog findFirst
+   */
+  export type RejectionLogFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * Filter, which RejectionLog to fetch.
+     */
+    where?: RejectionLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RejectionLogs to fetch.
+     */
+    orderBy?: RejectionLogOrderByWithRelationInput | RejectionLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RejectionLogs.
+     */
+    cursor?: RejectionLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RejectionLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RejectionLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RejectionLogs.
+     */
+    distinct?: RejectionLogScalarFieldEnum | RejectionLogScalarFieldEnum[]
+  }
+
+  /**
+   * RejectionLog findFirstOrThrow
+   */
+  export type RejectionLogFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * Filter, which RejectionLog to fetch.
+     */
+    where?: RejectionLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RejectionLogs to fetch.
+     */
+    orderBy?: RejectionLogOrderByWithRelationInput | RejectionLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RejectionLogs.
+     */
+    cursor?: RejectionLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RejectionLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RejectionLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RejectionLogs.
+     */
+    distinct?: RejectionLogScalarFieldEnum | RejectionLogScalarFieldEnum[]
+  }
+
+  /**
+   * RejectionLog findMany
+   */
+  export type RejectionLogFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * Filter, which RejectionLogs to fetch.
+     */
+    where?: RejectionLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RejectionLogs to fetch.
+     */
+    orderBy?: RejectionLogOrderByWithRelationInput | RejectionLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RejectionLogs.
+     */
+    cursor?: RejectionLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RejectionLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RejectionLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RejectionLogs.
+     */
+    distinct?: RejectionLogScalarFieldEnum | RejectionLogScalarFieldEnum[]
+  }
+
+  /**
+   * RejectionLog create
+   */
+  export type RejectionLogCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * The data needed to create a RejectionLog.
+     */
+    data: XOR<RejectionLogCreateInput, RejectionLogUncheckedCreateInput>
+  }
+
+  /**
+   * RejectionLog createMany
+   */
+  export type RejectionLogCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RejectionLogs.
+     */
+    data: RejectionLogCreateManyInput | RejectionLogCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RejectionLog createManyAndReturn
+   */
+  export type RejectionLogCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * The data used to create many RejectionLogs.
+     */
+    data: RejectionLogCreateManyInput | RejectionLogCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * RejectionLog update
+   */
+  export type RejectionLogUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * The data needed to update a RejectionLog.
+     */
+    data: XOR<RejectionLogUpdateInput, RejectionLogUncheckedUpdateInput>
+    /**
+     * Choose, which RejectionLog to update.
+     */
+    where: RejectionLogWhereUniqueInput
+  }
+
+  /**
+   * RejectionLog updateMany
+   */
+  export type RejectionLogUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RejectionLogs.
+     */
+    data: XOR<RejectionLogUpdateManyMutationInput, RejectionLogUncheckedUpdateManyInput>
+    /**
+     * Filter which RejectionLogs to update
+     */
+    where?: RejectionLogWhereInput
+    /**
+     * Limit how many RejectionLogs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RejectionLog updateManyAndReturn
+   */
+  export type RejectionLogUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * The data used to update RejectionLogs.
+     */
+    data: XOR<RejectionLogUpdateManyMutationInput, RejectionLogUncheckedUpdateManyInput>
+    /**
+     * Filter which RejectionLogs to update
+     */
+    where?: RejectionLogWhereInput
+    /**
+     * Limit how many RejectionLogs to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * RejectionLog upsert
+   */
+  export type RejectionLogUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * The filter to search for the RejectionLog to update in case it exists.
+     */
+    where: RejectionLogWhereUniqueInput
+    /**
+     * In case the RejectionLog found by the `where` argument doesn't exist, create a new RejectionLog with this data.
+     */
+    create: XOR<RejectionLogCreateInput, RejectionLogUncheckedCreateInput>
+    /**
+     * In case the RejectionLog was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RejectionLogUpdateInput, RejectionLogUncheckedUpdateInput>
+  }
+
+  /**
+   * RejectionLog delete
+   */
+  export type RejectionLogDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+    /**
+     * Filter which RejectionLog to delete.
+     */
+    where: RejectionLogWhereUniqueInput
+  }
+
+  /**
+   * RejectionLog deleteMany
+   */
+  export type RejectionLogDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RejectionLogs to delete
+     */
+    where?: RejectionLogWhereInput
+    /**
+     * Limit how many RejectionLogs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * RejectionLog without action
+   */
+  export type RejectionLogDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RejectionLog
+     */
+    select?: RejectionLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RejectionLog
+     */
+    omit?: RejectionLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RejectionLogInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -24006,6 +25405,7 @@ export namespace Prisma {
     notes: 'notes',
     ownerId: 'ownerId',
     approved: 'approved',
+    submittedAt: 'submittedAt',
     serviceChargeAmount: 'serviceChargeAmount',
     serviceChargeCycleMonths: 'serviceChargeCycleMonths',
     serviceChargeDueDate: 'serviceChargeDueDate',
@@ -24201,6 +25601,7 @@ export namespace Prisma {
     priority: 'priority',
     status: 'status',
     assignedToId: 'assignedToId',
+    createdById: 'createdById',
     notes: 'notes',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
@@ -24293,6 +25694,20 @@ export namespace Prisma {
   };
 
   export type WhatsappSessionScalarFieldEnum = (typeof WhatsappSessionScalarFieldEnum)[keyof typeof WhatsappSessionScalarFieldEnum]
+
+
+  export const RejectionLogScalarFieldEnum: {
+    id: 'id',
+    kind: 'kind',
+    entityLabel: 'entityLabel',
+    affectedUser: 'affectedUser',
+    amount: 'amount',
+    reason: 'reason',
+    rejectedById: 'rejectedById',
+    createdAt: 'createdAt'
+  };
+
+  export type RejectionLogScalarFieldEnum = (typeof RejectionLogScalarFieldEnum)[keyof typeof RejectionLogScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -24615,6 +26030,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'RejectionKind'
+   */
+  export type EnumRejectionKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RejectionKind'>
+    
+
+
+  /**
+   * Reference to a field of type 'RejectionKind[]'
+   */
+  export type ListEnumRejectionKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RejectionKind[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -24735,6 +26164,7 @@ export namespace Prisma {
     notes?: StringNullableFilter<"Property"> | string | null
     ownerId?: UuidNullableFilter<"Property"> | string | null
     approved?: BoolFilter<"Property"> | boolean
+    submittedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
     serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
@@ -24765,6 +26195,7 @@ export namespace Prisma {
     notes?: SortOrderInput | SortOrder
     ownerId?: SortOrderInput | SortOrder
     approved?: SortOrder
+    submittedAt?: SortOrderInput | SortOrder
     serviceChargeAmount?: SortOrderInput | SortOrder
     serviceChargeCycleMonths?: SortOrderInput | SortOrder
     serviceChargeDueDate?: SortOrderInput | SortOrder
@@ -24798,6 +26229,7 @@ export namespace Prisma {
     notes?: StringNullableFilter<"Property"> | string | null
     ownerId?: UuidNullableFilter<"Property"> | string | null
     approved?: BoolFilter<"Property"> | boolean
+    submittedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
     serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
@@ -24828,6 +26260,7 @@ export namespace Prisma {
     notes?: SortOrderInput | SortOrder
     ownerId?: SortOrderInput | SortOrder
     approved?: SortOrder
+    submittedAt?: SortOrderInput | SortOrder
     serviceChargeAmount?: SortOrderInput | SortOrder
     serviceChargeCycleMonths?: SortOrderInput | SortOrder
     serviceChargeDueDate?: SortOrderInput | SortOrder
@@ -24861,6 +26294,7 @@ export namespace Prisma {
     notes?: StringNullableWithAggregatesFilter<"Property"> | string | null
     ownerId?: UuidNullableWithAggregatesFilter<"Property"> | string | null
     approved?: BoolWithAggregatesFilter<"Property"> | boolean
+    submittedAt?: DateTimeNullableWithAggregatesFilter<"Property"> | Date | string | null
     serviceChargeAmount?: DecimalNullableWithAggregatesFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: IntNullableWithAggregatesFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableWithAggregatesFilter<"Property"> | Date | string | null
@@ -24997,6 +26431,7 @@ export namespace Prisma {
     unit?: XOR<UnitNullableScalarRelationFilter, UnitWhereInput> | null
     requests?: MaintenanceRequestListRelationFilter
     assignedRequests?: MaintenanceRequestListRelationFilter
+    createdRequests?: MaintenanceRequestListRelationFilter
     attachments?: MaintenanceAttachmentListRelationFilter
     taskLogs?: TaskLogListRelationFilter
     notifications?: NotificationListRelationFilter
@@ -25012,6 +26447,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestListRelationFilter
     ownedProperties?: PropertyListRelationFilter
     whatsappSessions?: WhatsappSessionListRelationFilter
+    rejectionLogs?: RejectionLogListRelationFilter
     familyMembers?: WorkerFamilyMemberListRelationFilter
   }
 
@@ -25054,6 +26490,7 @@ export namespace Prisma {
     unit?: UnitOrderByWithRelationInput
     requests?: MaintenanceRequestOrderByRelationAggregateInput
     assignedRequests?: MaintenanceRequestOrderByRelationAggregateInput
+    createdRequests?: MaintenanceRequestOrderByRelationAggregateInput
     attachments?: MaintenanceAttachmentOrderByRelationAggregateInput
     taskLogs?: TaskLogOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
@@ -25069,6 +26506,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestOrderByRelationAggregateInput
     ownedProperties?: PropertyOrderByRelationAggregateInput
     whatsappSessions?: WhatsappSessionOrderByRelationAggregateInput
+    rejectionLogs?: RejectionLogOrderByRelationAggregateInput
     familyMembers?: WorkerFamilyMemberOrderByRelationAggregateInput
   }
 
@@ -25115,6 +26553,7 @@ export namespace Prisma {
     unit?: XOR<UnitNullableScalarRelationFilter, UnitWhereInput> | null
     requests?: MaintenanceRequestListRelationFilter
     assignedRequests?: MaintenanceRequestListRelationFilter
+    createdRequests?: MaintenanceRequestListRelationFilter
     attachments?: MaintenanceAttachmentListRelationFilter
     taskLogs?: TaskLogListRelationFilter
     notifications?: NotificationListRelationFilter
@@ -25130,6 +26569,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestListRelationFilter
     ownedProperties?: PropertyListRelationFilter
     whatsappSessions?: WhatsappSessionListRelationFilter
+    rejectionLogs?: RejectionLogListRelationFilter
     familyMembers?: WorkerFamilyMemberListRelationFilter
   }, "id" | "phone" | "civilId" | "email_userType">
 
@@ -25874,6 +27314,7 @@ export namespace Prisma {
     priority?: EnumPriorityFilter<"MaintenanceRequest"> | $Enums.Priority
     status?: EnumRequestStatusFilter<"MaintenanceRequest"> | $Enums.RequestStatus
     assignedToId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
+    createdById?: UuidNullableFilter<"MaintenanceRequest"> | string | null
     notes?: StringNullableFilter<"MaintenanceRequest"> | string | null
     createdAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
     updatedAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
@@ -25890,6 +27331,7 @@ export namespace Prisma {
     unit?: XOR<UnitNullableScalarRelationFilter, UnitWhereInput> | null
     property?: XOR<PropertyNullableScalarRelationFilter, PropertyWhereInput> | null
     assignedTo?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    createdBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     attachments?: MaintenanceAttachmentListRelationFilter
     taskLogs?: TaskLogListRelationFilter
     notifications?: NotificationListRelationFilter
@@ -25908,6 +27350,7 @@ export namespace Prisma {
     priority?: SortOrder
     status?: SortOrder
     assignedToId?: SortOrderInput | SortOrder
+    createdById?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -25924,6 +27367,7 @@ export namespace Prisma {
     unit?: UnitOrderByWithRelationInput
     property?: PropertyOrderByWithRelationInput
     assignedTo?: UserOrderByWithRelationInput
+    createdBy?: UserOrderByWithRelationInput
     attachments?: MaintenanceAttachmentOrderByRelationAggregateInput
     taskLogs?: TaskLogOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
@@ -25945,6 +27389,7 @@ export namespace Prisma {
     priority?: EnumPriorityFilter<"MaintenanceRequest"> | $Enums.Priority
     status?: EnumRequestStatusFilter<"MaintenanceRequest"> | $Enums.RequestStatus
     assignedToId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
+    createdById?: UuidNullableFilter<"MaintenanceRequest"> | string | null
     notes?: StringNullableFilter<"MaintenanceRequest"> | string | null
     createdAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
     updatedAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
@@ -25961,6 +27406,7 @@ export namespace Prisma {
     unit?: XOR<UnitNullableScalarRelationFilter, UnitWhereInput> | null
     property?: XOR<PropertyNullableScalarRelationFilter, PropertyWhereInput> | null
     assignedTo?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    createdBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     attachments?: MaintenanceAttachmentListRelationFilter
     taskLogs?: TaskLogListRelationFilter
     notifications?: NotificationListRelationFilter
@@ -25979,6 +27425,7 @@ export namespace Prisma {
     priority?: SortOrder
     status?: SortOrder
     assignedToId?: SortOrderInput | SortOrder
+    createdById?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -26010,6 +27457,7 @@ export namespace Prisma {
     priority?: EnumPriorityWithAggregatesFilter<"MaintenanceRequest"> | $Enums.Priority
     status?: EnumRequestStatusWithAggregatesFilter<"MaintenanceRequest"> | $Enums.RequestStatus
     assignedToId?: UuidNullableWithAggregatesFilter<"MaintenanceRequest"> | string | null
+    createdById?: UuidNullableWithAggregatesFilter<"MaintenanceRequest"> | string | null
     notes?: StringNullableWithAggregatesFilter<"MaintenanceRequest"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"MaintenanceRequest"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"MaintenanceRequest"> | Date | string
@@ -26431,6 +27879,78 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"WhatsappSession"> | Date | string
   }
 
+  export type RejectionLogWhereInput = {
+    AND?: RejectionLogWhereInput | RejectionLogWhereInput[]
+    OR?: RejectionLogWhereInput[]
+    NOT?: RejectionLogWhereInput | RejectionLogWhereInput[]
+    id?: UuidFilter<"RejectionLog"> | string
+    kind?: EnumRejectionKindFilter<"RejectionLog"> | $Enums.RejectionKind
+    entityLabel?: StringFilter<"RejectionLog"> | string
+    affectedUser?: StringNullableFilter<"RejectionLog"> | string | null
+    amount?: DecimalNullableFilter<"RejectionLog"> | Decimal | DecimalJsLike | number | string | null
+    reason?: StringNullableFilter<"RejectionLog"> | string | null
+    rejectedById?: UuidFilter<"RejectionLog"> | string
+    createdAt?: DateTimeFilter<"RejectionLog"> | Date | string
+    rejectedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type RejectionLogOrderByWithRelationInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    entityLabel?: SortOrder
+    affectedUser?: SortOrderInput | SortOrder
+    amount?: SortOrderInput | SortOrder
+    reason?: SortOrderInput | SortOrder
+    rejectedById?: SortOrder
+    createdAt?: SortOrder
+    rejectedBy?: UserOrderByWithRelationInput
+  }
+
+  export type RejectionLogWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: RejectionLogWhereInput | RejectionLogWhereInput[]
+    OR?: RejectionLogWhereInput[]
+    NOT?: RejectionLogWhereInput | RejectionLogWhereInput[]
+    kind?: EnumRejectionKindFilter<"RejectionLog"> | $Enums.RejectionKind
+    entityLabel?: StringFilter<"RejectionLog"> | string
+    affectedUser?: StringNullableFilter<"RejectionLog"> | string | null
+    amount?: DecimalNullableFilter<"RejectionLog"> | Decimal | DecimalJsLike | number | string | null
+    reason?: StringNullableFilter<"RejectionLog"> | string | null
+    rejectedById?: UuidFilter<"RejectionLog"> | string
+    createdAt?: DateTimeFilter<"RejectionLog"> | Date | string
+    rejectedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type RejectionLogOrderByWithAggregationInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    entityLabel?: SortOrder
+    affectedUser?: SortOrderInput | SortOrder
+    amount?: SortOrderInput | SortOrder
+    reason?: SortOrderInput | SortOrder
+    rejectedById?: SortOrder
+    createdAt?: SortOrder
+    _count?: RejectionLogCountOrderByAggregateInput
+    _avg?: RejectionLogAvgOrderByAggregateInput
+    _max?: RejectionLogMaxOrderByAggregateInput
+    _min?: RejectionLogMinOrderByAggregateInput
+    _sum?: RejectionLogSumOrderByAggregateInput
+  }
+
+  export type RejectionLogScalarWhereWithAggregatesInput = {
+    AND?: RejectionLogScalarWhereWithAggregatesInput | RejectionLogScalarWhereWithAggregatesInput[]
+    OR?: RejectionLogScalarWhereWithAggregatesInput[]
+    NOT?: RejectionLogScalarWhereWithAggregatesInput | RejectionLogScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"RejectionLog"> | string
+    kind?: EnumRejectionKindWithAggregatesFilter<"RejectionLog"> | $Enums.RejectionKind
+    entityLabel?: StringWithAggregatesFilter<"RejectionLog"> | string
+    affectedUser?: StringNullableWithAggregatesFilter<"RejectionLog"> | string | null
+    amount?: DecimalNullableWithAggregatesFilter<"RejectionLog"> | Decimal | DecimalJsLike | number | string | null
+    reason?: StringNullableWithAggregatesFilter<"RejectionLog"> | string | null
+    rejectedById?: UuidWithAggregatesFilter<"RejectionLog"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"RejectionLog"> | Date | string
+  }
+
   export type PropertyTypeCreateInput = {
     id?: string
     name: string
@@ -26547,6 +28067,7 @@ export namespace Prisma {
     plotNumber?: string | null
     notes?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -26577,6 +28098,7 @@ export namespace Prisma {
     notes?: string | null
     ownerId?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -26603,6 +28125,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -26633,6 +28156,7 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -26661,6 +28185,7 @@ export namespace Prisma {
     notes?: string | null
     ownerId?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -26684,6 +28209,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -26709,6 +28235,7 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -26844,6 +28371,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -26859,6 +28387,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -26901,6 +28430,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -26916,6 +28446,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -26958,6 +28489,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -26973,6 +28505,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -27015,6 +28548,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -27030,6 +28564,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -27866,6 +29401,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -27884,6 +29420,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -27926,6 +29463,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -27944,6 +29482,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27974,6 +29513,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -28020,6 +29560,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -28457,6 +29998,82 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type RejectionLogCreateInput = {
+    id?: string
+    kind: $Enums.RejectionKind
+    entityLabel: string
+    affectedUser?: string | null
+    amount?: Decimal | DecimalJsLike | number | string | null
+    reason?: string | null
+    createdAt?: Date | string
+    rejectedBy: UserCreateNestedOneWithoutRejectionLogsInput
+  }
+
+  export type RejectionLogUncheckedCreateInput = {
+    id?: string
+    kind: $Enums.RejectionKind
+    entityLabel: string
+    affectedUser?: string | null
+    amount?: Decimal | DecimalJsLike | number | string | null
+    reason?: string | null
+    rejectedById: string
+    createdAt?: Date | string
+  }
+
+  export type RejectionLogUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumRejectionKindFieldUpdateOperationsInput | $Enums.RejectionKind
+    entityLabel?: StringFieldUpdateOperationsInput | string
+    affectedUser?: NullableStringFieldUpdateOperationsInput | string | null
+    amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    rejectedBy?: UserUpdateOneRequiredWithoutRejectionLogsNestedInput
+  }
+
+  export type RejectionLogUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumRejectionKindFieldUpdateOperationsInput | $Enums.RejectionKind
+    entityLabel?: StringFieldUpdateOperationsInput | string
+    affectedUser?: NullableStringFieldUpdateOperationsInput | string | null
+    amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    rejectedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RejectionLogCreateManyInput = {
+    id?: string
+    kind: $Enums.RejectionKind
+    entityLabel: string
+    affectedUser?: string | null
+    amount?: Decimal | DecimalJsLike | number | string | null
+    reason?: string | null
+    rejectedById: string
+    createdAt?: Date | string
+  }
+
+  export type RejectionLogUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumRejectionKindFieldUpdateOperationsInput | $Enums.RejectionKind
+    entityLabel?: StringFieldUpdateOperationsInput | string
+    affectedUser?: NullableStringFieldUpdateOperationsInput | string | null
+    amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RejectionLogUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumRejectionKindFieldUpdateOperationsInput | $Enums.RejectionKind
+    entityLabel?: StringFieldUpdateOperationsInput | string
+    affectedUser?: NullableStringFieldUpdateOperationsInput | string | null
+    amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    rejectedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type UuidFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -28663,6 +30280,17 @@ export namespace Prisma {
     not?: NestedUuidNullableFilter<$PrismaModel> | string | null
   }
 
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
   export type DecimalNullableFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
@@ -28683,17 +30311,6 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type DateTimeNullableFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
   export type PropertyTypeScalarRelationFilter = {
@@ -28752,6 +30369,7 @@ export namespace Prisma {
     notes?: SortOrder
     ownerId?: SortOrder
     approved?: SortOrder
+    submittedAt?: SortOrder
     serviceChargeAmount?: SortOrder
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
@@ -28782,6 +30400,7 @@ export namespace Prisma {
     notes?: SortOrder
     ownerId?: SortOrder
     approved?: SortOrder
+    submittedAt?: SortOrder
     serviceChargeAmount?: SortOrder
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
@@ -28807,6 +30426,7 @@ export namespace Prisma {
     notes?: SortOrder
     ownerId?: SortOrder
     approved?: SortOrder
+    submittedAt?: SortOrder
     serviceChargeAmount?: SortOrder
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
@@ -28834,6 +30454,20 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedStringNullableFilter<$PrismaModel>
     _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -28866,20 +30500,6 @@ export namespace Prisma {
     _sum?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedIntNullableFilter<$PrismaModel>
     _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
-  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type PropertyScalarRelationFilter = {
@@ -29039,6 +30659,12 @@ export namespace Prisma {
     none?: WhatsappSessionWhereInput
   }
 
+  export type RejectionLogListRelationFilter = {
+    every?: RejectionLogWhereInput
+    some?: RejectionLogWhereInput
+    none?: RejectionLogWhereInput
+  }
+
   export type WorkerFamilyMemberListRelationFilter = {
     every?: WorkerFamilyMemberWhereInput
     some?: WorkerFamilyMemberWhereInput
@@ -29070,6 +30696,10 @@ export namespace Prisma {
   }
 
   export type WhatsappSessionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type RejectionLogOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -29851,6 +31481,7 @@ export namespace Prisma {
     priority?: SortOrder
     status?: SortOrder
     assignedToId?: SortOrder
+    createdById?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29876,6 +31507,7 @@ export namespace Prisma {
     priority?: SortOrder
     status?: SortOrder
     assignedToId?: SortOrder
+    createdById?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29901,6 +31533,7 @@ export namespace Prisma {
     priority?: SortOrder
     status?: SortOrder
     assignedToId?: SortOrder
+    createdById?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -30191,6 +31824,64 @@ export namespace Prisma {
     _max?: NestedEnumWhatsappFlowNullableFilter<$PrismaModel>
   }
 
+  export type EnumRejectionKindFilter<$PrismaModel = never> = {
+    equals?: $Enums.RejectionKind | EnumRejectionKindFieldRefInput<$PrismaModel>
+    in?: $Enums.RejectionKind[] | ListEnumRejectionKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RejectionKind[] | ListEnumRejectionKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumRejectionKindFilter<$PrismaModel> | $Enums.RejectionKind
+  }
+
+  export type RejectionLogCountOrderByAggregateInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    entityLabel?: SortOrder
+    affectedUser?: SortOrder
+    amount?: SortOrder
+    reason?: SortOrder
+    rejectedById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type RejectionLogAvgOrderByAggregateInput = {
+    amount?: SortOrder
+  }
+
+  export type RejectionLogMaxOrderByAggregateInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    entityLabel?: SortOrder
+    affectedUser?: SortOrder
+    amount?: SortOrder
+    reason?: SortOrder
+    rejectedById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type RejectionLogMinOrderByAggregateInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    entityLabel?: SortOrder
+    affectedUser?: SortOrder
+    amount?: SortOrder
+    reason?: SortOrder
+    rejectedById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type RejectionLogSumOrderByAggregateInput = {
+    amount?: SortOrder
+  }
+
+  export type EnumRejectionKindWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RejectionKind | EnumRejectionKindFieldRefInput<$PrismaModel>
+    in?: $Enums.RejectionKind[] | ListEnumRejectionKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RejectionKind[] | ListEnumRejectionKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumRejectionKindWithAggregatesFilter<$PrismaModel> | $Enums.RejectionKind
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRejectionKindFilter<$PrismaModel>
+    _max?: NestedEnumRejectionKindFilter<$PrismaModel>
+  }
+
   export type PropertyTypeCreatelocationOptionsInput = {
     set: string[]
   }
@@ -30312,6 +32003,10 @@ export namespace Prisma {
     connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
   }
 
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
+  }
+
   export type NullableDecimalFieldUpdateOperationsInput = {
     set?: Decimal | DecimalJsLike | number | string | null
     increment?: Decimal | DecimalJsLike | number | string
@@ -30326,10 +32021,6 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
-  }
-
-  export type NullableDateTimeFieldUpdateOperationsInput = {
-    set?: Date | string | null
   }
 
   export type PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput = {
@@ -30610,6 +32301,13 @@ export namespace Prisma {
     connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
   }
 
+  export type MaintenanceRequestCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutCreatedByInput, MaintenanceRequestUncheckedCreateWithoutCreatedByInput> | MaintenanceRequestCreateWithoutCreatedByInput[] | MaintenanceRequestUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutCreatedByInput | MaintenanceRequestCreateOrConnectWithoutCreatedByInput[]
+    createMany?: MaintenanceRequestCreateManyCreatedByInputEnvelope
+    connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+  }
+
   export type MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput = {
     create?: XOR<MaintenanceAttachmentCreateWithoutCreatedByInput, MaintenanceAttachmentUncheckedCreateWithoutCreatedByInput> | MaintenanceAttachmentCreateWithoutCreatedByInput[] | MaintenanceAttachmentUncheckedCreateWithoutCreatedByInput[]
     connectOrCreate?: MaintenanceAttachmentCreateOrConnectWithoutCreatedByInput | MaintenanceAttachmentCreateOrConnectWithoutCreatedByInput[]
@@ -30715,6 +32413,13 @@ export namespace Prisma {
     connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
   }
 
+  export type RejectionLogCreateNestedManyWithoutRejectedByInput = {
+    create?: XOR<RejectionLogCreateWithoutRejectedByInput, RejectionLogUncheckedCreateWithoutRejectedByInput> | RejectionLogCreateWithoutRejectedByInput[] | RejectionLogUncheckedCreateWithoutRejectedByInput[]
+    connectOrCreate?: RejectionLogCreateOrConnectWithoutRejectedByInput | RejectionLogCreateOrConnectWithoutRejectedByInput[]
+    createMany?: RejectionLogCreateManyRejectedByInputEnvelope
+    connect?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+  }
+
   export type WorkerFamilyMemberCreateNestedManyWithoutWorkerInput = {
     create?: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput> | WorkerFamilyMemberCreateWithoutWorkerInput[] | WorkerFamilyMemberUncheckedCreateWithoutWorkerInput[]
     connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
@@ -30739,6 +32444,13 @@ export namespace Prisma {
     create?: XOR<MaintenanceRequestCreateWithoutAssignedToInput, MaintenanceRequestUncheckedCreateWithoutAssignedToInput> | MaintenanceRequestCreateWithoutAssignedToInput[] | MaintenanceRequestUncheckedCreateWithoutAssignedToInput[]
     connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutAssignedToInput | MaintenanceRequestCreateOrConnectWithoutAssignedToInput[]
     createMany?: MaintenanceRequestCreateManyAssignedToInputEnvelope
+    connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+  }
+
+  export type MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutCreatedByInput, MaintenanceRequestUncheckedCreateWithoutCreatedByInput> | MaintenanceRequestCreateWithoutCreatedByInput[] | MaintenanceRequestUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutCreatedByInput | MaintenanceRequestCreateOrConnectWithoutCreatedByInput[]
+    createMany?: MaintenanceRequestCreateManyCreatedByInputEnvelope
     connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
   }
 
@@ -30847,6 +32559,13 @@ export namespace Prisma {
     connect?: WhatsappSessionWhereUniqueInput | WhatsappSessionWhereUniqueInput[]
   }
 
+  export type RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput = {
+    create?: XOR<RejectionLogCreateWithoutRejectedByInput, RejectionLogUncheckedCreateWithoutRejectedByInput> | RejectionLogCreateWithoutRejectedByInput[] | RejectionLogUncheckedCreateWithoutRejectedByInput[]
+    connectOrCreate?: RejectionLogCreateOrConnectWithoutRejectedByInput | RejectionLogCreateOrConnectWithoutRejectedByInput[]
+    createMany?: RejectionLogCreateManyRejectedByInputEnvelope
+    connect?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+  }
+
   export type WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput = {
     create?: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput> | WorkerFamilyMemberCreateWithoutWorkerInput[] | WorkerFamilyMemberUncheckedCreateWithoutWorkerInput[]
     connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
@@ -30897,6 +32616,20 @@ export namespace Prisma {
     connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
     update?: MaintenanceRequestUpdateWithWhereUniqueWithoutAssignedToInput | MaintenanceRequestUpdateWithWhereUniqueWithoutAssignedToInput[]
     updateMany?: MaintenanceRequestUpdateManyWithWhereWithoutAssignedToInput | MaintenanceRequestUpdateManyWithWhereWithoutAssignedToInput[]
+    deleteMany?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
+  }
+
+  export type MaintenanceRequestUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutCreatedByInput, MaintenanceRequestUncheckedCreateWithoutCreatedByInput> | MaintenanceRequestCreateWithoutCreatedByInput[] | MaintenanceRequestUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutCreatedByInput | MaintenanceRequestCreateOrConnectWithoutCreatedByInput[]
+    upsert?: MaintenanceRequestUpsertWithWhereUniqueWithoutCreatedByInput | MaintenanceRequestUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: MaintenanceRequestCreateManyCreatedByInputEnvelope
+    set?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    disconnect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    delete?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    update?: MaintenanceRequestUpdateWithWhereUniqueWithoutCreatedByInput | MaintenanceRequestUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: MaintenanceRequestUpdateManyWithWhereWithoutCreatedByInput | MaintenanceRequestUpdateManyWithWhereWithoutCreatedByInput[]
     deleteMany?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
   }
 
@@ -31110,6 +32843,20 @@ export namespace Prisma {
     deleteMany?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
   }
 
+  export type RejectionLogUpdateManyWithoutRejectedByNestedInput = {
+    create?: XOR<RejectionLogCreateWithoutRejectedByInput, RejectionLogUncheckedCreateWithoutRejectedByInput> | RejectionLogCreateWithoutRejectedByInput[] | RejectionLogUncheckedCreateWithoutRejectedByInput[]
+    connectOrCreate?: RejectionLogCreateOrConnectWithoutRejectedByInput | RejectionLogCreateOrConnectWithoutRejectedByInput[]
+    upsert?: RejectionLogUpsertWithWhereUniqueWithoutRejectedByInput | RejectionLogUpsertWithWhereUniqueWithoutRejectedByInput[]
+    createMany?: RejectionLogCreateManyRejectedByInputEnvelope
+    set?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+    disconnect?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+    delete?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+    connect?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+    update?: RejectionLogUpdateWithWhereUniqueWithoutRejectedByInput | RejectionLogUpdateWithWhereUniqueWithoutRejectedByInput[]
+    updateMany?: RejectionLogUpdateManyWithWhereWithoutRejectedByInput | RejectionLogUpdateManyWithWhereWithoutRejectedByInput[]
+    deleteMany?: RejectionLogScalarWhereInput | RejectionLogScalarWhereInput[]
+  }
+
   export type WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput = {
     create?: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput> | WorkerFamilyMemberCreateWithoutWorkerInput[] | WorkerFamilyMemberUncheckedCreateWithoutWorkerInput[]
     connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
@@ -31159,6 +32906,20 @@ export namespace Prisma {
     connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
     update?: MaintenanceRequestUpdateWithWhereUniqueWithoutAssignedToInput | MaintenanceRequestUpdateWithWhereUniqueWithoutAssignedToInput[]
     updateMany?: MaintenanceRequestUpdateManyWithWhereWithoutAssignedToInput | MaintenanceRequestUpdateManyWithWhereWithoutAssignedToInput[]
+    deleteMany?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
+  }
+
+  export type MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<MaintenanceRequestCreateWithoutCreatedByInput, MaintenanceRequestUncheckedCreateWithoutCreatedByInput> | MaintenanceRequestCreateWithoutCreatedByInput[] | MaintenanceRequestUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutCreatedByInput | MaintenanceRequestCreateOrConnectWithoutCreatedByInput[]
+    upsert?: MaintenanceRequestUpsertWithWhereUniqueWithoutCreatedByInput | MaintenanceRequestUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: MaintenanceRequestCreateManyCreatedByInputEnvelope
+    set?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    disconnect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    delete?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    connect?: MaintenanceRequestWhereUniqueInput | MaintenanceRequestWhereUniqueInput[]
+    update?: MaintenanceRequestUpdateWithWhereUniqueWithoutCreatedByInput | MaintenanceRequestUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: MaintenanceRequestUpdateManyWithWhereWithoutCreatedByInput | MaintenanceRequestUpdateManyWithWhereWithoutCreatedByInput[]
     deleteMany?: MaintenanceRequestScalarWhereInput | MaintenanceRequestScalarWhereInput[]
   }
 
@@ -31370,6 +33131,20 @@ export namespace Prisma {
     update?: WhatsappSessionUpdateWithWhereUniqueWithoutUserInput | WhatsappSessionUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: WhatsappSessionUpdateManyWithWhereWithoutUserInput | WhatsappSessionUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: WhatsappSessionScalarWhereInput | WhatsappSessionScalarWhereInput[]
+  }
+
+  export type RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput = {
+    create?: XOR<RejectionLogCreateWithoutRejectedByInput, RejectionLogUncheckedCreateWithoutRejectedByInput> | RejectionLogCreateWithoutRejectedByInput[] | RejectionLogUncheckedCreateWithoutRejectedByInput[]
+    connectOrCreate?: RejectionLogCreateOrConnectWithoutRejectedByInput | RejectionLogCreateOrConnectWithoutRejectedByInput[]
+    upsert?: RejectionLogUpsertWithWhereUniqueWithoutRejectedByInput | RejectionLogUpsertWithWhereUniqueWithoutRejectedByInput[]
+    createMany?: RejectionLogCreateManyRejectedByInputEnvelope
+    set?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+    disconnect?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+    delete?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+    connect?: RejectionLogWhereUniqueInput | RejectionLogWhereUniqueInput[]
+    update?: RejectionLogUpdateWithWhereUniqueWithoutRejectedByInput | RejectionLogUpdateWithWhereUniqueWithoutRejectedByInput[]
+    updateMany?: RejectionLogUpdateManyWithWhereWithoutRejectedByInput | RejectionLogUpdateManyWithWhereWithoutRejectedByInput[]
+    deleteMany?: RejectionLogScalarWhereInput | RejectionLogScalarWhereInput[]
   }
 
   export type WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput = {
@@ -31924,6 +33699,12 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type UserCreateNestedOneWithoutCreatedRequestsInput = {
+    create?: XOR<UserCreateWithoutCreatedRequestsInput, UserUncheckedCreateWithoutCreatedRequestsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCreatedRequestsInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type MaintenanceAttachmentCreateNestedManyWithoutRequestInput = {
     create?: XOR<MaintenanceAttachmentCreateWithoutRequestInput, MaintenanceAttachmentUncheckedCreateWithoutRequestInput> | MaintenanceAttachmentCreateWithoutRequestInput[] | MaintenanceAttachmentUncheckedCreateWithoutRequestInput[]
     connectOrCreate?: MaintenanceAttachmentCreateOrConnectWithoutRequestInput | MaintenanceAttachmentCreateOrConnectWithoutRequestInput[]
@@ -32042,6 +33823,16 @@ export namespace Prisma {
     delete?: UserWhereInput | boolean
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAssignedRequestsInput, UserUpdateWithoutAssignedRequestsInput>, UserUncheckedUpdateWithoutAssignedRequestsInput>
+  }
+
+  export type UserUpdateOneWithoutCreatedRequestsNestedInput = {
+    create?: XOR<UserCreateWithoutCreatedRequestsInput, UserUncheckedCreateWithoutCreatedRequestsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCreatedRequestsInput
+    upsert?: UserUpsertWithoutCreatedRequestsInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCreatedRequestsInput, UserUpdateWithoutCreatedRequestsInput>, UserUncheckedUpdateWithoutCreatedRequestsInput>
   }
 
   export type MaintenanceAttachmentUpdateManyWithoutRequestNestedInput = {
@@ -32358,6 +34149,24 @@ export namespace Prisma {
     update?: XOR<XOR<MaintenanceRequestUpdateToOneWithWhereWithoutWhatsappSessionsInput, MaintenanceRequestUpdateWithoutWhatsappSessionsInput>, MaintenanceRequestUncheckedUpdateWithoutWhatsappSessionsInput>
   }
 
+  export type UserCreateNestedOneWithoutRejectionLogsInput = {
+    create?: XOR<UserCreateWithoutRejectionLogsInput, UserUncheckedCreateWithoutRejectionLogsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutRejectionLogsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumRejectionKindFieldUpdateOperationsInput = {
+    set?: $Enums.RejectionKind
+  }
+
+  export type UserUpdateOneRequiredWithoutRejectionLogsNestedInput = {
+    create?: XOR<UserCreateWithoutRejectionLogsInput, UserUncheckedCreateWithoutRejectionLogsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutRejectionLogsInput
+    upsert?: UserUpsertWithoutRejectionLogsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutRejectionLogsInput, UserUpdateWithoutRejectionLogsInput>, UserUncheckedUpdateWithoutRejectionLogsInput>
+  }
+
   export type NestedUuidFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -32516,17 +34325,6 @@ export namespace Prisma {
     not?: NestedUuidNullableFilter<$PrismaModel> | string | null
   }
 
-  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-  }
-
   export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -32536,6 +34334,17 @@ export namespace Prisma {
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
   }
 
   export type NestedUuidNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -32550,6 +34359,20 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedStringNullableFilter<$PrismaModel>
     _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -32593,20 +34416,6 @@ export namespace Prisma {
     gt?: number | FloatFieldRefInput<$PrismaModel>
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumUserTypeFilter<$PrismaModel = never> = {
@@ -32941,6 +34750,23 @@ export namespace Prisma {
     _max?: NestedEnumWhatsappFlowNullableFilter<$PrismaModel>
   }
 
+  export type NestedEnumRejectionKindFilter<$PrismaModel = never> = {
+    equals?: $Enums.RejectionKind | EnumRejectionKindFieldRefInput<$PrismaModel>
+    in?: $Enums.RejectionKind[] | ListEnumRejectionKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RejectionKind[] | ListEnumRejectionKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumRejectionKindFilter<$PrismaModel> | $Enums.RejectionKind
+  }
+
+  export type NestedEnumRejectionKindWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RejectionKind | EnumRejectionKindFieldRefInput<$PrismaModel>
+    in?: $Enums.RejectionKind[] | ListEnumRejectionKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RejectionKind[] | ListEnumRejectionKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumRejectionKindWithAggregatesFilter<$PrismaModel> | $Enums.RejectionKind
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRejectionKindFilter<$PrismaModel>
+    _max?: NestedEnumRejectionKindFilter<$PrismaModel>
+  }
+
   export type PropertyCreateWithoutPropertyTypeInput = {
     id?: string
     name: string
@@ -32955,6 +34781,7 @@ export namespace Prisma {
     plotNumber?: string | null
     notes?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -32983,6 +34810,7 @@ export namespace Prisma {
     notes?: string | null
     ownerId?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -33040,6 +34868,7 @@ export namespace Prisma {
     notes?: StringNullableFilter<"Property"> | string | null
     ownerId?: UuidNullableFilter<"Property"> | string | null
     approved?: BoolFilter<"Property"> | boolean
+    submittedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
     serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
@@ -33121,6 +34950,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -33135,6 +34965,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -33177,6 +35008,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -33191,6 +35023,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -33295,6 +35128,7 @@ export namespace Prisma {
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -33312,6 +35146,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -33430,6 +35265,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -33444,6 +35280,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -33486,6 +35323,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -33500,6 +35338,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -33597,6 +35436,7 @@ export namespace Prisma {
     priority?: EnumPriorityFilter<"MaintenanceRequest"> | $Enums.Priority
     status?: EnumRequestStatusFilter<"MaintenanceRequest"> | $Enums.RequestStatus
     assignedToId?: UuidNullableFilter<"MaintenanceRequest"> | string | null
+    createdById?: UuidNullableFilter<"MaintenanceRequest"> | string | null
     notes?: StringNullableFilter<"MaintenanceRequest"> | string | null
     createdAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
     updatedAt?: DateTimeFilter<"MaintenanceRequest"> | Date | string
@@ -33625,6 +35465,7 @@ export namespace Prisma {
     plotNumber?: string | null
     notes?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -33654,6 +35495,7 @@ export namespace Prisma {
     notes?: string | null
     ownerId?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -33708,6 +35550,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -33723,6 +35566,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -33764,6 +35608,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -33779,6 +35624,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -33809,6 +35655,7 @@ export namespace Prisma {
     user: UserCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -33826,6 +35673,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -33982,6 +35830,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -34011,6 +35860,7 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -34071,6 +35921,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -34086,6 +35937,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -34127,6 +35979,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -34142,6 +35995,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -34291,6 +36145,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -34308,6 +36163,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -34359,6 +36215,7 @@ export namespace Prisma {
     user: UserCreateNestedOneWithoutRequestsInput
     unit?: UnitCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -34376,6 +36233,7 @@ export namespace Prisma {
     location: string
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -34402,6 +36260,76 @@ export namespace Prisma {
 
   export type MaintenanceRequestCreateManyAssignedToInputEnvelope = {
     data: MaintenanceRequestCreateManyAssignedToInput | MaintenanceRequestCreateManyAssignedToInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type MaintenanceRequestCreateWithoutCreatedByInput = {
+    id?: string
+    title: string
+    description: string
+    location: string
+    priority?: $Enums.Priority
+    status?: $Enums.RequestStatus
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    completedAt?: Date | string | null
+    enRouteAt?: Date | string | null
+    inProgressAt?: Date | string | null
+    holdReason?: string | null
+    heldAt?: Date | string | null
+    heldFromStatus?: $Enums.RequestStatus | null
+    resumeRequestedAt?: Date | string | null
+    completionCode?: string | null
+    completionCodeAt?: Date | string | null
+    user: UserCreateNestedOneWithoutRequestsInput
+    unit?: UnitCreateNestedOneWithoutRequestsInput
+    property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
+    assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
+    taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
+    notifications?: NotificationCreateNestedManyWithoutRelatedInput
+    supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutTaskInput
+  }
+
+  export type MaintenanceRequestUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    userId: string
+    unitId?: string | null
+    propertyId?: string | null
+    title: string
+    description: string
+    location: string
+    priority?: $Enums.Priority
+    status?: $Enums.RequestStatus
+    assignedToId?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    completedAt?: Date | string | null
+    enRouteAt?: Date | string | null
+    inProgressAt?: Date | string | null
+    holdReason?: string | null
+    heldAt?: Date | string | null
+    heldFromStatus?: $Enums.RequestStatus | null
+    resumeRequestedAt?: Date | string | null
+    completionCode?: string | null
+    completionCodeAt?: Date | string | null
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutRequestInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutRequestInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutRelatedInput
+    supplyRequests?: SupplyRequestUncheckedCreateNestedManyWithoutRequestInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutTaskInput
+  }
+
+  export type MaintenanceRequestCreateOrConnectWithoutCreatedByInput = {
+    where: MaintenanceRequestWhereUniqueInput
+    create: XOR<MaintenanceRequestCreateWithoutCreatedByInput, MaintenanceRequestUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type MaintenanceRequestCreateManyCreatedByInputEnvelope = {
+    data: MaintenanceRequestCreateManyCreatedByInput | MaintenanceRequestCreateManyCreatedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -34945,6 +36873,7 @@ export namespace Prisma {
     plotNumber?: string | null
     notes?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -34973,6 +36902,7 @@ export namespace Prisma {
     plotNumber?: string | null
     notes?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -35024,6 +36954,36 @@ export namespace Prisma {
 
   export type WhatsappSessionCreateManyUserInputEnvelope = {
     data: WhatsappSessionCreateManyUserInput | WhatsappSessionCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type RejectionLogCreateWithoutRejectedByInput = {
+    id?: string
+    kind: $Enums.RejectionKind
+    entityLabel: string
+    affectedUser?: string | null
+    amount?: Decimal | DecimalJsLike | number | string | null
+    reason?: string | null
+    createdAt?: Date | string
+  }
+
+  export type RejectionLogUncheckedCreateWithoutRejectedByInput = {
+    id?: string
+    kind: $Enums.RejectionKind
+    entityLabel: string
+    affectedUser?: string | null
+    amount?: Decimal | DecimalJsLike | number | string | null
+    reason?: string | null
+    createdAt?: Date | string
+  }
+
+  export type RejectionLogCreateOrConnectWithoutRejectedByInput = {
+    where: RejectionLogWhereUniqueInput
+    create: XOR<RejectionLogCreateWithoutRejectedByInput, RejectionLogUncheckedCreateWithoutRejectedByInput>
+  }
+
+  export type RejectionLogCreateManyRejectedByInputEnvelope = {
+    data: RejectionLogCreateManyRejectedByInput | RejectionLogCreateManyRejectedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -35132,6 +37092,22 @@ export namespace Prisma {
   export type MaintenanceRequestUpdateManyWithWhereWithoutAssignedToInput = {
     where: MaintenanceRequestScalarWhereInput
     data: XOR<MaintenanceRequestUpdateManyMutationInput, MaintenanceRequestUncheckedUpdateManyWithoutAssignedToInput>
+  }
+
+  export type MaintenanceRequestUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: MaintenanceRequestWhereUniqueInput
+    update: XOR<MaintenanceRequestUpdateWithoutCreatedByInput, MaintenanceRequestUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<MaintenanceRequestCreateWithoutCreatedByInput, MaintenanceRequestUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type MaintenanceRequestUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: MaintenanceRequestWhereUniqueInput
+    data: XOR<MaintenanceRequestUpdateWithoutCreatedByInput, MaintenanceRequestUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type MaintenanceRequestUpdateManyWithWhereWithoutCreatedByInput = {
+    where: MaintenanceRequestScalarWhereInput
+    data: XOR<MaintenanceRequestUpdateManyMutationInput, MaintenanceRequestUncheckedUpdateManyWithoutCreatedByInput>
   }
 
   export type MaintenanceAttachmentUpsertWithWhereUniqueWithoutCreatedByInput = {
@@ -35487,6 +37463,36 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"WhatsappSession"> | Date | string
   }
 
+  export type RejectionLogUpsertWithWhereUniqueWithoutRejectedByInput = {
+    where: RejectionLogWhereUniqueInput
+    update: XOR<RejectionLogUpdateWithoutRejectedByInput, RejectionLogUncheckedUpdateWithoutRejectedByInput>
+    create: XOR<RejectionLogCreateWithoutRejectedByInput, RejectionLogUncheckedCreateWithoutRejectedByInput>
+  }
+
+  export type RejectionLogUpdateWithWhereUniqueWithoutRejectedByInput = {
+    where: RejectionLogWhereUniqueInput
+    data: XOR<RejectionLogUpdateWithoutRejectedByInput, RejectionLogUncheckedUpdateWithoutRejectedByInput>
+  }
+
+  export type RejectionLogUpdateManyWithWhereWithoutRejectedByInput = {
+    where: RejectionLogScalarWhereInput
+    data: XOR<RejectionLogUpdateManyMutationInput, RejectionLogUncheckedUpdateManyWithoutRejectedByInput>
+  }
+
+  export type RejectionLogScalarWhereInput = {
+    AND?: RejectionLogScalarWhereInput | RejectionLogScalarWhereInput[]
+    OR?: RejectionLogScalarWhereInput[]
+    NOT?: RejectionLogScalarWhereInput | RejectionLogScalarWhereInput[]
+    id?: UuidFilter<"RejectionLog"> | string
+    kind?: EnumRejectionKindFilter<"RejectionLog"> | $Enums.RejectionKind
+    entityLabel?: StringFilter<"RejectionLog"> | string
+    affectedUser?: StringNullableFilter<"RejectionLog"> | string | null
+    amount?: DecimalNullableFilter<"RejectionLog"> | Decimal | DecimalJsLike | number | string | null
+    reason?: StringNullableFilter<"RejectionLog"> | string | null
+    rejectedById?: UuidFilter<"RejectionLog"> | string
+    createdAt?: DateTimeFilter<"RejectionLog"> | Date | string
+  }
+
   export type WorkerFamilyMemberUpsertWithWhereUniqueWithoutWorkerInput = {
     where: WorkerFamilyMemberWhereUniqueInput
     update: XOR<WorkerFamilyMemberUpdateWithoutWorkerInput, WorkerFamilyMemberUncheckedUpdateWithoutWorkerInput>
@@ -35560,6 +37566,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -35575,6 +37582,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
   }
 
   export type UserUncheckedCreateWithoutFamilyMembersInput = {
@@ -35616,6 +37624,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -35631,6 +37640,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
   }
 
   export type UserCreateOrConnectWithoutFamilyMembersInput = {
@@ -35688,6 +37698,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -35703,6 +37714,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFamilyMembersInput = {
@@ -35744,6 +37756,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -35759,6 +37772,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
   }
 
   export type UnitCreateWithoutTenanciesInput = {
@@ -35831,6 +37845,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -35845,6 +37860,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -35887,6 +37903,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -35901,6 +37918,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -36082,6 +38100,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -36096,6 +38115,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -36138,6 +38158,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -36152,6 +38173,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -36201,6 +38223,7 @@ export namespace Prisma {
     plotNumber?: string | null
     notes?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -36230,6 +38253,7 @@ export namespace Prisma {
     notes?: string | null
     ownerId?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -36334,6 +38358,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -36348,6 +38373,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -36390,6 +38416,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -36404,6 +38431,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -36451,6 +38479,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -36465,6 +38494,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -36507,6 +38537,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -36521,6 +38552,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -36554,6 +38586,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36583,6 +38616,7 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36699,6 +38733,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -36713,6 +38748,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -36755,6 +38791,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -36769,6 +38806,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -36822,6 +38860,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -36836,6 +38875,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -36878,6 +38918,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -36892,6 +38933,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -37014,6 +39056,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -37028,6 +39071,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -37070,6 +39114,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -37084,6 +39129,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -37131,6 +39177,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -37145,6 +39192,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -37187,6 +39235,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -37201,6 +39250,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -37429,6 +39479,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -37443,6 +39494,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -37485,6 +39537,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -37499,6 +39552,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -37552,6 +39606,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -37566,6 +39621,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -37608,6 +39664,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -37622,6 +39679,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -37739,6 +39797,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -37753,6 +39812,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -37795,6 +39855,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -37809,6 +39870,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -37856,6 +39918,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -37870,6 +39933,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -37912,6 +39976,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -37926,6 +39991,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -38067,6 +40133,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -38081,6 +40148,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -38123,6 +40191,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -38137,6 +40206,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -38190,6 +40260,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -38204,6 +40275,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -38246,6 +40318,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -38260,6 +40333,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -38400,6 +40474,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -38414,6 +40489,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -38456,6 +40532,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -38470,6 +40547,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -38622,6 +40700,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -38636,6 +40715,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -38678,6 +40758,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -38692,6 +40773,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -38733,6 +40815,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -38748,6 +40831,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -38789,6 +40873,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -38804,6 +40889,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -38857,6 +40943,7 @@ export namespace Prisma {
     plotNumber?: string | null
     notes?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -38886,6 +40973,7 @@ export namespace Prisma {
     notes?: string | null
     ownerId?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -38940,6 +41028,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -38955,6 +41044,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -38996,6 +41086,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -39011,12 +41102,134 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
   export type UserCreateOrConnectWithoutAssignedRequestsInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutAssignedRequestsInput, UserUncheckedCreateWithoutAssignedRequestsInput>
+  }
+
+  export type UserCreateWithoutCreatedRequestsInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserUncheckedCreateWithoutCreatedRequestsInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserCreateOrConnectWithoutCreatedRequestsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutCreatedRequestsInput, UserUncheckedCreateWithoutCreatedRequestsInput>
   }
 
   export type MaintenanceAttachmentCreateWithoutRequestInput = {
@@ -39232,6 +41445,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -39247,6 +41461,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -39288,6 +41503,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -39303,6 +41519,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -39368,6 +41585,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -39397,6 +41615,7 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -39457,6 +41676,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -39472,6 +41692,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -39513,6 +41734,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -39528,6 +41750,134 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UserUpsertWithoutCreatedRequestsInput = {
+    update: XOR<UserUpdateWithoutCreatedRequestsInput, UserUncheckedUpdateWithoutCreatedRequestsInput>
+    create: XOR<UserCreateWithoutCreatedRequestsInput, UserUncheckedCreateWithoutCreatedRequestsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutCreatedRequestsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutCreatedRequestsInput, UserUncheckedUpdateWithoutCreatedRequestsInput>
+  }
+
+  export type UserUpdateWithoutCreatedRequestsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutCreatedRequestsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -39634,6 +41984,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -39651,6 +42002,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -39713,6 +42065,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -39727,6 +42080,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -39769,6 +42123,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -39783,6 +42138,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -39830,6 +42186,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -39844,6 +42201,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -39886,6 +42244,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -39900,6 +42259,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -39942,6 +42302,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -39959,6 +42320,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40027,6 +42389,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -40041,6 +42404,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -40083,6 +42447,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -40097,6 +42462,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -40150,6 +42516,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -40164,6 +42531,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -40206,6 +42574,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -40220,6 +42589,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -40246,6 +42616,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
@@ -40263,6 +42634,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -40325,6 +42697,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     tenancies?: TenancyCreateNestedManyWithoutTenantInput
@@ -40339,6 +42712,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -40381,6 +42755,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
@@ -40395,6 +42770,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -40437,6 +42813,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
@@ -40454,6 +42831,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40522,6 +42900,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     tenancies?: TenancyUpdateManyWithoutTenantNestedInput
@@ -40536,6 +42915,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -40578,6 +42958,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
@@ -40592,6 +42973,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -40618,6 +43000,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
@@ -40635,6 +43018,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -40697,6 +43081,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     tenancies?: TenancyCreateNestedManyWithoutTenantInput
@@ -40711,6 +43096,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -40753,6 +43139,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
@@ -40767,6 +43154,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -40809,6 +43197,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
@@ -40826,6 +43215,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40894,6 +43284,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     tenancies?: TenancyUpdateManyWithoutTenantNestedInput
@@ -40908,6 +43299,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -40950,6 +43342,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
@@ -40964,6 +43357,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -41006,6 +43400,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     tenancies?: TenancyCreateNestedManyWithoutTenantInput
@@ -41020,6 +43415,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -41062,6 +43458,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
@@ -41076,6 +43473,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -41107,6 +43505,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     supplyRequests?: SupplyRequestCreateNestedManyWithoutRequestInput
@@ -41124,6 +43523,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -41197,6 +43597,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     tenancies?: TenancyUpdateManyWithoutTenantNestedInput
@@ -41211,6 +43612,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -41253,6 +43655,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
@@ -41267,6 +43670,7 @@ export namespace Prisma {
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -41304,6 +43708,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
@@ -41321,6 +43726,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -41378,6 +43784,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -41392,6 +43799,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -41434,6 +43842,7 @@ export namespace Prisma {
     unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
     requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
     assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
     attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
     taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -41448,6 +43857,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
     supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
     ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -41479,6 +43889,7 @@ export namespace Prisma {
     unit?: UnitCreateNestedOneWithoutRequestsInput
     property?: PropertyCreateNestedOneWithoutCommonAreaRequestsInput
     assignedTo?: UserCreateNestedOneWithoutAssignedRequestsInput
+    createdBy?: UserCreateNestedOneWithoutCreatedRequestsInput
     attachments?: MaintenanceAttachmentCreateNestedManyWithoutRequestInput
     taskLogs?: TaskLogCreateNestedManyWithoutRequestInput
     notifications?: NotificationCreateNestedManyWithoutRelatedInput
@@ -41496,6 +43907,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -41569,6 +43981,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -41583,6 +43996,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -41625,6 +44039,7 @@ export namespace Prisma {
     unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
     requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
     assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
     attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
     taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -41639,6 +44054,7 @@ export namespace Prisma {
     supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -41676,6 +44092,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -41693,6 +44110,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -41711,6 +44129,254 @@ export namespace Prisma {
     supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
   }
 
+  export type UserCreateWithoutRejectionLogsInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserUncheckedCreateWithoutRejectionLogsInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserCreateOrConnectWithoutRejectionLogsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutRejectionLogsInput, UserUncheckedCreateWithoutRejectionLogsInput>
+  }
+
+  export type UserUpsertWithoutRejectionLogsInput = {
+    update: XOR<UserUpdateWithoutRejectionLogsInput, UserUncheckedUpdateWithoutRejectionLogsInput>
+    create: XOR<UserCreateWithoutRejectionLogsInput, UserUncheckedCreateWithoutRejectionLogsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutRejectionLogsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutRejectionLogsInput, UserUncheckedUpdateWithoutRejectionLogsInput>
+  }
+
+  export type UserUpdateWithoutRejectionLogsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutRejectionLogsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+  }
+
   export type PropertyCreateManyPropertyTypeInput = {
     id?: string
     name: string
@@ -41726,6 +44392,7 @@ export namespace Prisma {
     notes?: string | null
     ownerId?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -41749,6 +44416,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -41777,6 +44445,7 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -41804,6 +44473,7 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -41847,6 +44517,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -41961,6 +44632,7 @@ export namespace Prisma {
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -41978,6 +44650,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42007,6 +44680,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42031,6 +44705,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -42104,6 +44779,7 @@ export namespace Prisma {
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -42121,6 +44797,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42150,6 +44827,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42293,6 +44971,7 @@ export namespace Prisma {
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
     assignedToId?: string | null
+    createdById?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -42317,6 +44996,32 @@ export namespace Prisma {
     location: string
     priority?: $Enums.Priority
     status?: $Enums.RequestStatus
+    createdById?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    completedAt?: Date | string | null
+    enRouteAt?: Date | string | null
+    inProgressAt?: Date | string | null
+    holdReason?: string | null
+    heldAt?: Date | string | null
+    heldFromStatus?: $Enums.RequestStatus | null
+    resumeRequestedAt?: Date | string | null
+    completionCode?: string | null
+    completionCodeAt?: Date | string | null
+  }
+
+  export type MaintenanceRequestCreateManyCreatedByInput = {
+    id?: string
+    userId: string
+    unitId?: string | null
+    propertyId?: string | null
+    title: string
+    description: string
+    location: string
+    priority?: $Enums.Priority
+    status?: $Enums.RequestStatus
+    assignedToId?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -42536,6 +45241,7 @@ export namespace Prisma {
     plotNumber?: string | null
     notes?: string | null
     approved?: boolean
+    submittedAt?: Date | string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -42553,6 +45259,16 @@ export namespace Prisma {
     data?: NullableJsonNullValueInput | InputJsonValue
     taskId?: string | null
     updatedAt?: Date | string
+    createdAt?: Date | string
+  }
+
+  export type RejectionLogCreateManyRejectedByInput = {
+    id?: string
+    kind: $Enums.RejectionKind
+    entityLabel: string
+    affectedUser?: string | null
+    amount?: Decimal | DecimalJsLike | number | string | null
+    reason?: string | null
     createdAt?: Date | string
   }
 
@@ -42592,6 +45308,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
     assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -42609,6 +45326,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42638,6 +45356,7 @@ export namespace Prisma {
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
     assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42674,6 +45393,7 @@ export namespace Prisma {
     user?: UserUpdateOneRequiredWithoutRequestsNestedInput
     unit?: UnitUpdateOneWithoutRequestsNestedInput
     property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
+    createdBy?: UserUpdateOneWithoutCreatedRequestsNestedInput
     attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
     taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
     notifications?: NotificationUpdateManyWithoutRelatedNestedInput
@@ -42691,6 +45411,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42720,6 +45441,92 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    enRouteAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inProgressAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    holdReason?: NullableStringFieldUpdateOperationsInput | string | null
+    heldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    heldFromStatus?: NullableEnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus | null
+    resumeRequestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completionCode?: NullableStringFieldUpdateOperationsInput | string | null
+    completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type MaintenanceRequestUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    location?: StringFieldUpdateOperationsInput | string
+    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    enRouteAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inProgressAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    holdReason?: NullableStringFieldUpdateOperationsInput | string | null
+    heldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    heldFromStatus?: NullableEnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus | null
+    resumeRequestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completionCode?: NullableStringFieldUpdateOperationsInput | string | null
+    completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    user?: UserUpdateOneRequiredWithoutRequestsNestedInput
+    unit?: UnitUpdateOneWithoutRequestsNestedInput
+    property?: PropertyUpdateOneWithoutCommonAreaRequestsNestedInput
+    assignedTo?: UserUpdateOneWithoutAssignedRequestsNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutRequestNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutRequestNestedInput
+    notifications?: NotificationUpdateManyWithoutRelatedNestedInput
+    supplyRequests?: SupplyRequestUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutTaskNestedInput
+  }
+
+  export type MaintenanceRequestUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    location?: StringFieldUpdateOperationsInput | string
+    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    enRouteAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inProgressAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    holdReason?: NullableStringFieldUpdateOperationsInput | string | null
+    heldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    heldFromStatus?: NullableEnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus | null
+    resumeRequestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completionCode?: NullableStringFieldUpdateOperationsInput | string | null
+    completionCodeAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutRequestNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutRequestNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutRelatedNestedInput
+    supplyRequests?: SupplyRequestUncheckedUpdateManyWithoutRequestNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutTaskNestedInput
+  }
+
+  export type MaintenanceRequestUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    unitId?: NullableStringFieldUpdateOperationsInput | string | null
+    propertyId?: NullableStringFieldUpdateOperationsInput | string | null
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    location?: StringFieldUpdateOperationsInput | string
+    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    status?: EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+    assignedToId?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -43334,6 +46141,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -43362,6 +46170,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -43389,6 +46198,7 @@ export namespace Prisma {
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -43428,6 +46238,36 @@ export namespace Prisma {
     data?: NullableJsonNullValueInput | InputJsonValue
     taskId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RejectionLogUpdateWithoutRejectedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumRejectionKindFieldUpdateOperationsInput | $Enums.RejectionKind
+    entityLabel?: StringFieldUpdateOperationsInput | string
+    affectedUser?: NullableStringFieldUpdateOperationsInput | string | null
+    amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RejectionLogUncheckedUpdateWithoutRejectedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumRejectionKindFieldUpdateOperationsInput | $Enums.RejectionKind
+    entityLabel?: StringFieldUpdateOperationsInput | string
+    affectedUser?: NullableStringFieldUpdateOperationsInput | string | null
+    amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RejectionLogUncheckedUpdateManyWithoutRejectedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumRejectionKindFieldUpdateOperationsInput | $Enums.RejectionKind
+    entityLabel?: StringFieldUpdateOperationsInput | string
+    affectedUser?: NullableStringFieldUpdateOperationsInput | string | null
+    amount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

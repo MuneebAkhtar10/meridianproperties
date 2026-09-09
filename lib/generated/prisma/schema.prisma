@@ -170,6 +170,12 @@ model Property {
   /// start unapproved and stay hidden everywhere until an admin approves
   /// them. Defaults to true so every pre-existing row stays live.
   approved                    Boolean   @default(true)
+  /// When the owner submitted this property for admin review, after setting
+  /// up its units. Null means it's still a draft — the owner is adding
+  /// units and hasn't asked for approval yet, so it does NOT show up in the
+  /// admin's pending-review queue even though approved is false. Only
+  /// meaningful while approved is false; irrelevant once approved.
+  submittedAt                 DateTime? @map("submitted_at")
   /// Recurring maintenance budget the owner collects from/for this property
   /// (e.g. 400 OMR every 3 months). All three are null until someone sets
   /// them; nulls mean "no service charge tracked" and the reminder job skips
@@ -290,6 +296,7 @@ model User {
   unit                  Unit?                   @relation("UnitTenant")
   requests              MaintenanceRequest[]    @relation("RequestOwner")
   assignedRequests      MaintenanceRequest[]    @relation("AssignedWorker")
+  createdRequests       MaintenanceRequest[]    @relation("RequestCreatedBy")
   attachments           MaintenanceAttachment[]
   taskLogs              TaskLog[]
   notifications         Notification[]
@@ -306,6 +313,8 @@ model User {
   /// Set only for owners: the properties they were assigned or created.
   ownedProperties       Property[]              @relation("PropertyOwner")
   whatsappSessions      WhatsappSession[]
+  /// Rejections this admin issued (property, payment, or supply request).
+  rejectionLogs         RejectionLog[]
   /// Only populated when employeeType = "family" — the worker's tracked
   /// dependents (see WorkerFamilyMember).
   familyMembers         WorkerFamilyMember[]
@@ -504,6 +513,12 @@ model MaintenanceRequest {
   priority          Priority       @default(medium)
   status            RequestStatus  @default(pending)
   assignedToId      String?        @map("assigned_to") @db.Uuid
+  /// Who actually filed this — set only when an admin creates it on a
+  /// tenant's behalf (via the maintenance dashboard), so the UI can show
+  /// "Added by <admin>" distinct from `user` (the tenant it's for). Left
+  /// null for a tenant's own self-reported request; nothing to distinguish
+  /// there since userId already is the reporter in that case.
+  createdById       String?        @map("created_by_id") @db.Uuid
   notes             String?
   createdAt         DateTime       @default(now()) @map("created_at")
   updatedAt         DateTime       @updatedAt @map("updated_at")
@@ -527,6 +542,7 @@ model MaintenanceRequest {
   unit             Unit?                   @relation(fields: [unitId], references: [id], onDelete: SetNull)
   property         Property?               @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   assignedTo       User?                   @relation("AssignedWorker", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy        User?                   @relation("RequestCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   attachments      MaintenanceAttachment[]
   taskLogs         TaskLog[]
   notifications    Notification[]
@@ -677,4 +693,42 @@ model WhatsappSession {
 
   @@index([userId])
   @@map("whatsapp_sessions")
+}
+
+/// What kind of thing was rejected. Payment and supply-request rejections
+/// already keep their own permanent record on their own model (Payment.status
+/// = rejected, SupplyRequest.status = denied) — this enum only needs to
+/// name them so the admin rejections page can show one merged list.
+/// Property rejection is the odd one out: rejectPropertyAction deletes the
+/// property row outright, so RejectionLog is the ONLY surviving record of it.
+enum RejectionKind {
+  property
+  payment
+  supply_request
+}
+
+/// A permanent audit trail entry for a rejection, written at the moment of
+/// rejection. Required for `property` (whose row is deleted right after), and
+/// written for `payment`/`supply_request` too so the admin rejections page has
+/// one single table to query instead of merging three different models.
+model RejectionLog {
+  id           String        @id @default(uuid()) @db.Uuid
+  kind         RejectionKind
+  /// Human-readable label for the rejected thing, e.g. the property name or
+  /// the charge title — captured as text since the underlying row (property)
+  /// may no longer exist.
+  entityLabel  String        @map("entity_label")
+  /// Who the rejection affects, e.g. "owner@x.com" or "tenant@x.com" —
+  /// captured as text for the same reason as entityLabel.
+  affectedUser String?       @map("affected_user")
+  /// Amount involved, if any (payment rejections only).
+  amount       Decimal?      @db.Decimal(14, 3)
+  reason       String?
+  rejectedById String        @map("rejected_by_id") @db.Uuid
+  rejectedBy   User          @relation(fields: [rejectedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@index([kind])
+  @@index([createdAt])
+  @@map("rejection_logs")
 }

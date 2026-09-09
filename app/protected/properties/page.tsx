@@ -26,23 +26,29 @@ import {
 } from "@/app/admin-actions";
 
 export default async function PropertiesPage({ searchParams }: PageProps) {
-  const message = (await searchParams) as unknown as Message;
+  const params = (await searchParams) as unknown as { owner?: string };
+  const message = params as unknown as Message;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = user.userType === UserType.owner;
   const isAdmin = user.userType === UserType.admin;
+  const ownerFilter =
+    isAdmin && typeof params.owner === "string" ? params.owner : "all";
 
   const [properties, propertyTypes, pendingProperties, owners] =
     await Promise.all([
       prisma.property.findMany({
         where: isOwner
           ? { ownerId: user.id }
-          : // Admin's main list only shows live properties; unapproved
-            // owner-submitted ones surface separately below for review.
-            { approved: true },
+          : {
+              // Admin's main list only shows live properties; unapproved
+              // owner-submitted ones surface separately below for review.
+              approved: true,
+              ...(ownerFilter !== "all" ? { ownerId: ownerFilter } : {}),
+            },
         orderBy: { createdAt: "desc" },
         include: {
           propertyType: true,
-          owner: { select: { email: true } },
+          owner: { select: { email: true, firstName: true, lastName: true } },
           _count: { select: { units: true } },
           units: { select: { tenantId: true } },
         },
@@ -50,7 +56,10 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
       prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
       isAdmin
         ? prisma.property.findMany({
-            where: { approved: false },
+            // Draft properties (owner still adding units, hasn't submitted
+            // yet) don't belong in the review queue — only ones the owner
+            // has actually asked to be reviewed.
+            where: { approved: false, submittedAt: { not: null } },
             orderBy: { createdAt: "asc" },
             include: {
               propertyType: true,
@@ -61,7 +70,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
       isAdmin
         ? prisma.user.findMany({
             where: { userType: UserType.owner },
-            select: { id: true, email: true },
+            select: { id: true, email: true, firstName: true, lastName: true },
             orderBy: { email: "asc" },
           })
         : Promise.resolve([]),
@@ -196,11 +205,19 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                       Approve
                     </SubmitButton>
                   </form>
-                  <form action={rejectPropertyAction}>
+                  <form
+                    action={rejectPropertyAction}
+                    className="flex items-center gap-2"
+                  >
                     <input
                       type="hidden"
                       name="propertyId"
                       value={property.id}
+                    />
+                    <Input
+                      name="reason"
+                      placeholder="Reason (optional)"
+                      className="h-9 w-40"
                     />
                     <SubmitButton
                       size="sm"
@@ -221,6 +238,30 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
       {"error" in message || "success" in message ? (
         <FormMessage message={message} />
       ) : null}
+
+      {isAdmin && (
+        <form className="flex flex-wrap items-end gap-2">
+          <div className="w-full max-w-xs space-y-1.5">
+            <Label htmlFor="owner">Property owner</Label>
+            <Select id="owner" name="owner" defaultValue={ownerFilter}>
+              <option value="all">All owners</option>
+              {owners.map((owner) => {
+                const name = [owner.firstName, owner.lastName]
+                  .filter(Boolean)
+                  .join(" ");
+                return (
+                  <option key={owner.id} value={owner.id}>
+                    {name ? `${name} · ${owner.email}` : owner.email}
+                  </option>
+                );
+              })}
+            </Select>
+          </div>
+          <SubmitButton variant="outline" pendingText="Filtering...">
+            Filter
+          </SubmitButton>
+        </form>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-[1fr_23rem]">
         <div className="min-w-0 space-y-4">
@@ -282,6 +323,24 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                               <MapPin className="h-3.5 w-3.5 shrink-0" />
                               {formatOmanAddress(property)}
                             </p>
+                            {isAdmin && (
+                              <p className="text-sm text-muted-foreground">
+                                Owner:{" "}
+                                {property.owner
+                                  ? (() => {
+                                      const ownerName = [
+                                        property.owner.firstName,
+                                        property.owner.lastName,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(" ");
+                                      return ownerName
+                                        ? `${ownerName} (${property.owner.email})`
+                                        : property.owner.email;
+                                    })()
+                                  : "No owner assigned"}
+                              </p>
+                            )}
                           </div>
                         </div>
 

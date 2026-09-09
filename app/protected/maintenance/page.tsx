@@ -94,6 +94,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
           : { createdAt: "desc" },
       include: {
         user: { select: { email: true } },
+        createdBy: { select: { email: true } },
         unit: {
           include: {
             property: {

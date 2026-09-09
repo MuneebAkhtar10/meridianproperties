@@ -181,6 +181,27 @@ const STATUS_NOTIFICATION: Partial<
   },
 };
 
+/** Admin-facing wording for the same status transitions as
+ * STATUS_NOTIFICATION below — worded for someone managing the job, not
+ * living in it ("Worker is heading to..." vs "A maintenance worker is on
+ * the way for your request..."). */
+const ADMIN_STATUS_NOTIFICATION: Partial<
+  Record<RequestStatus, { title: string; message: (t: string) => string }>
+> = {
+  en_route: {
+    title: "Worker En Route",
+    message: (title) => `Worker is heading to "${title}".`,
+  },
+  in_progress: {
+    title: "Work Started",
+    message: (title) => `Worker started work on "${title}".`,
+  },
+  completed: {
+    title: "Request Completed",
+    message: (title) => `"${title}" has been marked completed by the worker.`,
+  },
+};
+
 export async function notifyStatusChange(request: {
   id: string;
   title: string;
@@ -250,6 +271,31 @@ export async function notifyStatusChange(request: {
       ...(details && { details }),
     },
   });
+
+  // A status change here only ever happens because a worker did something
+  // (headed over, started, finished) — admins get their own notice of it,
+  // separate from the tenant's, worded for someone managing the job.
+  const admins = await prisma.user.findMany({
+    where: { userType: UserType.admin },
+    select: { id: true },
+  });
+
+  if (admins.length > 0) {
+    const adminTemplate = ADMIN_STATUS_NOTIFICATION[request.status] ?? template;
+    await createNotifications({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        title: adminTemplate.title,
+        message: adminTemplate.message(request.title),
+        relatedId: request.id,
+        ...(details && { details }),
+      })),
+    });
+    await publish({
+      kind: "notification",
+      userIds: admins.map((admin) => admin.id),
+    });
+  }
 
   await publish({ kind: "notification", userIds: [request.userId] });
 }
@@ -410,6 +456,38 @@ export async function notifyAdminsNewRequest(request: {
       title: "New Maintenance Request",
       message: `${request.reportedBy} reported "${request.title}" at ${request.location}.`,
       relatedId: request.id,
+    })),
+  });
+
+  await publish({
+    kind: "notification",
+    userIds: admins.map((admin) => admin.id),
+  });
+}
+
+/** An owner finished setting up a property's units and submitted it for
+ * review — distinct from the property just existing as a draft, which
+ * admins never hear about until this fires. */
+export async function notifyAdminsPropertySubmitted(input: {
+  propertyId: string;
+  propertyName: string;
+  ownerEmail: string;
+}): Promise<void> {
+  const admins = await prisma.user.findMany({
+    where: { userType: UserType.admin },
+    select: { id: true },
+  });
+
+  if (admins.length === 0) {
+    return;
+  }
+
+  await createNotifications({
+    data: admins.map((admin) => ({
+      userId: admin.id,
+      title: "Property Submitted for Review",
+      message: `${input.ownerEmail} submitted “${input.propertyName}” for approval.`,
+      href: "/protected/properties",
     })),
   });
 

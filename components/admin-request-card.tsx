@@ -224,6 +224,9 @@ export function AdminRequestCard({
                 </span>
               )}
               <span>Reported {format(request.createdAt, "d MMM yyyy")}</span>
+              {request.createdBy && (
+                <span>Added by {request.createdBy.email}</span>
+              )}
             </span>
             <span className="flex items-center gap-1 rounded-md border border-border/60 bg-background px-2.5 py-1 font-medium text-foreground shadow-sm">
               {expanded ? "Hide" : "Manage"}

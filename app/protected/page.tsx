@@ -831,7 +831,7 @@ function StatTile({
             )}
             <span className="truncate">{label}</span>
           </div>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-2 break-words text-3xl font-semibold tracking-tight text-foreground">
             {value}
           </p>
           {hint && (

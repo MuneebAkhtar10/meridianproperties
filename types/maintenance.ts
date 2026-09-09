@@ -35,6 +35,9 @@ export type RequestWithPlace = MaintenanceRequest & {
   property: { name: string } | null;
   /** Only present on pages that fetch it — treat as empty if omitted. */
   supplyRequests?: SupplyRequestWithUsers[];
+  /** Set only when an admin filed this on a tenant's behalf — distinct from
+   * `user` (who it's for). Null for a tenant's own self-reported request. */
+  createdBy?: { email: string } | null;
 };
 
 export type TaskLogWithUser = TaskLog & {

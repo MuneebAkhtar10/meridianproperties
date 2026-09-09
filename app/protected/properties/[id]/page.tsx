@@ -16,6 +16,7 @@ import {
   generateUnitsAction,
   markServiceChargeReceivedAction,
   resendServiceChargeReminderAction,
+  submitPropertyForApprovalAction,
   updatePropertyAction,
   updateServiceChargeAction,
   updateUnitAction,
@@ -142,14 +143,34 @@ export default async function PropertyDetailPage({
       {!property.approved && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-            Pending approval
+            {property.submittedAt ? "Pending approval" : "Draft"}
           </span>
           <span>
             {isAdmin
-              ? "This property was submitted by its owner and isn't live yet. Approve or reject it from the properties list."
-              : "Your property is waiting for an admin to approve it. An admin will set up units, documents, and everything else here."}
+              ? property.submittedAt
+                ? "This property was submitted by its owner and isn't live yet. Approve or reject it from the properties list."
+                : "This property is still a draft — the owner hasn't submitted it for review yet."
+              : property.submittedAt
+                ? "Your property has been submitted and is waiting for an admin to approve it."
+                : `Add your ${propertyType.unitNounPlural.toLowerCase()} below, then submit this property for admin review.`}
           </span>
         </div>
+      )}
+
+      {isOwner && !property.approved && !property.submittedAt && (
+        <form action={submitPropertyForApprovalAction}>
+          <input type="hidden" name="propertyId" value={property.id} />
+          <SubmitButton
+            disabled={property.units.length === 0}
+            title={
+              property.units.length === 0
+                ? `Add at least one ${unitNoun} before submitting.`
+                : undefined
+            }
+          >
+            Submit for Approval
+          </SubmitButton>
+        </form>
       )}
 
       {"error" in message || "success" in message ? (
@@ -229,7 +250,7 @@ export default async function PropertyDetailPage({
                           className="border-b last:border-b-0 hover:bg-muted/30"
                         >
                           <td className="py-2.5 pl-4 pr-3">
-                            {isAdmin ? (
+                            {(isAdmin || isOwner) ? (
                               <form className="flex flex-nowrap items-end gap-2 rounded-md border bg-muted/10 px-2 py-1.5">
                                 <input
                                   type="hidden"
@@ -362,7 +383,7 @@ export default async function PropertyDetailPage({
                           </td>
 
                           <td className="py-2 pl-3 pr-4 text-right">
-                            {isAdmin && (
+                            {(isAdmin || isOwner) && (
                             <form>
                               <input
                                 type="hidden"
@@ -394,7 +415,7 @@ export default async function PropertyDetailPage({
 
         {/* ── Tools ──────────────────────────────────────────────────────── */}
         <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
-          {isAdmin && hasFloors && (
+          {(isAdmin || isOwner) && hasFloors && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -471,7 +492,7 @@ export default async function PropertyDetailPage({
             </Card>
           )}
 
-          {isAdmin && (
+          {(isAdmin || isOwner) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Add {unitNoun}</CardTitle>

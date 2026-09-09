@@ -34,6 +34,7 @@ import { encodedRedirect } from "@/utils/utils";
 import {
   Priority,
   RequestStatus,
+  RejectionKind,
   SupplyRequestStatus,
   UserType,
 } from "@/lib/generated/prisma/client";
@@ -902,6 +903,17 @@ export const decideSupplyRequestAction = async (
     },
   });
 
+  if (decision === "denied") {
+    await prisma.rejectionLog.create({
+      data: {
+        kind: RejectionKind.supply_request,
+        entityLabel: `${supplyRequest.item} (${supplyRequest.request.title})`,
+        reason: adminNote,
+        rejectedById: admin.id,
+      },
+    });
+  }
+
   if (supplyRequest.request.assignedToId) {
     await notifySupplyRequestDecided({
       taskId: supplyRequest.request.id,
@@ -1516,6 +1528,10 @@ export const createRequestAction = async (formData: FormData) => {
   const request = await prisma.maintenanceRequest.create({
     data: {
       userId: tenantId ?? admin.id,
+      // Distinct from userId (the tenant it's for) — this is who actually
+      // filed it, so the UI can show "Added by <admin>" on requests an
+      // admin created on someone's behalf.
+      createdById: admin.id,
       unitId: useCommonArea ? null : unitId,
       propertyId: useCommonArea ? property.id : null,
       title,

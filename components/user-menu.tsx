@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, LogOut, User as UserIcon } from "lucide-react";
+import { Ban, KeyRound, LogOut, QrCode, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 
 import { signOutAction } from "@/app/actions";
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { UserType } from "@/lib/generated/prisma/client";
+import { UserType } from "@/lib/generated/prisma/client";
 
 const ROLE_LABEL: Record<UserType, string> = {
   admin: "Administrator",
@@ -51,6 +51,28 @@ export function UserMenu({
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
+
+        {userType === UserType.admin && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/protected/rejections" className="cursor-pointer">
+                <Ban className="mr-2 h-4 w-4" />
+                Rejections
+                <LinkPendingIndicator />
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem asChild>
+              <Link href="/protected/admin/qr-code" className="cursor-pointer">
+                <QrCode className="mr-2 h-4 w-4" />
+                QR Code
+                <LinkPendingIndicator />
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+          </>
+        )}
 
         <DropdownMenuItem asChild>
           <Link href="/protected/reset-password" className="cursor-pointer">

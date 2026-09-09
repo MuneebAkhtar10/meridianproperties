@@ -5,6 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import { addMonths, differenceInCalendarDays, format } from "date-fns";
 
 import {
+  notifyAdminsPropertySubmitted,
   notifyPropertyApproved,
   notifyPropertyAssigned,
   notifyPropertyRejected,
@@ -32,6 +33,7 @@ import { encodedRedirect } from "@/utils/utils";
 import {
   EntityDocumentCategory,
   FamilyRelationship,
+  RejectionKind,
   UserType,
   WorkerCategory,
 } from "@/lib/generated/prisma/client";
@@ -416,6 +418,89 @@ export const deletePropertyAction = async (formData: FormData) => {
 };
 
 /**
+ * Owner has finished setting up a property's units and asks an admin to
+ * review it — moves it from "draft" (submittedAt null, hidden from the
+ * admin's pending queue) into "submitted" (visible there). Requires at
+ * least one unit, since there's nothing for an admin to actually check
+ * over otherwise.
+ */
+export const submitPropertyForApprovalAction = async (formData: FormData) => {
+  const actor = await requireRole(UserType.owner);
+
+  const id = formData.get("propertyId")?.toString();
+  if (!id) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Invalid property",
+    );
+  }
+
+  const property = await prisma.property.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      ownerId: true,
+      approved: true,
+      submittedAt: true,
+      _count: { select: { units: true } },
+    },
+  });
+
+  if (!property || property.ownerId !== actor.id) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Property not found.",
+    );
+  }
+
+  if (property.approved) {
+    return encodedRedirect(
+      "error",
+      `/protected/properties/${id}`,
+      "This property is already approved.",
+    );
+  }
+
+  if (property.submittedAt) {
+    return encodedRedirect(
+      "error",
+      `/protected/properties/${id}`,
+      "This property has already been submitted — an admin will review it soon.",
+    );
+  }
+
+  if (property._count.units === 0) {
+    return encodedRedirect(
+      "error",
+      `/protected/properties/${id}`,
+      "Add at least one unit before submitting for approval.",
+    );
+  }
+
+  await prisma.property.update({
+    where: { id },
+    data: { submittedAt: new Date() },
+  });
+
+  await notifyAdminsPropertySubmitted({
+    propertyId: id,
+    propertyName: property.name,
+    ownerEmail: actor.email,
+  });
+
+  revalidatePath(`/protected/properties/${id}`);
+  revalidatePath("/protected/properties");
+
+  return encodedRedirect(
+    "success",
+    `/protected/properties/${id}`,
+    "Submitted for admin review.",
+  );
+};
+
+/**
  * Admin approves an owner-submitted property, making it live everywhere.
  */
 export const approvePropertyAction = async (formData: FormData) => {
@@ -481,12 +566,15 @@ export const approvePropertyAction = async (formData: FormData) => {
  * Admin rejects a pending owner-submitted property. Rejection deletes the row
  * outright (documented choice — a rejected property has no units, tenants or
  * financial history yet, so there is nothing worth keeping an "unapproved,
- * rejected" record of; the owner can just resubmit it).
+ * rejected" record of; the owner can just resubmit it). Since the row itself
+ * disappears, a RejectionLog entry is the only surviving trace — see
+ * /protected/rejections.
  */
 export const rejectPropertyAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
 
   const id = formData.get("propertyId")?.toString();
+  const reason = formData.get("reason")?.toString().trim() || null;
   if (!id) {
     return encodedRedirect(
       "error",
@@ -497,7 +585,12 @@ export const rejectPropertyAction = async (formData: FormData) => {
 
   const property = await prisma.property.findUnique({
     where: { id },
-    select: { approved: true, name: true, ownerId: true },
+    select: {
+      approved: true,
+      name: true,
+      ownerId: true,
+      owner: { select: { email: true } },
+    },
   });
 
   if (!property || property.approved) {
@@ -516,6 +609,16 @@ export const rejectPropertyAction = async (formData: FormData) => {
   await Promise.allSettled(
     documents.map((document) => deleteAttachment(document.filePath)),
   );
+
+  await prisma.rejectionLog.create({
+    data: {
+      kind: RejectionKind.property,
+      entityLabel: property.name,
+      affectedUser: property.owner?.email ?? null,
+      reason,
+      rejectedById: admin.id,
+    },
+  });
 
   if (property.ownerId) {
     await notifyPropertyRejected({
@@ -939,7 +1042,9 @@ export const deletePropertyTypeAction = async (formData: FormData) => {
  * Floors 1–10 with 5 per floor gives 101–105, 201–205 … 1001–1005.
  */
 export const generateUnitsAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  // Owners manage units on their own property (to set it up before
+  // submitting for approval); admins manage units on any property.
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const propertyId = formData.get("propertyId")?.toString();
   const floors = Number(formData.get("floors"));
@@ -960,9 +1065,22 @@ export const generateUnitsAction = async (formData: FormData) => {
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
     select: {
+      ownerId: true,
       propertyType: { select: { hasFloors: true, unitNounPlural: true } },
     },
   });
+
+  if (
+    property &&
+    actor.userType === UserType.owner &&
+    property.ownerId !== actor.id
+  ) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "You can only manage units on your own properties.",
+    );
+  }
 
   if (property && !property.propertyType.hasFloors) {
     return encodedRedirect(
@@ -1022,7 +1140,7 @@ export const generateUnitsAction = async (formData: FormData) => {
 };
 
 export const createUnitAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const propertyId = formData.get("propertyId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -1040,6 +1158,20 @@ export const createUnitAction = async (formData: FormData) => {
   }
 
   const back = `/protected/properties/${propertyId}`;
+
+  if (actor.userType === UserType.owner) {
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+      select: { ownerId: true },
+    });
+    if (!property || property.ownerId !== actor.id) {
+      return encodedRedirect(
+        "error",
+        "/protected/properties",
+        "You can only manage units on your own properties.",
+      );
+    }
+  }
 
   const exists = await prisma.unit.findUnique({
     where: { propertyId_label: { propertyId, label } },
@@ -1062,7 +1194,7 @@ export const createUnitAction = async (formData: FormData) => {
 
 /** Edits a unit's number, floor and bedroom count in place. */
 export const updateUnitAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const unitId = formData.get("unitId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -1079,10 +1211,17 @@ export const updateUnitAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { propertyId: true, label: true },
+    select: {
+      propertyId: true,
+      label: true,
+      property: { select: { ownerId: true } },
+    },
   });
 
-  if (!unit) {
+  if (
+    !unit ||
+    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -1135,7 +1274,7 @@ export const updateUnitAction = async (formData: FormData) => {
 };
 
 export const deleteUnitAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireAnyRole(UserType.admin, UserType.owner);
 
   const unitId = formData.get("unitId")?.toString();
 
@@ -1149,10 +1288,18 @@ export const deleteUnitAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { propertyId: true, label: true, tenantId: true },
+    select: {
+      propertyId: true,
+      label: true,
+      tenantId: true,
+      property: { select: { ownerId: true } },
+    },
   });
 
-  if (!unit) {
+  if (
+    !unit ||
+    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
+  ) {
     return encodedRedirect(
       "error",
       "/protected/properties",

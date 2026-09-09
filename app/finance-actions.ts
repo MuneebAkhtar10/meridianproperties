@@ -38,6 +38,7 @@ import {
   FinancialDocumentKind,
   PaymentMethod,
   PaymentStatus,
+  RejectionKind,
   TenancyPurpose,
   UserType,
 } from "@/lib/generated/prisma/client";
@@ -1088,6 +1089,19 @@ export const reviewPaymentAction = async (
     }
     return false;
   });
+
+  if (!approved) {
+    await prisma.rejectionLog.create({
+      data: {
+        kind: RejectionKind.payment,
+        entityLabel: payment.charge.title,
+        affectedUser: payment.charge.tenant.email,
+        amount: payment.amount,
+        reason: reviewNotes,
+        rejectedById: admin.id,
+      },
+    });
+  }
 
   // The review is committed by this point — don't let a notification failure
   // surface as an error over a decision that already went through.
