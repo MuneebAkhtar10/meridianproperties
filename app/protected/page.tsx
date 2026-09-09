@@ -509,6 +509,7 @@ async function WorkerDashboard({ user }: { user: SessionUser }) {
           hint={`${count("en_route")} en route`}
           icon={<ClipboardList className="h-4 w-4" />}
           color="amber"
+          href="/protected/tasks"
         />
         <StatTile
           label="In progress"
@@ -516,6 +517,7 @@ async function WorkerDashboard({ user }: { user: SessionUser }) {
           hint="currently working"
           icon={<Wrench className="h-4 w-4" />}
           color="sky"
+          href="/protected/tasks"
         />
         <StatTile
           label="Completed"
@@ -523,6 +525,7 @@ async function WorkerDashboard({ user }: { user: SessionUser }) {
           hint="all time"
           icon={<KeyRound className="h-4 w-4" />}
           color="emerald"
+          href="/protected/history"
         />
       </div>
 

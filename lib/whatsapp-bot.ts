@@ -512,7 +512,29 @@ const DUES_TRIGGER_PHRASES = [
 
 function isDuesCheck(bodyLower: string): boolean {
   const normalized = stripTrailingPunctuation(bodyLower);
-  return DUES_TRIGGER_PHRASES.some((phrase) => normalized.includes(phrase));
+  if (DUES_TRIGGER_PHRASES.some((phrase) => normalized.includes(phrase))) {
+    return true;
+  }
+
+  // The fixed list above can't enumerate every way of asking — "please
+  // tell me my other pending amounts", "what bills do I have", "any
+  // outstanding rent" — so this catches the general shape instead: any
+  // money-related word (dues/amount/balance/bill/rent/payment/charge)
+  // paired with a word that signals they're asking about it, not paying
+  // it or reporting something else.
+  const mentionsMoneyWord =
+    /\b(dues?|amounts?|balance|bills?|rent|payments?|charges?)\b/.test(
+      normalized,
+    );
+  if (!mentionsMoneyWord) return false;
+
+  // A genuine "I paid X" claim is isPaymentClaim's job, not a status
+  // inquiry — don't double-match it here.
+  if (isPaymentClaim(bodyLower)) return false;
+
+  return /\b(pending|outstanding|owe|owing|due|remaining|left|how much|what|tell me|show me|check|any|other)\b/.test(
+    normalized,
+  );
 }
 
 // "I paid 300 for the deposit" / "I have paid rent" — a payment claim, not a

@@ -50,18 +50,23 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
 
   const params = (await searchParams) as unknown as {
     property?: string;
+    tenant?: string;
   };
   const propertyFilter = params.property || "all";
+  const tenantFilter = params.tenant || "all";
   const propertyScope =
     propertyFilter !== "all" ? { unit: { propertyId: propertyFilter } } : {};
+  const tenantScope =
+    tenantFilter !== "all" ? { tenantId: tenantFilter } : {};
 
-  const [active, history, availableTenants, emptyUnits, properties] =
+  const [active, history, availableTenants, emptyUnits, properties, tenantsWithTenancies] =
     await Promise.all([
       prisma.tenancy.findMany({
         where: {
           endDate: null,
           ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
           ...propertyScope,
+          ...tenantScope,
         },
         orderBy: { createdAt: "desc" },
         include: {
@@ -83,6 +88,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
           endDate: { not: null },
           ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
           ...propertyScope,
+          ...tenantScope,
         },
         orderBy: { endDate: "desc" },
         take: 20,
@@ -109,6 +115,20 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
         where: isOwner ? { ownerId: user.id } : {},
         orderBy: { name: "asc" },
         select: { id: true, name: true },
+      }),
+      // Every tenant who has (or had) a tenancy at all — the filter dropdown
+      // options, independent of the property/tenant filters currently applied.
+      prisma.user.findMany({
+        where: {
+          userType: UserType.user,
+          tenancies: {
+            some: isOwner
+              ? { unit: { property: { ownerId: user.id } } }
+              : {},
+          },
+        },
+        orderBy: { email: "asc" },
+        select: { id: true, email: true, firstName: true, lastName: true },
       }),
     ]);
   const pickableUnits: PickableUnit[] = emptyUnits.map((unit) => ({
@@ -147,6 +167,22 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                 {property.name}
               </option>
             ))}
+          </Select>
+        </div>
+        <div className="w-full max-w-xs space-y-1.5">
+          <Label htmlFor="tenant">Tenant</Label>
+          <Select id="tenant" name="tenant" defaultValue={tenantFilter}>
+            <option value="all">All tenants</option>
+            {tenantsWithTenancies.map((tenant) => {
+              const name = [tenant.firstName, tenant.lastName]
+                .filter(Boolean)
+                .join(" ");
+              return (
+                <option key={tenant.id} value={tenant.id}>
+                  {name ? `${name} · ${tenant.email}` : tenant.email}
+                </option>
+              );
+            })}
           </Select>
         </div>
         <SubmitButton variant="outline" pendingText="Filtering...">
