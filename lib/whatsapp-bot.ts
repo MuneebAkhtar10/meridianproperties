@@ -377,7 +377,24 @@ function isReportTrigger(bodyLower: string): boolean {
 }
 
 const YES_WORDS = ["yes", "y", "yeah", "yep", "yup", "sure", "go ahead", "confirm", "correct", "submit", "ok", "okay"];
-const NO_WORDS = ["no", "n", "nope", "nah", "cancel", "stop"];
+const NO_WORDS = [
+  "no",
+  "n",
+  "nope",
+  "nah",
+  "cancel",
+  "stop",
+  "close it",
+  "close",
+  "dismiss",
+  "dismiss it",
+  "nevermind",
+  "never mind",
+  "forget it",
+  "quit",
+  "exit",
+  "not now",
+];
 
 // Common phrasings for "what's going on with my request" that should
 // actually run the status check, not just be told to type *status*.
@@ -452,9 +469,26 @@ const STATUS_TRIGGER_PHRASES = [
 
 function isDirectStatusCheck(bodyLower: string): boolean {
   const normalized = stripTrailingPunctuation(bodyLower);
-  return STATUS_TRIGGER_PHRASES.some(
-    (phrase) => normalized === phrase || normalized.includes(phrase),
-  );
+  if (
+    STATUS_TRIGGER_PHRASES.some(
+      (phrase) => normalized === phrase || normalized.includes(phrase),
+    )
+  ) {
+    return true;
+  }
+
+  // Catches phrasing the fixed list can't enumerate — "is it worker assign
+  // for my plumbing request?", "has a worker been assigned to my issue",
+  // "did you assign someone" — a mention of assignment alongside their
+  // request/a worker is unambiguously asking about an existing one.
+  if (
+    /\bassign(ed|ment)?\b/.test(normalized) &&
+    /\b(request|issue|problem|worker|someone|anyone)\b/.test(normalized)
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 // Phrasings for "how much do I owe" — checked before falling through to the
