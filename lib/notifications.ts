@@ -1063,12 +1063,14 @@ export async function notifyPropertyServiceCharge(input: {
 export async function notifyPropertyRejected(input: {
   ownerId: string;
   propertyName: string;
+  reason: string;
 }): Promise<void> {
   await createNotification({
     data: {
       userId: input.ownerId,
       title: "Property Rejected",
-      message: `“${input.propertyName}” was not approved. Please contact the admin, or submit it again with corrections.`,
+      message: `“${input.propertyName}” was not approved: ${input.reason}. Fix it up and submit it again from the property page.`,
+      href: "/protected/properties",
     },
   });
 

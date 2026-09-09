@@ -303,17 +303,47 @@ export default async function FinanceDetailPage({
                           </div>
                         )}
 
-                        {payment.reviewedAt && (
-                          <p className="mt-3 text-xs text-muted-foreground">
-                            Reviewed{" "}
-                            {format(payment.reviewedAt, "dd MMM yyyy, h:mm a")}
-                            {payment.reviewedBy
-                              ? ` by ${payment.reviewedBy.email}`
-                              : ""}
-                            {payment.reviewNotes
-                              ? ` · ${payment.reviewNotes}`
-                              : ""}
-                          </p>
+                        {payment.reviewedAt &&
+                          payment.status === PaymentStatus.rejected ? (
+                          <div className="mt-3 space-y-1 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                            <p>
+                              Rejected{" "}
+                              {format(
+                                payment.reviewedAt,
+                                "dd MMM yyyy, h:mm a",
+                              )}
+                              {payment.reviewedBy
+                                ? ` by ${payment.reviewedBy.email}`
+                                : ""}
+                            </p>
+                            {payment.reviewNotes && (
+                              <p className="text-rose-900">
+                                <span className="font-medium">Reason:</span>{" "}
+                                {payment.reviewNotes}
+                              </p>
+                            )}
+                            {!canManagePayments && (
+                              <p>
+                                Upload new proof below to submit it again.
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          payment.reviewedAt && (
+                            <p className="mt-3 text-xs text-muted-foreground">
+                              Reviewed{" "}
+                              {format(
+                                payment.reviewedAt,
+                                "dd MMM yyyy, h:mm a",
+                              )}
+                              {payment.reviewedBy
+                                ? ` by ${payment.reviewedBy.email}`
+                                : ""}
+                              {payment.reviewNotes
+                                ? ` · ${payment.reviewNotes}`
+                                : ""}
+                            </p>
+                          )
                         )}
 
                         {canManagePayments &&

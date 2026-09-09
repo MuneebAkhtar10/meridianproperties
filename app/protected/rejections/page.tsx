@@ -3,11 +3,12 @@ import { Ban, Building2, PackageX, Receipt } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/session";
-import { RejectionKind, UserType } from "@/lib/generated/prisma/client";
+import { requireAnyRole } from "@/lib/session";
+import { PaymentStatus, RejectionKind, UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
 const KIND_META: Record<
@@ -32,7 +33,12 @@ const KIND_META: Record<
 };
 
 export default async function RejectionsPage({ searchParams }: PageProps) {
-  await requireRole(UserType.admin);
+  const user = await requireAnyRole(UserType.admin, UserType.user);
+
+  if (user.userType === UserType.user) {
+    return <TenantRejections tenantId={user.id} />;
+  }
+
   const params = await searchParams;
   const kindFilter =
     typeof params.kind === "string" &&
@@ -117,6 +123,73 @@ export default async function RejectionsPage({ searchParams }: PageProps) {
               </Card>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Tenant's own view: just their rejected payments, with the reason and a
+ * link straight to the bill to resubmit — no cross-tenant data, unlike the
+ * admin log above. */
+async function TenantRejections({ tenantId }: { tenantId: string }) {
+  const payments = await prisma.payment.findMany({
+    where: { status: PaymentStatus.rejected, charge: { tenantId } },
+    orderBy: { reviewedAt: "desc" },
+    include: {
+      charge: { select: { id: true, title: true } },
+      reviewedBy: { select: { email: true } },
+    },
+  });
+
+  return (
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-8">
+      <PageHeader
+        title="Rejections"
+        description="Payments and bills you submitted that were rejected — with the reason, so you know what to fix before submitting again."
+      />
+
+      {payments.length === 0 ? (
+        <EmptyState
+          icon={Ban}
+          title="No rejections"
+          description="If a payment you submit is ever rejected, it'll show up here with the reason."
+        />
+      ) : (
+        <div className="space-y-3">
+          {payments.map((payment) => (
+            <Card key={payment.id}>
+              <CardContent className="space-y-2 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium">{payment.charge.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatMoney(payment.amount)}
+                      {payment.reviewedAt
+                        ? ` · Rejected ${format(payment.reviewedAt, "d MMM yyyy")}`
+                        : ""}
+                      {payment.reviewedBy
+                        ? ` by ${payment.reviewedBy.email}`
+                        : ""}
+                    </p>
+                  </div>
+                  <ButtonLink
+                    href={`/protected/finances/${payment.charge.id}`}
+                    variant="outline"
+                    size="sm"
+                  >
+                    View bill
+                  </ButtonLink>
+                </div>
+                {payment.reviewNotes && (
+                  <p className="text-sm text-rose-800">
+                    <span className="font-medium">Reason:</span>{" "}
+                    {payment.reviewNotes}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>

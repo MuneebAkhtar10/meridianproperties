@@ -54,6 +54,18 @@ export function formatMoney(value: DecimalLike): string {
   }).format(moneyValue(value));
 }
 
+/// Same as formatMoney but rounded to 1 decimal — for tight UI spots (e.g.
+/// dashboard stat tiles) where the full 3-decimal precision isn't worth the
+/// extra width. Not for anywhere the exact amount matters.
+export function formatMoneyCompact(value: DecimalLike): string {
+  return new Intl.NumberFormat("en-OM", {
+    style: "currency",
+    currency: "OMR",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(moneyValue(value));
+}
+
 export function approvedTotal(
   payments: Array<{ amount: DecimalLike; status: PaymentStatus }>,
 ): number {

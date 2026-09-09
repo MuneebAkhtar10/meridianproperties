@@ -74,6 +74,20 @@ export function UserMenu({
           </>
         )}
 
+        {userType === UserType.user && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/protected/rejections" className="cursor-pointer">
+                <Ban className="mr-2 h-4 w-4" />
+                Rejections
+                <LinkPendingIndicator />
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+          </>
+        )}
+
         <DropdownMenuItem asChild>
           <Link href="/protected/reset-password" className="cursor-pointer">
             <KeyRound className="mr-2 h-4 w-4" />

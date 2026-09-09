@@ -140,7 +140,30 @@ export default async function PropertyDetailPage({
         </ButtonLink>
       </PageHeader>
 
-      {!property.approved && (
+      {!property.approved && property.rejectedAt && (
+        <div className="flex flex-col gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-800">
+              Rejected
+            </span>
+            <span>
+              {isAdmin
+                ? "You rejected this submission. It's back in draft — the owner can edit and resubmit it."
+                : "An admin rejected your submission on " +
+                  format(property.rejectedAt, "d MMM yyyy") +
+                  ". Review the note below, fix it up, and submit again."}
+            </span>
+          </div>
+          {property.rejectionReason && (
+            <p className="pl-0.5 text-rose-900">
+              <span className="font-medium">Reason:</span>{" "}
+              {property.rejectionReason}
+            </p>
+          )}
+        </div>
+      )}
+
+      {!property.approved && !property.rejectedAt && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
             {property.submittedAt ? "Pending approval" : "Draft"}

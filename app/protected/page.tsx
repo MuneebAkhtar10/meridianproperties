@@ -22,6 +22,7 @@ import {
   NON_UTILITY_CHARGE_TYPES,
   chargeBalance,
   formatMoney,
+  formatMoneyCompact,
 } from "@/lib/finance";
 import { formatOmanAddress } from "@/lib/oman";
 import { formatUnitLabel } from "@/lib/property-types";
@@ -443,7 +444,7 @@ async function OwnerDashboard({ user }: { user: SessionUser }) {
         />
         <StatTile
           label="Outstanding balance"
-          value={formatMoney(outstanding)}
+          value={formatMoneyCompact(outstanding)}
           icon={<WalletCards className="h-4 w-4" />}
           color="rose"
           href="/protected/finances"
@@ -684,7 +685,7 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatTile
               label="Rent & bills due"
-              value={formatMoney(outstanding)}
+              value={formatMoneyCompact(outstanding)}
               icon={<WalletCards className="h-4 w-4" />}
               color="rose"
               hint={
@@ -831,7 +832,7 @@ function StatTile({
             )}
             <span className="truncate">{label}</span>
           </div>
-          <p className="mt-2 break-words text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">
             {value}
           </p>
           {hint && (

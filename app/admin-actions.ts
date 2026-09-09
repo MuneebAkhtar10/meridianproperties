@@ -481,7 +481,11 @@ export const submitPropertyForApprovalAction = async (formData: FormData) => {
 
   await prisma.property.update({
     where: { id },
-    data: { submittedAt: new Date() },
+    data: {
+      submittedAt: new Date(),
+      rejectedAt: null,
+      rejectionReason: null,
+    },
   });
 
   await notifyAdminsPropertySubmitted({
@@ -517,7 +521,7 @@ export const approvePropertyAction = async (formData: FormData) => {
 
   const property = await prisma.property.update({
     where: { id },
-    data: { approved: true },
+    data: { approved: true, rejectedAt: null, rejectionReason: null },
     select: {
       name: true,
       ownerId: true,
@@ -563,11 +567,13 @@ export const approvePropertyAction = async (formData: FormData) => {
 };
 
 /**
- * Admin rejects a pending owner-submitted property. Rejection deletes the row
- * outright (documented choice — a rejected property has no units, tenants or
- * financial history yet, so there is nothing worth keeping an "unapproved,
- * rejected" record of; the owner can just resubmit it). Since the row itself
- * disappears, a RejectionLog entry is the only surviving trace — see
+ * Admin rejects a pending owner-submitted property. Rejection does NOT
+ * delete anything — the property, its units and documents all stay put.
+ * It's reset back to draft (submittedAt cleared, so it drops out of the
+ * review queue) with the reason stamped on it, so the owner can see why on
+ * their own property page and fix it up before resubmitting via
+ * submitPropertyForApprovalAction. A RejectionLog entry is kept too, as a
+ * permanent trail even if the property is later edited or deleted — see
  * /protected/rejections.
  */
 export const rejectPropertyAction = async (formData: FormData) => {
@@ -582,18 +588,26 @@ export const rejectPropertyAction = async (formData: FormData) => {
       "Invalid property",
     );
   }
+  if (!reason) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Please give a reason for rejecting this property.",
+    );
+  }
 
   const property = await prisma.property.findUnique({
     where: { id },
     select: {
       approved: true,
+      submittedAt: true,
       name: true,
       ownerId: true,
       owner: { select: { email: true } },
     },
   });
 
-  if (!property || property.approved) {
+  if (!property || property.approved || !property.submittedAt) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -601,14 +615,11 @@ export const rejectPropertyAction = async (formData: FormData) => {
     );
   }
 
-  const documents = await prisma.entityDocument.findMany({
-    where: { propertyId: id },
-    select: { filePath: true },
+  const rejectedAt = new Date();
+  await prisma.property.update({
+    where: { id },
+    data: { submittedAt: null, rejectedAt, rejectionReason: reason },
   });
-  await prisma.property.delete({ where: { id } });
-  await Promise.allSettled(
-    documents.map((document) => deleteAttachment(document.filePath)),
-  );
 
   await prisma.rejectionLog.create({
     data: {
@@ -617,6 +628,7 @@ export const rejectPropertyAction = async (formData: FormData) => {
       affectedUser: property.owner?.email ?? null,
       reason,
       rejectedById: admin.id,
+      createdAt: rejectedAt,
     },
   });
 
@@ -624,15 +636,17 @@ export const rejectPropertyAction = async (formData: FormData) => {
     await notifyPropertyRejected({
       ownerId: property.ownerId,
       propertyName: property.name,
+      reason,
     });
   }
 
   revalidatePath("/protected/properties");
+  revalidatePath(`/protected/properties/${id}`);
 
   return encodedRedirect(
     "success",
     "/protected/properties",
-    "Property rejected and removed.",
+    "Property rejected. The owner can review your note and resubmit.",
   );
 };
 

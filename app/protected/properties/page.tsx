@@ -216,8 +216,9 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                     />
                     <Input
                       name="reason"
-                      placeholder="Reason (optional)"
-                      className="h-9 w-40"
+                      placeholder="Reason for rejecting *"
+                      required
+                      className="h-9 w-44"
                     />
                     <SubmitButton
                       size="sm"
@@ -313,11 +314,20 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                               <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700 ring-1 ring-inset ring-violet-600/15">
                                 {property.propertyType.label}
                               </span>
-                              {!property.approved && (
-                                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
-                                  Pending approval
-                                </span>
-                              )}
+                              {!property.approved &&
+                                (property.submittedAt ? (
+                                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
+                                    Pending approval
+                                  </span>
+                                ) : property.rejectedAt ? (
+                                  <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-800 ring-1 ring-inset ring-rose-200">
+                                    Rejected
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
+                                    Draft
+                                  </span>
+                                ))}
                             </div>
                             <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                               <MapPin className="h-3.5 w-3.5 shrink-0" />

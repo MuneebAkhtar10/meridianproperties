@@ -4320,6 +4320,8 @@ export namespace Prisma {
     ownerId: string | null
     approved: boolean | null
     submittedAt: Date | null
+    rejectedAt: Date | null
+    rejectionReason: string | null
     serviceChargeAmount: Decimal | null
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
@@ -4346,6 +4348,8 @@ export namespace Prisma {
     ownerId: string | null
     approved: boolean | null
     submittedAt: Date | null
+    rejectedAt: Date | null
+    rejectionReason: string | null
     serviceChargeAmount: Decimal | null
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
@@ -4372,6 +4376,8 @@ export namespace Prisma {
     ownerId: number
     approved: number
     submittedAt: number
+    rejectedAt: number
+    rejectionReason: number
     serviceChargeAmount: number
     serviceChargeCycleMonths: number
     serviceChargeDueDate: number
@@ -4410,6 +4416,8 @@ export namespace Prisma {
     ownerId?: true
     approved?: true
     submittedAt?: true
+    rejectedAt?: true
+    rejectionReason?: true
     serviceChargeAmount?: true
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
@@ -4436,6 +4444,8 @@ export namespace Prisma {
     ownerId?: true
     approved?: true
     submittedAt?: true
+    rejectedAt?: true
+    rejectionReason?: true
     serviceChargeAmount?: true
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
@@ -4462,6 +4472,8 @@ export namespace Prisma {
     ownerId?: true
     approved?: true
     submittedAt?: true
+    rejectedAt?: true
+    rejectionReason?: true
     serviceChargeAmount?: true
     serviceChargeCycleMonths?: true
     serviceChargeDueDate?: true
@@ -4575,6 +4587,8 @@ export namespace Prisma {
     ownerId: string | null
     approved: boolean
     submittedAt: Date | null
+    rejectedAt: Date | null
+    rejectionReason: string | null
     serviceChargeAmount: Decimal | null
     serviceChargeCycleMonths: number | null
     serviceChargeDueDate: Date | null
@@ -4620,6 +4634,8 @@ export namespace Prisma {
     ownerId?: boolean
     approved?: boolean
     submittedAt?: boolean
+    rejectedAt?: boolean
+    rejectionReason?: boolean
     serviceChargeAmount?: boolean
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
@@ -4652,6 +4668,8 @@ export namespace Prisma {
     ownerId?: boolean
     approved?: boolean
     submittedAt?: boolean
+    rejectedAt?: boolean
+    rejectionReason?: boolean
     serviceChargeAmount?: boolean
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
@@ -4680,6 +4698,8 @@ export namespace Prisma {
     ownerId?: boolean
     approved?: boolean
     submittedAt?: boolean
+    rejectedAt?: boolean
+    rejectionReason?: boolean
     serviceChargeAmount?: boolean
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
@@ -4708,6 +4728,8 @@ export namespace Prisma {
     ownerId?: boolean
     approved?: boolean
     submittedAt?: boolean
+    rejectedAt?: boolean
+    rejectionReason?: boolean
     serviceChargeAmount?: boolean
     serviceChargeCycleMonths?: boolean
     serviceChargeDueDate?: boolean
@@ -4717,7 +4739,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "ownerId" | "approved" | "submittedAt" | "serviceChargeAmount" | "serviceChargeCycleMonths" | "serviceChargeDueDate" | "serviceChargeLastStage" | "serviceChargeLastReceivedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
+  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "ownerId" | "approved" | "submittedAt" | "rejectedAt" | "rejectionReason" | "serviceChargeAmount" | "serviceChargeCycleMonths" | "serviceChargeDueDate" | "serviceChargeLastStage" | "serviceChargeLastReceivedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
   export type PropertyInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
     owner?: boolean | Property$ownerArgs<ExtArgs>
@@ -4780,6 +4802,14 @@ export namespace Prisma {
        * meaningful while approved is false; irrelevant once approved.
        */
       submittedAt: Date | null
+      /**
+       * Set when an admin rejects a submitted property (rejectPropertyAction
+       * resets submittedAt to null so it drops out of the review queue, and
+       * stamps these two so the owner sees why on their own property page).
+       * Cleared again the moment the owner resubmits or an admin approves.
+       */
+      rejectedAt: Date | null
+      rejectionReason: string | null
       /**
        * Recurring maintenance budget the owner collects from/for this property
        * (e.g. 400 OMR every 3 months). All three are null until someone sets
@@ -5246,6 +5276,8 @@ export namespace Prisma {
     readonly ownerId: FieldRef<"Property", 'String'>
     readonly approved: FieldRef<"Property", 'Boolean'>
     readonly submittedAt: FieldRef<"Property", 'DateTime'>
+    readonly rejectedAt: FieldRef<"Property", 'DateTime'>
+    readonly rejectionReason: FieldRef<"Property", 'String'>
     readonly serviceChargeAmount: FieldRef<"Property", 'Decimal'>
     readonly serviceChargeCycleMonths: FieldRef<"Property", 'Int'>
     readonly serviceChargeDueDate: FieldRef<"Property", 'DateTime'>
@@ -25406,6 +25438,8 @@ export namespace Prisma {
     ownerId: 'ownerId',
     approved: 'approved',
     submittedAt: 'submittedAt',
+    rejectedAt: 'rejectedAt',
+    rejectionReason: 'rejectionReason',
     serviceChargeAmount: 'serviceChargeAmount',
     serviceChargeCycleMonths: 'serviceChargeCycleMonths',
     serviceChargeDueDate: 'serviceChargeDueDate',
@@ -26165,6 +26199,8 @@ export namespace Prisma {
     ownerId?: UuidNullableFilter<"Property"> | string | null
     approved?: BoolFilter<"Property"> | boolean
     submittedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
+    rejectedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
+    rejectionReason?: StringNullableFilter<"Property"> | string | null
     serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
@@ -26196,6 +26232,8 @@ export namespace Prisma {
     ownerId?: SortOrderInput | SortOrder
     approved?: SortOrder
     submittedAt?: SortOrderInput | SortOrder
+    rejectedAt?: SortOrderInput | SortOrder
+    rejectionReason?: SortOrderInput | SortOrder
     serviceChargeAmount?: SortOrderInput | SortOrder
     serviceChargeCycleMonths?: SortOrderInput | SortOrder
     serviceChargeDueDate?: SortOrderInput | SortOrder
@@ -26230,6 +26268,8 @@ export namespace Prisma {
     ownerId?: UuidNullableFilter<"Property"> | string | null
     approved?: BoolFilter<"Property"> | boolean
     submittedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
+    rejectedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
+    rejectionReason?: StringNullableFilter<"Property"> | string | null
     serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
@@ -26261,6 +26301,8 @@ export namespace Prisma {
     ownerId?: SortOrderInput | SortOrder
     approved?: SortOrder
     submittedAt?: SortOrderInput | SortOrder
+    rejectedAt?: SortOrderInput | SortOrder
+    rejectionReason?: SortOrderInput | SortOrder
     serviceChargeAmount?: SortOrderInput | SortOrder
     serviceChargeCycleMonths?: SortOrderInput | SortOrder
     serviceChargeDueDate?: SortOrderInput | SortOrder
@@ -26295,6 +26337,8 @@ export namespace Prisma {
     ownerId?: UuidNullableWithAggregatesFilter<"Property"> | string | null
     approved?: BoolWithAggregatesFilter<"Property"> | boolean
     submittedAt?: DateTimeNullableWithAggregatesFilter<"Property"> | Date | string | null
+    rejectedAt?: DateTimeNullableWithAggregatesFilter<"Property"> | Date | string | null
+    rejectionReason?: StringNullableWithAggregatesFilter<"Property"> | string | null
     serviceChargeAmount?: DecimalNullableWithAggregatesFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: IntNullableWithAggregatesFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableWithAggregatesFilter<"Property"> | Date | string | null
@@ -28068,6 +28112,8 @@ export namespace Prisma {
     notes?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -28099,6 +28145,8 @@ export namespace Prisma {
     ownerId?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -28126,6 +28174,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -28157,6 +28207,8 @@ export namespace Prisma {
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -28186,6 +28238,8 @@ export namespace Prisma {
     ownerId?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -28210,6 +28264,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -28236,6 +28292,8 @@ export namespace Prisma {
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -30370,6 +30428,8 @@ export namespace Prisma {
     ownerId?: SortOrder
     approved?: SortOrder
     submittedAt?: SortOrder
+    rejectedAt?: SortOrder
+    rejectionReason?: SortOrder
     serviceChargeAmount?: SortOrder
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
@@ -30401,6 +30461,8 @@ export namespace Prisma {
     ownerId?: SortOrder
     approved?: SortOrder
     submittedAt?: SortOrder
+    rejectedAt?: SortOrder
+    rejectionReason?: SortOrder
     serviceChargeAmount?: SortOrder
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
@@ -30427,6 +30489,8 @@ export namespace Prisma {
     ownerId?: SortOrder
     approved?: SortOrder
     submittedAt?: SortOrder
+    rejectedAt?: SortOrder
+    rejectionReason?: SortOrder
     serviceChargeAmount?: SortOrder
     serviceChargeCycleMonths?: SortOrder
     serviceChargeDueDate?: SortOrder
@@ -34782,6 +34846,8 @@ export namespace Prisma {
     notes?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -34811,6 +34877,8 @@ export namespace Prisma {
     ownerId?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -34869,6 +34937,8 @@ export namespace Prisma {
     ownerId?: UuidNullableFilter<"Property"> | string | null
     approved?: BoolFilter<"Property"> | boolean
     submittedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
+    rejectedAt?: DateTimeNullableFilter<"Property"> | Date | string | null
+    rejectionReason?: StringNullableFilter<"Property"> | string | null
     serviceChargeAmount?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: IntNullableFilter<"Property"> | number | null
     serviceChargeDueDate?: DateTimeNullableFilter<"Property"> | Date | string | null
@@ -35466,6 +35536,8 @@ export namespace Prisma {
     notes?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -35496,6 +35568,8 @@ export namespace Prisma {
     ownerId?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -35831,6 +35905,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35861,6 +35937,8 @@ export namespace Prisma {
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36874,6 +36952,8 @@ export namespace Prisma {
     notes?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -36903,6 +36983,8 @@ export namespace Prisma {
     notes?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -38224,6 +38306,8 @@ export namespace Prisma {
     notes?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -38254,6 +38338,8 @@ export namespace Prisma {
     ownerId?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -38587,6 +38673,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38617,6 +38705,8 @@ export namespace Prisma {
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -40944,6 +41034,8 @@ export namespace Prisma {
     notes?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -40974,6 +41066,8 @@ export namespace Prisma {
     ownerId?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -41586,6 +41680,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -41616,6 +41712,8 @@ export namespace Prisma {
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -44393,6 +44491,8 @@ export namespace Prisma {
     ownerId?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -44417,6 +44517,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -44446,6 +44548,8 @@ export namespace Prisma {
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -44474,6 +44578,8 @@ export namespace Prisma {
     ownerId?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -45242,6 +45348,8 @@ export namespace Prisma {
     notes?: string | null
     approved?: boolean
     submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
     serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: number | null
     serviceChargeDueDate?: Date | string | null
@@ -46142,6 +46250,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -46171,6 +46281,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -46199,6 +46311,8 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     approved?: BoolFieldUpdateOperationsInput | boolean
     submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
     serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null

@@ -176,6 +176,12 @@ model Property {
   /// admin's pending-review queue even though approved is false. Only
   /// meaningful while approved is false; irrelevant once approved.
   submittedAt     DateTime? @map("submitted_at")
+  /// Set when an admin rejects a submitted property (rejectPropertyAction
+  /// resets submittedAt to null so it drops out of the review queue, and
+  /// stamps these two so the owner sees why on their own property page).
+  /// Cleared again the moment the owner resubmits or an admin approves.
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason")
   /// Recurring maintenance budget the owner collects from/for this property
   /// (e.g. 400 OMR every 3 months). All three are null until someone sets
   /// them; nulls mean "no service charge tracked" and the reminder job skips
