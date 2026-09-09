@@ -57,7 +57,9 @@ export default async function PropertyDetailPage({
     where: { id },
     include: {
       propertyType: true,
-      owner: { select: { id: true, email: true } },
+      owner: {
+        select: { id: true, email: true, firstName: true, lastName: true },
+      },
       documents: { orderBy: { createdAt: "desc" } },
       units: {
         orderBy: [{ floor: "asc" }, { label: "asc" }],
@@ -95,6 +97,17 @@ export default async function PropertyDetailPage({
       : Promise.resolve([]),
   ]);
 
+  const ownerName = property.owner
+    ? [property.owner.firstName, property.owner.lastName]
+        .filter(Boolean)
+        .join(" ")
+    : null;
+  const ownerLabel = property.owner
+    ? ownerName
+      ? `${ownerName} (${property.owner.email})`
+      : property.owner.email
+    : "No owner assigned";
+
   const propertyType = property.propertyType;
   const hasFloors = propertyType.hasFloors;
   const hasBedrooms = propertyType.hasBedrooms;
@@ -117,7 +130,7 @@ export default async function PropertyDetailPage({
     <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
       <PageHeader
         title={property.name}
-        description={`${propertyType.label} · ${formatOmanAddress(property)}`}
+        description={`${propertyType.label} · ${formatOmanAddress(property)} · Owner: ${ownerLabel}`}
         back={{ href: "/protected/properties", label: "All properties" }}
       >
         <ButtonLink href="/protected/tenancies" variant="outline">
