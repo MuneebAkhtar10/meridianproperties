@@ -248,7 +248,8 @@ export type EntityDocumentCategory = (typeof EntityDocumentCategory)[keyof typeo
 export const FamilyRelationship: {
   spouse: 'spouse',
   father: 'father',
-  mother: 'mother'
+  mother: 'mother',
+  child: 'child'
 };
 
 export type FamilyRelationship = (typeof FamilyRelationship)[keyof typeof FamilyRelationship]

@@ -29,18 +29,25 @@ export type FamilyMemberItem = {
   documentFileSize: number | null;
 };
 
-const RELATIONSHIPS: FamilyRelationship[] = ["spouse", "father", "mother"];
+const RELATIONSHIPS: FamilyRelationship[] = [
+  "spouse",
+  "father",
+  "mother",
+  "child",
+];
 
 const RELATIONSHIP_LABEL: Record<FamilyRelationship, string> = {
   spouse: "Spouse",
   father: "Father",
   mother: "Mother",
+  child: "Child",
 };
 
 const LIMITS: Record<FamilyRelationship, number> = {
   spouse: 4,
   father: 1,
   mother: 1,
+  child: 10,
 };
 
 const NO_RESULT: FamilyMemberActionResult = { ok: true, message: "" };
@@ -61,6 +68,7 @@ function counts(members: FamilyMemberItem[]): Record<FamilyRelationship, number>
     spouse: members.filter((m) => m.relationship === "spouse").length,
     father: members.filter((m) => m.relationship === "father").length,
     mother: members.filter((m) => m.relationship === "mother").length,
+    child: members.filter((m) => m.relationship === "child").length,
   };
 }
 
@@ -426,13 +434,8 @@ export function FamilyMembersManager({
     <div className="space-y-3">
       <div className="rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-sm">
         <p className="text-muted-foreground">
-          Up to {LIMITS.spouse} spouses · {LIMITS.father} father ·{" "}
-          {LIMITS.mother} mother
-        </p>
-        <p className="font-medium">
-          Spouses: {memberCounts.spouse}/{LIMITS.spouse} · Father:{" "}
-          {memberCounts.father}/{LIMITS.father} · Mother:{" "}
-          {memberCounts.mother}/{LIMITS.mother}
+          Add spouses, a father, a mother, and children below — each
+          relationship has its own limit.
         </p>
       </div>
 

@@ -934,29 +934,46 @@ export async function notifyPropertyApproved(input: {
   ownerId: string;
   propertyId: string;
   propertyName: string;
-  /** Included when the property already has a service charge configured at
-   * the time it's approved, so the owner learns what they owe in the same
-   * email rather than finding out only when the first reminder fires. */
-  serviceCharge?: { amount: string; cycleMonths: number; dueDate: string };
 }): Promise<void> {
-  const details = input.serviceCharge
-    ? [
-        { label: "Service charge", value: input.serviceCharge.amount },
-        {
-          label: "Billing cycle",
-          value: `Every ${input.serviceCharge.cycleMonths} month${input.serviceCharge.cycleMonths === 1 ? "" : "s"}`,
-        },
-        { label: "Due date", value: input.serviceCharge.dueDate },
-      ]
-    : undefined;
-
   await createNotification({
     data: {
       userId: input.ownerId,
       title: "Property Approved",
       message: `“${input.propertyName}” has been approved and is now live.`,
       href: `/protected/properties/${input.propertyId}`,
-      ...(details && { details }),
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+/** A property's service charge became known to its owner — at creation, at
+ * approval, or whenever an owner is (re)assigned to a property that already
+ * has one configured. Deliberately its own notification rather than a
+ * detail bolted onto "Property Assigned"/"Property Approved": a service
+ * charge invoice is its own thing, not a footnote on an unrelated event. */
+export async function notifyPropertyServiceCharge(input: {
+  ownerId: string;
+  propertyId: string;
+  propertyName: string;
+  amount: string;
+  cycleMonths: number;
+  dueDate: string;
+}): Promise<void> {
+  await createNotification({
+    data: {
+      userId: input.ownerId,
+      title: "Property Service Charge",
+      message: `Your service charge invoice for “${input.propertyName}” has been generated.`,
+      href: `/protected/properties/${input.propertyId}`,
+      details: [
+        { label: "Service charge", value: input.amount },
+        {
+          label: "Billing cycle",
+          value: `Every ${input.cycleMonths} month${input.cycleMonths === 1 ? "" : "s"}`,
+        },
+        { label: "Due date", value: input.dueDate },
+      ],
     },
   });
 
@@ -985,29 +1002,13 @@ export async function notifyPropertyAssigned(input: {
   ownerId: string;
   propertyId: string;
   propertyName: string;
-  /** Included when the property has a service charge configured — surfaced
-   * as details on the email/WhatsApp message so the owner knows what
-   * they're on the hook for from day one. */
-  serviceCharge?: { amount: string; cycleMonths: number; dueDate: string };
 }): Promise<void> {
-  const details = input.serviceCharge
-    ? [
-        { label: "Service charge", value: input.serviceCharge.amount },
-        {
-          label: "Billing cycle",
-          value: `Every ${input.serviceCharge.cycleMonths} month${input.serviceCharge.cycleMonths === 1 ? "" : "s"}`,
-        },
-        { label: "Due date", value: input.serviceCharge.dueDate },
-      ]
-    : undefined;
-
   await createNotification({
     data: {
       userId: input.ownerId,
       title: "Property Assigned to You",
       message: `“${input.propertyName}” has been assigned to you.`,
       href: `/protected/properties/${input.propertyId}`,
-      ...(details && { details }),
     },
   });
 

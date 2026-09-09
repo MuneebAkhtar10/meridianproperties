@@ -318,6 +318,7 @@ enum FamilyRelationship {
   spouse
   father
   mother
+  child
 }
 
 /// A dependent (spouse/father/mother) tracked for an in-house worker whose

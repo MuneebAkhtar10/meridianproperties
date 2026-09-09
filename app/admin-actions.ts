@@ -8,6 +8,7 @@ import {
   notifyPropertyApproved,
   notifyPropertyAssigned,
   notifyPropertyRejected,
+  notifyPropertyServiceCharge,
   notifyServiceChargeDue,
   notifyServiceChargeOverdue,
   notifyServiceChargeReceived,
@@ -185,11 +186,14 @@ export const createPropertyAction = async (formData: FormData) => {
       ownerId,
       propertyId: property.id,
       propertyName: property.name,
-      serviceCharge: {
-        amount: formatMoney(serviceCharge.amount),
-        cycleMonths: serviceCharge.cycleMonths,
-        dueDate: format(serviceCharge.dueDate, "d MMM yyyy"),
-      },
+    });
+    await notifyPropertyServiceCharge({
+      ownerId,
+      propertyId: property.id,
+      propertyName: property.name,
+      amount: formatMoney(serviceCharge.amount),
+      cycleMonths: serviceCharge.cycleMonths,
+      dueDate: format(serviceCharge.dueDate, "d MMM yyyy"),
     });
   }
 
@@ -329,11 +333,14 @@ export const updatePropertyAction = async (formData: FormData) => {
       ownerId,
       propertyId: id,
       propertyName: name,
-      serviceCharge: {
-        amount: formatMoney(serviceCharge.amount),
-        cycleMonths: serviceCharge.cycleMonths,
-        dueDate: format(serviceCharge.dueDate, "d MMM yyyy"),
-      },
+    });
+    await notifyPropertyServiceCharge({
+      ownerId,
+      propertyId: id,
+      propertyName: name,
+      amount: formatMoney(serviceCharge.amount),
+      cycleMonths: serviceCharge.cycleMonths,
+      dueDate: format(serviceCharge.dueDate, "d MMM yyyy"),
     });
   }
 
@@ -445,14 +452,18 @@ export const approvePropertyAction = async (formData: FormData) => {
       ownerId: property.ownerId,
       propertyId: id,
       propertyName: property.name,
-      serviceCharge: hasServiceCharge
-        ? {
-            amount: formatMoney(property.serviceChargeAmount!),
-            cycleMonths: property.serviceChargeCycleMonths!,
-            dueDate: format(property.serviceChargeDueDate!, "d MMM yyyy"),
-          }
-        : undefined,
     });
+
+    if (hasServiceCharge) {
+      await notifyPropertyServiceCharge({
+        ownerId: property.ownerId,
+        propertyId: id,
+        propertyName: property.name,
+        amount: formatMoney(property.serviceChargeAmount!),
+        cycleMonths: property.serviceChargeCycleMonths!,
+        dueDate: format(property.serviceChargeDueDate!, "d MMM yyyy"),
+      });
+    }
   }
 
   await publishDirectoryChange();
@@ -1881,12 +1892,13 @@ export const updateWorkerHrAction = async (formData: FormData) => {
 
 /** Per-relationship dependent limits — a worker can list up to 4 spouses
  * (common under some Gulf employment/visa arrangements), one father, one
- * mother. Enforced here rather than in the schema since it's a business
- * rule, not a data-integrity one. */
+ * mother, and up to 10 children. Enforced here rather than in the schema
+ * since it's a business rule, not a data-integrity one. */
 const FAMILY_MEMBER_LIMITS: Record<FamilyRelationship, number> = {
   spouse: 4,
   father: 1,
   mother: 1,
+  child: 10,
 };
 
 function parseRelationship(value: FormDataEntryValue | null): FamilyRelationship | null {
