@@ -175,6 +175,8 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       : "all";
   const propertyFilter =
     typeof params.property === "string" ? params.property : "all";
+  const tenantFilter =
+    typeof params.tenant === "string" ? params.tenant : "all";
   const sortColumn: SortColumn =
     typeof params.sort === "string" &&
     SORT_COLUMNS.includes(params.sort as SortColumn)
@@ -188,6 +190,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     properties,
     pendingCount,
     collectedThisMonth,
+    tenantsWithTenancies,
   ] = await Promise.all([
     prisma.charge.findMany({
       where: {
@@ -199,6 +202,9 @@ export default async function FinancesPage({ searchParams }: PageProps) {
             : (typeFilter as ChargeType),
         ...((isAdmin || isOwner) && propertyFilter !== "all"
           ? { unit: { propertyId: propertyFilter } }
+          : {}),
+        ...((isAdmin || isOwner) && tenantFilter !== "all"
+          ? { tenantId: tenantFilter }
           : {}),
       },
       orderBy: [{ dueDate: "desc" }, { createdAt: "desc" }],
@@ -266,6 +272,20 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       },
       _sum: { amount: true },
     }),
+    isAdmin || isOwner
+      ? prisma.user.findMany({
+          where: {
+            userType: UserType.user,
+            tenancies: {
+              some: isOwner
+                ? { unit: { property: { ownerId: user.id } } }
+                : {},
+            },
+          },
+          orderBy: { email: "asc" },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   const visibleCharges = sortCharges(
@@ -396,7 +416,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
               ))}
             </div>
 
-            <form className="grid gap-2 sm:grid-cols-3">
+            <form className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <input type="hidden" name="status" value={statusFilter} />
               <Select name="type" defaultValue={typeFilter}>
                 <option value="all">All charge types</option>
@@ -414,6 +434,21 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                       {property.name}
                     </option>
                   ))}
+                </Select>
+              )}
+              {(isAdmin || isOwner) && (
+                <Select name="tenant" defaultValue={tenantFilter}>
+                  <option value="all">All tenants</option>
+                  {tenantsWithTenancies.map((tenant) => {
+                    const name = [tenant.firstName, tenant.lastName]
+                      .filter(Boolean)
+                      .join(" ");
+                    return (
+                      <option key={tenant.id} value={tenant.id}>
+                        {name ? `${name} · ${tenant.email}` : tenant.email}
+                      </option>
+                    );
+                  })}
                 </Select>
               )}
               <SubmitButton variant="outline" pendingText="Filtering...">
