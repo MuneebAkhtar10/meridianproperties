@@ -282,6 +282,67 @@ function isSmallTalk(bodyLower: string): boolean {
 
   return false;
 }
+
+// A farewell or "thanks" is just a reaction, not a new request — treating
+// it like an unclear message (falling to "what do you need?") reads as the
+// bot not understanding basic conversation. These get their own warm,
+// short sign-off instead, with no "what do you need" follow-up implied.
+const FAREWELL_PHRASES = [
+  "bye",
+  "bye bye",
+  "goodbye",
+  "good bye",
+  "take care",
+  "see you",
+  "see ya",
+  "cya",
+  "later",
+  "have a good day",
+  "have a good one",
+  "allah hafiz",
+  "khuda hafiz",
+  "good night",
+];
+const THANKS_PHRASES = [
+  "thanks",
+  "thank you",
+  "thankyou",
+  "thanks a lot",
+  "thank u",
+  "thnx",
+  "tysm",
+  "much appreciated",
+  "appreciate it",
+  "appreciated",
+  "ok thanks",
+  "okay thanks",
+  "alright thanks",
+];
+// Short, one-word reactions — only treated as a reaction when they're the
+// *entire* message. Matched as a substring like the phrases above, "not
+// great, the AC is broken" would wrongly read as a happy reaction instead
+// of the actual (negative) problem report it is.
+// "ok"/"okay" deliberately excluded — those are also how a tenant answers
+// "yes" to submit a report mid-flow (YES_WORDS), so treating them as a
+// stand-alone reaction here would swallow that confirmation.
+const REACTION_ONLY_WORDS = ["great", "nice", "perfect", "awesome", "cool"];
+
+function isFarewell(bodyLower: string): boolean {
+  const normalized = stripTrailingPunctuation(bodyLower);
+  return FAREWELL_PHRASES.some(
+    (phrase) => normalized === phrase || normalized.includes(phrase),
+  );
+}
+
+function isThanksOrReaction(bodyLower: string): boolean {
+  const normalized = stripTrailingPunctuation(bodyLower);
+  return (
+    THANKS_PHRASES.some(
+      (phrase) => normalized === phrase || normalized.includes(phrase),
+    ) || REACTION_ONLY_WORDS.includes(normalized)
+  );
+}
+
 const REPORT_TRIGGER_WORDS = [
   "menu",
   "start",
@@ -305,7 +366,13 @@ function isReportTrigger(bodyLower: string): boolean {
   if (REPORT_TRIGGER_WORDS.includes(normalized)) return true;
   return (
     /\breport(ing)?\b/.test(normalized) ||
-    /\bnew\b[\s\S]*\b(issue|problem|request)\b/.test(normalized)
+    /\bnew\b[\s\S]*\b(issue|problem|request)\b/.test(normalized) ||
+    // "I have a maintenance issue", "there's a problem", "I'm having an
+    // issue with the AC" — stating a problem exists is just as clear an
+    // intent to report as literally saying the word "report".
+    /\b(have|having|got|there'?s|theres)\b[\s\S]*\b(issue|problem)\b/.test(
+      normalized,
+    )
   );
 }
 
@@ -342,6 +409,45 @@ const STATUS_TRIGGER_PHRASES = [
   "where is my request",
   "did anyone look at my request",
   "has anyone looked at my request",
+  // Arrival/ETA questions — these are about an existing request just as
+  // much as "what's the status", and previously only the AI path handled
+  // them (unreliably, since it sometimes fails and falls to the generic
+  // "not sure what you need" line instead of actually answering).
+  "when will he arrive",
+  "when will she arrive",
+  "when will they arrive",
+  "when will the worker arrive",
+  "when is he coming",
+  "when is she coming",
+  "when is the worker coming",
+  "when will he come",
+  "when will he get here",
+  "when's he coming",
+  "whens he coming",
+  "what time will he",
+  "what time is he",
+  "eta",
+  // A direct answer to the bot's own "report a new issue, or check on one
+  // you've already sent in?" question — "existing issue" on its own isn't
+  // in REPORT_TRIGGER_WORDS's exact list and doesn't match isReportTrigger
+  // either, so it fell through as unrecognized instead of being read as
+  // exactly the answer it obviously is.
+  "existing issue",
+  "existing request",
+  "existing one",
+  "the existing",
+  "already sent",
+  "already reported",
+  "already submitted",
+  "old issue",
+  "old request",
+  "previous issue",
+  "previous request",
+  "one i sent",
+  "one i already sent",
+  "the one i sent",
+  "check on it",
+  "check on that",
 ];
 
 function isDirectStatusCheck(bodyLower: string): boolean {
@@ -380,7 +486,7 @@ function isDuesCheck(bodyLower: string): boolean {
 // number or a known charge-type word) so an unrelated message mentioning
 // money in passing doesn't get swept into the payment-proof flow.
 function isPaymentClaim(bodyLower: string): boolean {
-  const mentionsPaying = /\b(paid|payment|pay)\b/.test(bodyLower);
+  const mentionsPaying = /\b(paid|paying|payment|pay)\b/.test(bodyLower);
   if (!mentionsPaying) return false;
   const mentionsAmount = /\d/.test(bodyLower);
   const mentionsChargeWord =
@@ -440,12 +546,28 @@ async function tenantFlow(
   // payment claim or a dues question should never get swallowed by the
   // maintenance-report matching below just because it mentions a number.
   if (!session?.flow) {
+    // Payment intent first: "I need to pay my dues" is someone acting on
+    // it, not just asking the balance — isDuesCheck would also match
+    // "dues" there, but starting the payment flow is what they actually
+    // asked for.
+    if (isPaymentClaim(bodyLower)) {
+      return startPaymentClaim(userId, phone, body);
+    }
+
     if (isDuesCheck(bodyLower)) {
       return describeTenantDues(userId);
     }
 
-    if (isPaymentClaim(bodyLower)) {
-      return startPaymentClaim(userId, phone, body);
+    // A farewell/thanks/reaction isn't a new ask — replying with "what do
+    // you need?" to "thanks" or "take care" reads as not following the
+    // conversation at all. These get a plain, warm sign-off instead, with
+    // nothing implying they still need to ask for something.
+    if (isFarewell(bodyLower)) {
+      return "Take care! I'm here whenever you need anything.";
+    }
+
+    if (isThanksOrReaction(bodyLower)) {
+      return "You're welcome! Let me know if anything comes up.";
     }
   }
 
@@ -564,6 +686,23 @@ async function tenantFlow(
   ) {
     await clearSession(phone);
     return "No problem, all cancelled. Just let me know whenever you want to start again.";
+  }
+
+  // A tenant mid-report can still have a completely unrelated question —
+  // previously the only way out was the exact cancel-word check above, so
+  // "close it, I need to pay my dues" just got swallowed by whatever step
+  // was pending (e.g. re-asked "which room?" forever) instead of actually
+  // switching to the dues/payment flow. This lets any step but the photo
+  // upload one hand off to that flow directly.
+  if (
+    session.step !== "awaiting_payment_proof" &&
+    (isDuesCheck(bodyLower) || isPaymentClaim(bodyLower))
+  ) {
+    await clearSession(phone);
+    if (isPaymentClaim(bodyLower)) {
+      return startPaymentClaim(userId, phone, body);
+    }
+    return describeTenantDues(userId);
   }
 
   switch (session.step) {
@@ -1182,6 +1321,15 @@ async function workerFlow(
   }
 
   const session = await getSession(phone);
+
+  if (!session?.flow) {
+    if (isFarewell(bodyLower)) {
+      return "Take care! I'm here whenever you need anything.";
+    }
+    if (isThanksOrReaction(bodyLower)) {
+      return "You're welcome! Let me know if anything comes up.";
+    }
+  }
 
   if (session?.flow === WhatsappFlow.awaiting_completion_code && session.taskId) {
     return handleCompletionStep(workerId, phone, session, body, bodyLower, imageId);

@@ -73,6 +73,15 @@ type WhatsappWebhookPayload = {
   }[];
 };
 
+/** Marks a forwarded copy so the receiving side (this same route, running
+ * locally) knows to only observe it — see the header check in POST below.
+ * Without this, the local instance would run the full flow a second time
+ * against the same shared database (creating a duplicate maintenance
+ * request, minting a second completion code, etc.) and send its own extra
+ * reply on top of production's — a real double/triple-reply bug this
+ * exists to prevent. */
+const MIRROR_HEADER = "X-Whatsapp-Mirror";
+
 /**
  * Meta only accepts one callback URL per app subscription, so there's no
  * way to register both a local (ngrok) and live URL with Meta at once. This
@@ -100,6 +109,7 @@ async function mirrorWebhookPayload(
       headers: {
         "Content-Type": "application/json",
         "X-Hub-Signature-256": headers.get("X-Hub-Signature-256") ?? "",
+        [MIRROR_HEADER]: "true",
       },
       body: rawBody,
       signal: AbortSignal.timeout(4000),
@@ -111,6 +121,16 @@ async function mirrorWebhookPayload(
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
+
+  // This request IS a mirrored copy (forwarded by production, see below) —
+  // never act on it. Acting on it would re-run the whole flow (and its
+  // database writes) a second time against the same shared database, and
+  // send a second reply on top of production's. Log it for local
+  // visibility, then stop.
+  if (request.headers.get(MIRROR_HEADER) === "true") {
+    console.log("[whatsapp webhook] Mirrored payload (observe-only):", rawBody);
+    return NextResponse.json({ ok: true, mirrored: true });
+  }
 
   await mirrorWebhookPayload(rawBody, request.headers);
 

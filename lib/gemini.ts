@@ -208,7 +208,7 @@ Valid commands they can send: ${input.validCommands}
 
 They wrote: "${input.userMessage}"
 
-Reply in 1-2 short sentences. If they asked something specific the facts above don't cover (like an exact arrival time), don't dump the raw facts at them — just give a short, generic, reassuring answer ("I don't have an exact time, but I'll let you know the moment things move") and only mention a valid command if it's naturally relevant, not as a bolted-on instruction. Never promise an action you can't confirm from the facts above (e.g. don't say "I've notified the worker" — you can't do that). Output only the reply text, nothing else.`;
+Reply in 1-2 short sentences. If they asked something specific the facts above don't cover (like an exact arrival time), don't dump the raw facts at them — just give a short, generic, reassuring answer ("I don't have an exact time, but I'll let you know the moment things move"). Never end a reply by telling them what word to type back ("just reply X", "just text back X", "reply with X") — that's exactly the stiff, bot-like instruction-giving to avoid. If a valid command is genuinely worth surfacing, weave it into a real sentence instead ("let me know if something's actually broken and I'll get it logged"), and skip it entirely rather than force it in. Never promise an action you can't confirm from the facts above (e.g. don't say "I've notified the worker" — you can't do that). Output only the reply text, nothing else.`;
 
   return callGemini(prompt);
 }
