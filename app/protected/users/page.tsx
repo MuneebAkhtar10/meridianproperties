@@ -3,7 +3,9 @@ import {
   IdCard,
   KeyRound,
   Search,
+  Shield,
   Trash2,
+  UserCog,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -24,6 +26,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { PendingLink } from "@/components/ui/pending-link";
 import { NewPersonFields } from "@/components/new-person-fields";
 import { PhoneInput } from "@/components/phone-input";
@@ -105,7 +108,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
     ? { AND: andConditions }
     : {};
 
-  const [users, emptyUnits, inHouseWorkers] = await Promise.all([
+  const [users, emptyUnits, inHouseWorkers, roleCounts] = await Promise.all([
     prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -130,13 +133,21 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         familyMembers: { orderBy: { createdAt: "asc" } },
       },
     }),
+    // Unfiltered totals for the summary tiles — these always describe the
+    // whole org, independent of whatever search/role filter is applied below.
+    prisma.user.groupBy({ by: ["userType"], _count: true }),
   ]);
+
+  const totalPeople = roleCounts.reduce((sum, r) => sum + r._count, 0);
+  const countByType = (type: UserType) =>
+    roleCounts.find((r) => r.userType === type)?._count ?? 0;
 
   const pickableUnits: PickableUnit[] = emptyUnits.map((unit) => ({
     id: unit.id,
     label: unit.label,
     propertyName: unit.property.name,
     propertyTypeId: unit.property.propertyTypeId,
+    propertyTypeName: unit.property.propertyType.name,
     propertyTypeLabel: unit.property.propertyType.label,
     propertyTypeUnitNounSingular: unit.property.propertyType.unitNounSingular,
     propertyTypeUnitNounPlural: unit.property.propertyType.unitNounPlural,
@@ -144,11 +155,49 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   }));
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pb-8 pt-4 sm:px-6 lg:px-8">
       <PageHeader
         title="People"
-        description={`${users.length} account${users.length === 1 ? "" : "s"}`}
+        description={`${totalPeople} account${totalPeople === 1 ? "" : "s"} across every role`}
       />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatTile
+          icon={<Users className="h-5 w-5" />}
+          value={totalPeople}
+          label="Total accounts"
+          accent="bg-slate-400"
+          iconBg="bg-slate-50 text-slate-600"
+        />
+        <StatTile
+          icon={<Shield className="h-5 w-5" />}
+          value={countByType(UserType.admin)}
+          label="Admins"
+          accent="bg-violet-500"
+          iconBg="bg-violet-50 text-violet-600"
+        />
+        <StatTile
+          icon={<KeyRound className="h-5 w-5" />}
+          value={countByType(UserType.owner)}
+          label="Property owners"
+          accent="bg-amber-500"
+          iconBg="bg-amber-50 text-amber-600"
+        />
+        <StatTile
+          icon={<Users className="h-5 w-5" />}
+          value={countByType(UserType.user)}
+          label="Tenants"
+          accent="bg-emerald-500"
+          iconBg="bg-emerald-50 text-emerald-600"
+        />
+        <StatTile
+          icon={<UserCog className="h-5 w-5" />}
+          value={countByType(UserType.worker)}
+          label="Workers"
+          accent="bg-[#0886be]"
+          iconBg="bg-[#0886be]/10 text-[#0886be]"
+        />
+      </div>
 
       {"error" in message || "success" in message ? (
         <FormMessage message={message} />
@@ -461,6 +510,21 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                               />
                             </div>
                           </div>
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor={`mailing-address-${user.id}`}
+                              className="text-xs"
+                            >
+                              Mailing address
+                            </Label>
+                            <Textarea
+                              id={`mailing-address-${user.id}`}
+                              name="mailingAddress"
+                              defaultValue={user.mailingAddress ?? ""}
+                              className="min-h-16 text-xs"
+                              placeholder="Used on owner service charge invoices"
+                            />
+                          </div>
                           <SubmitButton
                             formAction={updateUserProfileAction}
                             size="sm"
@@ -643,5 +707,36 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         </Card>
       </div>
     </div>
+  );
+}
+
+function StatTile({
+  icon,
+  value,
+  label,
+  accent,
+  iconBg,
+}: {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+  accent: string;
+  iconBg: string;
+}) {
+  return (
+    <Card className="relative overflow-hidden border-border/60 shadow-sm">
+      <span className={`absolute inset-x-0 top-0 h-1 ${accent}`} />
+      <CardContent className="flex items-center gap-4 p-5">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="whitespace-nowrap text-xs text-muted-foreground">
+            {label}
+          </p>
+          <p className="text-2xl font-semibold">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

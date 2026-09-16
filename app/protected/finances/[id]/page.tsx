@@ -22,21 +22,17 @@ import {
 import { ChargeStatusBadge } from "@/components/charge-status-badge";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { RecordPaymentForm } from "@/components/record-payment-form";
 import { SubmitButton } from "@/components/submit-button";
-import { UploadFileInput } from "@/components/upload-file-input";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   CHARGE_TYPE_LABEL,
   PAYMENT_METHOD_LABEL,
-  PAYMENT_METHODS,
   approvedTotal,
   chargeBalance,
-  dateInputValue,
   formatMoney,
   pendingTotal,
 } from "@/lib/finance";
@@ -102,7 +98,7 @@ export default async function FinanceDetailPage({
     !charge ||
     (user.userType === UserType.user && charge.tenantId !== user.id) ||
     (user.userType === UserType.owner &&
-      charge.unit.property.ownerId !== user.id)
+      charge.unit.ownerId !== user.id)
   ) {
     notFound();
   }
@@ -120,7 +116,7 @@ export default async function FinanceDetailPage({
     .join(" ");
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8 px-4 pt-4 pb-8">
       <PageHeader
         title={charge.title}
         description={`${CHARGE_TYPE_LABEL[charge.type]} · ${charge.unit.property.name} · ${formatUnitLabel(
@@ -412,69 +408,13 @@ export default async function FinanceDetailPage({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form className="space-y-4" encType="multipart/form-data">
-                  <input type="hidden" name="chargeId" value={charge.id} />
-                  <Field label="Amount (OMR)">
-                    <Input
-                      name="amount"
-                      type="number"
-                      min="0.001"
-                      max={availableToSubmit}
-                      step="0.001"
-                      defaultValue={availableToSubmit.toFixed(3)}
-                      required
-                    />
-                  </Field>
-                  <Field label="Paid on">
-                    <Input
-                      name="paidAt"
-                      type="date"
-                      defaultValue={dateInputValue()}
-                      required
-                    />
-                  </Field>
-                  <Field label="Payment method">
-                    <Select name="method" defaultValue="bank_transfer">
-                      {PAYMENT_METHODS.map((method) => (
-                        <option key={method} value={method}>
-                          {PAYMENT_METHOD_LABEL[method]}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  <Field label="Reference / transaction ID">
-                    <Input name="reference" placeholder="Optional" />
-                  </Field>
-                  <Field
-                    label={
-                      canManagePayments
-                        ? "Receipt (optional)"
-                        : "Receipt / screenshot *"
-                    }
-                  >
-                    <UploadFileInput
-                      name="receipt"
-                      required={user.userType === UserType.user}
-                    />
-                  </Field>
-                  <Field label="Notes">
-                    <Textarea name="notes" className="min-h-16" />
-                  </Field>
-                  <SubmitButton
-                    formAction={submitPaymentAction}
-                    className="w-full"
-                    pendingText="Submitting..."
-                  >
-                    {canManagePayments
-                      ? "Record as approved"
-                      : "Send proof for review"}
-                  </SubmitButton>
-                  {pending > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {formatMoney(pending)} is already waiting for review.
-                    </p>
-                  )}
-                </form>
+                <RecordPaymentForm
+                  chargeId={charge.id}
+                  availableToSubmit={availableToSubmit}
+                  pending={pending}
+                  canManagePayments={canManagePayments}
+                  receiptRequired={user.userType === UserType.user}
+                />
               </CardContent>
             </Card>
           )}

@@ -19,6 +19,8 @@ import {
   notifyWorkerUnassigned,
 } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import { pushMaintenanceRequestToDynamics } from "@/lib/dynamics/entities";
+import { formatUnitLabel } from "@/lib/property-types";
 import { publish } from "@/lib/realtime";
 import {
   getCurrentUser,
@@ -227,7 +229,7 @@ export const reportIssueAction = async (formData: FormData) => {
   // raise an issue against someone else's apartment.
   const unit = await prisma.unit.findUnique({
     where: { tenantId: user.id },
-    select: { id: true, propertyId: true },
+    select: { id: true, propertyId: true, maintenanceEnabled: true },
   });
 
   if (!unit) {
@@ -245,6 +247,14 @@ export const reportIssueAction = async (formData: FormData) => {
     ? await prisma.unit.count({ where: { propertyId: unit.propertyId } })
     : 0;
   const isValidCommonArea = isCommonArea && unitCount > 1;
+
+  if (!isValidCommonArea && !unit.maintenanceEnabled) {
+    return encodedRedirect(
+      "error",
+      "/protected/report",
+      "Maintenance requests aren't available for your unit. Please contact property management directly.",
+    );
+  }
 
   const request = await prisma.maintenanceRequest.create({
     data: {
@@ -265,6 +275,30 @@ export const reportIssueAction = async (formData: FormData) => {
       },
     },
   });
+
+  try {
+    const [tenant, unitDetails] = await Promise.all([
+      prisma.user.findUnique({ where: { id: user.id }, select: { firstName: true, lastName: true } }),
+      isValidCommonArea
+        ? null
+        : prisma.unit.findUnique({
+            where: { id: unit.id },
+            select: { label: true, property: { select: { propertyType: true } } },
+          }),
+    ]);
+    await pushMaintenanceRequestToDynamics({
+      title: request.title,
+      unitLabel: unitDetails
+        ? formatUnitLabel(unitDetails.property.propertyType, unitDetails.label)
+        : "Common area",
+      tenantName: [tenant?.firstName, tenant?.lastName].filter(Boolean).join(" ") || user.email,
+      priority,
+      status: "Pending",
+      description: request.description,
+    });
+  } catch (error) {
+    console.error("Dynamics sync failed for maintenance request:", request.id, error);
+  }
 
   const uploadFailed = await saveAttachments(attachments, request.id, user.id);
 
@@ -1477,8 +1511,9 @@ export const createRequestAction = async (formData: FormData) => {
     select: {
       id: true,
       name: true,
-      ownerId: true,
-      units: { select: { id: true, tenantId: true } },
+      units: {
+        select: { id: true, tenantId: true, maintenanceEnabled: true },
+      },
     },
   });
 
@@ -1495,11 +1530,19 @@ export const createRequestAction = async (formData: FormData) => {
   const useCommonArea = isCommonArea && property.units.length > 1;
 
   if (!useCommonArea) {
-    if (!unitId || !property.units.some((u) => u.id === unitId)) {
+    const selectedUnit = property.units.find((u) => u.id === unitId);
+    if (!selectedUnit) {
       return encodedRedirect(
         "error",
         "/protected/maintenance/new",
         "Select a unit in this property.",
+      );
+    }
+    if (!selectedUnit.maintenanceEnabled) {
+      return encodedRedirect(
+        "error",
+        "/protected/maintenance/new",
+        "Maintenance requests are turned off for this unit — enable it from the unit's settings first.",
       );
     }
   }
@@ -1551,6 +1594,30 @@ export const createRequestAction = async (formData: FormData) => {
       },
     },
   });
+
+  try {
+    const [tenant, unitDetails] = await Promise.all([
+      tenantId
+        ? prisma.user.findUnique({ where: { id: tenantId }, select: { firstName: true, lastName: true, email: true } })
+        : null,
+      useCommonArea
+        ? null
+        : prisma.unit.findUnique({
+            where: { id: unitId },
+            select: { label: true, property: { select: { propertyType: true } } },
+          }),
+    ]);
+    await pushMaintenanceRequestToDynamics({
+      title: request.title,
+      unitLabel: unitDetails ? formatUnitLabel(unitDetails.property.propertyType, unitDetails.label) : "Common area",
+      tenantName: tenant ? [tenant.firstName, tenant.lastName].filter(Boolean).join(" ") || tenant.email : "—",
+      priority,
+      status: "Pending",
+      description: request.description,
+    });
+  } catch (error) {
+    console.error("Dynamics sync failed for maintenance request:", request.id, error);
+  }
 
   if (workerId) {
     const worker = await prisma.user.findUnique({

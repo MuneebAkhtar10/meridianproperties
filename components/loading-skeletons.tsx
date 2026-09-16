@@ -14,7 +14,7 @@ function LoadingRegion({
       role="status"
       aria-label="Loading page"
       aria-live="polite"
-      className={cn("mx-auto w-full space-y-8 px-4 py-8", maxWidth)}
+      className={cn("mx-auto w-full space-y-8 px-4 pt-4 pb-8", maxWidth)}
     >
       <span className="sr-only">Loading page…</span>
       {children}
@@ -91,9 +91,9 @@ function SidebarFormSkeleton() {
   );
 }
 
-export function DashboardLoadingSkeleton() {
+export function DashboardLoadingSkeleton({ maxWidth = "max-w-6xl" } = {}) {
   return (
-    <LoadingRegion>
+    <LoadingRegion maxWidth={maxWidth}>
       <HeaderSkeleton actions={2} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (

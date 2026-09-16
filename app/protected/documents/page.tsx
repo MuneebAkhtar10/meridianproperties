@@ -43,7 +43,7 @@ export default async function MyDocumentsPage({ searchParams }: PageProps) {
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="My documents"
         description="Your private identity and tenancy records in one place."

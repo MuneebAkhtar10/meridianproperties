@@ -20,7 +20,12 @@ type Property = {
     hasFloors: boolean;
     unitPrefix: string | null;
   };
-  units: { id: string; label: string; tenant: { email: string } | null }[];
+  units: {
+    id: string;
+    label: string;
+    maintenanceEnabled: boolean;
+    tenant: { email: string } | null;
+  }[];
 };
 
 type Worker = {
@@ -164,9 +169,16 @@ export function AdminCreateRequestForm({
                   Select a unit
                 </option>
                 {property?.units.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
+                  <option
+                    key={unit.id}
+                    value={unit.id}
+                    disabled={!unit.maintenanceEnabled}
+                  >
                     {formatUnitLabel(property.propertyType, unit.label)}
                     {unit.tenant ? ` — ${unit.tenant.email}` : " — vacant"}
+                    {!unit.maintenanceEnabled
+                      ? " (maintenance disabled)"
+                      : ""}
                   </option>
                 ))}
               </Select>

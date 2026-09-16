@@ -6,10 +6,6 @@ import { EmptyState } from "@/components/empty-state";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
-import {
-  UploadBudgetProvider,
-  UploadFileInput,
-} from "@/components/upload-file-input";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,31 +22,62 @@ import {
 } from "@/app/admin-actions";
 
 export default async function PropertiesPage({ searchParams }: PageProps) {
-  const params = (await searchParams) as unknown as { owner?: string };
+  const params = (await searchParams) as unknown as {
+    owner?: string;
+    q?: string;
+  };
   const message = params as unknown as Message;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = user.userType === UserType.owner;
   const isAdmin = user.userType === UserType.admin;
   const ownerFilter =
     isAdmin && typeof params.owner === "string" ? params.owner : "all";
+  const search =
+    isAdmin && typeof params.q === "string" ? params.q.trim() : "";
 
   const [properties, propertyTypes, pendingProperties, owners] =
     await Promise.all([
       prisma.property.findMany({
         where: isOwner
-          ? { ownerId: user.id }
+          ? { units: { some: { ownerId: user.id } } }
           : {
               // Admin's main list only shows live properties; unapproved
               // owner-submitted ones surface separately below for review.
               approved: true,
-              ...(ownerFilter !== "all" ? { ownerId: ownerFilter } : {}),
+              ...(ownerFilter !== "all"
+                ? { units: { some: { ownerId: ownerFilter } } }
+                : {}),
+              ...(search
+                ? {
+                    OR: [
+                      { name: { contains: search, mode: "insensitive" } },
+                      {
+                        units: {
+                          some: {
+                            owner: {
+                              OR: [
+                                { email: { contains: search, mode: "insensitive" } },
+                                { firstName: { contains: search, mode: "insensitive" } },
+                                { lastName: { contains: search, mode: "insensitive" } },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  }
+                : {}),
             },
         orderBy: { createdAt: "desc" },
         include: {
           propertyType: true,
-          owner: { select: { email: true, firstName: true, lastName: true } },
           _count: { select: { units: true } },
-          units: { select: { tenantId: true } },
+          units: {
+            select: {
+              tenantId: true,
+              owner: { select: { email: true, firstName: true, lastName: true } },
+            },
+          },
         },
       }),
       prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
@@ -63,7 +90,9 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
             orderBy: { createdAt: "asc" },
             include: {
               propertyType: true,
-              owner: { select: { email: true } },
+              units: {
+                select: { owner: { select: { email: true } } },
+              },
             },
           })
         : Promise.resolve([]),
@@ -82,8 +111,16 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
     0,
   );
 
+  /** A property's owners are the distinct set of its units' owners — several
+   * units can belong to different landlords under the same building. */
+  function distinctOwnerEmails(units: { owner: { email: string } | null }[]) {
+    return Array.from(
+      new Set(units.map((u) => u.owner?.email).filter(Boolean)),
+    ) as string[];
+  }
+
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Properties"
         description={`${properties.length} propert${
@@ -184,7 +221,8 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Submitted by{" "}
-                    {property.owner?.email ?? "an unknown owner"}
+                    {distinctOwnerEmails(property.units).join(", ") ||
+                      "an unknown owner"}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -242,6 +280,15 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
 
       {isAdmin && (
         <form className="flex flex-wrap items-end gap-2">
+          <div className="min-w-56 flex-1 max-w-sm space-y-1.5">
+            <Label htmlFor="q">Search</Label>
+            <Input
+              id="q"
+              name="q"
+              defaultValue={search}
+              placeholder="Property name or owner…"
+            />
+          </div>
           <div className="w-full max-w-xs space-y-1.5">
             <Label htmlFor="owner">Property owner</Label>
             <Select id="owner" name="owner" defaultValue={ownerFilter}>
@@ -261,10 +308,18 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
           <SubmitButton variant="outline" pendingText="Filtering...">
             Filter
           </SubmitButton>
+          {(ownerFilter !== "all" || search) && (
+            <Link
+              href="/protected/properties"
+              className="text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              Clear filters
+            </Link>
+          )}
         </form>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_23rem]">
+      <div className="grid gap-8 lg:grid-cols-[1fr_27rem]">
         <div className="min-w-0 space-y-4">
           {properties.length === 0 ? (
             <EmptyState
@@ -335,19 +390,15 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                             </p>
                             {isAdmin && (
                               <p className="text-sm text-muted-foreground">
-                                Owner:{" "}
-                                {property.owner
-                                  ? (() => {
-                                      const ownerName = [
-                                        property.owner.firstName,
-                                        property.owner.lastName,
-                                      ]
-                                        .filter(Boolean)
-                                        .join(" ");
-                                      return ownerName
-                                        ? `${ownerName} (${property.owner.email})`
-                                        : property.owner.email;
-                                    })()
+                                {distinctOwnerEmails(property.units).length > 0
+                                  ? `Owner${
+                                      distinctOwnerEmails(property.units)
+                                        .length > 1
+                                        ? "s"
+                                        : ""
+                                    }: ${distinctOwnerEmails(
+                                      property.units,
+                                    ).join(", ")}`
                                   : "No owner assigned"}
                               </p>
                             )}
@@ -399,34 +450,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
             </h2>
           </div>
           <CardContent className="pt-5">
-            <UploadBudgetProvider>
-              <form className="space-y-4" encType="multipart/form-data">
-                {isAdmin && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ownerId">Owner</Label>
-                    <Select id="ownerId" name="ownerId" defaultValue="" required>
-                      <option value="" disabled>
-                        Select an owner
-                      </option>
-                      {owners.map((owner) => (
-                        <option key={owner.id} value={owner.id}>
-                          {owner.email}
-                        </option>
-                      ))}
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Don&rsquo;t see the owner you need?{" "}
-                      <Link
-                        href="/protected/users?newPersonRole=owner#add-person"
-                        className="font-medium underline"
-                      >
-                        Create the owner first
-                      </Link>
-                      , then come back here.
-                    </p>
-                  </div>
-                )}
-
+              <form className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="name">Property Name</Label>
                   <Input
@@ -537,87 +561,6 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="titleDeedDocuments">
-                    Title deed / ownership documents
-                  </Label>
-                  <UploadFileInput
-                    id="titleDeedDocuments"
-                    name="titleDeedDocuments"
-                    multiple
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="approvalDocuments">
-                    Municipality / building approvals
-                  </Label>
-                  <UploadFileInput
-                    id="approvalDocuments"
-                    name="approvalDocuments"
-                    multiple
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="otherPropertyDocuments">
-                    Other property documents
-                  </Label>
-                  <UploadFileInput
-                    id="otherPropertyDocuments"
-                    name="otherPropertyDocuments"
-                    multiple
-                  />
-                </div>
-
-                <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/30 p-3">
-                  <p className="text-sm font-medium">Service charge</p>
-                  <p className="text-xs text-muted-foreground">
-                    The recurring maintenance budget for this property, and
-                    when it&apos;s next due.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="serviceChargeAmount">Amount (OMR)</Label>
-                      <Input
-                        id="serviceChargeAmount"
-                        name="serviceChargeAmount"
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        placeholder="400"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="serviceChargeCycleMonths">Repeats every</Label>
-                      <Select
-                        id="serviceChargeCycleMonths"
-                        name="serviceChargeCycleMonths"
-                        defaultValue=""
-                        required
-                      >
-                        <option value="" disabled>
-                          Select cycle
-                        </option>
-                        <option value="1">1 month</option>
-                        <option value="3">3 months</option>
-                        <option value="6">6 months</option>
-                        <option value="12">12 months</option>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5 pt-1">
-                    <Label htmlFor="serviceChargeDueDate">Due date</Label>
-                    <Input
-                      id="serviceChargeDueDate"
-                      name="serviceChargeDueDate"
-                      type="date"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
                   <Label htmlFor="notes">Notes</Label>
                   <Input id="notes" name="notes" placeholder="Optional" />
                 </div>
@@ -625,7 +568,8 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                 {isOwner && (
                   <p className="text-xs text-muted-foreground">
                     Your property will be reviewed by an administrator before
-                    it appears anywhere else.
+                    it appears anywhere else. Add its units next — you&rsquo;ll
+                    be assigned as the owner of each one you add.
                   </p>
                 )}
 
@@ -637,7 +581,6 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   Create property
                 </SubmitButton>
               </form>
-            </UploadBudgetProvider>
           </CardContent>
         </Card>
       </div>

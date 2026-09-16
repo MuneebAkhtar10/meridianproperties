@@ -1141,6 +1141,40 @@ export async function notifyServiceChargeDue(input: {
   await publish({ kind: "notification", userIds: input.recipientIds });
 }
 
+/** A scheduled installment on a payment plan is due within a week — sent
+ * either by the daily cron (lib/installment-reminders.ts) or the admin's
+ * manual "Send invoice" button on that installment. */
+export async function notifyInstallmentDue(input: {
+  propertyId: string;
+  propertyName: string;
+  unitLabel: string;
+  sequence: number;
+  installmentCount: number;
+  amount: string;
+  dueDate: string;
+  recipientIds: string[];
+}): Promise<void> {
+  if (input.recipientIds.length === 0) return;
+
+  const title = "Installment Payment Due Soon";
+  const message = `Installment ${input.sequence} of ${input.installmentCount} for "${input.propertyName} — ${input.unitLabel}" is due ${input.dueDate}.`;
+
+  await createNotifications({
+    data: input.recipientIds.map((userId) => ({
+      userId,
+      title,
+      message,
+      href: `/protected/properties/${input.propertyId}`,
+      details: [
+        { label: "Amount", value: input.amount },
+        { label: "Due date", value: input.dueDate },
+      ],
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: input.recipientIds });
+}
+
 export async function notifyServiceChargeOverdue(input: {
   propertyId: string;
   propertyName: string;
@@ -1181,6 +1215,43 @@ export async function notifyServiceChargeReceived(input: {
       title: "Service Charge Received",
       message: `The ${input.amount} service charge for “${input.propertyName}” was recorded as received. Next due: ${input.nextDueDate}.`,
       href: `/protected/properties/${input.propertyId}`,
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: input.recipientIds });
+}
+
+/** Spec #19 "OA Reminder" — an admin-composed, ad-hoc "Notify Owner" message
+ * (see the "Notify Owner" button in components/unit-manage-modal.tsx and
+ * sendServiceChargeReminderAction), as opposed to the automatic staged
+ * reminders above. Same email+WhatsApp fan-out as every other notification
+ * here; an attachment (if any) is a link, not a real email attachment —
+ * this app's email sender has no attachment API. */
+export async function notifyOwnerCustom(input: {
+  propertyId: string;
+  propertyName: string;
+  unitLabel: string;
+  message: string;
+  attachmentUrl?: string;
+  recipientIds: string[];
+}): Promise<void> {
+  if (input.recipientIds.length === 0) return;
+
+  const details = [
+    { label: "Property", value: input.propertyName },
+    { label: "Unit", value: input.unitLabel },
+    ...(input.attachmentUrl
+      ? [{ label: "Attachment", value: input.attachmentUrl }]
+      : []),
+  ];
+
+  await createNotifications({
+    data: input.recipientIds.map((userId) => ({
+      userId,
+      title: "Service Charge Reminder",
+      message: input.message,
+      href: `/protected/properties/${input.propertyId}`,
+      details,
     })),
   });
 

@@ -29,7 +29,7 @@ export default async function QrCodePage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-8 px-4 py-8">
+    <div className="mx-auto w-full max-w-2xl space-y-8 px-4 pt-4 pb-8">
       <PageHeader
         title="QR code"
         description="Tenants scan this to report a maintenance issue without signing in — they're matched to their apartment by phone number."

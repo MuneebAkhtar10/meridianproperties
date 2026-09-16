@@ -19,6 +19,7 @@ export async function GET(
     where: { id },
     include: {
       tenancy: { select: { tenantId: true } },
+      unit: { select: { ownerId: true } },
     },
   });
 
@@ -29,7 +30,8 @@ export async function GET(
   const canRead =
     user.userType === UserType.admin ||
     document.userId === user.id ||
-    document.tenancy?.tenantId === user.id;
+    document.tenancy?.tenantId === user.id ||
+    document.unit?.ownerId === user.id;
 
   if (!canRead) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });

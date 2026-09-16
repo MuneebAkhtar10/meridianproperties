@@ -43,6 +43,17 @@ async function canManageTarget(
     );
   }
 
+  if (target.type === "unit") {
+    const unit = await prisma.unit.findUnique({
+      where: { id: target.id },
+      select: { ownerId: true },
+    });
+    return Boolean(
+      unit &&
+        (user.userType === UserType.admin || unit.ownerId === user.id),
+    );
+  }
+
   if (target.type === "tenancy") {
     const tenancy = await prisma.tenancy.findUnique({
       where: { id: target.id },
@@ -65,10 +76,21 @@ async function canManageTarget(
   );
 }
 
-function revalidateDocumentTarget(target: EntityDocumentTarget, back: string) {
+async function revalidateDocumentTarget(
+  target: EntityDocumentTarget,
+  back: string,
+) {
   revalidatePath(back);
   if (target.type === "property") {
     revalidatePath(`/protected/properties/${target.id}`);
+  } else if (target.type === "unit") {
+    const unit = await prisma.unit.findUnique({
+      where: { id: target.id },
+      select: { propertyId: true },
+    });
+    if (unit) {
+      revalidatePath(`/protected/properties/${unit.propertyId}`);
+    }
   } else if (target.type === "tenancy") {
     revalidatePath("/protected/tenancies");
     revalidatePath("/protected/documents");
@@ -135,7 +157,7 @@ export const uploadEntityDocumentsAction = async (formData: FormData) => {
   }
 
   if (count > 0) {
-    revalidateDocumentTarget(target, back);
+    await revalidateDocumentTarget(target, back);
   }
 
   return encodedRedirect(
@@ -159,6 +181,7 @@ export const deleteEntityDocumentAction = async (formData: FormData) => {
     select: {
       filePath: true,
       propertyId: true,
+      unitId: true,
       tenancyId: true,
       userId: true,
       uploadedById: true,
@@ -171,9 +194,11 @@ export const deleteEntityDocumentAction = async (formData: FormData) => {
 
   const target: EntityDocumentTarget = document.propertyId
     ? { type: "property", id: document.propertyId }
-    : document.tenancyId
-      ? { type: "tenancy", id: document.tenancyId }
-      : { type: "user", id: document.userId! };
+    : document.unitId
+      ? { type: "unit", id: document.unitId }
+      : document.tenancyId
+        ? { type: "tenancy", id: document.tenancyId }
+        : { type: "user", id: document.userId! };
 
   if (!(await canManageTarget(user, target))) {
     return encodedRedirect("error", back, "You cannot delete this document.");
@@ -199,6 +224,6 @@ export const deleteEntityDocumentAction = async (formData: FormData) => {
     console.error("Could not remove document object:", error);
   }
 
-  revalidateDocumentTarget(target, back);
+  await revalidateDocumentTarget(target, back);
   return encodedRedirect("success", back, "Document removed.");
 };

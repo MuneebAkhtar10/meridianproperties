@@ -62,12 +62,14 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
     });
   }
 
-  // An owner only ever sees requests for properties they own.
+  // An owner only ever sees requests for units they own — a common-area
+  // request has no unit, so it's scoped by whether the property has at
+  // least one unit this owner owns.
   if (isOwner) {
     andConditions.push({
       OR: [
-        { unit: { property: { ownerId: user.id } } },
-        { property: { ownerId: user.id } },
+        { unit: { ownerId: user.id } },
+        { property: { units: { some: { ownerId: user.id } } } },
       ],
     });
   }
@@ -80,6 +82,12 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
       ],
     });
   }
+
+  // A unit with maintenance turned off is fully hidden here — common-area
+  // requests have no unit to check, so they're unaffected.
+  andConditions.push({
+    OR: [{ unitId: null }, { unit: { maintenanceEnabled: true } }],
+  });
 
   if (andConditions.length > 0) {
     where.AND = andConditions;
@@ -127,7 +135,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
       orderBy: { email: "asc" },
     }),
     prisma.property.findMany({
-      where: isOwner ? { ownerId: user.id } : {},
+      where: isOwner ? { units: { some: { ownerId: user.id } } } : {},
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
@@ -144,7 +152,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Maintenance requests"
         description={`${requests.length} request${

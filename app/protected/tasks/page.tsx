@@ -101,7 +101,7 @@ export default async function WorkerTasksPage({ searchParams }: PageProps) {
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="My tasks"
         description={`${tasks.length} job${tasks.length === 1 ? "" : "s"} assigned to you`}

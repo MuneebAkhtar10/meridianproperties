@@ -31,6 +31,7 @@ export default async function NewMaintenanceRequestPage({
           select: {
             id: true,
             label: true,
+            maintenanceEnabled: true,
             tenant: { select: { email: true } },
           },
         },
@@ -49,7 +50,7 @@ export default async function NewMaintenanceRequestPage({
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-8">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 pt-4 pb-8">
       <PageHeader
         title="New maintenance request"
         description="Create a request for a tenant's unit or a shared common area, and optionally assign a worker right away."

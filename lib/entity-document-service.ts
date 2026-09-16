@@ -14,6 +14,7 @@ import type { EntityDocumentTargetType } from "@/lib/entity-documents";
 
 export type EntityDocumentTarget =
   | { type: "property"; id: string }
+  | { type: "unit"; id: string }
   | { type: "tenancy"; id: string }
   | { type: "user"; id: string };
 
@@ -33,10 +34,11 @@ function targetData(
   target: EntityDocumentTarget,
 ): Pick<
   Prisma.EntityDocumentCreateManyInput,
-  "propertyId" | "tenancyId" | "userId"
+  "propertyId" | "unitId" | "tenancyId" | "userId"
 > {
   return {
     propertyId: target.type === "property" ? target.id : null,
+    unitId: target.type === "unit" ? target.id : null,
     tenancyId: target.type === "tenancy" ? target.id : null,
     userId: target.type === "user" ? target.id : null,
   };
@@ -109,9 +111,9 @@ export function parseDocumentTarget(
   if (
     !targetId ||
     !targetType ||
-    !(["property", "tenancy", "user"] as EntityDocumentTargetType[]).includes(
-      targetType as EntityDocumentTargetType,
-    )
+    !(
+      ["property", "unit", "tenancy", "user"] as EntityDocumentTargetType[]
+    ).includes(targetType as EntityDocumentTargetType)
   ) {
     return null;
   }

@@ -63,7 +63,7 @@ export default async function RequestDetailPage({
     !request.taskLogs.some((log) => log.status === RequestStatus.on_hold);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8">
+    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-4 pb-8">
       <PageHeader
         title={request.title}
         back={{ href: "/protected/requests", label: "My requests" }}

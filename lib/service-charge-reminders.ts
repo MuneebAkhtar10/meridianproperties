@@ -15,7 +15,7 @@ const UPCOMING_WINDOW_DAYS = 7;
 
 /**
  * Runs daily (see app/api/cron/service-charge-reminders/route.ts). For every
- * property with a service charge set up, sends at most one notification per
+ * unit with a service charge set up, sends at most one notification per
  * day: an "upcoming" nudge starting 7 days out, a "due today" notice on the
  * day, then a daily "overdue" nudge for every day it stays unpaid.
  * `serviceChargeLastStage` records what was last sent for the CURRENT cycle
@@ -27,22 +27,27 @@ export async function runServiceChargeReminders(): Promise<{
   checked: number;
   notified: number;
 }> {
-  const properties = await prisma.property.findMany({
+  const units = await prisma.unit.findMany({
     where: {
       serviceChargeAmount: { not: null },
       serviceChargeDueDate: { not: null },
+      // The service charge is the owner's maintenance-budget collection, so
+      // it follows the maintenance toggle, not the rent & bills one.
+      maintenanceEnabled: true,
     },
     select: {
       id: true,
-      name: true,
+      label: true,
+      propertyId: true,
       ownerId: true,
       serviceChargeAmount: true,
       serviceChargeDueDate: true,
       serviceChargeLastStage: true,
+      property: { select: { name: true } },
     },
   });
 
-  if (properties.length === 0) {
+  if (units.length === 0) {
     return { checked: 0, notified: 0 };
   }
 
@@ -55,13 +60,13 @@ export async function runServiceChargeReminders(): Promise<{
 
   let notified = 0;
 
-  for (const property of properties) {
-    if (!property.serviceChargeDueDate || !property.serviceChargeAmount) {
+  for (const unit of units) {
+    if (!unit.serviceChargeDueDate || !unit.serviceChargeAmount) {
       continue;
     }
 
     const daysUntilDue = differenceInCalendarDays(
-      property.serviceChargeDueDate,
+      unit.serviceChargeDueDate,
       today,
     );
 
@@ -76,50 +81,51 @@ export async function runServiceChargeReminders(): Promise<{
             ? "upcoming"
             : null;
 
-    if (!stageKey || property.serviceChargeLastStage === stageKey) {
+    if (!stageKey || unit.serviceChargeLastStage === stageKey) {
       continue;
     }
 
     const recipientIds = Array.from(
       new Set(
-        [property.ownerId, ...adminIds].filter(
+        [unit.ownerId, ...adminIds].filter(
           (recipientId): recipientId is string => Boolean(recipientId),
         ),
       ),
     );
-    const amount = formatMoney(property.serviceChargeAmount);
+    const amount = formatMoney(unit.serviceChargeAmount);
+    const propertyName = `${unit.property.name} — Unit ${unit.label}`;
 
     if (stageKey === "upcoming") {
       await notifyServiceChargeUpcoming({
-        propertyId: property.id,
-        propertyName: property.name,
+        propertyId: unit.propertyId,
+        propertyName,
         amount,
-        dueDate: format(property.serviceChargeDueDate, "d MMM yyyy"),
+        dueDate: format(unit.serviceChargeDueDate, "d MMM yyyy"),
         recipientIds,
       });
     } else if (stageKey === "due") {
       await notifyServiceChargeDue({
-        propertyId: property.id,
-        propertyName: property.name,
+        propertyId: unit.propertyId,
+        propertyName,
         amount,
         recipientIds,
       });
     } else {
       await notifyServiceChargeOverdue({
-        propertyId: property.id,
-        propertyName: property.name,
+        propertyId: unit.propertyId,
+        propertyName,
         amount,
         daysOverdue: Math.abs(daysUntilDue),
         recipientIds,
       });
     }
 
-    await prisma.property.update({
-      where: { id: property.id },
-      data: { serviceChargeLastStage: stageKey },
+    await prisma.unit.update({
+      where: { id: unit.id },
+      data: { serviceChargeLastStage: stageKey, serviceChargeLastReminderAt: today },
     });
     notified++;
   }
 
-  return { checked: properties.length, notified };
+  return { checked: units.length, notified };
 }

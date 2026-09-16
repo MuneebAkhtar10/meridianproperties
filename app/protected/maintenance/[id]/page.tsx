@@ -34,6 +34,7 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
       user: { select: { email: true, phone: true } },
       assignedTo: { select: { email: true } },
       unit: { include: { property: { include: { propertyType: true } } } },
+      property: { select: { units: { select: { ownerId: true } } } },
       attachments: true,
       taskLogs: {
         orderBy: { createdAt: "asc" },
@@ -49,16 +50,19 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
     },
   });
 
+  const ownsThisRequest =
+    request?.unit?.ownerId === user.id ||
+    request?.property?.units.some((unit) => unit.ownerId === user.id);
+
   if (
     !request ||
-    (user.userType === UserType.owner &&
-      request.unit?.property.ownerId !== user.id)
+    (user.userType === UserType.owner && !ownsThisRequest)
   ) {
     notFound();
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8">
+    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-4 pb-8">
       <PageHeader
         title={request.title}
         back={{ href: "/protected/maintenance", label: "All requests" }}

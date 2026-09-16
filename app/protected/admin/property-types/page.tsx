@@ -28,7 +28,7 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
   });
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Property types"
         description="Villa, apartment building, office — add whatever kinds of property you manage. Each type controls its own wording and whether its units are organized by floor."

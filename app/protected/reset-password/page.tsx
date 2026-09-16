@@ -12,7 +12,7 @@ export default async function ChangePasswordPage(props: {
   const searchParams = await props.searchParams;
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6 px-4 py-8">
+    <div className="mx-auto w-full max-w-md space-y-6 px-4 pt-4 pb-8">
       <PageHeader
         title="Change password"
         description="Enter your current password, then pick a new one."

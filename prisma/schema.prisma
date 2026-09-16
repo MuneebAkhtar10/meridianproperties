@@ -55,6 +55,9 @@ enum ChargeType {
   other
 }
 
+/// What the property management company spent money on, drawn from the
+/// yearly service charge. Mirrors the category terms already used in
+/// owners' association cash-flow statements (e.g. Urbanise Strata exports).
 enum ChargeStatus {
   open
   paid
@@ -77,6 +80,15 @@ enum PaymentMethod {
   other
 }
 
+/// Who actually holds the money for a rent payment or expense — recording
+/// a payment does not necessarily mean the management company received
+/// it; the owner may have collected it directly. See Payment.collectedBy
+/// and Expense.paidBy.
+enum PaymentCollector {
+  management
+  owner
+}
+
 enum TenancyPurpose {
   residential
   commercial
@@ -93,6 +105,10 @@ enum EntityDocumentCategory {
   move_in_report
   title_deed
   ownership_certificate
+  /// The contract/agreement between the property manager and a unit's
+  /// owner — established when the owner's unit is set up, distinct from
+  /// `ownership_certificate` (a government-issued proof of ownership).
+  ownership_contract
   cadastral_plan
   building_permit
   completion_certificate
@@ -106,6 +122,11 @@ enum EntityDocumentCategory {
   driving_license
   vehicle_registration
   car_insurance
+  /// The tenant's own agreement with the property manager for a parking
+  /// slot — distinct from `vehicle_registration` (a government Mulkiya),
+  /// this is the internal document assigning the slot and registering the
+  /// tenant's car against their unit.
+  parking_agreement
   other
 }
 
@@ -113,25 +134,25 @@ enum EntityDocumentCategory {
 /// Admins can add their own instead of being limited to a fixed set, which is
 /// why the floor behaviour and unit wording live here as data, not code.
 model PropertyType {
-  id       String @id @default(uuid()) @db.Uuid
+  id               String   @id @default(uuid()) @db.Uuid
   /// Stable machine key, e.g. "apartment". Never shown to users.
-  name     String @unique
+  name             String   @unique
   /// Shown when picking a property type, e.g. "Apartment building".
-  label    String
+  label            String
   /// Singular noun for one unit of this type, e.g. "Apartment", "Villa", "Office".
-  unitNounSingular String @map("unit_noun_singular")
+  unitNounSingular String   @map("unit_noun_singular")
   /// Plural noun, e.g. "Apartments", "Villas", "Offices".
-  unitNounPlural   String @map("unit_noun_plural")
+  unitNounPlural   String   @map("unit_noun_plural")
   /// Short prefix shown before a unit's label, e.g. "Apt" → "Apt 101". Null
   /// means the unit label is shown on its own, with no prefix — the villa
   /// convention ("Villa 2", not "Villa Villa 2").
-  unitPrefix       String? @map("unit_prefix")
+  unitPrefix       String?  @map("unit_prefix")
   /// Whether units of this type are organized by floor. Controls the floor
   /// field, the "generate by floor" wizard and the floor grouping in the UI.
-  hasFloors        Boolean @default(true) @map("has_floors")
+  hasFloors        Boolean  @default(true) @map("has_floors")
   /// Whether units of this type track a bedroom count. Off for commercial
   /// types like offices or shops, where "bedrooms" doesn't apply.
-  hasBedrooms      Boolean @default(true) @map("has_bedrooms")
+  hasBedrooms      Boolean  @default(true) @map("has_bedrooms")
   /// Choices shown in "Where is the problem?" when a tenant of this type
   /// reports a maintenance issue, e.g. ["Kitchen", "Bathroom", ...] for an
   /// apartment or ["Sales floor", "Storeroom", ...] for a shop. Always ends
@@ -147,90 +168,165 @@ model PropertyType {
 
 /// A building or managed property in Oman.
 model Property {
-  id              String       @id @default(uuid()) @db.Uuid
-  name            String
-  propertyTypeId  String       @map("property_type_id") @db.Uuid
-  address         String
-  governorate     String?
-  wilayat         String?
-  area            String?
-  wayNumber       String?  @map("way_number")
-  buildingNumber  String?  @map("building_number")
-  postalCode      String?  @map("postal_code")
-  titleDeedNumber String?  @map("title_deed_number")
-  plotNumber      String?  @map("plot_number")
-  notes           String?
-  /// The landlord this property belongs to. Null means no owner is assigned
-  /// yet (all properties created before the owner role existed, and any an
-  /// admin hasn't assigned). Set automatically to themselves when an owner
-  /// creates the property; only an admin can assign or reassign it.
-  ownerId         String?  @map("owner_id") @db.Uuid
+  id                            String    @id @default(uuid()) @db.Uuid
+  name                          String
+  propertyTypeId                String    @map("property_type_id") @db.Uuid
+  address                       String
+  governorate                   String?
+  wilayat                       String?
+  area                          String?
+  wayNumber                     String?   @map("way_number")
+  buildingNumber                String?   @map("building_number")
+  postalCode                    String?   @map("postal_code")
+  titleDeedNumber               String?   @map("title_deed_number")
+  plotNumber                    String?   @map("plot_number")
+  notes                         String?
+  /// Owners' association letterhead + bank details, printed on every
+  /// service charge invoice generated for this property's units — see
+  /// lib/pdf/service-charge-invoice.tsx.
+  associationRegistrationNumber String?   @map("association_registration_number")
+  associationPhone              String?   @map("association_phone")
+  bankName                      String?   @map("bank_name")
+  bankSwiftCode                 String?   @map("bank_swift_code")
+  bankAccountNumber             String?   @map("bank_account_number")
+  paymentReference              String?   @map("payment_reference")
+  chequePayableTo               String?   @map("cheque_payable_to")
+  poBox                         String?   @map("po_box")
   /// Live/visible to admin, tenant and worker screens once true. Properties
   /// an admin creates are approved immediately; properties an owner creates
   /// start unapproved and stay hidden everywhere until an admin approves
   /// them. Defaults to true so every pre-existing row stays live.
-  approved        Boolean  @default(true)
+  approved                      Boolean   @default(true)
   /// When the owner submitted this property for admin review, after setting
   /// up its units. Null means it's still a draft — the owner is adding
   /// units and hasn't asked for approval yet, so it does NOT show up in the
   /// admin's pending-review queue even though approved is false. Only
   /// meaningful while approved is false; irrelevant once approved.
-  submittedAt     DateTime? @map("submitted_at")
+  submittedAt                   DateTime? @map("submitted_at")
   /// Set when an admin rejects a submitted property (rejectPropertyAction
   /// resets submittedAt to null so it drops out of the review queue, and
   /// stamps these two so the owner sees why on their own property page).
   /// Cleared again the moment the owner resubmits or an admin approves.
-  rejectedAt      DateTime? @map("rejected_at")
-  rejectionReason String?   @map("rejection_reason")
-  /// Recurring maintenance budget the owner collects from/for this property
-  /// (e.g. 400 OMR every 3 months). All three are null until someone sets
-  /// them; nulls mean "no service charge tracked" and the reminder job skips
-  /// the property entirely.
-  serviceChargeAmount      Decimal?  @map("service_charge_amount") @db.Decimal(14, 3)
-  serviceChargeCycleMonths Int?      @map("service_charge_cycle_months")
-  serviceChargeDueDate     DateTime? @map("service_charge_due_date") @db.Date
-  /// Which reminder was last sent for the CURRENT due date, so the daily job
-  /// never sends the same stage twice ("upcoming" | "due" | "overdue").
-  serviceChargeLastStage   String?   @map("service_charge_last_stage")
-  /// When an admin last marked the service charge as received — shown as a
-  /// confirmation tick on the property page. Cleared implicitly by simply
-  /// being stale once a new due date has since passed.
-  serviceChargeLastReceivedAt DateTime? @map("service_charge_last_received_at")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  rejectedAt                    DateTime? @map("rejected_at")
+  rejectionReason               String?   @map("rejection_reason")
+  createdAt                     DateTime  @default(now()) @map("created_at")
+  updatedAt                     DateTime  @updatedAt @map("updated_at")
 
-  propertyType PropertyType     @relation(fields: [propertyTypeId], references: [id], onDelete: Restrict)
-  owner        User?            @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  units        Unit[]
-  documents    EntityDocument[]
+  propertyType       PropertyType         @relation(fields: [propertyTypeId], references: [id], onDelete: Restrict)
+  units              Unit[]
+  documents          EntityDocument[]
   commonAreaRequests MaintenanceRequest[]
+  expenses           Expense[]
+  supplierLinks      SupplierProperty[]
+  budgets            AnnualBudget[]
+  serviceContracts   BuildingServiceContract[]
 
   @@index([propertyTypeId])
-  @@index([ownerId])
   @@map("properties")
 }
 
 /// An apartment inside a building.
 model Unit {
-  id         String   @id @default(uuid()) @db.Uuid
-  propertyId String   @map("property_id") @db.Uuid
-  label      String
-  floor      Int?
-  bedrooms   Int?
+  id                          String    @id @default(uuid()) @db.Uuid
+  propertyId                  String    @map("property_id") @db.Uuid
+  label                       String
+  floor                       Int?
+  bedrooms                    Int?
+  /// The landlord this unit belongs to. Null means no owner is assigned yet
+  /// (all units created before the owner role existed, and any an admin
+  /// hasn't assigned). Set automatically to themselves when an owner adds
+  /// the unit; only an admin can assign or reassign it. A property's
+  /// "owner(s)" are the distinct set of its units' owners — a property can
+  /// have several, and one owner can own units across several properties.
+  ownerId                     String?   @map("owner_id") @db.Uuid
   /// The tenant living here. Null means the apartment is empty.
-  tenantId   String?  @unique @map("tenant_id") @db.Uuid
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  tenantId                    String?   @unique @map("tenant_id") @db.Uuid
+  /// Whether this unit is billed at all — some units (e.g. an owners
+  /// association's common-area units) are never charged rent or bills
+  /// through the system. When false, the unit and its tenant are fully
+  /// hidden from Rent & Bills: no charge can be created for it, and none of
+  /// its existing charges are shown there.
+  rentBillsEnabled            Boolean   @default(true) @map("rent_bills_enabled")
+  /// Whether this unit's tenant can file maintenance requests, and whether
+  /// its recurring service-charge reminders (below) are sent at all. When
+  /// false, the report-issue flow refuses new requests for this unit and it
+  /// is hidden from the maintenance dashboard (common-area requests, which
+  /// have no unit, are unaffected).
+  maintenanceEnabled          Boolean   @default(true) @map("maintenance_enabled")
+  /// Recurring maintenance budget the owner collects from/for this unit
+  /// (e.g. 400 OMR every 3 months). All three are null until someone sets
+  /// them; nulls mean "no service charge tracked" and the reminder job skips
+  /// the unit entirely.
+  serviceChargeAmount         Decimal?  @map("service_charge_amount") @db.Decimal(14, 3)
+  serviceChargeCycleMonths    Int?      @map("service_charge_cycle_months")
+  serviceChargeDueDate        DateTime? @map("service_charge_due_date") @db.Date
+  /// Which reminder was last sent for the CURRENT due date, so the daily job
+  /// never sends the same stage twice ("upcoming" | "due" | "overdue").
+  serviceChargeLastStage      String?   @map("service_charge_last_stage")
+  /// When an admin last marked the service charge as received — shown as a
+  /// confirmation tick on the unit. Cleared implicitly by simply being stale
+  /// once a new due date has since passed.
+  serviceChargeLastReceivedAt DateTime? @map("service_charge_last_received_at")
+  /// When a service-charge reminder was last sent for this unit — set by
+  /// both the daily cron (lib/service-charge-reminders.ts) and the manual
+  /// "Notify Owner" action, so the Collection Position dashboard's "Last
+  /// Reminder" column has one source of truth regardless of which path
+  /// sent it.
+  serviceChargeLastReminderAt DateTime? @map("service_charge_last_reminder_at")
+  /// Ownership-share weight an owners' association uses to split common
+  /// costs — printed on the service charge invoice, display-only for now
+  /// (not used in any calculation).
+  entitlements                Int?
+  /// Running service-charge ledger: positive = owed by the owner, negative
+  /// = credit owed to the owner. Updated by generateServiceChargeInvoiceAction
+  /// (adds the period's charge) and recordServiceChargePaymentAction
+  /// (subtracts a payment/credit) — see app/service-charge-invoice-actions.ts.
+  serviceChargeBalance        Decimal   @default(0) @map("service_charge_balance") @db.Decimal(14, 3)
+  createdAt                   DateTime  @default(now()) @map("created_at")
+  updatedAt                   DateTime  @updatedAt @map("updated_at")
 
-  property  Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant    User?                @relation("UnitTenant", fields: [tenantId], references: [id], onDelete: SetNull)
-  requests  MaintenanceRequest[]
-  tenancies Tenancy[]
-  charges   Charge[]
+  property              Property                       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  owner                 User?                          @relation("UnitOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  tenant                User?                          @relation("UnitTenant", fields: [tenantId], references: [id], onDelete: SetNull)
+  requests              MaintenanceRequest[]
+  tenancies             Tenancy[]
+  charges               Charge[]
+  permissionChanges     UnitPermissionChange[]
+  documents             EntityDocument[]
+  expenseLinks          ExpenseUnit[]
+  serviceChargeInvoices ServiceChargeInvoice[]
+  serviceChargePayments ServiceChargePayment[]
+  installmentPlans      ServiceChargeInstallmentPlan[]
+  fundBalances          UnitFundBalance[]
 
   @@unique([propertyId, label])
   @@index([propertyId])
+  @@index([ownerId])
   @@map("units")
+}
+
+/// Append-only log of when a unit's rent-bills/maintenance toggles changed.
+/// Not surfaced anywhere yet — it exists purely so a future report can
+/// reconstruct, after the fact, which periods a unit was billed through the
+/// system vs. handled outside it. That's the only scenario (e.g. a
+/// building-management unit toggled off for two months, then back on) where
+/// "what is it set to right now" isn't enough: without this log, once a
+/// cycle passes there is no way to recover what it was set to during it.
+model UnitPermissionChange {
+  id          String   @id @default(uuid()) @db.Uuid
+  unitId      String   @map("unit_id") @db.Uuid
+  /// Which toggle changed: "rentBillsEnabled" | "maintenanceEnabled".
+  field       String
+  fromValue   Boolean  @map("from_value")
+  toValue     Boolean  @map("to_value")
+  changedById String?  @map("changed_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  unit      Unit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  changedBy User? @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([unitId, createdAt])
+  @@map("unit_permission_changes")
 }
 
 /// Account and profile in one row. `userType` drives every authorization check.
@@ -238,92 +334,105 @@ model Unit {
 /// Auth's `auth.users`, which credentials and password hashing live in; see
 /// the `_supabase_auth` migration for the foreign key that ties the two together.
 model User {
-  id                    String   @id @db.Uuid
+  id                          String          @id @db.Uuid
   /// Unique per role, not globally: a tenant and a worker (etc.) can share an
   /// email, but two tenants (or two workers) can't. See @@unique below.
-  email                 String
-  userType              UserType @default(user) @map("user_type")
+  email                       String
+  userType                    UserType        @default(user) @map("user_type")
   /// Only set when userType = worker: whether this worker is in-house staff
   /// or a 3rd-party contractor/vendor.
-  workerCategory        WorkerCategory? @map("worker_category")
+  workerCategory              WorkerCategory? @map("worker_category")
   /// Only meaningful for 3rd-party workers: the vendor/company name shown
   /// alongside their contact info wherever they're listed.
-  companyName           String?  @map("company_name")
-  firstName             String?  @map("first_name")
-  lastName              String?  @map("last_name")
-  phone                 String?  @unique
-  civilId               String?  @unique @map("civil_id")
-  nationality           String?
-  employer              String?
-  emergencyContactName  String?  @map("emergency_contact_name")
-  emergencyContactPhone String?  @map("emergency_contact_phone")
+  companyName                 String?         @map("company_name")
+  firstName                   String?         @map("first_name")
+  lastName                    String?         @map("last_name")
+  phone                       String?         @unique
+  civilId                     String?         @unique @map("civil_id")
+  nationality                 String?
+  employer                    String?
+  /// Owner's own postal address — the "bill to" block on a service charge
+  /// invoice, distinct from any property's address.
+  mailingAddress              String?         @map("mailing_address")
+  emergencyContactName        String?         @map("emergency_contact_name")
+  emergencyContactPhone       String?         @map("emergency_contact_phone")
   /// The following are only meaningful for in-house workers — the paperwork
   /// required to legally employ someone in the Gulf. Third-party
   /// contractors' documents are their own employer's responsibility, not
   /// tracked here.
-  passportNumber        String?  @map("passport_number")
-  passportIssuance      DateTime? @map("passport_issuance")
-  passportExpiry        DateTime? @map("passport_expiry")
+  passportNumber              String?         @map("passport_number")
+  passportIssuance            DateTime?       @map("passport_issuance")
+  passportExpiry              DateTime?       @map("passport_expiry")
   /// Work visa / residency permit.
-  visaNumber            String?  @map("visa_number")
-  visaIssuance          DateTime? @map("visa_issuance")
-  visaExpiry            DateTime? @map("visa_expiry")
+  visaNumber                  String?         @map("visa_number")
+  visaIssuance                DateTime?       @map("visa_issuance")
+  visaExpiry                  DateTime?       @map("visa_expiry")
   /// Issuance/expiry of the Civil ID / Resident Card already captured in
   /// `civilId`.
-  civilIdIssuance       DateTime? @map("civil_id_issuance")
-  civilIdExpiry         DateTime? @map("civil_id_expiry")
-  drivingLicenseNumber  String?  @map("driving_license_number")
-  drivingLicenseIssuance DateTime? @map("driving_license_issuance")
-  drivingLicenseExpiry  DateTime? @map("driving_license_expiry")
+  civilIdIssuance             DateTime?       @map("civil_id_issuance")
+  civilIdExpiry               DateTime?       @map("civil_id_expiry")
+  drivingLicenseNumber        String?         @map("driving_license_number")
+  drivingLicenseIssuance      DateTime?       @map("driving_license_issuance")
+  drivingLicenseExpiry        DateTime?       @map("driving_license_expiry")
   /// Only meaningful for in-house workers: "individual" (default) or
   /// "family" — a family employee's dependents (spouse/father/mother) get
   /// their own Bataka records tracked below via familyMembers.
-  employeeType          String   @default("individual") @map("employee_type")
+  employeeType                String          @default("individual") @map("employee_type")
   /// Whether this worker has/drives a vehicle for work — gates whether the
   /// vehicle documents below are asked for at all.
-  hasVehicle            Boolean  @default(false) @map("has_vehicle")
+  hasVehicle                  Boolean         @default(false) @map("has_vehicle")
   /// Mulkiya — vehicle registration.
-  vehicleRegistrationNumber  String?   @map("vehicle_registration_number")
-  vehicleRegistrationIssuance DateTime? @map("vehicle_registration_issuance")
-  vehicleRegistrationExpiry  DateTime? @map("vehicle_registration_expiry")
-  carInsuranceNumber    String?  @map("car_insurance_number")
-  carInsuranceIssuance  DateTime? @map("car_insurance_issuance")
-  carInsuranceExpiry    DateTime? @map("car_insurance_expiry")
+  vehicleRegistrationNumber   String?         @map("vehicle_registration_number")
+  vehicleRegistrationIssuance DateTime?       @map("vehicle_registration_issuance")
+  vehicleRegistrationExpiry   DateTime?       @map("vehicle_registration_expiry")
+  carInsuranceNumber          String?         @map("car_insurance_number")
+  carInsuranceIssuance        DateTime?       @map("car_insurance_issuance")
+  carInsuranceExpiry          DateTime?       @map("car_insurance_expiry")
   /// What was last sent for each HR document's expiry cycle — e.g.
   /// {"passport": "upcoming", "visa": "overdue:3"} — so the daily reminder
   /// job (lib/hr-reminders.ts) doesn't repeat the same nudge. Mirrors
   /// Property.serviceChargeLastStage's pattern, generalized to several
   /// documents per person instead of one charge per property.
-  hrReminderStages      Json?    @map("hr_reminder_stages")
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  hrReminderStages            Json?           @map("hr_reminder_stages")
+  createdAt                   DateTime        @default(now()) @map("created_at")
+  updatedAt                   DateTime        @updatedAt @map("updated_at")
 
   /// Set only for tenants: the apartment they live in.
-  unit              Unit?                   @relation("UnitTenant")
-  requests          MaintenanceRequest[]    @relation("RequestOwner")
-  assignedRequests  MaintenanceRequest[]    @relation("AssignedWorker")
-  createdRequests   MaintenanceRequest[]    @relation("RequestCreatedBy")
-  attachments       MaintenanceAttachment[]
-  taskLogs          TaskLog[]
-  notifications     Notification[]
-  tenancies         Tenancy[]               @relation("TenancyTenant")
-  charges           Charge[]                @relation("ChargeTenant")
-  createdCharges    Charge[]                @relation("ChargeCreator")
-  submittedPayments Payment[]               @relation("PaymentSubmitter")
-  reviewedPayments  Payment[]               @relation("PaymentReviewer")
-  financialUploads  FinancialAttachment[]   @relation("FinancialUploader")
-  documents         EntityDocument[]         @relation("UserDocuments")
-  documentUploads   EntityDocument[]         @relation("EntityDocumentUploader")
-  supplyRequestsMade    SupplyRequest[]      @relation("SupplyRequestedBy")
-  supplyRequestsDecided SupplyRequest[]      @relation("SupplyDecidedBy")
-  /// Set only for owners: the properties they were assigned or created.
-  ownedProperties       Property[]           @relation("PropertyOwner")
-  whatsappSessions      WhatsappSession[]
+  unit                         Unit?                          @relation("UnitTenant")
+  requests                     MaintenanceRequest[]           @relation("RequestOwner")
+  assignedRequests             MaintenanceRequest[]           @relation("AssignedWorker")
+  createdRequests              MaintenanceRequest[]           @relation("RequestCreatedBy")
+  attachments                  MaintenanceAttachment[]
+  taskLogs                     TaskLog[]
+  notifications                Notification[]
+  tenancies                    Tenancy[]                      @relation("TenancyTenant")
+  charges                      Charge[]                       @relation("ChargeTenant")
+  createdCharges               Charge[]                       @relation("ChargeCreator")
+  submittedPayments            Payment[]                      @relation("PaymentSubmitter")
+  reviewedPayments             Payment[]                      @relation("PaymentReviewer")
+  financialUploads             FinancialAttachment[]          @relation("FinancialUploader")
+  documents                    EntityDocument[]               @relation("UserDocuments")
+  documentUploads              EntityDocument[]               @relation("EntityDocumentUploader")
+  supplyRequestsMade           SupplyRequest[]                @relation("SupplyRequestedBy")
+  supplyRequestsDecided        SupplyRequest[]                @relation("SupplyDecidedBy")
+  expensesCreated              Expense[]                      @relation("ExpenseCreator")
+  serviceChargeInvoicesCreated ServiceChargeInvoice[]         @relation("ServiceChargeInvoiceCreator")
+  serviceChargePaymentsCreated ServiceChargePayment[]         @relation("ServiceChargePaymentCreator")
+  serviceChargePlansCreated    ServiceChargeInstallmentPlan[] @relation("ServiceChargePlanCreator")
+  suppliersCreated             Supplier[]                     @relation("SupplierCreator")
+  buildingServiceContractsCreated BuildingServiceContract[]   @relation("BuildingServiceContractCreator")
+  annualBudgetsCreated         AnnualBudget[]                 @relation("AnnualBudgetCreator")
+  /// Set only for owners: the units they were assigned or created.
+  ownedUnits                   Unit[]                         @relation("UnitOwner")
+  whatsappSessions             WhatsappSession[]
   /// Rejections this admin issued (property, payment, or supply request).
-  rejectionLogs         RejectionLog[]
+  rejectionLogs                RejectionLog[]
+  /// Toggle changes this admin made on a unit's rent-bills/maintenance
+  /// permissions — see UnitPermissionChange.
+  unitPermissionChanges        UnitPermissionChange[]
   /// Only populated when employeeType = "family" — the worker's tracked
   /// dependents (see WorkerFamilyMember).
-  familyMembers         WorkerFamilyMember[]
+  familyMembers                WorkerFamilyMember[]
 
   @@unique([email, userType])
   @@map("users")
@@ -369,15 +478,32 @@ model Tenancy {
   startDate                  DateTime       @map("start_date") @db.Date
   endDate                    DateTime?      @map("end_date") @db.Date
   leaseEndDate               DateTime?      @map("lease_end_date") @db.Date
+  /// The signed agreement's own start date, when it differs from the
+  /// tenant's actual move-in (startDate) — e.g. a contract dated a few
+  /// days before check-in. Defaults to startDate when not set separately.
+  agreementStartDate         DateTime?      @map("agreement_start_date") @db.Date
   monthlyRent                Decimal        @default(0) @map("monthly_rent") @db.Decimal(14, 3)
   rentDueDay                 Int            @default(5) @map("rent_due_day")
   securityDeposit            Decimal        @default(0) @map("security_deposit") @db.Decimal(14, 3)
   purpose                    TenancyPurpose @default(residential)
   agreementRef               String?        @map("agreement_ref")
+  /// Who actually pays the rent — usually the tenant themselves, but can
+  /// be a sponsoring employer or third party. Free text, not a User link,
+  /// since it's often not a system account.
+  paidBy                     String?        @map("paid_by")
   municipalityContractNumber String?        @map("municipality_contract_number")
   contractRegisteredAt       DateTime?      @map("contract_registered_at") @db.Date
   electricityAccountNumber   String?        @map("electricity_account_number")
   waterAccountNumber         String?        @map("water_account_number")
+  /// A parking slot is its own small agreement between the tenant and the
+  /// property manager — the tenant registers a car against it, so the
+  /// vehicle is tied to their unit the same way a Mulkiya ties a car to its
+  /// owner. Free text, not a separate model: one slot/one vehicle per
+  /// tenancy is the common case, and the signed agreement itself is stored
+  /// as an EntityDocument (see EntityDocumentCategory.parking_agreement).
+  parkingSlotNumber          String?        @map("parking_slot_number")
+  vehiclePlateNumber         String?        @map("vehicle_plate_number")
+  vehicleDetails             String?        @map("vehicle_details")
   notes                      String?
   createdAt                  DateTime       @default(now()) @map("created_at")
   updatedAt                  DateTime       @updatedAt @map("updated_at")
@@ -396,6 +522,7 @@ model Tenancy {
 model EntityDocument {
   id           String                 @id @default(uuid()) @db.Uuid
   propertyId   String?                @map("property_id") @db.Uuid
+  unitId       String?                @map("unit_id") @db.Uuid
   tenancyId    String?                @map("tenancy_id") @db.Uuid
   userId       String?                @map("user_id") @db.Uuid
   category     EntityDocumentCategory
@@ -408,11 +535,13 @@ model EntityDocument {
   createdAt    DateTime               @default(now()) @map("created_at")
 
   property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit       Unit?     @relation(fields: [unitId], references: [id], onDelete: Cascade)
   tenancy    Tenancy?  @relation(fields: [tenancyId], references: [id], onDelete: Cascade)
   user       User?     @relation("UserDocuments", fields: [userId], references: [id], onDelete: Cascade)
   uploadedBy User?     @relation("EntityDocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
 
   @@index([propertyId, createdAt])
+  @@index([unitId, createdAt])
   @@index([tenancyId, createdAt])
   @@index([userId, createdAt])
   @@map("entity_documents")
@@ -453,20 +582,37 @@ model Charge {
 }
 
 model Payment {
-  id            String        @id @default(uuid()) @db.Uuid
-  chargeId      String        @map("charge_id") @db.Uuid
-  amount        Decimal       @db.Decimal(14, 3)
-  paidAt        DateTime      @map("paid_at") @db.Date
-  method        PaymentMethod
-  reference     String?
-  notes         String?
-  status        PaymentStatus @default(pending)
-  submittedById String        @map("submitted_by") @db.Uuid
-  reviewedById  String?       @map("reviewed_by") @db.Uuid
-  reviewedAt    DateTime?     @map("reviewed_at")
-  reviewNotes   String?       @map("review_notes")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  id                String           @id @default(uuid()) @db.Uuid
+  chargeId          String           @map("charge_id") @db.Uuid
+  amount            Decimal          @db.Decimal(14, 3)
+  paidAt            DateTime         @map("paid_at") @db.Date
+  method            PaymentMethod
+  reference         String?
+  notes             String?
+  status            PaymentStatus    @default(pending)
+  /// Who actually holds this money — recording a payment doesn't mean the
+  /// management company received it; the owner may have collected it
+  /// directly. Distinct from submittedById, which is just who filed the
+  /// record in the system.
+  collectedBy       PaymentCollector @default(management) @map("collected_by")
+  /// The person who physically received the cash/cheque, if worth naming
+  /// separately from the system user who submitted the record.
+  receivedByName    String?          @map("received_by_name")
+  /// Free-form bank transfer reference, same idiom as
+  /// ServiceChargePayment.transactionNumber.
+  transactionNumber String?          @map("transaction_number")
+  chequeNumber      String?          @map("cheque_number")
+  chequeDate        DateTime?        @map("cheque_date") @db.Date
+  bank              String?
+  /// Simple string ("pending" | "cleared" | "bounced"), same idiom as
+  /// ServiceChargePayment.clearanceStatus.
+  clearanceStatus   String?          @map("clearance_status")
+  submittedById     String           @map("submitted_by") @db.Uuid
+  reviewedById      String?          @map("reviewed_by") @db.Uuid
+  reviewedAt        DateTime?        @map("reviewed_at")
+  reviewNotes       String?          @map("review_notes")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
 
   charge      Charge                @relation(fields: [chargeId], references: [id], onDelete: Cascade)
   submittedBy User                  @relation("PaymentSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
@@ -475,6 +621,7 @@ model Payment {
 
   @@index([chargeId, status])
   @@index([status, createdAt])
+  @@index([method, chequeDate])
   @@map("payments")
 }
 
@@ -497,6 +644,462 @@ model FinancialAttachment {
   @@index([chargeId])
   @@index([paymentId])
   @@map("financial_attachments")
+}
+
+/// Money the management company spent, drawn from the service charge —
+/// logged against either a whole property (e.g. lobby cleaning) or one
+/// specific unit. Exactly one of propertyId/unitId is set, same idiom as
+/// MaintenanceRequest's unit-vs-common-area split.
+model Expense {
+  id               String           @id @default(uuid()) @db.Uuid
+  propertyId       String?          @map("property_id") @db.Uuid
+  categoryId       String           @map("category_id") @db.Uuid
+  /// One of the chosen category's ExpenseSubcategoryType labels (validated
+  /// in the server action, not a DB FK — kept as a plain string since it's
+  /// just a label copy, same idiom the old hardcoded list used).
+  subcategory      String?
+  /// The vendor this was paid to, if any — null means "Company default"
+  /// (no external supplier), not a database row. See Supplier above.
+  supplierId       String?          @map("supplier_id") @db.Uuid
+  description      String
+  amount           Decimal          @db.Decimal(14, 3)
+  /// VAT charged on this expense, if any — kept as its own amount (not a
+  /// rate) since that's what a supplier invoice actually states.
+  vatAmount        Decimal          @default(0) @map("vat_amount") @db.Decimal(14, 3)
+  /// Which OA fund this expense is paid out of — required, like
+  /// ServiceChargeInvoice.fundId, so every fund's Cash Flow Statement can
+  /// filter expenditure by it.
+  fundId           String           @map("fund_id") @db.Uuid
+  /// Free-form bank transfer/cheque reference, same idiom as
+  /// ServiceChargePayment.transactionNumber.
+  paymentReference String?          @map("payment_reference")
+  /// Who actually paid this expense — same distinction as
+  /// Payment.collectedBy: did it come out of the management company's own
+  /// float, or did the owner pay the supplier directly.
+  paidBy           PaymentCollector @default(management) @map("paid_by")
+  notes            String?
+  date             DateTime         @db.Date
+  /// The uploaded invoice/receipt, if any. Single file, so inline rather
+  /// than a separate attachment table — same idiom as SupplyRequest's
+  /// receiptPath/receiptFileName/receiptFileType.
+  receiptFileName  String?          @map("receipt_file_name")
+  receiptFilePath  String?          @map("receipt_file_path")
+  receiptFileType  String?          @map("receipt_file_type")
+  receiptFileSize  Int?             @map("receipt_file_size")
+  createdById      String?          @map("created_by") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  property  Property?           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  category  ExpenseCategoryType @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier  Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  fund      Fund                @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  createdBy User?               @relation("ExpenseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  /// The unit(s) this expense is split across when it isn't property-wide —
+  /// a many-to-many join (not a single unitId) so one shared cost logged
+  /// against several units stays ONE row with the amount as entered,
+  /// instead of being duplicated per unit. Exactly one of propertyId /
+  /// units is set — validated in createExpenseAction, since a join table
+  /// can't be covered by a simple CHECK constraint.
+  units     ExpenseUnit[]
+
+  @@index([propertyId, date])
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([fundId])
+  @@map("expenses")
+}
+
+model ExpenseUnit {
+  expenseId String @map("expense_id") @db.Uuid
+  unitId    String @map("unit_id") @db.Uuid
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  unit    Unit    @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@id([expenseId, unitId])
+  @@index([unitId])
+  @@map("expense_units")
+}
+
+/// Admin-manageable OA accounting fund (General Administrative Fund, Admin
+/// Fund, Sinking Fund, ...) — same idiom as PropertyType/ExpenseCategoryType.
+/// Every invoice line and payment can tag one, and Unit.serviceChargeBalance
+/// (the maintained grand total) is backed by a real per-fund balance in
+/// UnitFundBalance below, instead of treating every amount as one number.
+model Fund {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// Stable slug, e.g. "sinking".
+  name      String   @unique
+  label     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  invoiceLines          ServiceChargeInvoiceLine[]
+  payments              ServiceChargePayment[]
+  balances              UnitFundBalance[]
+  expenseLines          BudgetExpenseLine[]
+  serviceChargeInvoices ServiceChargeInvoice[]
+  expenses              Expense[]
+
+  @@map("funds")
+}
+
+/// A unit's running balance within one fund — positive = owed by the
+/// owner, negative = credit, same sign convention as
+/// Unit.serviceChargeBalance (which is simply the sum of these rows across
+/// every fund, kept in sync in the same transaction as any write here so
+/// existing total-balance UI never has to change).
+model UnitFundBalance {
+  unitId  String  @map("unit_id") @db.Uuid
+  fundId  String  @map("fund_id") @db.Uuid
+  balance Decimal @default(0) @db.Decimal(14, 3)
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  fund Fund @relation(fields: [fundId], references: [id], onDelete: Restrict)
+
+  @@id([unitId, fundId])
+  @@index([fundId])
+  @@map("unit_fund_balances")
+}
+
+/// One generated owner service-charge invoice for a unit — see
+/// app/service-charge-invoice-actions.ts for the balance math and
+/// lib/pdf/service-charge-invoice.tsx for the printed layout. Bills exactly
+/// one fund (see ServiceChargeInvoiceLine) — billing two funds in the same
+/// period means generating two invoices, same as two real invoice numbers.
+model ServiceChargeInvoice {
+  id              String   @id @default(uuid()) @db.Uuid
+  unitId          String   @map("unit_id") @db.Uuid
+  fundId          String   @map("fund_id") @db.Uuid
+  invoiceNumber   String   @unique @map("invoice_number")
+  issueDate       DateTime @map("issue_date") @db.Date
+  dueDate         DateTime @map("due_date") @db.Date
+  /// Days of grace after dueDate before this invoice counts as overdue —
+  /// printed on the invoice, 0 means none.
+  graceDays       Int      @default(0) @map("grace_days")
+  periodStart     DateTime @map("period_start") @db.Date
+  periodEnd       DateTime @map("period_end") @db.Date
+  /// This fund's UnitFundBalance as it stood before this invoice.
+  previousBalance Decimal  @map("previous_balance") @db.Decimal(14, 3)
+  currentAmount   Decimal  @map("current_amount") @db.Decimal(14, 3)
+  amountPayable   Decimal  @map("amount_payable") @db.Decimal(14, 3)
+  /// previousBalance + currentAmount — becomes this fund's UnitFundBalance
+  /// once this invoice is created, and the next invoice's previousBalance.
+  closingBalance  Decimal  @map("closing_balance") @db.Decimal(14, 3)
+  createdById     String?  @map("created_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  unit      Unit                       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  fund      Fund                       @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  createdBy User?                      @relation("ServiceChargeInvoiceCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  lines     ServiceChargeInvoiceLine[]
+
+  @@index([unitId, issueDate])
+  @@map("service_charge_invoices")
+}
+
+/// The Fund/Description/Unit Rate/Qty/Totals line on an invoice. v1 always
+/// creates exactly one, matching the invoice's own fundId/currentAmount —
+/// kept as its own table (not flattened onto the invoice) so a future
+/// multi-line invoice is additive, not a rewrite.
+model ServiceChargeInvoiceLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  invoiceId   String  @map("invoice_id") @db.Uuid
+  fundId      String  @map("fund_id") @db.Uuid
+  description String
+  unitRate    Decimal @map("unit_rate") @db.Decimal(14, 3)
+  qty         Decimal @default(1) @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(14, 3)
+
+  invoice ServiceChargeInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  fund    Fund                 @relation(fields: [fundId], references: [id], onDelete: Restrict)
+
+  @@map("service_charge_invoice_lines")
+}
+
+/// A payment or manual credit adjustment against a unit's running service
+/// charge balance — subtracts from Unit.serviceChargeBalance (and, when
+/// fundId is set, from that fund's own UnitFundBalance too), so enough of
+/// these can push it negative (a credit) exactly like the reference
+/// invoice's "Previous Balance: (400.00)". fundId is nullable because
+/// installment-plan payments (app/service-charge-installment-actions.ts)
+/// and generic payments deliberately move only the total, not one fund.
+model ServiceChargePayment {
+  id                String         @id @default(uuid()) @db.Uuid
+  unitId            String         @map("unit_id") @db.Uuid
+  fundId            String?        @map("fund_id") @db.Uuid
+  amount            Decimal        @db.Decimal(14, 3)
+  paidAt            DateTime       @map("paid_at") @db.Date
+  /// Free-form reference for a bank transfer/receipt, distinct from a
+  /// cheque's own number below.
+  transactionNumber String?        @map("transaction_number")
+  paymentMethod     PaymentMethod? @map("payment_method")
+  chequeNumber      String?        @map("cheque_number")
+  chequeDate        DateTime?      @map("cheque_date") @db.Date
+  bank              String?
+  /// Simple string ("pending" | "cleared" | "bounced") rather than a full
+  /// enum — three values an admin picks from a select, never scripted
+  /// against, so an enum would only add migration friction if it changes.
+  clearanceStatus   String?        @map("clearance_status")
+  note              String?
+  createdById       String?        @map("created_by") @db.Uuid
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  unit        Unit                      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  fund        Fund?                     @relation(fields: [fundId], references: [id], onDelete: SetNull)
+  createdBy   User?                     @relation("ServiceChargePaymentCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  installment ServiceChargeInstallment?
+
+  @@index([unitId, paidAt])
+  @@map("service_charge_payments")
+}
+
+/// A schedule for paying off a unit's outstanding service-charge balance
+/// over several installments instead of one lump sum. unitId-scoped like
+/// the rest of the ledger above, so it carries forward automatically if the
+/// unit changes owners mid-plan — nothing to migrate, updateUnitAction only
+/// ever touches Unit.ownerId.
+model ServiceChargeInstallmentPlan {
+  id               String    @id @default(uuid()) @db.Uuid
+  unitId           String    @map("unit_id") @db.Uuid
+  /// Unit.serviceChargeBalance as it stood when the plan was created —
+  /// fixed at setup time; charges accrued afterwards aren't folded in.
+  totalAmount      Decimal   @map("total_amount") @db.Decimal(14, 3)
+  installmentCount Int       @map("installment_count")
+  frequencyMonths  Int       @map("frequency_months")
+  startDate        DateTime  @map("start_date") @db.Date
+  createdById      String?   @map("created_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at")
+  /// Set when an admin cancels the plan early (e.g. owner wants to pay
+  /// differently) — remaining unpaid installments stop counting as active.
+  cancelledAt      DateTime? @map("cancelled_at")
+
+  unit         Unit                       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  createdBy    User?                      @relation("ServiceChargePlanCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  installments ServiceChargeInstallment[]
+
+  @@index([unitId])
+  @@map("service_charge_installment_plans")
+}
+
+/// One scheduled installment within a plan. Marking it paid creates a real
+/// ServiceChargePayment (same as "Record payment" already does) so the
+/// unit's running balance moves through the one ledger, not a parallel one.
+model ServiceChargeInstallment {
+  id             String    @id @default(uuid()) @db.Uuid
+  planId         String    @map("plan_id") @db.Uuid
+  /// 1-based position — "Installment 2 of 4".
+  sequence       Int
+  amount         Decimal   @db.Decimal(14, 3)
+  dueDate        DateTime  @map("due_date") @db.Date
+  paidAt         DateTime? @map("paid_at") @db.Date
+  paymentId      String?   @unique @map("payment_id") @db.Uuid
+  /// When the "due in a week" invoice email last went out for this
+  /// installment — set by the daily cron or the manual "Send invoice"
+  /// button, whichever fires first, so it's never sent twice automatically.
+  reminderSentAt DateTime? @map("reminder_sent_at")
+
+  plan    ServiceChargeInstallmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  payment ServiceChargePayment?        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@unique([planId, sequence])
+  @@map("service_charge_installments")
+}
+
+/// One property's estimated budget for a financial year — a reference
+/// document only (v1 doesn't push its numbers back onto any unit's
+/// service charge amount). Determines what needs to be recovered through
+/// service charges, but that recovery is still set manually per unit.
+model AnnualBudget {
+  id          String   @id @default(uuid()) @db.Uuid
+  propertyId  String   @map("property_id") @db.Uuid
+  year        Int
+  createdById String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  property     Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdBy    User?               @relation("AnnualBudgetCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  incomeLines  BudgetIncomeLine[]
+  expenseLines BudgetExpenseLine[]
+
+  @@unique([propertyId, year])
+  @@map("annual_budgets")
+}
+
+/// One row of budgeted income — Description | No of Units | Amount |
+/// Total Yearly, the exact terminology the spec requires be retained.
+model BudgetIncomeLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  budgetId    String  @map("budget_id") @db.Uuid
+  description String
+  units       Int     @map("no_of_units")
+  amount      Decimal @db.Decimal(14, 3)
+  totalYearly Decimal @map("total_yearly") @db.Decimal(14, 3)
+
+  budget AnnualBudget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@map("budget_income_lines")
+}
+
+/// One row of budgeted expenditure — Description | Rate/Month | Rate/Year,
+/// optionally tagged with which Fund it draws from. `description` is free
+/// text (the UI offers the spec's own category list as suggestions, not a
+/// hard enum, so a client can always type something new).
+model BudgetExpenseLine {
+  id           String  @id @default(uuid()) @db.Uuid
+  budgetId     String  @map("budget_id") @db.Uuid
+  fundId       String? @map("fund_id") @db.Uuid
+  description  String
+  ratePerMonth Decimal @map("rate_per_month") @db.Decimal(14, 3)
+  ratePerYear  Decimal @map("rate_per_year") @db.Decimal(14, 3)
+
+  budget AnnualBudget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  fund   Fund?        @relation(fields: [fundId], references: [id], onDelete: SetNull)
+
+  @@map("budget_expense_lines")
+}
+
+/// Admin-manageable expense categories — same idiom as PropertyType (see
+/// /protected/admin/property-types) instead of a fixed enum, so the list
+/// can grow as the client's own chart of accounts does.
+model ExpenseCategoryType {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// Stable slug, e.g. "administration" — matches the original hardcoded
+  /// enum values so existing expenses kept their category through the
+  /// migration off that enum.
+  name      String   @unique
+  label     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  subcategories ExpenseSubcategoryType[]
+  expenses      Expense[]
+  suppliers     SupplierCategory[]
+
+  @@map("expense_category_types")
+}
+
+/// A real vendor record (company info, contact, contract terms) — suggested
+/// when logging an expense against a category it covers (see
+/// SupplierCategory below and components/expense-category-picker.tsx).
+model Supplier {
+  id                        String    @id @default(uuid()) @db.Uuid
+  companyName               String    @map("company_name")
+  companyNameAr             String?   @map("company_name_ar")
+  externalReference         String?   @map("external_reference")
+  /// Whether this supplier can be assigned to new expenses — inactive
+  /// suppliers drop out of the picker but stay on past expenses.
+  active                    Boolean   @default(true)
+  contactPerson             String?   @map("contact_person")
+  phone                     String?
+  whatsapp                  String?
+  email                     String?
+  address                   String?
+  availableForEmergencies   Boolean   @default(false) @map("available_for_emergencies")
+  /// True (the default) means this vendor can be picked for an expense
+  /// against any property. False means only the properties explicitly
+  /// linked via SupplierProperty below are eligible.
+  availableForAllProperties Boolean   @default(true) @map("available_for_all_properties")
+  calloutCharge             Decimal?  @map("callout_charge") @db.Decimal(14, 3)
+  contractStart             DateTime? @map("contract_start") @db.Date
+  contractEnd               DateTime? @map("contract_end") @db.Date
+  contractInfo              String?   @map("contract_info")
+  notes                     String?
+  createdById               String?   @map("created_by") @db.Uuid
+  createdAt                 DateTime  @default(now()) @map("created_at")
+  updatedAt                 DateTime  @updatedAt @map("updated_at")
+
+  createdBy  User?              @relation("SupplierCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  categories SupplierCategory[]
+  properties SupplierProperty[]
+  expenses   Expense[]
+  serviceContracts BuildingServiceContract[]
+
+  @@map("suppliers")
+}
+
+/// The property manager's own agreement with a vendor for a whole
+/// building's shared infrastructure — lift maintenance, fire extinguisher
+/// servicing, generator, pest control, and so on. Distinct from a
+/// Supplier's own contractStart/contractEnd (which just describes that one
+/// vendor's general terms) and from Expense (the recurring bill this
+/// contract eventually generates): this row is the fixed-term agreement
+/// itself, kept so its expiry can be tracked and its signed copy stored.
+model BuildingServiceContract {
+  id               String    @id @default(uuid()) @db.Uuid
+  propertyId       String    @map("property_id") @db.Uuid
+  /// Freeform, not an enum — the same "pick a preset or type your own"
+  /// idiom as ExpenseCategoryType's subcategories (Elevator, Fire
+  /// Extinguisher, Generator, Pest Control, Water Tank Cleaning, ...).
+  contractType     String    @map("contract_type")
+  supplierId       String?   @map("supplier_id") @db.Uuid
+  startDate        DateTime  @map("start_date") @db.Date
+  /// Null means an open-ended/rolling contract with no fixed expiry.
+  endDate          DateTime? @map("end_date") @db.Date
+  amount           Decimal?  @db.Decimal(14, 3)
+  notes            String?
+  /// The signed contract file, if uploaded. Single file, inline rather
+  /// than routed through EntityDocument — same idiom as Expense's own
+  /// receipt fields.
+  documentFileName String?   @map("document_file_name")
+  documentFilePath String?   @map("document_file_path")
+  documentFileType String?   @map("document_file_type")
+  documentFileSize Int?      @map("document_file_size")
+  createdById      String?   @map("created_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  supplier  Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  createdBy User?     @relation("BuildingServiceContractCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, endDate])
+  @@map("building_service_contracts")
+}
+
+/// Which expense categories a supplier covers ("services covered") — used
+/// to suggest/filter suppliers when logging an expense against a category.
+model SupplierCategory {
+  supplierId String @map("supplier_id") @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+
+  supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  category ExpenseCategoryType @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([supplierId, categoryId])
+  @@index([categoryId])
+  @@map("supplier_categories")
+}
+
+/// Explicit property links for a supplier that ISN'T available for all
+/// properties (Supplier.availableForAllProperties = false) — only these
+/// properties can use it when logging an expense.
+model SupplierProperty {
+  supplierId String @map("supplier_id") @db.Uuid
+  propertyId String @map("property_id") @db.Uuid
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@id([supplierId, propertyId])
+  @@index([propertyId])
+  @@map("supplier_properties")
+}
+
+/// A specific line item within a category (e.g. "Cleaning Service" within
+/// "Services") — admin-manageable per ExpenseCategoryType above.
+model ExpenseSubcategoryType {
+  id         String   @id @default(uuid()) @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  label      String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  category ExpenseCategoryType @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, label])
+  @@index([categoryId])
+  @@map("expense_subcategory_types")
 }
 
 model MaintenanceRequest {
@@ -544,15 +1147,15 @@ model MaintenanceRequest {
   completionCode    String?        @map("completion_code")
   completionCodeAt  DateTime?      @map("completion_code_at")
 
-  user          User                    @relation("RequestOwner", fields: [userId], references: [id], onDelete: Cascade)
-  unit          Unit?                   @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  property      Property?               @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  assignedTo    User?                   @relation("AssignedWorker", fields: [assignedToId], references: [id], onDelete: SetNull)
-  createdBy     User?                   @relation("RequestCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  attachments   MaintenanceAttachment[]
-  taskLogs      TaskLog[]
-  notifications Notification[]
-  supplyRequests SupplyRequest[]
+  user             User                    @relation("RequestOwner", fields: [userId], references: [id], onDelete: Cascade)
+  unit             Unit?                   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  property         Property?               @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  assignedTo       User?                   @relation("AssignedWorker", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy        User?                   @relation("RequestCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  attachments      MaintenanceAttachment[]
+  taskLogs         TaskLog[]
+  notifications    Notification[]
+  supplyRequests   SupplyRequest[]
   whatsappSessions WhatsappSession[]
 
   @@index([userId])
@@ -568,35 +1171,35 @@ model MaintenanceRequest {
 /// is / how it was sourced) or denies (with a reason); the worker resumes
 /// the job themselves once they actually have it in hand.
 model SupplyRequest {
-  id            String              @id @default(uuid()) @db.Uuid
-  requestId     String              @map("request_id") @db.Uuid
+  id              String              @id @default(uuid()) @db.Uuid
+  requestId       String              @map("request_id") @db.Uuid
   /// Short name of what's needed, e.g. "20m PVC pipe" or "replacement water heater".
-  item          String
+  item            String
   /// Extra detail from the worker — size, brand, where to buy, cost estimate.
-  notes         String?
-  status        SupplyRequestStatus @default(pending)
+  notes           String?
+  status          SupplyRequestStatus @default(pending)
   /// Admin's reason for denying, or a note like "picked up, ready for you".
-  adminNote     String?             @map("admin_note")
+  adminNote       String?             @map("admin_note")
   /// The actual price paid, recorded by the admin at the moment of approval.
   /// Set once and never edited again — decideSupplyRequestAction refuses any
   /// request that isn't still pending, so this is the permanent cost record
   /// for the audit trail, unaffected by later job status changes.
-  cost          Decimal?            @db.Decimal(14, 3)
+  cost            Decimal?            @db.Decimal(14, 3)
   /// What the worker says they paid, entered alongside the receipt. A
   /// suggestion for the admin only — never authoritative and never a
   /// substitute for `cost`, which the admin sets explicitly on approval.
-  workerCost      Decimal?          @map("worker_cost") @db.Decimal(14, 3)
+  workerCost      Decimal?            @map("worker_cost") @db.Decimal(14, 3)
   /// Storage object key for a photo/PDF of the purchase receipt the worker
   /// uploaded as proof of what they already bought. Set once, while the
   /// request is still pending — see uploadSupplyReceiptAction.
-  receiptPath     String?           @map("receipt_path")
-  receiptFileName String?           @map("receipt_file_name")
-  receiptFileType String?           @map("receipt_file_type")
-  requestedById String              @map("requested_by") @db.Uuid
-  decidedById   String?             @map("decided_by") @db.Uuid
-  decidedAt     DateTime?           @map("decided_at")
-  createdAt     DateTime            @default(now()) @map("created_at")
-  updatedAt     DateTime            @updatedAt @map("updated_at")
+  receiptPath     String?             @map("receipt_path")
+  receiptFileName String?             @map("receipt_file_name")
+  receiptFileType String?             @map("receipt_file_type")
+  requestedById   String              @map("requested_by") @db.Uuid
+  decidedById     String?             @map("decided_by") @db.Uuid
+  decidedAt       DateTime?           @map("decided_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
 
   request     MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   requestedBy User               @relation("SupplyRequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)

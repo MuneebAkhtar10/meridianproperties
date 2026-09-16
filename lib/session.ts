@@ -11,6 +11,8 @@ export type SessionUser = {
   id: string;
   email: string;
   userType: UserType;
+  firstName: string | null;
+  lastName: string | null;
 };
 
 /**
@@ -32,7 +34,13 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
 
   return prisma.user.findUnique({
     where: { id: authUser.id },
-    select: { id: true, email: true, userType: true },
+    select: {
+      id: true,
+      email: true,
+      userType: true,
+      firstName: true,
+      lastName: true,
+    },
   });
 });
 

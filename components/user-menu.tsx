@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, KeyRound, LogOut, QrCode, User as UserIcon } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 import Link from "next/link";
 
 import { signOutAction } from "@/app/actions";
@@ -9,85 +9,66 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserType } from "@/lib/generated/prisma/client";
 
 const ROLE_LABEL: Record<UserType, string> = {
-  admin: "Administrator",
+  admin: "Admin",
   worker: "Maintenance worker",
   user: "Tenant",
   owner: "Property owner",
 };
 
+/**
+ * The sidebar's bottom-of-column identity card — name, email and role badge,
+ * doubling as the trigger for the account dropdown (change password, sign
+ * out). Quick-access admin links (Rejections, QR Code, Dynamics 365) live in
+ * the top toolbar instead — see `AppTopbar` — so this menu stays focused on
+ * the account itself.
+ */
 export function UserMenu({
   email,
   userType,
+  firstName,
+  lastName,
 }: {
   email: string;
   userType: UserType;
+  firstName?: string | null;
+  lastName?: string | null;
 }) {
-  const initial = email.charAt(0).toUpperCase();
+  const name = [firstName, lastName].filter(Boolean).join(" ");
+  const initial = (name || email).charAt(0).toUpperCase();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          className="flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-muted"
           aria-label="Account menu"
         >
-          {initial}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+            {initial}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium">
+              {name || email}
+            </span>
+            {name && (
+              <span className="block truncate text-xs text-muted-foreground">
+                {email}
+              </span>
+            )}
+            <span className="mt-0.5 inline-flex items-center rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-foreground">
+              {ROLE_LABEL[userType]}
+            </span>
+          </span>
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuLabel className="flex flex-col gap-0.5">
-          <span className="truncate text-sm font-medium">{email}</span>
-          <span className="text-xs font-normal text-muted-foreground">
-            {ROLE_LABEL[userType]}
-          </span>
-        </DropdownMenuLabel>
-
-        <DropdownMenuSeparator />
-
-        {userType === UserType.admin && (
-          <>
-            <DropdownMenuItem asChild>
-              <Link href="/protected/rejections" className="cursor-pointer">
-                <Ban className="mr-2 h-4 w-4" />
-                Rejections
-                <LinkPendingIndicator />
-              </Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem asChild>
-              <Link href="/protected/admin/qr-code" className="cursor-pointer">
-                <QrCode className="mr-2 h-4 w-4" />
-                QR Code
-                <LinkPendingIndicator />
-              </Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-          </>
-        )}
-
-        {userType === UserType.user && (
-          <>
-            <DropdownMenuItem asChild>
-              <Link href="/protected/rejections" className="cursor-pointer">
-                <Ban className="mr-2 h-4 w-4" />
-                Rejections
-                <LinkPendingIndicator />
-              </Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-          </>
-        )}
-
+      <DropdownMenuContent align="end" side="top" className="w-60">
         <DropdownMenuItem asChild>
           <Link href="/protected/reset-password" className="cursor-pointer">
             <KeyRound className="mr-2 h-4 w-4" />
@@ -99,7 +80,7 @@ export function UserMenu({
         <DropdownMenuSeparator />
 
         <DropdownMenuItem asChild>
-          <form action={signOutAction}>
+          <form action={signOutAction} className="w-full">
             <button
               type="submit"
               className="flex w-full cursor-pointer items-center"

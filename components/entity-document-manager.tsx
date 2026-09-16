@@ -17,7 +17,7 @@ import {
 import { MAX_UPLOAD_LABEL } from "@/lib/upload-limits";
 import type { EntityDocumentCategory } from "@/lib/generated/prisma/client";
 
-type DocumentItem = {
+export type DocumentItem = {
   id: string;
   category: EntityDocumentCategory;
   label: string | null;

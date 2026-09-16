@@ -1,32 +1,33 @@
 import {
+  AlertCircle,
+  CheckCircle2,
   DoorOpen,
+  FileCheck,
+  FileWarning,
   KeyRound,
   LayoutGrid,
   MapPin,
+  Phone,
+  Receipt,
+  ScrollText,
+  Store,
   Trash2,
   UserPlus,
+  Wallet,
   Wand2,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import {
-  assignTenantAction,
   createUnitAction,
-  deleteUnitAction,
   generateUnitsAction,
-  markServiceChargeReceivedAction,
-  resendServiceChargeReminderAction,
   submitPropertyForApprovalAction,
   updatePropertyAction,
-  updateServiceChargeAction,
-  updateUnitAction,
 } from "@/app/admin-actions";
-import { CalendarClock, Check, Pencil } from "lucide-react";
-import { differenceInCalendarDays, format } from "date-fns";
+import { format } from "date-fns";
 import { EmptyState } from "@/components/empty-state";
 import { EntityDocumentManager } from "@/components/entity-document-manager";
 import { FormMessage, Message } from "@/components/form-message";
-import { ManageToggle } from "@/components/manage-toggle";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,10 +35,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Modal } from "@/components/ui/modal";
 import { ButtonLink } from "@/components/ui/button-link";
-import { formatMoney } from "@/lib/finance";
+import { PendingLink } from "@/components/ui/pending-link";
+import { UnitManageModal } from "@/components/unit-manage-modal";
+import { toManagedUnit } from "@/lib/managed-unit";
+import { formatMoney, formatMoneyCompact } from "@/lib/finance";
 import { formatOmanAddress, OMAN_GOVERNORATES } from "@/lib/oman";
-import { formatUnitLabel } from "@/lib/property-types";
+import {
+  defaultUnitPermissions,
+  formatUnitLabel,
+  isBuildingManagementType,
+  isBuildingType,
+} from "@/lib/property-types";
+import { serviceChargeTone } from "@/lib/service-charge-status";
+import { SummaryTile } from "@/components/summary-tile";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
@@ -48,7 +60,24 @@ export default async function PropertyDetailPage({
   searchParams,
 }: PageProps) {
   const { id } = await params;
-  const message = (await searchParams) as unknown as Message;
+  const rawParams = (await searchParams) as unknown as {
+    owner?: string;
+    contract?: string;
+    charge?: string;
+    occupancy?: string;
+    q?: string;
+  } & Message;
+  const message = rawParams as Message;
+  const ownerFilter =
+    typeof rawParams.owner === "string" ? rawParams.owner : "all";
+  const contractFilter =
+    typeof rawParams.contract === "string" ? rawParams.contract : "all";
+  const chargeFilter =
+    typeof rawParams.charge === "string" ? rawParams.charge : "all";
+  const occupancyFilter =
+    typeof rawParams.occupancy === "string" ? rawParams.occupancy : "all";
+  const search =
+    typeof rawParams.q === "string" ? rawParams.q.trim() : "";
 
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isAdmin = user.userType === UserType.admin;
@@ -58,82 +87,295 @@ export default async function PropertyDetailPage({
     where: { id },
     include: {
       propertyType: true,
-      owner: {
-        select: { id: true, email: true, firstName: true, lastName: true },
-      },
       documents: { orderBy: { createdAt: "desc" } },
       units: {
         orderBy: [{ floor: "asc" }, { label: "asc" }],
         include: {
           tenant: { select: { id: true, email: true } },
-          _count: { select: { requests: true } },
+          owner: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+          _count: { select: { requests: true, documents: true } },
+          documents: { orderBy: { createdAt: "desc" } },
           tenancies: {
             where: { endDate: null },
             select: { monthlyRent: true },
             take: 1,
+          },
+          serviceChargeInvoices: {
+            orderBy: { issueDate: "desc" },
+            select: {
+              id: true,
+              invoiceNumber: true,
+              issueDate: true,
+              amountPayable: true,
+              fund: { select: { label: true } },
+            },
+          },
+          serviceChargePayments: {
+            select: { amount: true },
+          },
+          fundBalances: {
+            select: { fundId: true, balance: true, fund: { select: { label: true } } },
+          },
+          installmentPlans: {
+            where: { cancelledAt: null },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            include: { installments: { orderBy: { sequence: "asc" } } },
           },
         },
       },
     },
   });
 
-  if (!property || (isOwner && property.ownerId !== user.id)) {
+  // An owner can see a property once they own a unit on it — or, before it
+  // has any units at all, the brand-new draft they just created (there's no
+  // other way to add its first unit and become its owner otherwise).
+  const canOwnerAccess =
+    !!property &&
+    (property.units.length === 0 ||
+      property.units.some((unit) => unit.ownerId === user.id));
+
+  if (!property || (isOwner && !canOwnerAccess)) {
     notFound();
   }
 
   // Tenants who could move in: anyone with the tenant role who isn't already housed.
-  const [availableTenants, propertyTypes, owners] = await Promise.all([
-    prisma.user.findMany({
-      where: { userType: UserType.user, unit: null },
-      orderBy: { email: "asc" },
-      select: { id: true, email: true },
-    }),
-    prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
-    isAdmin
-      ? prisma.user.findMany({
-          where: { userType: UserType.owner },
-          select: { id: true, email: true },
-          orderBy: { email: "asc" },
-        })
-      : Promise.resolve([]),
-  ]);
+  const [availableTenants, propertyTypes, owners, funds, propertySuppliers] =
+    await Promise.all([
+      prisma.user.findMany({
+        where: { userType: UserType.user, unit: null },
+        orderBy: { email: "asc" },
+        select: { id: true, email: true },
+      }),
+      prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
+      isAdmin
+        ? prisma.user.findMany({
+            where: { userType: UserType.owner },
+            select: { id: true, email: true },
+            orderBy: { email: "asc" },
+          })
+        : Promise.resolve([]),
+      prisma.fund.findMany({
+        orderBy: { createdAt: "asc" },
+        select: { id: true, label: true },
+      }),
+      // Suppliers this property can use an expense against — either linked
+      // to it specifically, or (the common case) available everywhere. Same
+      // eligibility rule createExpenseAction/the Building Contracts page use.
+      prisma.supplier.findMany({
+        where: {
+          active: true,
+          OR: [
+            { availableForAllProperties: true },
+            { properties: { some: { propertyId: id } } },
+          ],
+        },
+        orderBy: { companyName: "asc" },
+        select: {
+          id: true,
+          companyName: true,
+          contactPerson: true,
+          phone: true,
+          whatsapp: true,
+          availableForAllProperties: true,
+          availableForEmergencies: true,
+          categories: { select: { category: { select: { label: true } } } },
+        },
+      }),
+    ]);
 
-  const ownerName = property.owner
-    ? [property.owner.firstName, property.owner.lastName]
-        .filter(Boolean)
-        .join(" ")
-    : null;
-  const ownerLabel = property.owner
-    ? ownerName
-      ? `${ownerName} (${property.owner.email})`
-      : property.owner.email
-    : "No owner assigned";
+  // A property's owner(s) are the distinct set of its units' owners — units
+  // in the same building can belong to different landlords.
+  const distinctOwners = Array.from(
+    new Map(
+      property.units
+        .filter((unit) => unit.owner)
+        .map((unit) => [unit.owner!.id, unit.owner!]),
+    ).values(),
+  );
+  const ownerLabel =
+    distinctOwners.length === 0
+      ? "No owner assigned"
+      : distinctOwners
+          .map((owner) => {
+            const name = [owner.firstName, owner.lastName]
+              .filter(Boolean)
+              .join(" ");
+            return name ? `${name} (${owner.email})` : owner.email;
+          })
+          .join(", ");
 
   const propertyType = property.propertyType;
   const hasFloors = propertyType.hasFloors;
   const hasBedrooms = propertyType.hasBedrooms;
   const unitNoun = propertyType.unitNounSingular.toLowerCase();
   const unitNounCap = propertyType.unitNounSingular;
+  const newUnitDefaults = defaultUnitPermissions(propertyType.name);
+  const isPropertyBuildingType = isBuildingType(propertyType.name);
+  const isPropertyBuildingManagementType = isBuildingManagementType(
+    propertyType.name,
+  );
   const occupied = property.units.filter((u) => u.tenant).length;
   const scheduledMonthlyRent = property.units.reduce(
     (total, unit) => total + Number(unit.tenancies[0]?.monthlyRent ?? 0),
     0,
   );
+
+  // Shared per-unit status, used for both the row badges and the filters/
+  // summary tiles below, so all three always agree with each other — and
+  // with the portfolio-wide Service Charge Ledger module, since both call the
+  // same lib/service-charge-status.ts helper.
+  const chargeToneFor = serviceChargeTone;
+  const hasContract = (unit: (typeof property.units)[number]) =>
+    unit._count.documents > 0;
+
+  // Service charge totals for the summary tiles — always reflect the whole
+  // property, same as the other tiles, regardless of the filters below.
+  let serviceChargeDueCount = 0;
+  let serviceChargeDueAmount = 0;
+  let serviceChargeCollectedCount = 0;
+  let serviceChargeCollectedAmount = 0;
+  for (const unit of property.units) {
+    const tone = chargeToneFor(unit);
+    if (tone === "overdue" || tone === "dueSoon") {
+      serviceChargeDueCount++;
+      serviceChargeDueAmount += Number(unit.serviceChargeAmount);
+    } else if (tone === "ok") {
+      serviceChargeCollectedCount++;
+      serviceChargeCollectedAmount += Number(unit.serviceChargeAmount);
+    }
+  }
+
+  const searchLower = search.toLowerCase();
+  const unitMatchesSearch = (unit: (typeof property.units)[number]) => {
+    if (!searchLower) return true;
+    const ownerName = unit.owner
+      ? [unit.owner.firstName, unit.owner.lastName]
+          .filter(Boolean)
+          .join(" ")
+      : "";
+    const haystack = [
+      unit.label,
+      formatUnitLabel(propertyType, unit.label),
+      unit.tenant?.email,
+      unit.owner?.email,
+      ownerName,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(searchLower);
+  };
+
+  // Filters scope only what's displayed below — the summary tiles above
+  // always reflect the whole property.
+  const displayedUnits = property.units.filter((unit) => {
+    if (!unitMatchesSearch(unit)) return false;
+    if (ownerFilter === "unassigned" && unit.ownerId) return false;
+    if (
+      ownerFilter !== "all" &&
+      ownerFilter !== "unassigned" &&
+      unit.ownerId !== ownerFilter
+    ) {
+      return false;
+    }
+    if (contractFilter === "established" && !hasContract(unit)) return false;
+    if (
+      contractFilter === "needed" &&
+      (!unit.owner || hasContract(unit))
+    ) {
+      return false;
+    }
+    if (occupancyFilter === "occupied" && !unit.tenant) return false;
+    if (occupancyFilter === "empty" && unit.tenant) return false;
+    const tone = chargeToneFor(unit);
+    if (chargeFilter === "due" && tone !== "overdue" && tone !== "dueSoon") {
+      return false;
+    }
+    if (
+      chargeFilter !== "all" &&
+      chargeFilter !== "due" &&
+      tone !== chargeFilter
+    ) {
+      return false;
+    }
+    return true;
+  });
+
   const byFloor = new Map<number | null, typeof property.units>();
 
-  for (const unit of property.units) {
+  for (const unit of displayedUnits) {
     const list = byFloor.get(unit.floor) ?? [];
     list.push(unit);
     byFloor.set(unit.floor, list);
   }
 
+  const buildFilterHref = (
+    next: Partial<{
+      owner: string;
+      contract: string;
+      charge: string;
+      occupancy: string;
+    }>,
+  ) => {
+    const owner = next.owner ?? ownerFilter;
+    const contract = next.contract ?? contractFilter;
+    const charge = next.charge ?? chargeFilter;
+    const occupancy = next.occupancy ?? occupancyFilter;
+    const query = new URLSearchParams();
+    if (owner !== "all") query.set("owner", owner);
+    if (contract !== "all") query.set("contract", contract);
+    if (charge !== "all") query.set("charge", charge);
+    if (occupancy !== "all") query.set("occupancy", occupancy);
+    const qs = query.toString();
+    return `/protected/properties/${property.id}${qs ? `?${qs}` : ""}`;
+  };
+  const hasActiveFilter =
+    ownerFilter !== "all" ||
+    contractFilter !== "all" ||
+    chargeFilter !== "all" ||
+    occupancyFilter !== "all" ||
+    Boolean(search);
+
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-5 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title={property.name}
         description={`${propertyType.label} · ${formatOmanAddress(property)} · Owner: ${ownerLabel}`}
         back={{ href: "/protected/properties", label: "All properties" }}
       >
+        <ButtonLink
+          href={`/protected/properties/${property.id}/budget/${new Date().getFullYear()}`}
+          variant="outline"
+        >
+          <Wallet className="h-4 w-4" />
+          Annual Budget
+        </ButtonLink>
+        <ButtonLink
+          href={`/protected/properties/${property.id}/building-expenses`}
+          variant="outline"
+        >
+          <Receipt className="h-4 w-4" />
+          Building Expenses
+        </ButtonLink>
+        <ButtonLink
+          href={`/protected/properties/${property.id}/building-contracts`}
+          variant="outline"
+        >
+          <FileCheck className="h-4 w-4" />
+          Building Contracts
+        </ButtonLink>
+        {isPropertyBuildingManagementType && (
+          <ButtonLink
+            href={`/protected/properties/${property.id}/building-management-report`}
+            variant="outline"
+          >
+            <ScrollText className="h-4 w-4" />
+            Building Management Report
+          </ButtonLink>
+        )}
         <ButtonLink href="/protected/tenancies" variant="outline">
           <KeyRound className="h-4 w-4" />
           Tenancy terms
@@ -200,32 +442,316 @@ export default async function PropertyDetailPage({
         <FormMessage message={message} />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <SummaryTile
           icon={<DoorOpen className="h-4 w-4" />}
           value={property.units.length}
           label={propertyType.unitNounPlural}
+          accent="bg-violet-500"
+          iconBg="bg-violet-50 text-violet-600"
+          href={buildFilterHref({
+            owner: "all",
+            contract: "all",
+            charge: "all",
+            occupancy: "all",
+          })}
+          active={!hasActiveFilter}
         />
         <SummaryTile
           icon={<UserPlus className="h-4 w-4" />}
           value={occupied}
           label="Occupied"
+          accent="bg-emerald-500"
+          iconBg="bg-emerald-50 text-emerald-600"
+          href={buildFilterHref({
+            occupancy: occupancyFilter === "occupied" ? "all" : "occupied",
+          })}
+          active={occupancyFilter === "occupied"}
         />
         <SummaryTile
           icon={<LayoutGrid className="h-4 w-4" />}
           value={property.units.length - occupied}
           label="Empty"
+          accent="bg-slate-400"
+          iconBg="bg-slate-50 text-slate-600"
+          href={buildFilterHref({
+            occupancy: occupancyFilter === "empty" ? "all" : "empty",
+          })}
+          active={occupancyFilter === "empty"}
         />
         <SummaryTile
           icon={<KeyRound className="h-4 w-4" />}
-          value={formatMoney(scheduledMonthlyRent)}
+          value={formatMoneyCompact(scheduledMonthlyRent)}
           label="Scheduled monthly rent"
+          accent="bg-[#0886be]"
+          iconBg="bg-[#0886be]/10 text-[#0886be]"
+          href={buildFilterHref({
+            occupancy: occupancyFilter === "occupied" ? "all" : "occupied",
+          })}
+          active={occupancyFilter === "occupied"}
         />
+        <SummaryTile
+          icon={<AlertCircle className="h-4 w-4" />}
+          value={formatMoneyCompact(serviceChargeDueAmount)}
+          label="Service charge due"
+          sublabel={`${serviceChargeDueCount} ${serviceChargeDueCount === 1 ? unitNoun : propertyType.unitNounPlural.toLowerCase()}`}
+          accent="bg-amber-500"
+          iconBg="bg-amber-50 text-amber-600"
+          href={buildFilterHref({
+            charge: chargeFilter === "due" ? "all" : "due",
+          })}
+          active={chargeFilter === "due"}
+        />
+        <SummaryTile
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          value={formatMoneyCompact(serviceChargeCollectedAmount)}
+          label="Service charge collected"
+          sublabel={`${serviceChargeCollectedCount} ${serviceChargeCollectedCount === 1 ? unitNoun : propertyType.unitNounPlural.toLowerCase()}`}
+          accent="bg-teal-500"
+          iconBg="bg-teal-50 text-teal-600"
+          href={buildFilterHref({
+            charge: chargeFilter === "ok" ? "all" : "ok",
+          })}
+          active={chargeFilter === "ok"}
+        />
+        <Modal
+          trigger={
+            <SummaryTile
+              icon={<Store className="h-4 w-4" />}
+              value={propertySuppliers.length}
+              label="Suppliers"
+              sublabel="linked to this property"
+              accent="bg-indigo-500"
+              iconBg="bg-indigo-50 text-indigo-600"
+            />
+          }
+          title="Suppliers"
+          description={`Every active supplier eligible for ${property.name} — linked directly, or available portfolio-wide.`}
+          icon={
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <Store className="h-4 w-4" />
+            </span>
+          }
+        >
+          {propertySuppliers.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No suppliers are eligible for this property yet.
+            </p>
+          ) : (
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+              {propertySuppliers.map((supplier) => (
+                <div
+                  key={supplier.id}
+                  className="rounded-lg border border-border/60 p-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{supplier.companyName}</p>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
+                        supplier.availableForAllProperties
+                          ? "bg-slate-100 text-slate-600 ring-slate-500/20"
+                          : "bg-indigo-50 text-indigo-700 ring-indigo-600/20"
+                      }`}
+                    >
+                      {supplier.availableForAllProperties
+                        ? "All properties"
+                        : "This property"}
+                    </span>
+                  </div>
+                  {(supplier.contactPerson || supplier.phone || supplier.whatsapp) && (
+                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                      {supplier.contactPerson && <span>{supplier.contactPerson}</span>}
+                      {supplier.phone && (
+                        <span className="inline-flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {supplier.phone}
+                        </span>
+                      )}
+                      {supplier.availableForEmergencies && (
+                        <span className="font-medium text-amber-700">
+                          Available for emergencies
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {supplier.categories.length === 0 ? (
+                      <span className="text-xs text-muted-foreground">
+                        No services listed
+                      </span>
+                    ) : (
+                      supplier.categories.map(({ category }) => (
+                        <span
+                          key={category.label}
+                          className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground/80"
+                        >
+                          {category.label}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
+      <div className="grid gap-8 lg:grid-cols-[1fr_28rem]">
         {/* ── Apartments ─────────────────────────────────────────────────── */}
         <div className="min-w-0 space-y-6">
+          {isAdmin && (
+            <Card className="border-border/60 shadow-sm">
+              <CardContent className="space-y-2 p-2.5">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Contract
+                    </p>
+                    <div className="flex flex-wrap gap-0.5 rounded-md bg-muted/50 p-0.5">
+                      {[
+                        { value: "all", label: "All" },
+                        { value: "established", label: "Established" },
+                        { value: "needed", label: "Needed" },
+                      ].map((filter) => {
+                        const active = contractFilter === filter.value;
+                        return (
+                          <PendingLink
+                            key={filter.value}
+                            href={buildFilterHref({ contract: filter.value })}
+                            className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-all ${
+                              active
+                                ? "bg-white text-foreground shadow-sm ring-1 ring-border/60"
+                                : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+                            }`}
+                          >
+                            {filter.label}
+                          </PendingLink>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Charge
+                    </p>
+                    <div className="flex flex-wrap gap-0.5 rounded-md bg-muted/50 p-0.5">
+                      {[
+                        { value: "all", label: "All", dot: null },
+                        { value: "overdue", label: "Overdue", dot: "bg-red-500" },
+                        { value: "dueSoon", label: "Due soon", dot: "bg-amber-500" },
+                        { value: "ok", label: "Up to date", dot: "bg-teal-500" },
+                        { value: "none", label: "No charge", dot: "bg-slate-400" },
+                      ].map((filter) => {
+                        const active = chargeFilter === filter.value;
+                        return (
+                          <PendingLink
+                            key={filter.value}
+                            href={buildFilterHref({ charge: filter.value })}
+                            className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-all ${
+                              active
+                                ? "bg-white text-foreground shadow-sm ring-1 ring-border/60"
+                                : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+                            }`}
+                          >
+                            {filter.dot && (
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${filter.dot}`}
+                              />
+                            )}
+                            {filter.label}
+                          </PendingLink>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-end gap-2 border-t border-border/60 pt-2">
+                  <form
+                    action={`/protected/properties/${property.id}`}
+                    className="flex flex-wrap items-end gap-2"
+                  >
+                    {contractFilter !== "all" && (
+                      <input type="hidden" name="contract" value={contractFilter} />
+                    )}
+                    {chargeFilter !== "all" && (
+                      <input type="hidden" name="charge" value={chargeFilter} />
+                    )}
+                    <div className="min-w-48 flex-1 max-w-xs space-y-1">
+                      <Label htmlFor="unit-search" className="text-xs">
+                        Search
+                      </Label>
+                      <Input
+                        id="unit-search"
+                        name="q"
+                        defaultValue={search}
+                        placeholder={`${unitNounCap} no., tenant or owner…`}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    {distinctOwners.length > 0 && (
+                      <div className="w-full max-w-xs space-y-1">
+                        <Label htmlFor="owner-filter" className="text-xs">
+                          Owner
+                        </Label>
+                        <Select
+                          id="owner-filter"
+                          name="owner"
+                          defaultValue={ownerFilter}
+                          className="h-8 text-xs"
+                        >
+                          <option value="all">
+                            All owners ({property.units.length}{" "}
+                            {propertyType.unitNounPlural.toLowerCase()})
+                          </option>
+                          {distinctOwners.map((owner) => {
+                            const count = property.units.filter(
+                              (u) => u.ownerId === owner.id,
+                            ).length;
+                            const name = [owner.firstName, owner.lastName]
+                              .filter(Boolean)
+                              .join(" ");
+                            return (
+                              <option key={owner.id} value={owner.id}>
+                                {(name
+                                  ? `${name} (${owner.email})`
+                                  : owner.email) + ` — ${count}`}
+                              </option>
+                            );
+                          })}
+                          {property.units.some((u) => !u.ownerId) && (
+                            <option value="unassigned">
+                              Unassigned (
+                              {property.units.filter((u) => !u.ownerId).length})
+                            </option>
+                          )}
+                        </Select>
+                      </div>
+                    )}
+                    <SubmitButton
+                      variant="outline"
+                      size="sm"
+                      pendingText="Filtering..."
+                    >
+                      Apply
+                    </SubmitButton>
+                  </form>
+                  {hasActiveFilter && (
+                    <ButtonLink
+                      href={`/protected/properties/${property.id}`}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Clear all
+                    </ButtonLink>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {property.units.length === 0 ? (
             <EmptyState
               icon={DoorOpen}
@@ -236,8 +762,15 @@ export default async function PropertyDetailPage({
                   : `Use "Add ${unitNoun}" to add them one at a time.`
               }
             />
+          ) : displayedUnits.length === 0 ? (
+            <EmptyState
+              icon={DoorOpen}
+              title={`No ${propertyType.unitNounPlural.toLowerCase()} match this filter`}
+              description="Clear a filter above to see all of them again."
+            />
           ) : (
-            /* A table, not cards: fifty apartments have to stay scannable. */
+            /* One clean row per unit, not a form-crammed table — a single
+             * "Manage" button opens the full edit surface in a modal. */
             [...byFloor.entries()].map(([floor, units]) => (
               <Card key={String(floor)} className="overflow-hidden">
                 <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2.5">
@@ -254,103 +787,35 @@ export default async function PropertyDetailPage({
                   </span>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="border-b bg-muted/30 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                      <tr>
-                        <th className="py-2 pl-4 pr-3 font-semibold">
-                          {unitNounCap} details
-                        </th>
-                        <th className="px-3 py-2 font-semibold">Status</th>
-                        <th className="px-3 py-2 font-semibold">Tenant</th>
-                        <th className="py-2 pl-3 pr-4"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {units.map((unit) => (
-                        <tr
-                          key={unit.id}
-                          className="border-b last:border-b-0 hover:bg-muted/30"
-                        >
-                          <td className="py-2.5 pl-4 pr-3">
-                            {(isAdmin || isOwner) ? (
-                              <form className="flex flex-nowrap items-end gap-2 rounded-md border bg-muted/10 px-2 py-1.5">
-                                <input
-                                  type="hidden"
-                                  name="unitId"
-                                  value={unit.id}
-                                />
-                                <Field
-                                  label={
-                                    propertyType.unitPrefix
-                                      ? `${propertyType.unitPrefix} #`
-                                      : "Number"
-                                  }
-                                >
-                                  <Input
-                                    name="label"
-                                    defaultValue={unit.label}
-                                    className="h-8 w-20 text-xs font-medium"
-                                    aria-label={`${unitNounCap} number, currently ${unit.label}`}
-                                  />
-                                </Field>
-                                {hasFloors && (
-                                  <Field label="Floor">
-                                    <Input
-                                      name="floor"
-                                      type="number"
-                                      defaultValue={unit.floor ?? ""}
-                                      className="h-8 w-20 text-xs"
-                                      aria-label={`Floor for ${unitNoun} ${unit.label}`}
-                                    />
-                                  </Field>
-                                )}
-                                {hasBedrooms && (
-                                  <Field label="Bedrooms">
-                                    <Input
-                                      name="bedrooms"
-                                      type="number"
-                                      min={0}
-                                      defaultValue={unit.bedrooms ?? ""}
-                                      className="h-8 w-20 text-xs"
-                                      aria-label={`Bedrooms for ${unitNoun} ${unit.label}`}
-                                    />
-                                  </Field>
-                                )}
-                                <SubmitButton
-                                  formAction={updateUnitAction}
-                                  variant="outline"
-                                  size="sm"
-                                  pendingText="…"
-                                  className="h-8 shrink-0"
-                                >
-                                  Save
-                                </SubmitButton>
-                              </form>
-                            ) : (
-                              <p className="text-sm font-medium">
-                                {propertyType.unitPrefix
-                                  ? `${propertyType.unitPrefix} ${unit.label}`
-                                  : unit.label}
-                                {hasFloors && unit.floor !== null
-                                  ? ` · Floor ${unit.floor}`
-                                  : ""}
-                                {hasBedrooms && unit.bedrooms
-                                  ? ` · ${unit.bedrooms} bed`
-                                  : ""}
-                              </p>
-                            )}
-                            {unit._count.requests > 0 && (
-                              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                                {unit._count.requests} request
-                                {unit._count.requests === 1 ? "" : "s"}
-                              </p>
-                            )}
-                          </td>
+                <div className="divide-y divide-border/60">
+                  {units.map((unit) => {
+                    const unitLabel = propertyType.unitPrefix
+                      ? `${propertyType.unitPrefix} ${unit.label}`
+                      : unit.label;
+                    const chargeTone = chargeToneFor(unit);
+                    const hasCharge = chargeTone !== "none";
+                    const totalPaid = unit.serviceChargePayments.reduce(
+                      (total, payment) => total + Number(payment.amount),
+                      0,
+                    );
+                    const balance = Number(unit.serviceChargeBalance);
+                    const activePlan = unit.installmentPlans[0] ?? null;
+                    const planPaidCount =
+                      activePlan?.installments.filter((i) => i.paidAt)
+                        .length ?? 0;
 
-                          <td className="px-3 py-2.5">
+                    return (
+                      <div
+                        key={unit.id}
+                        className="flex flex-col gap-2 px-4 py-3.5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold">
+                              {unitLabel}
+                            </p>
                             <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
                                 unit.tenant
                                   ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
                                   : "bg-slate-50 text-slate-600 ring-slate-500/20"
@@ -358,78 +823,161 @@ export default async function PropertyDetailPage({
                             >
                               {unit.tenant ? "Occupied" : "Empty"}
                             </span>
-                          </td>
-
-                          <td className="px-3 py-2.5">
-                            {isAdmin ? (
-                              <form className="flex items-center gap-2">
-                                <input
-                                  type="hidden"
-                                  name="unitId"
-                                  value={unit.id}
-                                />
-                                <Select
-                                  name="tenantId"
-                                  defaultValue={unit.tenant?.id ?? ""}
-                                  className="h-8 min-w-44 text-xs"
-                                  aria-label={`Tenant for ${unitNoun} ${unit.label}`}
-                                >
-                                  <option value="">— Empty —</option>
-                                  {/* The current tenant has to stay selectable. */}
-                                  {unit.tenant && (
-                                    <option value={unit.tenant.id}>
-                                      {unit.tenant.email}
-                                    </option>
-                                  )}
-                                  {availableTenants.map((tenant) => (
-                                    <option key={tenant.id} value={tenant.id}>
-                                      {tenant.email}
-                                    </option>
-                                  ))}
-                                </Select>
-
-                                <SubmitButton
-                                  formAction={assignTenantAction}
-                                  variant="outline"
-                                  size="sm"
-                                  pendingText="…"
-                                  className="h-8"
-                                >
-                                  Save
-                                </SubmitButton>
-                              </form>
-                            ) : (
-                              <span className="text-sm">
-                                {unit.tenant?.email ?? "—"}
+                            {!isPropertyBuildingType && !unit.rentBillsEnabled && (
+                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
+                                No billing
                               </span>
                             )}
-                          </td>
-
-                          <td className="py-2 pl-3 pr-4 text-right">
-                            {(isAdmin || isOwner) && (
-                            <form>
-                              <input
-                                type="hidden"
-                                name="unitId"
-                                value={unit.id}
-                              />
-                              <SubmitButton
-                                formAction={deleteUnitAction}
-                                variant="ghost"
-                                size="iconSm"
-                                pendingText="…"
-                                className="text-muted-foreground hover:text-destructive"
-                                aria-label={`Delete ${unitNoun} ${unit.label}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </SubmitButton>
-                            </form>
+                            {!isPropertyBuildingType && !unit.maintenanceEnabled && (
+                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
+                                No maintenance
+                              </span>
                             )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                            {unit.owner &&
+                              (hasContract(unit) ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                  <FileCheck className="h-3 w-3" />
+                                  Contract on file
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
+                                  <FileWarning className="h-3 w-3" />
+                                  Contract needed
+                                </span>
+                              ))}
+                            {hasCharge && (
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
+                                  chargeTone === "overdue"
+                                    ? "bg-red-100 text-red-800 ring-red-600/20"
+                                    : chargeTone === "dueSoon"
+                                      ? "bg-amber-100 text-amber-800 ring-amber-600/20"
+                                      : "bg-slate-50 text-slate-600 ring-slate-500/20"
+                                }`}
+                              >
+                                {formatMoney(unit.serviceChargeAmount as never)}{" "}
+                                · Due{" "}
+                                {format(
+                                  unit.serviceChargeDueDate!,
+                                  "d MMM yyyy",
+                                )}
+                              </span>
+                            )}
+                          </div>
+                          <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                            <span>
+                              {[
+                                hasFloors && unit.floor !== null
+                                  ? `Floor ${unit.floor}`
+                                  : null,
+                                hasBedrooms && unit.bedrooms
+                                  ? `${unit.bedrooms} bed`
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                            <span className="text-border">·</span>
+                            <span>
+                              Owner:{" "}
+                              {unit.owner ? (
+                                <span className="font-medium text-foreground">
+                                  {unit.owner.email}
+                                </span>
+                              ) : (
+                                <span className="font-medium text-amber-700">
+                                  Unassigned
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-border">·</span>
+                            <span>
+                              Tenant:{" "}
+                              <span
+                                className={
+                                  unit.tenant
+                                    ? "font-medium text-foreground"
+                                    : ""
+                                }
+                              >
+                                {unit.tenant?.email ?? "—"}
+                              </span>
+                            </span>
+                            {!hasCharge && (
+                              <>
+                                <span className="text-border">·</span>
+                                <span>No service charge</span>
+                              </>
+                            )}
+                            {unit._count.requests > 0 && (
+                              <>
+                                <span className="text-border">·</span>
+                                <span>
+                                  {unit._count.requests} request
+                                  {unit._count.requests === 1 ? "" : "s"}
+                                </span>
+                              </>
+                            )}
+                          </p>
+                          {hasCharge && (
+                            <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
+                              <span className="font-medium text-emerald-700">
+                                Paid {formatMoney(totalPaid)}
+                              </span>
+                              <span className="text-border">·</span>
+                              <span
+                                className={
+                                  balance > 0
+                                    ? "font-medium text-rose-700"
+                                    : balance < 0
+                                      ? "font-medium text-emerald-700"
+                                      : "text-muted-foreground"
+                                }
+                              >
+                                {balance > 0
+                                  ? `Remaining ${formatMoney(balance)}`
+                                  : balance < 0
+                                    ? `Credit ${formatMoney(Math.abs(balance))}`
+                                    : "Fully paid"}
+                              </span>
+                              {activePlan && (
+                                <>
+                                  <span className="text-border">·</span>
+                                  <span className="text-muted-foreground">
+                                    Payment plan: {planPaidCount}/
+                                    {activePlan.installments.length}{" "}
+                                    installments paid
+                                  </span>
+                                </>
+                              )}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="shrink-0">
+                          {(isAdmin || isOwner) && (
+                            <UnitManageModal
+                              unit={toManagedUnit(unit)}
+                              unitLabel={unitLabel}
+                              propertyName={property.name}
+                              unitNoun={unitNoun}
+                              unitNounCap={unitNounCap}
+                              hasFloors={hasFloors}
+                              hasBedrooms={hasBedrooms}
+                              isAdmin={isAdmin}
+                              isBuildingType={isPropertyBuildingType}
+                              canManageDocuments={
+                                isAdmin || unit.ownerId === user.id
+                              }
+                              owners={owners}
+                              availableTenants={availableTenants}
+                              funds={funds}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </Card>
             ))
@@ -572,6 +1120,51 @@ export default async function PropertyDetailPage({
                   )}
                 </div>
 
+                {isAdmin && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="add-unit-owner" className="text-xs">
+                      Owner
+                    </Label>
+                    <Select id="add-unit-owner" name="ownerId" defaultValue="">
+                      <option value="">— Unassigned —</option>
+                      {owners.map((owner) => (
+                        <option key={owner.id} value={owner.id}>
+                          {owner.email}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+
+                {isOwner && (
+                  <p className="text-xs text-muted-foreground">
+                    You&rsquo;ll be assigned as this {unitNoun}&rsquo;s owner.
+                  </p>
+                )}
+
+                {!isPropertyBuildingType && (
+                  <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2.5">
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        name="rentBillsEnabled"
+                        defaultChecked={newUnitDefaults.rentBillsEnabled}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      Charge rent &amp; bills for this {unitNoun}
+                    </label>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        name="maintenanceEnabled"
+                        defaultChecked={newUnitDefaults.maintenanceEnabled}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      Accept maintenance requests
+                    </label>
+                  </div>
+                )}
+
                 <SubmitButton
                   formAction={createUnitAction}
                   variant="outline"
@@ -585,227 +1178,6 @@ export default async function PropertyDetailPage({
           </Card>
           )}
 
-          {(property.serviceChargeAmount ||
-            isAdmin ||
-            isOwner) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <CalendarClock className="h-4 w-4" />
-                  Service charge
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                {property.serviceChargeAmount &&
-                property.serviceChargeDueDate ? (
-                  (() => {
-                    const daysUntilDue = differenceInCalendarDays(
-                      property.serviceChargeDueDate,
-                      new Date(),
-                    );
-                    const isOverdue = daysUntilDue < 0;
-                    const isDueSoon = daysUntilDue >= 0 && daysUntilDue <= 7;
-                    return (
-                      <>
-                        <p className="text-2xl font-semibold tracking-tight">
-                          {formatMoney(property.serviceChargeAmount)}
-                        </p>
-                        <p className="text-muted-foreground">
-                          Every {property.serviceChargeCycleMonths}{" "}
-                          {property.serviceChargeCycleMonths === 1
-                            ? "month"
-                            : "months"}{" "}
-                          · Due {format(property.serviceChargeDueDate, "d MMM yyyy")}
-                        </p>
-                        {isOverdue ? (
-                          <p className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                            {Math.abs(daysUntilDue)} day
-                            {Math.abs(daysUntilDue) === 1 ? "" : "s"} overdue
-                          </p>
-                        ) : isDueSoon ? (
-                          <p className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                            Due in {daysUntilDue} day{daysUntilDue === 1 ? "" : "s"}
-                          </p>
-                        ) : null}
-                        {property.serviceChargeLastReceivedAt && (
-                          <p className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                            <Check className="h-3 w-3" />
-                            Last payment received{" "}
-                            {format(
-                              property.serviceChargeLastReceivedAt,
-                              "d MMM yyyy",
-                            )}
-                          </p>
-                        )}
-                        {/* Owners can see the charge but not act on it —
-                            marking it received or resending the reminder
-                            are both admin-only operations. */}
-                        {isAdmin && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <form>
-                              <input type="hidden" name="propertyId" value={property.id} />
-                              <SubmitButton
-                                formAction={markServiceChargeReceivedAction}
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                                pendingText="Recording..."
-                              >
-                                Mark received
-                              </SubmitButton>
-                            </form>
-                            <form>
-                              <input type="hidden" name="propertyId" value={property.id} />
-                              <SubmitButton
-                                formAction={resendServiceChargeReminderAction}
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                                pendingText="Sending..."
-                              >
-                                Resend email
-                              </SubmitButton>
-                            </form>
-                          </div>
-                        )}
-
-                        {isAdmin && (
-                          <ManageToggle
-                            label="Edit service charge"
-                            icon={<Pencil className="h-3.5 w-3.5" />}
-                          >
-                            <form className="space-y-3">
-                              <input
-                                type="hidden"
-                                name="propertyId"
-                                value={property.id}
-                              />
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div className="space-y-1">
-                                  <Label
-                                    htmlFor="sc-amount"
-                                    className="text-xs"
-                                  >
-                                    Amount (OMR)
-                                  </Label>
-                                  <Input
-                                    id="sc-amount"
-                                    name="serviceChargeAmount"
-                                    type="number"
-                                    step="0.001"
-                                    min="0"
-                                    defaultValue={property.serviceChargeAmount?.toString()}
-                                    required
-                                  />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label htmlFor="sc-cycle" className="text-xs">
-                                    Repeats every
-                                  </Label>
-                                  <Select
-                                    id="sc-cycle"
-                                    name="serviceChargeCycleMonths"
-                                    defaultValue={property.serviceChargeCycleMonths?.toString()}
-                                    required
-                                  >
-                                    <option value="1">1 month</option>
-                                    <option value="3">3 months</option>
-                                    <option value="6">6 months</option>
-                                    <option value="12">12 months</option>
-                                  </Select>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <Label htmlFor="sc-due" className="text-xs">
-                                  Due date
-                                </Label>
-                                <Input
-                                  id="sc-due"
-                                  name="serviceChargeDueDate"
-                                  type="date"
-                                  defaultValue={property.serviceChargeDueDate
-                                    ?.toISOString()
-                                    .slice(0, 10)}
-                                  required
-                                />
-                              </div>
-                              <SubmitButton
-                                formAction={updateServiceChargeAction}
-                                size="sm"
-                                className="w-full"
-                                pendingText="Saving..."
-                              >
-                                Save service charge
-                              </SubmitButton>
-                            </form>
-                          </ManageToggle>
-                        )}
-                      </>
-                    );
-                  })()
-                ) : isAdmin ? (
-                  <ManageToggle
-                    label="Add service charge"
-                    icon={<Pencil className="h-3.5 w-3.5" />}
-                    defaultOpen
-                  >
-                    <form className="space-y-3">
-                      <input type="hidden" name="propertyId" value={property.id} />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label htmlFor="sc-amount" className="text-xs">
-                            Amount (OMR)
-                          </Label>
-                          <Input
-                            id="sc-amount"
-                            name="serviceChargeAmount"
-                            type="number"
-                            step="0.001"
-                            min="0"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="sc-cycle" className="text-xs">
-                            Repeats every
-                          </Label>
-                          <Select
-                            id="sc-cycle"
-                            name="serviceChargeCycleMonths"
-                            defaultValue="12"
-                            required
-                          >
-                            <option value="1">1 month</option>
-                            <option value="3">3 months</option>
-                            <option value="6">6 months</option>
-                            <option value="12">12 months</option>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="sc-due" className="text-xs">
-                          Due date
-                        </Label>
-                        <Input id="sc-due" name="serviceChargeDueDate" type="date" required />
-                      </div>
-                      <SubmitButton
-                        formAction={updateServiceChargeAction}
-                        size="sm"
-                        className="w-full"
-                        pendingText="Saving..."
-                      >
-                        Save service charge
-                      </SubmitButton>
-                    </form>
-                  </ManageToggle>
-                ) : (
-                  <p className="text-muted-foreground">
-                    No service charge set up yet.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           <Card>
             <CardHeader>
@@ -936,78 +1308,114 @@ export default async function PropertyDetailPage({
                       />
                     </div>
                   </div>
-                  {isAdmin && (
-                    <div className="space-y-1">
-                      <Label htmlFor="property-owner" className="text-xs">
-                        Owner
-                      </Label>
-                      <Select
-                        id="property-owner"
-                        name="ownerId"
-                        defaultValue={property.ownerId ?? ""}
-                      >
-                        <option value="">No owner assigned</option>
-                        {owners.map((owner) => (
-                          <option key={owner.id} value={owner.id}>
-                            {owner.email}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                  )}
-                  <div className="space-y-1 rounded-lg border p-2">
-                    <p className="text-xs font-medium">Service charge</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ownership and service charges are now set per unit — see
+                    each {unitNoun}&rsquo;s row above.
+                  </p>
+                  <div className="space-y-2 rounded-md border p-2">
+                    <p className="text-xs font-medium">
+                      Invoice letterhead & bank details
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Printed on this property&rsquo;s owner service charge
+                      invoices.
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <Label htmlFor="property-service-amount" className="text-xs">
-                          Amount (OMR)
+                        <Label
+                          htmlFor="property-assoc-regn"
+                          className="text-xs"
+                        >
+                          Association registration #
                         </Label>
                         <Input
-                          id="property-service-amount"
-                          name="serviceChargeAmount"
-                          type="number"
-                          step="0.001"
-                          min="0"
-                          defaultValue={property.serviceChargeAmount?.toString() ?? ""}
-                          required
+                          id="property-assoc-regn"
+                          name="associationRegistrationNumber"
+                          defaultValue={
+                            property.associationRegistrationNumber ?? ""
+                          }
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="property-service-cycle" className="text-xs">
-                          Repeats every
-                        </Label>
-                        <Select
-                          id="property-service-cycle"
-                          name="serviceChargeCycleMonths"
-                          defaultValue={property.serviceChargeCycleMonths?.toString() ?? ""}
+                        <Label
+                          htmlFor="property-assoc-phone"
                           className="text-xs"
-                          required
                         >
-                          <option value="" disabled>
-                            Select cycle
-                          </option>
-                          <option value="1">1 month</option>
-                          <option value="3">3 months</option>
-                          <option value="6">6 months</option>
-                          <option value="12">12 months</option>
-                        </Select>
+                          Association phone
+                        </Label>
+                        <Input
+                          id="property-assoc-phone"
+                          name="associationPhone"
+                          defaultValue={property.associationPhone ?? ""}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="property-bank-name" className="text-xs">
+                          Bank name
+                        </Label>
+                        <Input
+                          id="property-bank-name"
+                          name="bankName"
+                          defaultValue={property.bankName ?? ""}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="property-bank-swift" className="text-xs">
+                          SWIFT code
+                        </Label>
+                        <Input
+                          id="property-bank-swift"
+                          name="bankSwiftCode"
+                          defaultValue={property.bankSwiftCode ?? ""}
+                        />
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="property-service-due" className="text-xs">
-                        Due date
+                      <Label htmlFor="property-bank-account" className="text-xs">
+                        Bank account number
                       </Label>
                       <Input
-                        id="property-service-due"
-                        name="serviceChargeDueDate"
-                        type="date"
-                        defaultValue={
-                          property.serviceChargeDueDate
-                            ? property.serviceChargeDueDate.toISOString().slice(0, 10)
-                            : ""
-                        }
-                        required
+                        id="property-bank-account"
+                        name="bankAccountNumber"
+                        defaultValue={property.bankAccountNumber ?? ""}
                       />
+                    </div>
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="property-payment-reference"
+                        className="text-xs"
+                      >
+                        Payment reference
+                      </Label>
+                      <Input
+                        id="property-payment-reference"
+                        name="paymentReference"
+                        defaultValue={property.paymentReference ?? ""}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="property-cheque-to" className="text-xs">
+                          Cheques payable to
+                        </Label>
+                        <Input
+                          id="property-cheque-to"
+                          name="chequePayableTo"
+                          defaultValue={property.chequePayableTo ?? ""}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="property-po-box" className="text-xs">
+                          P.O. Box
+                        </Label>
+                        <Input
+                          id="property-po-box"
+                          name="poBox"
+                          defaultValue={property.poBox ?? ""}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -1058,44 +1466,5 @@ export default async function PropertyDetailPage({
   );
 }
 
-/** Small labeled slot for a compact inline edit field, e.g. inside a table row. */
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1">
-      <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
-      {children}
-    </div>
-  );
-}
 
-function SummaryTile({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  value: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-4 p-5">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-          {icon}
-        </span>
-        <div>
-          <p className="text-2xl font-semibold leading-none">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+

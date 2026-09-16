@@ -39,7 +39,7 @@ export default async function DashboardPage() {
   const user = await requireUser();
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       {user.userType === UserType.admin && <AdminDashboard />}
       {user.userType === UserType.worker && <WorkerDashboard user={user} />}
       {user.userType === UserType.user && <TenantDashboard user={user} />}
@@ -374,22 +374,22 @@ async function AdminDashboard() {
 async function OwnerDashboard({ user }: { user: SessionUser }) {
   const [properties, unitCount, occupiedCount, openRequests, outstandingCharges] =
     await Promise.all([
-      prisma.property.count({ where: { ownerId: user.id } }),
-      prisma.unit.count({ where: { property: { ownerId: user.id } } }),
+      prisma.property.count({ where: { units: { some: { ownerId: user.id } } } }),
+      prisma.unit.count({ where: { ownerId: user.id } }),
       prisma.unit.count({
-        where: { property: { ownerId: user.id }, tenantId: { not: null } },
+        where: { ownerId: user.id, tenantId: { not: null } },
       }),
       prisma.maintenanceRequest.count({
         where: {
           status: { not: RequestStatus.completed },
-          unit: { property: { ownerId: user.id } },
+          unit: { ownerId: user.id },
         },
       }),
       prisma.charge.findMany({
         where: {
           status: ChargeStatus.open,
           type: { in: NON_UTILITY_CHARGE_TYPES },
-          unit: { property: { ownerId: user.id } },
+          unit: { ownerId: user.id },
         },
         select: {
           amount: true,

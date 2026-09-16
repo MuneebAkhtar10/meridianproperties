@@ -1,8 +1,44 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { X } from "lucide-react";
+
+/** Lets anything nested inside an open Modal ask it to close — see
+ * `CloseModalOnSubmit` below, which is how a form inside the modal closes it
+ * once its own submission actually finishes. */
+const ModalCloseContext = createContext<(() => void) | null>(null);
+
+/**
+ * Drop this inside a `<form>` that lives inside a `Modal` to close the modal
+ * once that form's submission completes (success or error alike — the page
+ * behind the modal already reflects the outcome via its own message banner).
+ * Closing on completion rather than on click keeps the modal open — and its
+ * Save button's pending spinner visible — for the full round trip, instead
+ * of vanishing the instant the button is pressed.
+ */
+export function CloseModalOnSubmit() {
+  const { pending } = useFormStatus();
+  const close = useContext(ModalCloseContext);
+  const wasPending = useRef(false);
+
+  useEffect(() => {
+    if (wasPending.current && !pending) {
+      close?.();
+    }
+    wasPending.current = pending;
+  }, [pending, close]);
+
+  return null;
+}
 
 /**
  * A minimal, dependency-free modal dialog (no Radix — this codebase has no
@@ -96,19 +132,10 @@ export function Modal({
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <div
-                  className="p-5"
-                  onClick={(e) => {
-                    // A successful form submit inside the modal triggers a
-                    // navigation/redirect handled by the server action; the
-                    // modal doesn't need to manage its own close-on-submit
-                    // since the page reload naturally resets `open` to false.
-                    if ((e.target as HTMLElement).closest("[data-close-modal]")) {
-                      setOpen(false);
-                    }
-                  }}
-                >
-                  {children}
+                <div className="p-5">
+                  <ModalCloseContext.Provider value={() => setOpen(false)}>
+                    {children}
+                  </ModalCloseContext.Provider>
                 </div>
               </div>
             </div>,

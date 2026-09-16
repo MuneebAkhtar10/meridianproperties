@@ -63,7 +63,7 @@ export default async function RejectionsPage({ searchParams }: PageProps) {
   const total = counts.reduce((sum, c) => sum + c._count._all, 0);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8">
+    <div className="w-full space-y-6 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Rejections"
         description="A permanent log of every property, payment, and supply request that was rejected — who rejected it, and why."
@@ -143,7 +143,7 @@ async function TenantRejections({ tenantId }: { tenantId: string }) {
   });
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-8">
+    <div className="w-full space-y-6 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Rejections"
         description="Payments and bills you submitted that were rejected — with the reason, so you know what to fix before submitting again."

@@ -1,5 +1,5 @@
 import { ListLoadingSkeleton } from "@/components/loading-skeletons";
 
 export default function Loading() {
-  return <ListLoadingSkeleton rows={6} />;
+  return <ListLoadingSkeleton maxWidth="" rows={6} />;
 }

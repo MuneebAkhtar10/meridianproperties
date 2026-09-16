@@ -2,9 +2,11 @@ import { format, startOfMonth } from "date-fns";
 import Link from "next/link";
 import {
   Banknote,
+  CalendarClock,
   CalendarPlus,
   FileCheck2,
   Landmark,
+  LayoutDashboard,
   Plus,
   ReceiptText,
   SlidersHorizontal,
@@ -50,6 +52,7 @@ import {
   ChargeType,
   PaymentStatus,
   UserType,
+  type Prisma,
 } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -130,7 +133,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
   const user = await requireUser();
   if (user.userType === UserType.worker) {
     return (
-      <div className="mx-auto w-full max-w-6xl px-4 py-8">
+      <div className="w-full px-4 pt-4 pb-8 sm:px-6 lg:px-8">
         <EmptyState
           icon={WalletCards}
           title="Finance access is not part of the worker role"
@@ -184,6 +187,19 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       : "due";
   const sortDir: SortDir = params.dir === "asc" ? "asc" : "desc";
 
+  // A unit with rent & bills turned off is fully hidden from this section —
+  // built as one object (not several separate `unit:` spreads) so the
+  // owner-scoping and property-filter conditions actually combine instead of
+  // one silently overwriting another's `unit` key.
+  const chargeUnitWhere: Prisma.UnitWhereInput = { rentBillsEnabled: true };
+  if (isOwner) chargeUnitWhere.ownerId = user.id;
+  if ((isAdmin || isOwner) && propertyFilter !== "all") {
+    chargeUnitWhere.propertyId = propertyFilter;
+  }
+
+  const tenancyUnitWhere: Prisma.UnitWhereInput = { rentBillsEnabled: true };
+  if (isOwner) tenancyUnitWhere.ownerId = user.id;
+
   const [
     charges,
     activeTenancies,
@@ -195,14 +211,11 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     prisma.charge.findMany({
       where: {
         ...(user.userType === UserType.user ? { tenantId: user.id } : {}),
-        ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+        unit: chargeUnitWhere,
         type:
           typeFilter === "all"
             ? { in: NON_UTILITY_CHARGE_TYPES }
             : (typeFilter as ChargeType),
-        ...((isAdmin || isOwner) && propertyFilter !== "all"
-          ? { unit: { propertyId: propertyFilter } }
-          : {}),
         ...((isAdmin || isOwner) && tenantFilter !== "all"
           ? { tenantId: tenantFilter }
           : {}),
@@ -231,7 +244,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       ? prisma.tenancy.findMany({
           where: {
             endDate: null,
-            ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+            unit: tenancyUnitWhere,
           },
           orderBy: [
             { unit: { property: { name: "asc" } } },
@@ -247,7 +260,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       : Promise.resolve([]),
     isAdmin || isOwner
       ? prisma.property.findMany({
-          where: isOwner ? { ownerId: user.id } : {},
+          where: isOwner ? { units: { some: { ownerId: user.id } } } : {},
           orderBy: { name: "asc" },
           select: { id: true, name: true },
         })
@@ -277,9 +290,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
           where: {
             userType: UserType.user,
             tenancies: {
-              some: isOwner
-                ? { unit: { property: { ownerId: user.id } } }
-                : {},
+              some: { unit: tenancyUnitWhere },
             },
           },
           orderBy: { email: "asc" },
@@ -316,7 +327,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
   );
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title={
           isAdminView ? "Rent & bills" : "My rent & bills"
@@ -328,10 +339,20 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         }
       >
         {isAdminView && (
-          <ButtonLink href="/protected/tenancies" variant="outline">
-            <Landmark className="h-4 w-4" />
-            Manage tenancies
-          </ButtonLink>
+          <>
+            <ButtonLink href="/protected/finances/rent-position" variant="outline">
+              <LayoutDashboard className="h-4 w-4" />
+              Rent Position
+            </ButtonLink>
+            <ButtonLink href="/protected/finances/cheque-reminders" variant="outline">
+              <CalendarClock className="h-4 w-4" />
+              Cheque Reminders
+            </ButtonLink>
+            <ButtonLink href="/protected/tenancies" variant="outline">
+              <Landmark className="h-4 w-4" />
+              Manage tenancies
+            </ButtonLink>
+          </>
         )}
       </PageHeader>
 

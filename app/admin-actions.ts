@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
-import { addMonths, differenceInCalendarDays, format } from "date-fns";
+import { format } from "date-fns";
 
 import {
   notifyAdminsPropertySubmitted,
@@ -10,28 +10,28 @@ import {
   notifyPropertyAssigned,
   notifyPropertyRejected,
   notifyPropertyServiceCharge,
-  notifyServiceChargeDue,
-  notifyServiceChargeOverdue,
-  notifyServiceChargeReceived,
-  notifyServiceChargeUpcoming,
   notifyTenantAssigned,
 } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import {
+  pushPropertyToDynamics,
+  pushUnitToDynamics,
+  pushTenantToDynamics,
+} from "@/lib/dynamics/entities";
 import { formatMoney } from "@/lib/finance";
-import { formatUnitLabel } from "@/lib/property-types";
+import {
+  defaultUnitPermissions,
+  formatUnitLabel,
+  isBuildingType,
+} from "@/lib/property-types";
 import { publish } from "@/lib/realtime";
 import { requireAnyRole, requireRole } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  storeEntityDocumentGroups,
-  uploadedFiles,
-} from "@/lib/entity-document-service";
 import { OMAN_GOVERNORATES } from "@/lib/oman";
 import { isValidPhone } from "@/lib/phone";
 import { deleteAttachment, uploadEntityDocument } from "@/lib/storage";
 import { encodedRedirect } from "@/utils/utils";
 import {
-  EntityDocumentCategory,
   FamilyRelationship,
   RejectionKind,
   UserType,
@@ -104,28 +104,12 @@ export const createPropertyAction = async (formData: FormData) => {
     formData.get("buildingNumber")?.toString().trim() || null;
   const postalCode = formData.get("postalCode")?.toString().trim() || null;
   const notes = formData.get("notes")?.toString().trim() || null;
-  // Only an admin can hand a property to an existing owner; an owner creating
-  // their own property is always assigned to themselves.
-  const ownerId = isOwner
-    ? actor.id
-    : formData.get("ownerId")?.toString().trim() || null;
-  const titleDeedDocuments = uploadedFiles(formData, "titleDeedDocuments");
-  const approvalDocuments = uploadedFiles(formData, "approvalDocuments");
-  const otherDocuments = uploadedFiles(formData, "otherPropertyDocuments");
 
   if (!name || !address) {
     return encodedRedirect(
       "error",
       "/protected/properties",
       "Name and address are required",
-    );
-  }
-
-  if (!isOwner && !ownerId) {
-    return encodedRedirect(
-      "error",
-      "/protected/properties",
-      "Select an owner for this property.",
     );
   }
 
@@ -153,11 +137,6 @@ export const createPropertyAction = async (formData: FormData) => {
     );
   }
 
-  const serviceCharge = parseServiceCharge(formData);
-  if (!serviceCharge.ok) {
-    return encodedRedirect("error", "/protected/properties", serviceCharge.error);
-  }
-
   const property = await prisma.property.create({
     data: {
       name,
@@ -170,62 +149,23 @@ export const createPropertyAction = async (formData: FormData) => {
       buildingNumber,
       postalCode,
       notes,
-      ownerId,
       // Admin-created properties are live immediately; an owner's submission
       // waits for an admin to approve it — see the "Pending properties"
       // section on the properties page.
       approved: !isOwner,
-      serviceChargeAmount: serviceCharge.amount,
-      serviceChargeCycleMonths: serviceCharge.cycleMonths,
-      serviceChargeDueDate: serviceCharge.dueDate,
     },
   });
 
-  // Admin picked an existing owner for this new property from the dropdown —
-  // an owner assigning it to themselves already knows, so no alert needed.
-  if (!isOwner && ownerId) {
-    await notifyPropertyAssigned({
-      ownerId,
-      propertyId: property.id,
-      propertyName: property.name,
-    });
-    await notifyPropertyServiceCharge({
-      ownerId,
-      propertyId: property.id,
-      propertyName: property.name,
-      amount: formatMoney(serviceCharge.amount),
-      cycleMonths: serviceCharge.cycleMonths,
-      dueDate: format(serviceCharge.dueDate, "d MMM yyyy"),
-    });
-  }
-
-  let documentUploadError: string | null = null;
   try {
-    await storeEntityDocumentGroups({
-      target: { type: "property", id: property.id },
-      uploadedById: actor.id,
-      groups: [
-        {
-          category: EntityDocumentCategory.title_deed,
-          files: titleDeedDocuments,
-        },
-        {
-          category: EntityDocumentCategory.building_permit,
-          files: approvalDocuments,
-        },
-        {
-          category: EntityDocumentCategory.other,
-          files: otherDocuments,
-        },
-      ],
+    await pushPropertyToDynamics({
+      name: property.name,
+      address: property.address,
+      governorate: property.governorate,
+      propertyType: propertyType.label,
+      status: property.approved ? "Active" : "Pending approval",
     });
   } catch (error) {
-    // `redirect()` reports itself by throwing. Without this, a redirect thrown
-    // anywhere under here would be caught and shown to the admin as the error
-    // "NEXT_REDIRECT" instead of navigating.
-    unstable_rethrow(error);
-    documentUploadError =
-      error instanceof Error ? error.message : "Document upload failed.";
+    console.error("Dynamics sync failed for property:", property.id, error);
   }
 
   await publishDirectoryChange();
@@ -233,11 +173,9 @@ export const createPropertyAction = async (formData: FormData) => {
   revalidatePath("/protected/properties");
 
   return encodedRedirect(
-    documentUploadError ? "error" : "success",
+    "success",
     `/protected/properties/${property.id}`,
-    documentUploadError
-      ? `"${name}" was created, but its documents could not be uploaded: ${documentUploadError}`
-      : `"${name}" created with its property documents. Now add its units.`,
+    `"${name}" created. Now add its units — agreements and other documents are managed against each one.`,
   );
 };
 
@@ -258,8 +196,20 @@ export const updatePropertyAction = async (formData: FormData) => {
     formData.get("buildingNumber")?.toString().trim() || null;
   const postalCode = formData.get("postalCode")?.toString().trim() || null;
   const notes = formData.get("notes")?.toString().trim() || null;
-  // Only an admin may reassign a property's owner from this form.
-  const ownerId = formData.get("ownerId")?.toString().trim() || null;
+  const associationRegistrationNumber =
+    formData.get("associationRegistrationNumber")?.toString().trim() || null;
+  const associationPhone =
+    formData.get("associationPhone")?.toString().trim() || null;
+  const bankName = formData.get("bankName")?.toString().trim() || null;
+  const bankSwiftCode =
+    formData.get("bankSwiftCode")?.toString().trim() || null;
+  const bankAccountNumber =
+    formData.get("bankAccountNumber")?.toString().trim() || null;
+  const paymentReference =
+    formData.get("paymentReference")?.toString().trim() || null;
+  const chequePayableTo =
+    formData.get("chequePayableTo")?.toString().trim() || null;
+  const poBox = formData.get("poBox")?.toString().trim() || null;
 
   if (!id || !name || !address) {
     return encodedRedirect(
@@ -293,21 +243,6 @@ export const updatePropertyAction = async (formData: FormData) => {
     );
   }
 
-  const serviceCharge = parseServiceCharge(formData);
-  if (!serviceCharge.ok) {
-    return encodedRedirect("error", `/protected/properties/${id}`, serviceCharge.error);
-  }
-
-  // Fetch the prior owner first to tell whether this update is actually a
-  // (re)assignment worth notifying about.
-  const previousOwnerId =
-    (
-      await prisma.property.findUnique({
-        where: { id },
-        select: { ownerId: true },
-      })
-    )?.ownerId ?? null;
-
   await prisma.property.update({
     where: { id },
     data: {
@@ -321,30 +256,16 @@ export const updatePropertyAction = async (formData: FormData) => {
       buildingNumber,
       postalCode,
       notes,
-      ownerId,
-      serviceChargeAmount: serviceCharge.amount,
-      serviceChargeCycleMonths: serviceCharge.cycleMonths,
-      serviceChargeDueDate: serviceCharge.dueDate,
-      // Editing the charge (amount/cycle/date) starts a fresh reminder cycle.
-      serviceChargeLastStage: null,
+      associationRegistrationNumber,
+      associationPhone,
+      bankName,
+      bankSwiftCode,
+      bankAccountNumber,
+      paymentReference,
+      chequePayableTo,
+      poBox,
     },
   });
-
-  if (ownerId && ownerId !== previousOwnerId) {
-    await notifyPropertyAssigned({
-      ownerId,
-      propertyId: id,
-      propertyName: name,
-    });
-    await notifyPropertyServiceCharge({
-      ownerId,
-      propertyId: id,
-      propertyName: name,
-      amount: formatMoney(serviceCharge.amount),
-      cycleMonths: serviceCharge.cycleMonths,
-      dueDate: format(serviceCharge.dueDate, "d MMM yyyy"),
-    });
-  }
 
   await publishDirectoryChange();
 
@@ -440,14 +361,17 @@ export const submitPropertyForApprovalAction = async (formData: FormData) => {
     where: { id },
     select: {
       name: true,
-      ownerId: true,
       approved: true,
       submittedAt: true,
       _count: { select: { units: true } },
     },
   });
 
-  if (!property || property.ownerId !== actor.id) {
+  const ownsAUnit = await prisma.unit.count({
+    where: { propertyId: id, ownerId: actor.id },
+  });
+
+  if (!property || ownsAUnit === 0) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -522,8 +446,13 @@ export const approvePropertyAction = async (formData: FormData) => {
   const property = await prisma.property.update({
     where: { id },
     data: { approved: true, rejectedAt: null, rejectionReason: null },
+    select: { name: true },
+  });
+
+  const units = await prisma.unit.findMany({
+    where: { propertyId: id, ownerId: { not: null } },
     select: {
-      name: true,
+      label: true,
       ownerId: true,
       serviceChargeAmount: true,
       serviceChargeCycleMonths: true,
@@ -531,26 +460,33 @@ export const approvePropertyAction = async (formData: FormData) => {
     },
   });
 
-  if (property.ownerId) {
-    const hasServiceCharge =
-      property.serviceChargeAmount &&
-      property.serviceChargeCycleMonths &&
-      property.serviceChargeDueDate;
+  const distinctOwnerIds = Array.from(
+    new Set(units.map((unit) => unit.ownerId).filter((v): v is string => Boolean(v))),
+  );
 
+  for (const ownerId of distinctOwnerIds) {
     await notifyPropertyApproved({
-      ownerId: property.ownerId,
+      ownerId,
       propertyId: id,
       propertyName: property.name,
     });
+  }
+
+  for (const unit of units) {
+    const hasServiceCharge =
+      unit.ownerId &&
+      unit.serviceChargeAmount &&
+      unit.serviceChargeCycleMonths &&
+      unit.serviceChargeDueDate;
 
     if (hasServiceCharge) {
       await notifyPropertyServiceCharge({
-        ownerId: property.ownerId,
+        ownerId: unit.ownerId!,
         propertyId: id,
-        propertyName: property.name,
-        amount: formatMoney(property.serviceChargeAmount!),
-        cycleMonths: property.serviceChargeCycleMonths!,
-        dueDate: format(property.serviceChargeDueDate!, "d MMM yyyy"),
+        propertyName: `${property.name} — Unit ${unit.label}`,
+        amount: formatMoney(unit.serviceChargeAmount!),
+        cycleMonths: unit.serviceChargeCycleMonths!,
+        dueDate: format(unit.serviceChargeDueDate!, "d MMM yyyy"),
       });
     }
   }
@@ -598,13 +534,7 @@ export const rejectPropertyAction = async (formData: FormData) => {
 
   const property = await prisma.property.findUnique({
     where: { id },
-    select: {
-      approved: true,
-      submittedAt: true,
-      name: true,
-      ownerId: true,
-      owner: { select: { email: true } },
-    },
+    select: { approved: true, submittedAt: true, name: true },
   });
 
   if (!property || property.approved || !property.submittedAt) {
@@ -614,6 +544,11 @@ export const rejectPropertyAction = async (formData: FormData) => {
       "Only a pending property can be rejected.",
     );
   }
+
+  const owners = await prisma.user.findMany({
+    where: { ownedUnits: { some: { propertyId: id } } },
+    select: { id: true, email: true },
+  });
 
   const rejectedAt = new Date();
   await prisma.property.update({
@@ -625,16 +560,16 @@ export const rejectPropertyAction = async (formData: FormData) => {
     data: {
       kind: RejectionKind.property,
       entityLabel: property.name,
-      affectedUser: property.owner?.email ?? null,
+      affectedUser: owners.map((owner) => owner.email).join(", ") || null,
       reason,
       rejectedById: admin.id,
       createdAt: rejectedAt,
     },
   });
 
-  if (property.ownerId) {
+  for (const owner of owners) {
     await notifyPropertyRejected({
-      ownerId: property.ownerId,
+      ownerId: owner.id,
       propertyName: property.name,
       reason,
     });
@@ -650,227 +585,53 @@ export const rejectPropertyAction = async (formData: FormData) => {
   );
 };
 
-/**
- * Owner or admin confirms this cycle's service charge came in. There's no
- * ledger for it (reminder-only feature) — this just rolls the due date
- * forward by the property's cycle and notifies the owner + admins.
- */
-/** Edits just the service charge (amount/cycle/due date) from its own card
- * on the property page, without needing the full property edit form below
- * it. Admin-only — an owner can view the charge but not change it. */
-export const updateServiceChargeAction = async (formData: FormData) => {
+/** Edits just the service charge (amount/cycle/due date) for one unit, from
+ * its "Manage charge" modal on the property page. Admin-only — an owner can
+ * view the charge but not change it. */
+export const updateUnitServiceChargeAction = async (formData: FormData) => {
   await requireRole(UserType.admin);
 
-  const id = formData.get("propertyId")?.toString();
-  if (!id) {
-    return encodedRedirect("error", "/protected/properties", "Invalid property");
+  const unitId = formData.get("unitId")?.toString();
+  if (!unitId) {
+    return encodedRedirect("error", "/protected/properties", "Invalid unit");
   }
 
-  const property = await prisma.property.findUnique({
-    where: { id },
-    select: { id: true },
+  const unit = await prisma.unit.findUnique({
+    where: { id: unitId },
+    select: { propertyId: true },
   });
-  if (!property) {
-    return encodedRedirect("error", "/protected/properties", "Property not found.");
+  if (!unit) {
+    return encodedRedirect("error", "/protected/properties", "Unit not found.");
   }
 
   const serviceCharge = parseServiceCharge(formData);
   if (!serviceCharge.ok) {
     return encodedRedirect(
       "error",
-      `/protected/properties/${id}`,
+      `/protected/properties/${unit.propertyId}`,
       serviceCharge.error,
     );
   }
 
-  await prisma.property.update({
-    where: { id },
+  await prisma.unit.update({
+    where: { id: unitId },
     data: {
       serviceChargeAmount: serviceCharge.amount,
       serviceChargeCycleMonths: serviceCharge.cycleMonths,
       serviceChargeDueDate: serviceCharge.dueDate,
       // Editing the charge starts a fresh reminder cycle, same as the full
-      // property edit form does.
+      // unit edit form does.
       serviceChargeLastStage: null,
     },
   });
 
-  revalidatePath(`/protected/properties/${id}`);
+  revalidatePath(`/protected/properties/${unit.propertyId}`);
   revalidatePath("/protected/properties");
 
   return encodedRedirect(
     "success",
-    `/protected/properties/${id}`,
+    `/protected/properties/${unit.propertyId}`,
     "Service charge updated.",
-  );
-};
-
-export const markServiceChargeReceivedAction = async (formData: FormData) => {
-  // Admin-only — an owner can see the service charge on their property but
-  // can't mark it received or resend its reminder themselves (see the
-  // matching UI gate in app/protected/properties/[id]/page.tsx).
-  const actor = await requireRole(UserType.admin);
-
-  const id = formData.get("propertyId")?.toString();
-  if (!id) {
-    return encodedRedirect("error", "/protected/properties", "Invalid property");
-  }
-
-  const property = await prisma.property.findUnique({
-    where: { id },
-    select: {
-      name: true,
-      ownerId: true,
-      serviceChargeAmount: true,
-      serviceChargeCycleMonths: true,
-      serviceChargeDueDate: true,
-    },
-  });
-
-  if (!property) {
-    return encodedRedirect("error", "/protected/properties", "Property not found.");
-  }
-
-  if (
-    !property.serviceChargeAmount ||
-    !property.serviceChargeCycleMonths ||
-    !property.serviceChargeDueDate
-  ) {
-    return encodedRedirect(
-      "error",
-      `/protected/properties/${id}`,
-      "This property has no service charge set up.",
-    );
-  }
-
-  // Roll forward from the due date (not from today) so a cycle paid early or
-  // late still lands on the intended recurring schedule.
-  const nextDueDate = addMonths(
-    property.serviceChargeDueDate,
-    property.serviceChargeCycleMonths,
-  );
-
-  await prisma.property.update({
-    where: { id },
-    data: {
-      serviceChargeDueDate: nextDueDate,
-      serviceChargeLastStage: null,
-      serviceChargeLastReceivedAt: new Date(),
-    },
-  });
-
-  const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin, id: { not: actor.id } },
-    select: { id: true },
-  });
-  const recipientIds = Array.from(
-    new Set(
-      [property.ownerId, ...admins.map((admin) => admin.id)].filter(
-        (recipientId): recipientId is string => Boolean(recipientId),
-      ),
-    ),
-  );
-
-  await notifyServiceChargeReceived({
-    propertyId: id,
-    propertyName: property.name,
-    amount: `OMR ${Number(property.serviceChargeAmount).toFixed(3)}`,
-    nextDueDate: format(nextDueDate, "d MMM yyyy"),
-    recipientIds,
-  });
-
-  revalidatePath(`/protected/properties/${id}`);
-  revalidatePath("/protected/properties");
-
-  return encodedRedirect(
-    "success",
-    `/protected/properties/${id}`,
-    "Service charge marked as received. Next due date updated.",
-  );
-};
-
-/** Re-sends the service charge reminder for whatever stage it's actually
- * in right now (upcoming/due/overdue) — mirrors the daily cron's own logic
- * in lib/service-charge-reminders.ts rather than always sending the same
- * one, so the wording matches what the owner would already be expecting. */
-export const resendServiceChargeReminderAction = async (formData: FormData) => {
-  // Admin-only, same as markServiceChargeReceivedAction above.
-  const actor = await requireRole(UserType.admin);
-
-  const id = formData.get("propertyId")?.toString();
-  if (!id) {
-    return encodedRedirect("error", "/protected/properties", "Invalid property");
-  }
-
-  const property = await prisma.property.findUnique({
-    where: { id },
-    select: {
-      name: true,
-      ownerId: true,
-      serviceChargeAmount: true,
-      serviceChargeDueDate: true,
-    },
-  });
-
-  if (!property) {
-    return encodedRedirect("error", "/protected/properties", "Property not found.");
-  }
-
-  if (!property.serviceChargeAmount || !property.serviceChargeDueDate) {
-    return encodedRedirect(
-      "error",
-      `/protected/properties/${id}`,
-      "This property has no service charge set up.",
-    );
-  }
-
-  const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin, id: { not: actor.id } },
-    select: { id: true },
-  });
-  const recipientIds = Array.from(
-    new Set(
-      [property.ownerId, ...admins.map((admin) => admin.id)].filter(
-        (recipientId): recipientId is string => Boolean(recipientId),
-      ),
-    ),
-  );
-
-  const amount = `OMR ${Number(property.serviceChargeAmount).toFixed(3)}`;
-  const daysUntilDue = differenceInCalendarDays(
-    property.serviceChargeDueDate,
-    new Date(),
-  );
-
-  if (daysUntilDue < 0) {
-    await notifyServiceChargeOverdue({
-      propertyId: id,
-      propertyName: property.name,
-      amount,
-      daysOverdue: Math.abs(daysUntilDue),
-      recipientIds,
-    });
-  } else if (daysUntilDue === 0) {
-    await notifyServiceChargeDue({
-      propertyId: id,
-      propertyName: property.name,
-      amount,
-      recipientIds,
-    });
-  } else {
-    await notifyServiceChargeUpcoming({
-      propertyId: id,
-      propertyName: property.name,
-      amount,
-      dueDate: format(property.serviceChargeDueDate, "d MMM yyyy"),
-      recipientIds,
-    });
-  }
-
-  return encodedRedirect(
-    "success",
-    `/protected/properties/${id}`,
-    "Service charge reminder resent.",
   );
 };
 
@@ -983,30 +744,15 @@ export const updatePropertyTypeAction = async (formData: FormData) => {
     );
   }
 
-  // `name` is a stable machine key derived from the label at creation time
-  // (see createPropertyTypeAction) — it has to be re-derived on rename too,
-  // or the old key stays permanently reserved and blocks anyone from later
-  // creating a new type with the label this one used to have.
-  const name = slugifyTypeName(label);
-  if (!name) {
-    return encodedRedirect("error", back, "Enter a valid label.");
-  }
-
-  const nameTaken = await prisma.propertyType.findFirst({
-    where: { name, id: { not: id } },
-  });
-  if (nameTaken) {
-    return encodedRedirect(
-      "error",
-      back,
-      `A property type named "${label}" already exists.`,
-    );
-  }
-
+  // `name` is a stable machine key set once at creation (see
+  // createPropertyTypeAction) and never touched again — code elsewhere
+  // (defaultUnitPermissions, isBuildingType, isBuildingManagementType in
+  // lib/property-types.ts) branches on it to decide whether a type bills
+  // rent at all, so silently re-deriving it from a relabel would quietly
+  // break that logic for every property already using this type.
   await prisma.propertyType.update({
     where: { id },
     data: {
-      name,
       label,
       unitNounSingular,
       unitNounPlural,
@@ -1052,6 +798,26 @@ export const deletePropertyTypeAction = async (formData: FormData) => {
 /* ── Units (apartments) ────────────────────────────────────────────────────── */
 
 /**
+ * Whether this owner may add/generate units on this property: either they
+ * already own at least one unit here, or the property has no units at all
+ * yet (the "first unit on my own new property" case — before that, nothing
+ * on the property points to any owner). Admins always pass.
+ */
+async function ownerCanManageUnitsOn(
+  actor: { id: string; userType: UserType },
+  propertyId: string,
+): Promise<boolean> {
+  if (actor.userType !== UserType.owner) return true;
+
+  const [ownedUnitCount, totalUnitCount] = await Promise.all([
+    prisma.unit.count({ where: { propertyId, ownerId: actor.id } }),
+    prisma.unit.count({ where: { propertyId } }),
+  ]);
+
+  return ownedUnitCount > 0 || totalUnitCount === 0;
+}
+
+/**
  * Bulk-creates apartments so nobody has to type fifty of them by hand.
  * Floors 1–10 with 5 per floor gives 101–105, 201–205 … 1001–1005.
  */
@@ -1079,16 +845,13 @@ export const generateUnitsAction = async (formData: FormData) => {
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
     select: {
-      ownerId: true,
-      propertyType: { select: { hasFloors: true, unitNounPlural: true } },
+      propertyType: {
+        select: { name: true, hasFloors: true, unitNounPlural: true },
+      },
     },
   });
 
-  if (
-    property &&
-    actor.userType === UserType.owner &&
-    property.ownerId !== actor.id
-  ) {
+  if (property && !(await ownerCanManageUnitsOn(actor, propertyId))) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -1123,6 +886,11 @@ export const generateUnitsAction = async (formData: FormData) => {
 
   const units = [];
 
+  const generatedOwnerId = actor.userType === UserType.owner ? actor.id : null;
+  const { rentBillsEnabled, maintenanceEnabled } = defaultUnitPermissions(
+    property?.propertyType.name ?? "",
+  );
+
   for (let floor = startFloor; floor < startFloor + floors; floor++) {
     for (let n = 1; n <= perFloor; n++) {
       units.push({
@@ -1130,6 +898,9 @@ export const generateUnitsAction = async (formData: FormData) => {
         label: `${floor}${String(n).padStart(2, "0")}`,
         floor,
         bedrooms,
+        ownerId: generatedOwnerId,
+        rentBillsEnabled,
+        maintenanceEnabled,
       });
     }
   }
@@ -1155,6 +926,7 @@ export const generateUnitsAction = async (formData: FormData) => {
 
 export const createUnitAction = async (formData: FormData) => {
   const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isOwner = actor.userType === UserType.owner;
 
   const propertyId = formData.get("propertyId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -1162,6 +934,17 @@ export const createUnitAction = async (formData: FormData) => {
   const bedrooms = formData.get("bedrooms")
     ? Number(formData.get("bedrooms"))
     : null;
+  // Only an admin can hand a unit to an existing owner; an owner adding a
+  // unit is always assigned to themselves.
+  const ownerId = isOwner
+    ? actor.id
+    : formData.get("ownerId")?.toString().trim() || null;
+  // Checkboxes default to checked in the form, so absence here really does
+  // mean "unchecked" rather than "field not rendered yet" — except for a
+  // building-type property, where the toggles aren't rendered at all and
+  // must stay off no matter what's posted.
+  let rentBillsEnabled = formData.get("rentBillsEnabled") === "on";
+  let maintenanceEnabled = formData.get("maintenanceEnabled") === "on";
 
   if (!propertyId || !label) {
     return encodedRedirect(
@@ -1173,18 +956,12 @@ export const createUnitAction = async (formData: FormData) => {
 
   const back = `/protected/properties/${propertyId}`;
 
-  if (actor.userType === UserType.owner) {
-    const property = await prisma.property.findUnique({
-      where: { id: propertyId },
-      select: { ownerId: true },
-    });
-    if (!property || property.ownerId !== actor.id) {
-      return encodedRedirect(
-        "error",
-        "/protected/properties",
-        "You can only manage units on your own properties.",
-      );
-    }
+  if (!(await ownerCanManageUnitsOn(actor, propertyId))) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "You can only manage units on your own properties.",
+    );
   }
 
   const exists = await prisma.unit.findUnique({
@@ -1195,9 +972,58 @@ export const createUnitAction = async (formData: FormData) => {
     return encodedRedirect("error", back, `Unit ${label} already exists.`);
   }
 
-  await prisma.unit.create({
-    data: { propertyId, label, floor, bedrooms },
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: { propertyType: { select: { name: true } } },
   });
+  if (property && isBuildingType(property.propertyType.name)) {
+    rentBillsEnabled = false;
+    maintenanceEnabled = false;
+  }
+
+  // A blank charge is fine (no service charge tracked); a partial one isn't.
+  const chargeFieldsFilled = [
+    "serviceChargeAmount",
+    "serviceChargeCycleMonths",
+    "serviceChargeDueDate",
+  ].some((field) => formData.get(field)?.toString().trim());
+
+  let serviceCharge: ReturnType<typeof parseServiceCharge> | null = null;
+  if (chargeFieldsFilled) {
+    serviceCharge = parseServiceCharge(formData);
+    if (!serviceCharge.ok) {
+      return encodedRedirect("error", back, serviceCharge.error);
+    }
+  }
+
+  await prisma.unit.create({
+    data: {
+      propertyId,
+      label,
+      floor,
+      bedrooms,
+      ownerId,
+      rentBillsEnabled,
+      maintenanceEnabled,
+      serviceChargeAmount: serviceCharge?.ok ? serviceCharge.amount : null,
+      serviceChargeCycleMonths: serviceCharge?.ok
+        ? serviceCharge.cycleMonths
+        : null,
+      serviceChargeDueDate: serviceCharge?.ok ? serviceCharge.dueDate : null,
+    },
+  });
+
+  try {
+    const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { name: true } });
+    await pushUnitToDynamics({
+      label,
+      propertyName: property?.name ?? propertyId,
+      bedrooms,
+      status: "Vacant",
+    });
+  } catch (error) {
+    console.error("Dynamics sync failed for unit:", propertyId, label, error);
+  }
 
   await publishDirectoryChange();
 
@@ -1206,9 +1032,12 @@ export const createUnitAction = async (formData: FormData) => {
   return encodedRedirect("success", back, `Unit ${label} added.`);
 };
 
-/** Edits a unit's number, floor and bedroom count in place. */
+/** Edits a unit's number, floor, bedroom count, owner and service charge in
+ * place. Owners can only edit units they themselves own; admins can edit any
+ * unit and reassign its owner. */
 export const updateUnitAction = async (formData: FormData) => {
   const actor = await requireAnyRole(UserType.admin, UserType.owner);
+  const isAdmin = actor.userType === UserType.admin;
 
   const unitId = formData.get("unitId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -1228,14 +1057,16 @@ export const updateUnitAction = async (formData: FormData) => {
     select: {
       propertyId: true,
       label: true,
-      property: { select: { ownerId: true } },
+      ownerId: true,
+      rentBillsEnabled: true,
+      maintenanceEnabled: true,
+      property: {
+        select: { name: true, propertyType: { select: { name: true } } },
+      },
     },
   });
 
-  if (
-    !unit ||
-    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
-  ) {
+  if (!unit || (!isAdmin && unit.ownerId !== actor.id)) {
     return encodedRedirect(
       "error",
       "/protected/properties",
@@ -1275,10 +1106,74 @@ export const updateUnitAction = async (formData: FormData) => {
     return encodedRedirect("error", back, `Unit ${label} already exists.`);
   }
 
+  // Only an admin may reassign a unit's owner from this form. Service charge
+  // is edited separately, via its own "Manage charge" modal/action, so this
+  // form never touches it.
+  const ownerId = isAdmin
+    ? formData.get("ownerId")?.toString().trim() || null
+    : unit.ownerId;
+  // Only an admin can see (or submit) these checkboxes at all — for anyone
+  // else's submission of this form, leave the unit's current values alone
+  // rather than reading an absent field as "unchecked".
+  // Building-type properties never render these checkboxes at all, so the
+  // toggle stays forced off regardless of what a submission carries.
+  const unitIsBuildingType = isBuildingType(unit.property.propertyType.name);
+  const rentBillsEnabled = unitIsBuildingType
+    ? false
+    : isAdmin
+      ? formData.get("rentBillsEnabled") === "on"
+      : unit.rentBillsEnabled;
+  const maintenanceEnabled = unitIsBuildingType
+    ? false
+    : isAdmin
+      ? formData.get("maintenanceEnabled") === "on"
+      : unit.maintenanceEnabled;
+
   await prisma.unit.update({
     where: { id: unitId },
-    data: { label, floor: floorValue, bedrooms: bedroomsValue },
+    data: {
+      label,
+      floor: floorValue,
+      bedrooms: bedroomsValue,
+      ownerId,
+      rentBillsEnabled,
+      maintenanceEnabled,
+    },
   });
+
+  // Logged purely so a future report can reconstruct, after the fact, which
+  // periods this unit was actually billed through the system — "what it's
+  // set to right now" alone can't answer that once a cycle has passed.
+  const permissionChanges = [];
+  if (rentBillsEnabled !== unit.rentBillsEnabled) {
+    permissionChanges.push({
+      unitId,
+      field: "rentBillsEnabled",
+      fromValue: unit.rentBillsEnabled,
+      toValue: rentBillsEnabled,
+      changedById: actor.id,
+    });
+  }
+  if (maintenanceEnabled !== unit.maintenanceEnabled) {
+    permissionChanges.push({
+      unitId,
+      field: "maintenanceEnabled",
+      fromValue: unit.maintenanceEnabled,
+      toValue: maintenanceEnabled,
+      changedById: actor.id,
+    });
+  }
+  if (permissionChanges.length > 0) {
+    await prisma.unitPermissionChange.createMany({ data: permissionChanges });
+  }
+
+  if (isAdmin && ownerId && ownerId !== unit.ownerId) {
+    await notifyPropertyAssigned({
+      ownerId,
+      propertyId: unit.propertyId,
+      propertyName: `${unit.property.name} — Unit ${label}`,
+    });
+  }
 
   await publishDirectoryChange();
 
@@ -1306,13 +1201,13 @@ export const deleteUnitAction = async (formData: FormData) => {
       propertyId: true,
       label: true,
       tenantId: true,
-      property: { select: { ownerId: true } },
+      ownerId: true,
     },
   });
 
   if (
     !unit ||
-    (actor.userType === UserType.owner && unit.property.ownerId !== actor.id)
+    (actor.userType === UserType.owner && unit.ownerId !== actor.id)
   ) {
     return encodedRedirect(
       "error",
@@ -1370,10 +1265,11 @@ export const assignTenantAction = async (formData: FormData) => {
       propertyId: true,
       label: true,
       tenantId: true,
+      ownerId: true,
+      rentBillsEnabled: true,
       property: {
         select: {
           name: true,
-          ownerId: true,
           propertyType: { select: { unitPrefix: true, hasFloors: true } },
         },
       },
@@ -1442,8 +1338,9 @@ export const assignTenantAction = async (formData: FormData) => {
   // Not a rich lease-terms email like startTenancyAction's — this quick
   // assignment has none yet (zero-rent placeholder, see above) — but the
   // tenant and owner still deserve to know a move-in happened at all,
-  // which previously sent nothing.
-  if (isNewAssignment && tenantId) {
+  // which previously sent nothing. Skipped entirely when rent & bills are
+  // off for this unit, since the whole notice is about lease/rent terms.
+  if (isNewAssignment && tenantId && unit.rentBillsEnabled) {
     try {
       await notifyTenantAssigned({
         tenantId,
@@ -1452,7 +1349,7 @@ export const assignTenantAction = async (formData: FormData) => {
         moveInDate: format(new Date(), "d MMMM yyyy"),
         monthlyRent: formatMoney(0),
         rentDueDay: 5,
-        ownerId: unit.property.ownerId,
+        ownerId: unit.ownerId,
       });
     } catch (error) {
       console.error("Tenant-assigned notification failed:", error);
@@ -1624,6 +1521,18 @@ export const createUserAction = async (formData: FormData) => {
     // rather than leave a login with no profile behind it.
     await createAdminClient().auth.admin.deleteUser(authUser.user.id);
     throw error;
+  }
+
+  if (userType === UserType.user) {
+    try {
+      await pushTenantToDynamics({
+        name: [firstName, lastName].filter(Boolean).join(" ") || email,
+        email,
+        phone,
+      });
+    } catch (error) {
+      console.error("Dynamics sync failed for tenant:", user.id, error);
+    }
   }
 
   // Only tenants live in an apartment.
@@ -1820,6 +1729,8 @@ export const updateUserProfileAction = async (formData: FormData) => {
     formData.get("emergencyContactName")?.toString().trim() || null;
   const emergencyContactPhone =
     formData.get("emergencyContactPhone")?.toString().trim() || null;
+  const mailingAddress =
+    formData.get("mailingAddress")?.toString().trim() || null;
 
   if (!userId) {
     return encodedRedirect("error", "/protected/users", "Invalid person.");
@@ -1939,6 +1850,7 @@ export const updateUserProfileAction = async (formData: FormData) => {
       employer,
       emergencyContactName,
       emergencyContactPhone,
+      mailingAddress,
     },
   });
 

@@ -11,6 +11,9 @@ export type PickableUnit = {
   label: string;
   propertyName: string;
   propertyTypeId: string;
+  /** Stable slug (e.g. "building") — see lib/property-types.ts's
+   * defaultUnitPermissions, which branches on this same name. */
+  propertyTypeName: string;
   propertyTypeLabel: string;
   propertyTypeUnitNounSingular: string;
   propertyTypeUnitNounPlural: string;
@@ -29,12 +32,17 @@ export function UnitPicker({
   id,
   defaultUnitId,
   required,
+  onPropertyTypeChange,
 }: {
   units: PickableUnit[];
   name: string;
   id: string;
   defaultUnitId?: string;
   required?: boolean;
+  /** Fires whenever the chosen property type changes (including back to
+   * none, as ""), for callers that need to react to it — e.g. defaulting
+   * other fields based on the type's own conventions. */
+  onPropertyTypeChange?: (propertyTypeName: string) => void;
 }) {
   const defaultUnit = defaultUnitId
     ? units.find((u) => u.id === defaultUnitId)
@@ -75,6 +83,10 @@ export function UnitPicker({
             // A unit from the previous type can never be valid once the type
             // changes — clear it so a stale id doesn't get submitted.
             setUnitId("");
+            const chosen = availableTypes.find(
+              (t) => t.propertyTypeId === e.target.value,
+            );
+            onPropertyTypeChange?.(chosen?.propertyTypeName ?? "");
           }}
         >
           <option value="">— Choose a property type —</option>

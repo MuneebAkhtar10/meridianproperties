@@ -1,17 +1,9 @@
 import { format } from "date-fns";
-import {
-  FilePenLine,
-  Home,
-  KeyRound,
-  LogOut,
-  Plus,
-  Users,
-} from "lucide-react";
+import { FilePenLine, FileText, Home, LogOut, Plus, Users } from "lucide-react";
 
 import {
   endTenancyAction,
   resendTenancyWelcomeEmailAction,
-  startTenancyAction,
   updateTenancyAction,
 } from "@/app/finance-actions";
 import { EmptyState } from "@/components/empty-state";
@@ -19,18 +11,16 @@ import { EntityDocumentManager } from "@/components/entity-document-manager";
 import { ManageToggle } from "@/components/manage-toggle";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { StartTenancyForm } from "@/components/start-tenancy-form";
 import { SubmitButton } from "@/components/submit-button";
-import {
-  UploadBudgetProvider,
-  UploadFileInput,
-} from "@/components/upload-file-input";
 import { ButtonLink } from "@/components/ui/button-link";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { UnitPicker, type PickableUnit } from "@/components/unit-picker";
+import { type PickableUnit } from "@/components/unit-picker";
 import { chargeBalance, dateInputValue, formatMoney } from "@/lib/finance";
 import { formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
@@ -64,7 +54,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
       prisma.tenancy.findMany({
         where: {
           endDate: null,
-          ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+          ...(isOwner ? { unit: { ownerId: user.id } } : {}),
           ...propertyScope,
           ...tenantScope,
         },
@@ -86,7 +76,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
       prisma.tenancy.findMany({
         where: {
           endDate: { not: null },
-          ...(isOwner ? { unit: { property: { ownerId: user.id } } } : {}),
+          ...(isOwner ? { unit: { ownerId: user.id } } : {}),
           ...propertyScope,
           ...tenantScope,
         },
@@ -112,7 +102,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
           })
         : Promise.resolve([]),
       prisma.property.findMany({
-        where: isOwner ? { ownerId: user.id } : {},
+        where: isOwner ? { units: { some: { ownerId: user.id } } } : {},
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
@@ -123,7 +113,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
           userType: UserType.user,
           tenancies: {
             some: isOwner
-              ? { unit: { property: { ownerId: user.id } } }
+              ? { unit: { ownerId: user.id } }
               : {},
           },
         },
@@ -136,6 +126,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
     label: unit.label,
     propertyName: unit.property.name,
     propertyTypeId: unit.property.propertyTypeId,
+    propertyTypeName: unit.property.propertyType.name,
     propertyTypeLabel: unit.property.propertyType.label,
     propertyTypeUnitNounSingular: unit.property.propertyType.unitNounSingular,
     propertyTypeUnitNounPlural: unit.property.propertyType.unitNounPlural,
@@ -147,11 +138,43 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8">
+    <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Tenancies"
         description={`${active.length} active · ${formatMoney(scheduledMonthlyRent)} scheduled monthly rent`}
-      />
+      >
+        <ButtonLink href="/protected/tenancies/agreements" variant="outline">
+          <FileText className="h-4 w-4" />
+          Agreement List
+        </ButtonLink>
+        {propertyFilter !== "all" ? (
+          <ButtonLink
+            href={`/protected/tenancies/report?property=${propertyFilter}`}
+            variant="outline"
+          >
+            <FileText className="h-4 w-4" />
+            Tenant Report
+          </ButtonLink>
+        ) : (
+          <span
+            className={buttonVariants({
+              variant: "outline",
+              className: "cursor-not-allowed opacity-50",
+            })}
+            title="Pick a specific property in the filter below to enable this"
+          >
+            <FileText className="h-4 w-4" />
+            Tenant Report
+          </span>
+        )}
+      </PageHeader>
+
+      {propertyFilter === "all" && (
+        <p className="-mt-3 text-xs text-muted-foreground">
+          Pick a specific property in the filter below to view or download its
+          Tenant Report.
+        </p>
+      )}
 
       {"error" in message || "success" in message ? (
         <FormMessage message={message} />
@@ -227,7 +250,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
             <EmptyState
               icon={Users}
               title="No active tenancies"
-              description="Start a tenancy to connect a unit, tenant, rent terms and ledger history."
+              description="Create a tenant agreement to connect a unit, tenant, rent terms and ledger history."
             />
           ) : (
             <div className="space-y-4">
@@ -338,6 +361,17 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                             </span>
                           </span>
                         )}
+                        {tenancy.parkingSlotNumber && (
+                          <span>
+                            Parking{" "}
+                            <span className="font-medium text-foreground">
+                              {tenancy.parkingSlotNumber}
+                              {tenancy.vehiclePlateNumber
+                                ? ` · ${tenancy.vehiclePlateNumber}`
+                                : ""}
+                            </span>
+                          </span>
+                        )}
                       </div>
 
                       {!isAdmin && (
@@ -444,6 +478,13 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                                     required
                                   />
                                 </Field>
+                                <Field label="Paid by">
+                                  <Input
+                                    name="paidBy"
+                                    defaultValue={tenancy.paidBy ?? ""}
+                                    placeholder="e.g. the tenant, or a sponsoring employer"
+                                  />
+                                </Field>
                               </div>
                             </FormSection>
 
@@ -452,6 +493,25 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                               description="Registration date; supporting documents are managed below."
                             >
                               <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Agreement number">
+                                  <Input
+                                    name="agreementRef"
+                                    defaultValue={tenancy.agreementRef ?? ""}
+                                  />
+                                </Field>
+                                <Field label="Agreement start date">
+                                  <Input
+                                    name="agreementStartDate"
+                                    type="date"
+                                    defaultValue={
+                                      tenancy.agreementStartDate
+                                        ? dateInputValue(
+                                            tenancy.agreementStartDate,
+                                          )
+                                        : ""
+                                    }
+                                  />
+                                </Field>
                                 <Field label="Contract registered on">
                                   <Input
                                     name="contractRegisteredAt"
@@ -463,6 +523,35 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                                           )
                                         : ""
                                     }
+                                  />
+                                </Field>
+                              </div>
+                            </FormSection>
+
+                            <FormSection
+                              title="Parking"
+                              description="The tenant's own agreement for a parking slot — the signed copy is managed below alongside other tenancy documents."
+                            >
+                              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                <Field label="Parking slot number">
+                                  <Input
+                                    name="parkingSlotNumber"
+                                    defaultValue={tenancy.parkingSlotNumber ?? ""}
+                                    placeholder="e.g. P-14"
+                                  />
+                                </Field>
+                                <Field label="Vehicle plate number">
+                                  <Input
+                                    name="vehiclePlateNumber"
+                                    defaultValue={tenancy.vehiclePlateNumber ?? ""}
+                                    placeholder="e.g. 12345 / A"
+                                  />
+                                </Field>
+                                <Field label="Vehicle details">
+                                  <Input
+                                    name="vehicleDetails"
+                                    defaultValue={tenancy.vehicleDetails ?? ""}
+                                    placeholder="Make, model, colour…"
                                   />
                                 </Field>
                               </div>
@@ -639,7 +728,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15">
               <Plus className="h-4 w-4" />
             </span>
-            <span className="text-base font-semibold">Start a tenancy</span>
+            <span className="text-base font-semibold">Create Tenant Agreement</span>
           </div>
           <CardContent className="pt-5">
             {availableTenants.length === 0 || emptyUnits.length === 0 ? (
@@ -672,164 +761,10 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                 </div>
               </div>
             ) : (
-              <UploadBudgetProvider>
-                <form className="space-y-4" encType="multipart/form-data">
-                  <div className="rounded-lg border border-[#0886be]/25 bg-[#0886be]/10 p-3 text-xs text-[#075e82]">
-                    Oman record checklist: keep the tenant Civil ID under
-                    People, title deed/plot under Property, and add the
-                    municipality contract below.
-                  </div>
-                  <Field label="Tenant">
-                    <Select name="tenantId" required defaultValue="">
-                      <option value="" disabled>
-                        Select tenant
-                      </option>
-                      {availableTenants.map((tenant) => (
-                        <option key={tenant.id} value={tenant.id}>
-                          {[tenant.firstName, tenant.lastName]
-                            .filter(Boolean)
-                            .join(" ") || tenant.email}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-
-                  <UnitPicker
-                    id="new-tenancy-unit"
-                    name="unitId"
-                    units={pickableUnits}
-                    required
-                  />
-
-
-                  <StartFormHeading>Lease details</StartFormHeading>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Move-in">
-                      <Input
-                        name="startDate"
-                        type="date"
-                        defaultValue={dateInputValue()}
-                        required
-                      />
-                    </Field>
-                    <Field label="Lease end">
-                      <Input name="leaseEndDate" type="date" />
-                    </Field>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Monthly rent">
-                      <Input
-                        name="monthlyRent"
-                        type="number"
-                        min={0}
-                        step="0.001"
-                        required
-                      />
-                    </Field>
-                    <Field label="Due day">
-                      <Input
-                        name="rentDueDay"
-                        type="number"
-                        min={1}
-                        max={28}
-                        defaultValue={5}
-                        required
-                      />
-                    </Field>
-                  </div>
-
-                  <Field label="Security deposit (OMR)">
-                    <Input
-                      name="securityDeposit"
-                      type="number"
-                      min={0}
-                      step="0.001"
-                      defaultValue={0}
-                      required
-                    />
-                  </Field>
-
-                  <Field label="Lease purpose">
-                    <Select
-                      name="purpose"
-                      defaultValue={TenancyPurpose.residential}
-                    >
-                      <option value={TenancyPurpose.residential}>
-                        Residential
-                      </option>
-                      <option value={TenancyPurpose.commercial}>
-                        Commercial
-                      </option>
-                    </Select>
-                  </Field>
-
-                  <StartFormHeading>Oman registration</StartFormHeading>
-
-                  <Field label="Signed tenancy agreement">
-                    <UploadFileInput
-                      name="tenancyAgreementDocuments"
-                      multiple
-                    />
-                  </Field>
-                  <Field label="Municipality registration documents">
-                    <UploadFileInput name="municipalityDocuments" multiple />
-                  </Field>
-                  <Field label="Contract registered on">
-                    <Input name="contractRegisteredAt" type="date" />
-                  </Field>
-                  <Field label="Other tenancy documents">
-                    <UploadFileInput name="otherTenancyDocuments" multiple />
-                  </Field>
-
-                  <Field label="Notes">
-                    <Textarea
-                      name="notes"
-                      className="min-h-20"
-                      placeholder="Occupants and special terms…"
-                    />
-                  </Field>
-
-                  <label className="flex items-start gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="createFirstRent"
-                      defaultChecked
-                      className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
-                    />
-                    <span>
-                      Create first rent charge
-                      <span className="block text-xs text-muted-foreground">
-                        Uses the move-in month.
-                      </span>
-                    </span>
-                  </label>
-                  <label className="flex items-start gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="createDepositCharge"
-                      defaultChecked
-                      className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
-                    />
-                    <span>
-                      Create deposit charge
-                      <span className="block text-xs text-muted-foreground">
-                        Skipped when deposit is zero.
-                      </span>
-                    </span>
-                  </label>
-
-                  <SubmitButton
-                    formAction={startTenancyAction}
-                    className="w-full"
-                    pendingText="Starting..."
-                  >
-                    <KeyRound className="h-4 w-4" />
-                    Start tenancy
-                  </SubmitButton>
-                </form>
-              </UploadBudgetProvider>
+              <StartTenancyForm
+                availableTenants={availableTenants}
+                pickableUnits={pickableUnits}
+              />
             )}
           </CardContent>
         </Card>

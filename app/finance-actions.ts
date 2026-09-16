@@ -27,6 +27,8 @@ import {
   parsePositiveMoney,
 } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
+import { pushPaymentToDynamics } from "@/lib/dynamics/sync";
+import { pushTenancyToDynamics, pushChargeToDynamics } from "@/lib/dynamics/entities";
 import { publish } from "@/lib/realtime";
 import { requireRole, requireUser } from "@/lib/session";
 import { uploadFinancialDocument } from "@/lib/storage";
@@ -36,6 +38,7 @@ import {
   ChargeType,
   EntityDocumentCategory,
   FinancialDocumentKind,
+  PaymentCollector,
   PaymentMethod,
   PaymentStatus,
   RejectionKind,
@@ -84,9 +87,20 @@ export const startTenancyAction = async (formData: FormData) => {
   );
   const rentDueDay = Number(formData.get("rentDueDay"));
   const purpose = formData.get("purpose")?.toString();
+  const agreementRef = formData.get("agreementRef")?.toString().trim() || null;
+  const agreementStartDate = parseDate(
+    formData.get("agreementStartDate")?.toString(),
+  );
+  const paidBy = formData.get("paidBy")?.toString().trim() || null;
   const contractRegisteredAt = parseDate(
     formData.get("contractRegisteredAt")?.toString(),
   );
+  const parkingSlotNumber =
+    formData.get("parkingSlotNumber")?.toString().trim() || null;
+  const vehiclePlateNumber =
+    formData.get("vehiclePlateNumber")?.toString().trim() || null;
+  const vehicleDetails =
+    formData.get("vehicleDetails")?.toString().trim() || null;
   const agreementDocuments = uploadedFiles(
     formData,
     "tenancyAgreementDocuments",
@@ -94,6 +108,10 @@ export const startTenancyAction = async (formData: FormData) => {
   const municipalityDocuments = uploadedFiles(
     formData,
     "municipalityDocuments",
+  );
+  const parkingAgreementDocuments = uploadedFiles(
+    formData,
+    "parkingAgreementDocuments",
   );
   const otherDocuments = uploadedFiles(formData, "otherTenancyDocuments");
   const notes = formData.get("notes")?.toString().trim() || null;
@@ -134,7 +152,6 @@ export const startTenancyAction = async (formData: FormData) => {
         property: {
           select: {
             name: true,
-            ownerId: true,
             propertyType: { select: { unitPrefix: true, hasFloors: true } },
           },
         },
@@ -180,7 +197,13 @@ export const startTenancyAction = async (formData: FormData) => {
         rentDueDay,
         securityDeposit,
         purpose: purpose as TenancyPurpose,
+        agreementRef,
+        agreementStartDate,
+        paidBy,
         contractRegisteredAt,
+        parkingSlotNumber,
+        vehiclePlateNumber,
+        vehicleDetails,
         notes,
       },
     });
@@ -236,30 +259,63 @@ export const startTenancyAction = async (formData: FormData) => {
   });
 
   const unitLabel = formatUnitLabel(unit.property.propertyType, unit.label);
+  const tenantName = [tenant.firstName, tenant.lastName].filter(Boolean).join(" ") || tenant.email;
+
+  try {
+    await pushTenancyToDynamics({
+      label: `Tenancy - ${unitLabel} - ${tenantName}`,
+      tenantName,
+      unitLabel,
+      propertyName: unit.property.name,
+      monthlyRent: formatMoney(monthlyRent),
+      startDate: format(startDate, "yyyy-MM-dd"),
+      status: "Active",
+    });
+    for (const charge of tenancy.createdCharges) {
+      await pushChargeToDynamics({
+        label: charge.title,
+        tenantName,
+        unitLabel,
+        chargeType: charge.title.startsWith("Rent") ? "Rent" : "Deposit",
+        amount: formatMoney(charge.amount),
+        dueDate: format(charge.dueDate, "yyyy-MM-dd"),
+        status: "Open",
+      });
+    }
+  } catch (error) {
+    console.error("Dynamics sync failed for tenancy:", tenancy.id, error);
+  }
 
   // The tenant has a home now — a rich welcome email with the lease specifics,
   // not just a bare "you were assigned" line. Not worth failing the whole
-  // tenancy creation over a notification hiccup.
-  try {
-    await notifyTenantAssigned({
-      tenantId,
-      propertyName: unit.property.name,
-      unitLabel,
-      moveInDate: format(startDate, "d MMMM yyyy"),
-      monthlyRent: formatMoney(monthlyRent),
-      rentDueDay,
-      securityDeposit:
-        Number(securityDeposit) > 0 ? formatMoney(securityDeposit) : undefined,
-      leaseEndDate: leaseEndDate ? format(leaseEndDate, "d MMMM yyyy") : undefined,
-      ownerId: unit.property.ownerId,
-    });
-  } catch (error) {
-    console.error("Tenant-assigned notification failed:", error);
+  // tenancy creation over a notification hiccup. Skipped entirely when rent
+  // & bills are off for this unit, since the whole notice is lease/rent terms.
+  if (unit.rentBillsEnabled) {
+    try {
+      await notifyTenantAssigned({
+        tenantId,
+        propertyName: unit.property.name,
+        unitLabel,
+        moveInDate: format(startDate, "d MMMM yyyy"),
+        monthlyRent: formatMoney(monthlyRent),
+        rentDueDay,
+        securityDeposit:
+          Number(securityDeposit) > 0
+            ? formatMoney(securityDeposit)
+            : undefined,
+        leaseEndDate: leaseEndDate
+          ? format(leaseEndDate, "d MMMM yyyy")
+          : undefined,
+        ownerId: unit.ownerId,
+      });
+    } catch (error) {
+      console.error("Tenant-assigned notification failed:", error);
+    }
   }
 
   // First-move-in charges exist now — send one combined invoice rather than
   // a separate email per charge.
-  if (tenancy.createdCharges.length > 0) {
+  if (unit.rentBillsEnabled && tenancy.createdCharges.length > 0) {
     try {
       const total = tenancy.createdCharges.reduce(
         (sum, charge) => sum + Number(charge.amount),
@@ -303,6 +359,10 @@ export const startTenancyAction = async (formData: FormData) => {
         {
           category: EntityDocumentCategory.municipality_registration,
           files: municipalityDocuments,
+        },
+        {
+          category: EntityDocumentCategory.parking_agreement,
+          files: parkingAgreementDocuments,
         },
         {
           category: EntityDocumentCategory.other,
@@ -351,9 +411,20 @@ export const updateTenancyAction = async (formData: FormData) => {
   );
   const rentDueDay = Number(formData.get("rentDueDay"));
   const purpose = formData.get("purpose")?.toString();
+  const agreementRef = formData.get("agreementRef")?.toString().trim() || null;
+  const agreementStartDate = parseDate(
+    formData.get("agreementStartDate")?.toString(),
+  );
+  const paidBy = formData.get("paidBy")?.toString().trim() || null;
   const contractRegisteredAt = parseDate(
     formData.get("contractRegisteredAt")?.toString(),
   );
+  const parkingSlotNumber =
+    formData.get("parkingSlotNumber")?.toString().trim() || null;
+  const vehiclePlateNumber =
+    formData.get("vehiclePlateNumber")?.toString().trim() || null;
+  const vehicleDetails =
+    formData.get("vehicleDetails")?.toString().trim() || null;
   const notes = formData.get("notes")?.toString().trim() || null;
 
   if (
@@ -391,7 +462,13 @@ export const updateTenancyAction = async (formData: FormData) => {
       rentDueDay,
       securityDeposit,
       purpose: purpose as TenancyPurpose,
+      agreementRef,
+      agreementStartDate,
+      paidBy,
       contractRegisteredAt,
+      parkingSlotNumber,
+      vehiclePlateNumber,
+      vehicleDetails,
       notes,
     },
     select: { tenantId: true },
@@ -432,6 +509,14 @@ export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/tenancies", "Tenancy not found.");
   }
 
+  if (!tenancy.unit.rentBillsEnabled) {
+    return encodedRedirect(
+      "error",
+      "/protected/tenancies",
+      "Rent & bills are turned off for this unit — there's no welcome email to resend.",
+    );
+  }
+
   try {
     await notifyTenantAssigned({
       tenantId: tenancy.tenantId,
@@ -450,7 +535,7 @@ export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
       leaseEndDate: tenancy.leaseEndDate
         ? format(tenancy.leaseEndDate, "d MMMM yyyy")
         : undefined,
-      ownerId: tenancy.unit.property.ownerId,
+      ownerId: tenancy.unit.ownerId,
     });
   } catch (error) {
     console.error("Resend welcome email failed:", error);
@@ -566,9 +651,9 @@ export const createChargeAction = async (formData: FormData) => {
       unit: {
         select: {
           label: true,
+          rentBillsEnabled: true,
           property: {
             select: {
-              ownerId: true,
               name: true,
               propertyType: { select: { unitPrefix: true, hasFloors: true } },
             },
@@ -586,6 +671,14 @@ export const createChargeAction = async (formData: FormData) => {
     );
   }
 
+  if (!tenancy.unit.rentBillsEnabled) {
+    return encodedRedirect(
+      "error",
+      "/protected/finances",
+      "Rent & bills are turned off for this unit — enable it from the unit's settings first.",
+    );
+  }
+
   const charge = await prisma.charge.create({
     data: {
       tenancyId,
@@ -600,6 +693,21 @@ export const createChargeAction = async (formData: FormData) => {
       createdById: admin.id,
     },
   });
+
+  try {
+    const unitLabel = formatUnitLabel(tenancy.unit.property.propertyType, tenancy.unit.label);
+    await pushChargeToDynamics({
+      label: title,
+      tenantName: [tenancy.tenant.firstName, tenancy.tenant.lastName].filter(Boolean).join(" ") || tenancy.tenant.email,
+      unitLabel,
+      chargeType: type,
+      amount: formatMoney(amount),
+      dueDate: format(dueDate, "yyyy-MM-dd"),
+      status: "Open",
+    });
+  } catch (error) {
+    console.error("Dynamics sync failed for charge:", charge.id, error);
+  }
 
   let uploadError: string | null = null;
   if (bill instanceof File && bill.size > 0) {
@@ -680,6 +788,7 @@ export const generateRentChargesAction = async (formData: FormData) => {
       monthlyRent: { gt: 0 },
       startDate: { lte: periodEnd },
       OR: [{ endDate: null }, { endDate: { gte: period } }],
+      unit: { rentBillsEnabled: true },
     },
     select: {
       id: true,
@@ -749,6 +858,28 @@ export const generateRentChargesAction = async (formData: FormData) => {
       },
     });
 
+    // Same best-effort treatment as the invoice emails below: one Dynamics
+    // record per generated charge, run in parallel, a failure on one doesn't
+    // stop the rest or fail the bulk action.
+    await Promise.allSettled(
+      created.map((charge) =>
+        pushChargeToDynamics({
+          label: charge.title,
+          tenantName:
+            [charge.tenant.firstName, charge.tenant.lastName]
+              .filter(Boolean)
+              .join(" ") || charge.tenant.email,
+          unitLabel: charge.unit
+            ? formatUnitLabel(charge.unit.property.propertyType, charge.unit.label)
+            : "—",
+          chargeType: "Rent",
+          amount: formatMoney(charge.amount),
+          dueDate: format(charge.dueDate, "yyyy-MM-dd"),
+          status: "Open",
+        }),
+      ),
+    );
+
     // One invoice email per tenant — best-effort, run in parallel; a failed
     // send for one tenant shouldn't stop the others or fail the bulk action.
     await Promise.allSettled(
@@ -796,6 +927,21 @@ export const submitPaymentAction = async (formData: FormData) => {
   const reference = formData.get("reference")?.toString().trim() || null;
   const notes = formData.get("notes")?.toString().trim() || null;
   const receipt = formData.get("receipt");
+  const collectedByRaw = formData.get("collectedBy")?.toString();
+  const collectedBy = (
+    Object.values(PaymentCollector) as string[]
+  ).includes(collectedByRaw ?? "")
+    ? (collectedByRaw as PaymentCollector)
+    : PaymentCollector.management;
+  const receivedByName =
+    formData.get("receivedByName")?.toString().trim() || null;
+  const transactionNumber =
+    formData.get("transactionNumber")?.toString().trim() || null;
+  const chequeNumber = formData.get("chequeNumber")?.toString().trim() || null;
+  const chequeDate = parseDate(formData.get("chequeDate")?.toString());
+  const bank = formData.get("bank")?.toString().trim() || null;
+  const clearanceStatus =
+    formData.get("clearanceStatus")?.toString().trim() || null;
 
   if (
     !chargeId ||
@@ -824,13 +970,13 @@ export const submitPaymentAction = async (formData: FormData) => {
     include: {
       tenant: { select: { email: true } },
       payments: { select: { amount: true, status: true } },
-      unit: { select: { property: { select: { ownerId: true } } } },
+      unit: { select: { ownerId: true } },
     },
   });
 
   const isOwnPropertyOwner =
     user.userType === UserType.owner &&
-    charge?.unit.property.ownerId === user.id;
+    charge?.unit.ownerId === user.id;
 
   if (
     !charge ||
@@ -917,6 +1063,13 @@ export const submitPaymentAction = async (formData: FormData) => {
         reference,
         notes,
         status,
+        collectedBy,
+        receivedByName,
+        transactionNumber,
+        chequeNumber,
+        chequeDate,
+        bank,
+        clearanceStatus,
         submittedById: user.id,
         reviewedById: isAdminStyleActor ? user.id : null,
         reviewedAt: isAdminStyleActor ? new Date() : null,
@@ -962,7 +1115,7 @@ export const submitPaymentAction = async (formData: FormData) => {
         title: charge.title,
       });
       await notifyOwnerPaymentProof({
-        ownerId: charge.unit.property.ownerId,
+        ownerId: charge.unit.ownerId,
         chargeId,
         title: charge.title,
         tenantEmail: charge.tenant.email,
@@ -981,7 +1134,7 @@ export const submitPaymentAction = async (formData: FormData) => {
 
     if (chargeFullyPaid) {
       await notifyOwnerChargePaid({
-        ownerId: charge.unit.property.ownerId,
+        ownerId: charge.unit.ownerId,
         chargeId,
         title: charge.title,
         amount: `OMR ${Number(charge.amount).toFixed(3)}`,
@@ -1028,7 +1181,7 @@ export const reviewPaymentAction = async (
         include: {
           payments: { select: { id: true, amount: true, status: true } },
           tenant: { select: { email: true } },
-          unit: { select: { property: { select: { ownerId: true } } } },
+          unit: { select: { ownerId: true } },
         },
       },
     },
@@ -1115,7 +1268,7 @@ export const reviewPaymentAction = async (
 
     if (chargeFullyPaid) {
       await notifyOwnerChargePaid({
-        ownerId: payment.charge.unit.property.ownerId,
+        ownerId: payment.charge.unit.ownerId,
         chargeId: payment.chargeId,
         title: payment.charge.title,
         amount: `OMR ${Number(payment.charge.amount).toFixed(3)}`,
@@ -1124,6 +1277,16 @@ export const reviewPaymentAction = async (
     }
   } catch (error) {
     console.error("Payment review notification failed:", error);
+  }
+
+  // Same rule as the notification above: the review already went through, so a Dynamics
+  // outage or a bad credential must not surface as an error on the admin's approval.
+  if (approved) {
+    try {
+      await pushPaymentToDynamics(paymentId);
+    } catch (error) {
+      console.error("Dynamics sync failed for payment:", paymentId, error);
+    }
   }
 
   await publishFinance([payment.charge.tenantId]);
@@ -1151,7 +1314,7 @@ export const waiveChargeAction = async (formData: FormData) => {
     where: { id: chargeId },
     include: {
       payments: { select: { status: true } },
-      unit: { select: { property: { select: { ownerId: true } } } },
+      unit: { select: { ownerId: true } },
     },
   });
   if (!charge || charge.status !== ChargeStatus.open) {
@@ -1184,7 +1347,7 @@ export const waiveChargeAction = async (formData: FormData) => {
   try {
     await notifyChargeWaived({
       tenantId: charge.tenantId,
-      ownerId: charge.unit.property.ownerId,
+      ownerId: charge.unit.ownerId,
       chargeId,
       title: charge.title,
     });
@@ -1225,6 +1388,14 @@ export const resendChargeInvoiceEmailAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/finances", "Charge not found.");
   }
 
+  if (!charge.unit.rentBillsEnabled) {
+    return encodedRedirect(
+      "error",
+      "/protected/finances",
+      "Rent & bills are turned off for this unit — there's no invoice to resend.",
+    );
+  }
+
   try {
     await notifyTenantInvoice({
       tenantId: charge.tenantId,
@@ -1256,5 +1427,54 @@ export const resendChargeInvoiceEmailAction = async (formData: FormData) => {
     "success",
     financeBack(chargeId),
     "Invoice email resent to the tenant.",
+  );
+};
+
+/**
+ * Spec #31 "Cheque Reminders" — a cheque stays in the action queue until
+ * its outcome is recorded. This is the one action that records that
+ * outcome, callable directly from the Cheque Reminders dashboard.
+ */
+export const updatePaymentClearanceAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+
+  const paymentId = formData.get("paymentId")?.toString();
+  const clearanceStatus = formData.get("clearanceStatus")?.toString();
+
+  if (
+    !paymentId ||
+    !clearanceStatus ||
+    !["pending", "cleared", "bounced"].includes(clearanceStatus)
+  ) {
+    return encodedRedirect(
+      "error",
+      "/protected/finances/cheque-reminders",
+      "Invalid clearance status.",
+    );
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: { id: true },
+  });
+  if (!payment) {
+    return encodedRedirect(
+      "error",
+      "/protected/finances/cheque-reminders",
+      "Payment not found.",
+    );
+  }
+
+  await prisma.payment.update({
+    where: { id: paymentId },
+    data: { clearanceStatus },
+  });
+
+  revalidatePath("/protected/finances/cheque-reminders");
+
+  return encodedRedirect(
+    "success",
+    "/protected/finances/cheque-reminders",
+    "Cheque status updated.",
   );
 };

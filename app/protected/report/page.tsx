@@ -28,7 +28,7 @@ export default async function ReportIssuePage({ searchParams }: PageProps) {
     : 0;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-8">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 pt-4 pb-8">
       <PageHeader
         title="Report an issue"
         description="Tell us what needs fixing and we'll assign someone."
@@ -44,6 +44,12 @@ export default async function ReportIssuePage({ searchParams }: PageProps) {
           icon={Home}
           title="No unit assigned"
           description="Your account is not linked to a unit yet, so there is nowhere to file this issue against. Please ask your administrator to assign you one."
+        />
+      ) : !unit.maintenanceEnabled ? (
+        <EmptyState
+          icon={Home}
+          title="Maintenance requests aren't available"
+          description="Maintenance requests aren't handled through this system for your unit. Please contact property management directly."
         />
       ) : (
         <>

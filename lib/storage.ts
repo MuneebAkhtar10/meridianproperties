@@ -80,6 +80,13 @@ function buildEntityDocumentObjectKey(
   return `entity-documents/${targetType}/${targetId}/${randomUUID()}.${extension}`;
 }
 
+function buildExpenseObjectKey(expenseId: string, fileName: string): string {
+  const extension = fileName.includes(".")
+    ? fileName.split(".").pop()!.toLowerCase()
+    : "bin";
+  return `expenses/${expenseId}/${randomUUID()}.${extension}`;
+}
+
 export type UploadedObject = {
   objectKey: string;
   fileName: string;
@@ -117,6 +124,18 @@ export async function uploadEntityDocument(
     file,
     ALLOWED_DOCUMENT_TYPES,
     buildEntityDocumentObjectKey(targetType, targetId, file.name),
+  );
+}
+
+/** Uploads a private expense invoice/receipt. PDF is accepted in addition to images. */
+export async function uploadExpenseReceipt(
+  file: File,
+  expenseId: string,
+): Promise<UploadedObject> {
+  return store(
+    file,
+    ALLOWED_DOCUMENT_TYPES,
+    buildExpenseObjectKey(expenseId, file.name),
   );
 }
 
