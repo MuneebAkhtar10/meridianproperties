@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { PendingLink } from "@/components/ui/pending-link";
 import { prisma } from "@/lib/prisma";
+import { isBuildingType } from "@/lib/property-types";
 import { requireAnyRole } from "@/lib/session";
 import { STATUS_META } from "@/lib/status";
 import { RequestStatus, UserType } from "@/lib/generated/prisma/client";
@@ -93,7 +94,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
     where.AND = andConditions;
   }
 
-  const [requests, workers, properties] = await Promise.all([
+  const [requests, workers, allProperties] = await Promise.all([
     prisma.maintenanceRequest.findMany({
       where,
       orderBy:
@@ -136,10 +137,16 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
     }),
     prisma.property.findMany({
       where: isOwner ? { units: { some: { ownerId: user.id } } } : {},
-      select: { id: true, name: true },
+      select: { id: true, name: true, propertyType: { select: { name: true } } },
       orderBy: { name: "asc" },
     }),
   ]);
+
+  // OA properties never accept maintenance requests — no point offering
+  // them as a filter here.
+  const properties = allProperties.filter(
+    (property) => !isBuildingType(property.propertyType.name),
+  );
 
   const buildHref = (next: Record<string, string>) => {
     const search = new URLSearchParams({

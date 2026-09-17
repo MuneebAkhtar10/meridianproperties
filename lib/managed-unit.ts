@@ -18,18 +18,14 @@ type RawManagedUnit = Omit<
   | "serviceChargeAmount"
   | "serviceChargeBalance"
   | "serviceChargeInvoices"
-  | "fundBalances"
   | "installmentPlans"
 > & {
   serviceChargeAmount: unknown;
   serviceChargeBalance: unknown;
   serviceChargeInvoices: (Omit<
     ManagedUnit["serviceChargeInvoices"][number],
-    "amountPayable"
-  > & { amountPayable: unknown })[];
-  fundBalances: (Omit<ManagedUnit["fundBalances"][number], "balance"> & {
-    balance: unknown;
-  })[];
+    "amountPayable" | "currentAmount" | "previousBalance"
+  > & { amountPayable: unknown; currentAmount: unknown; previousBalance: unknown })[];
   installmentPlans: (Omit<
     ManagedUnit["installmentPlans"][number],
     "installments"
@@ -43,9 +39,9 @@ type RawManagedUnit = Omit<
 
 /** Converts a raw Prisma unit query result into the plain-object shape
  * UnitManageModal needs — its Decimal fields (serviceChargeAmount,
- * serviceChargeBalance, invoice.amountPayable, fundBalance.balance,
- * installment.amount) become strings, since a Decimal is a class instance
- * and can't cross the Server Component -> Client Component boundary. */
+ * serviceChargeBalance, invoice.amountPayable, installment.amount) become
+ * strings, since a Decimal is a class instance and can't cross the Server
+ * Component -> Client Component boundary. */
 export function toManagedUnit(unit: RawManagedUnit): ManagedUnit {
   return {
     ...unit,
@@ -55,10 +51,8 @@ export function toManagedUnit(unit: RawManagedUnit): ManagedUnit {
     serviceChargeInvoices: unit.serviceChargeInvoices.map((invoice) => ({
       ...invoice,
       amountPayable: String(invoice.amountPayable),
-    })),
-    fundBalances: unit.fundBalances.map((balance) => ({
-      ...balance,
-      balance: String(balance.balance),
+      currentAmount: String(invoice.currentAmount),
+      previousBalance: String(invoice.previousBalance),
     })),
     installmentPlans: unit.installmentPlans.map((plan) => ({
       ...plan,

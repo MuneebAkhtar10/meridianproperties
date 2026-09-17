@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 const NAV_BY_ROLE: Record<UserType, NavItem[]> = {
   admin: [
     { href: "/protected", label: "Dashboard", icon: "dashboard" },
+    { href: "/protected/onboarding", label: "Onboarding", icon: "onboarding" },
     { href: "/protected/properties", label: "Properties", icon: "properties" },
     { href: "/protected/tenancies", label: "Tenancies", icon: "tenancies" },
     { href: "/protected/maintenance", label: "Requests", icon: "requests" },
@@ -34,6 +35,7 @@ const NAV_BY_ROLE: Record<UserType, NavItem[]> = {
       icon: "serviceCharges",
     },
     { href: "/protected/expenses", label: "Expenses", icon: "expenses" },
+    { href: "/protected/reports", label: "Reports", icon: "reports" },
     { href: "/protected/admin/suppliers", label: "Suppliers", icon: "suppliers" },
     { href: "/protected/users", label: "People", icon: "people" },
   ],

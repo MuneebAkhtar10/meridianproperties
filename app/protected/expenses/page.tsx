@@ -54,6 +54,7 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
     category?: string;
     property?: string;
     year?: string;
+    cashflow?: string;
   } & Message;
   const message = rawParams as Message;
   const tab = rawParams.tab === "types" ? "types" : "log";
@@ -103,7 +104,9 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
         category: { select: { id: true, label: true } },
         supplier: { select: { id: true, companyName: true } },
         fund: { select: { id: true, label: true } },
-        property: { select: { name: true } },
+        property: {
+          select: { name: true, propertyType: { select: { name: true } } },
+        },
         units: {
           include: {
             unit: {
@@ -113,7 +116,9 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                 property: {
                   select: {
                     name: true,
-                    propertyType: { select: { unitPrefix: true, hasFloors: true } },
+                    propertyType: {
+                      select: { name: true, unitPrefix: true, hasFloors: true },
+                    },
                   },
                 },
               },
@@ -124,7 +129,11 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
     }),
     prisma.property.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        propertyType: { select: { name: true } },
+      },
     }),
     prisma.unit.findMany({
       orderBy: [{ property: { name: "asc" } }, { label: "asc" }],
@@ -200,7 +209,14 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
           {tab === "log" ? (
             <>
               <ExpensesExportMenu csvHref={exportCsvHref} pdfHref={exportPdfHref} />
-              <CashFlowStatementModal properties={properties} funds={funds} />
+              <CashFlowStatementModal
+                properties={properties}
+                funds={funds}
+                defaultPropertyId={
+                  propertyFilter !== "all" ? propertyFilter : undefined
+                }
+                autoOpen={rawParams.cashflow === "1"}
+              />
               <PendingLink
                 href="/protected/expenses?tab=types"
                 className={buttonVariants({ variant: "secondary" })}
@@ -549,6 +565,11 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                             : "—";
                       const expensePropertyId =
                         expense.propertyId ?? expense.units[0]?.unit.propertyId ?? null;
+                      const expensePropertyTypeName =
+                        expense.property?.propertyType.name ??
+                        expense.units[0]?.unit.property.propertyType.name ??
+                        null;
+                      const isOaExpense = expensePropertyTypeName === "building";
 
                       return (
                         <div
@@ -568,14 +589,17 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                               <span className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20">
                                 {expense.supplier?.companyName ?? "Company default"}
                               </span>
-                              <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                {expense.fund.label}
-                              </span>
                               {expense.paidBy === "owner" && (
                                 <span className="inline-flex items-center rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20">
                                   Paid by owner
                                 </span>
                               )}
+                              {!isOaExpense &&
+                                expense.ownerChargeMethod === "service_charge_deduction" && (
+                                  <span className="inline-flex items-center rounded-full bg-teal-50 px-1.5 py-0.5 text-[10px] font-medium text-teal-700 ring-1 ring-inset ring-teal-600/20">
+                                    Deducted from service charge
+                                  </span>
+                                )}
                               <p className="text-sm font-semibold">
                                 {formatMoney(expense.amount)}
                                 {moneyValue(expense.vatAmount) > 0 && (
@@ -645,14 +669,15 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                                 fundId: expense.fund.id,
                                 paymentReference: expense.paymentReference,
                                 paidBy: expense.paidBy,
+                                ownerChargeMethod: expense.ownerChargeMethod,
                                 notes: expense.notes,
                                 date: expense.date,
                                 receiptFileName: expense.receiptFileName,
                               }}
                               categories={categories}
                               suppliers={suppliers}
-                              funds={funds}
                               targetLabel={targetLabel}
+                              isOaExpense={isOaExpense}
                             />
                             <form>
                               <input type="hidden" name="expenseId" value={expense.id} />
@@ -736,23 +761,6 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                           />
                         </div>
                         <div className="min-w-0 space-y-1.5">
-                          <Label htmlFor="expense-fund" className="text-xs">
-                            Fund
-                          </Label>
-                          <Select
-                            id="expense-fund"
-                            name="fundId"
-                            defaultValue={funds[0]?.id ?? ""}
-                            required
-                          >
-                            {funds.map((fund) => (
-                              <option key={fund.id} value={fund.id}>
-                                {fund.label}
-                              </option>
-                            ))}
-                          </Select>
-                        </div>
-                        <div className="min-w-0 space-y-1.5">
                           <Label htmlFor="expense-vat" className="text-xs">
                             VAT (OMR)
                           </Label>
@@ -766,6 +774,7 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                           />
                         </div>
                       </div>
+                      <input type="hidden" name="fundId" value={funds[0]?.id ?? ""} />
                     </div>
 
                     <div className="space-y-3 border-t pt-4">

@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
     include: {
       category: { select: { label: true } },
       property: { select: { name: true } },
-      fund: { select: { label: true } },
       units: {
         include: {
           unit: {
@@ -70,7 +69,6 @@ export async function GET(request: NextRequest) {
       expense.description,
       moneyValue(expense.amount),
       moneyValue(expense.vatAmount),
-      expense.fund.label,
       expense.paymentReference ?? "",
       expense.notes ?? "",
       expense.receiptFileName ? "Yes" : "No",
@@ -86,7 +84,6 @@ export async function GET(request: NextRequest) {
       "Description",
       "Amount (OMR)",
       "VAT (OMR)",
-      "Fund",
       "Payment reference",
       "Notes",
       "Has receipt",

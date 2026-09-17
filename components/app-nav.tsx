@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   AlertTriangle,
+  BarChart3,
   Building2,
   FileText,
   History,
   KeyRound,
   Landmark,
   LayoutDashboard,
+  ListChecks,
   Receipt,
   Tags,
   Users,
@@ -25,6 +27,7 @@ import { LinkPendingIndicator } from "@/components/link-pending-indicator";
  * this map resolves it to the actual icon on the client side. */
 const ICONS = {
   dashboard: LayoutDashboard,
+  onboarding: ListChecks,
   requests: Wrench,
   rentAndBills: Receipt,
   tenancies: KeyRound,
@@ -36,6 +39,7 @@ const ICONS = {
   expenses: Wallet,
   suppliers: Tags,
   serviceCharges: Landmark,
+  reports: BarChart3,
 } as const;
 
 export type NavIconKey = keyof typeof ICONS;

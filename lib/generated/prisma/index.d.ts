@@ -42,6 +42,15 @@ export type Unit = $Result.DefaultSelection<Prisma.$UnitPayload>
  */
 export type UnitPermissionChange = $Result.DefaultSelection<Prisma.$UnitPermissionChangePayload>
 /**
+ * Model OwnershipTransfer
+ * A recorded handover of one unit from its current owner to a new one —
+ * the professional alternative to just overwriting Unit.ownerId, which
+ * left no record of who owned a unit before or when the change happened.
+ * The old ownership ends and the new one starts on the same transferDate,
+ * same as a real sale/handover would.
+ */
+export type OwnershipTransfer = $Result.DefaultSelection<Prisma.$OwnershipTransferPayload>
+/**
  * Model User
  * Account and profile in one row. `userType` drives every authorization check.
  * `id` is not generated here — it is the id of the matching row in Supabase
@@ -668,6 +677,16 @@ export class PrismaClient<
     * ```
     */
   get unitPermissionChange(): Prisma.UnitPermissionChangeDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.ownershipTransfer`: Exposes CRUD operations for the **OwnershipTransfer** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OwnershipTransfers
+    * const ownershipTransfers = await prisma.ownershipTransfer.findMany()
+    * ```
+    */
+  get ownershipTransfer(): Prisma.OwnershipTransferDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.user`: Exposes CRUD operations for the **User** model.
@@ -1439,6 +1458,7 @@ export namespace Prisma {
     Property: 'Property',
     Unit: 'Unit',
     UnitPermissionChange: 'UnitPermissionChange',
+    OwnershipTransfer: 'OwnershipTransfer',
     User: 'User',
     WorkerFamilyMember: 'WorkerFamilyMember',
     Tenancy: 'Tenancy',
@@ -1486,7 +1506,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "propertyType" | "property" | "unit" | "unitPermissionChange" | "user" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "expense" | "expenseUnit" | "fund" | "unitFundBalance" | "serviceChargeInvoice" | "serviceChargeInvoiceLine" | "serviceChargePayment" | "serviceChargeInstallmentPlan" | "serviceChargeInstallment" | "annualBudget" | "budgetIncomeLine" | "budgetExpenseLine" | "expenseCategoryType" | "supplier" | "buildingServiceContract" | "supplierCategory" | "supplierProperty" | "expenseSubcategoryType" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession" | "rejectionLog"
+      modelProps: "propertyType" | "property" | "unit" | "unitPermissionChange" | "ownershipTransfer" | "user" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "expense" | "expenseUnit" | "fund" | "unitFundBalance" | "serviceChargeInvoice" | "serviceChargeInvoiceLine" | "serviceChargePayment" | "serviceChargeInstallmentPlan" | "serviceChargeInstallment" | "annualBudget" | "budgetIncomeLine" | "budgetExpenseLine" | "expenseCategoryType" | "supplier" | "buildingServiceContract" | "supplierCategory" | "supplierProperty" | "expenseSubcategoryType" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession" | "rejectionLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1783,6 +1803,80 @@ export namespace Prisma {
           count: {
             args: Prisma.UnitPermissionChangeCountArgs<ExtArgs>
             result: $Utils.Optional<UnitPermissionChangeCountAggregateOutputType> | number
+          }
+        }
+      }
+      OwnershipTransfer: {
+        payload: Prisma.$OwnershipTransferPayload<ExtArgs>
+        fields: Prisma.OwnershipTransferFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OwnershipTransferFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OwnershipTransferFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>
+          }
+          findFirst: {
+            args: Prisma.OwnershipTransferFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OwnershipTransferFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>
+          }
+          findMany: {
+            args: Prisma.OwnershipTransferFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>[]
+          }
+          create: {
+            args: Prisma.OwnershipTransferCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>
+          }
+          createMany: {
+            args: Prisma.OwnershipTransferCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OwnershipTransferCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>[]
+          }
+          delete: {
+            args: Prisma.OwnershipTransferDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>
+          }
+          update: {
+            args: Prisma.OwnershipTransferUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>
+          }
+          deleteMany: {
+            args: Prisma.OwnershipTransferDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OwnershipTransferUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.OwnershipTransferUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>[]
+          }
+          upsert: {
+            args: Prisma.OwnershipTransferUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnershipTransferPayload>
+          }
+          aggregate: {
+            args: Prisma.OwnershipTransferAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOwnershipTransfer>
+          }
+          groupBy: {
+            args: Prisma.OwnershipTransferGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OwnershipTransferGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OwnershipTransferCountArgs<ExtArgs>
+            result: $Utils.Optional<OwnershipTransferCountAggregateOutputType> | number
           }
         }
       }
@@ -4281,6 +4375,7 @@ export namespace Prisma {
     property?: PropertyOmit
     unit?: UnitOmit
     unitPermissionChange?: UnitPermissionChangeOmit
+    ownershipTransfer?: OwnershipTransferOmit
     user?: UserOmit
     workerFamilyMember?: WorkerFamilyMemberOmit
     tenancy?: TenancyOmit
@@ -4519,6 +4614,7 @@ export namespace Prisma {
     serviceChargePayments: number
     installmentPlans: number
     fundBalances: number
+    ownershipTransfers: number
   }
 
   export type UnitCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4532,6 +4628,7 @@ export namespace Prisma {
     serviceChargePayments?: boolean | UnitCountOutputTypeCountServiceChargePaymentsArgs
     installmentPlans?: boolean | UnitCountOutputTypeCountInstallmentPlansArgs
     fundBalances?: boolean | UnitCountOutputTypeCountFundBalancesArgs
+    ownershipTransfers?: boolean | UnitCountOutputTypeCountOwnershipTransfersArgs
   }
 
   // Custom InputTypes
@@ -4615,6 +4712,13 @@ export namespace Prisma {
     where?: UnitFundBalanceWhereInput
   }
 
+  /**
+   * UnitCountOutputType without action
+   */
+  export type UnitCountOutputTypeCountOwnershipTransfersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OwnershipTransferWhereInput
+  }
+
 
   /**
    * Count Type UserCountOutputType
@@ -4648,6 +4752,9 @@ export namespace Prisma {
     whatsappSessions: number
     rejectionLogs: number
     unitPermissionChanges: number
+    ownershipTransfersFrom: number
+    ownershipTransfersTo: number
+    ownershipTransfersCreated: number
     familyMembers: number
   }
 
@@ -4679,6 +4786,9 @@ export namespace Prisma {
     whatsappSessions?: boolean | UserCountOutputTypeCountWhatsappSessionsArgs
     rejectionLogs?: boolean | UserCountOutputTypeCountRejectionLogsArgs
     unitPermissionChanges?: boolean | UserCountOutputTypeCountUnitPermissionChangesArgs
+    ownershipTransfersFrom?: boolean | UserCountOutputTypeCountOwnershipTransfersFromArgs
+    ownershipTransfersTo?: boolean | UserCountOutputTypeCountOwnershipTransfersToArgs
+    ownershipTransfersCreated?: boolean | UserCountOutputTypeCountOwnershipTransfersCreatedArgs
     familyMembers?: boolean | UserCountOutputTypeCountFamilyMembersArgs
   }
 
@@ -4880,6 +4990,27 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountUnitPermissionChangesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: UnitPermissionChangeWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountOwnershipTransfersFromArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OwnershipTransferWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountOwnershipTransfersToArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OwnershipTransferWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountOwnershipTransfersCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OwnershipTransferWhereInput
   }
 
   /**
@@ -6574,8 +6705,20 @@ export namespace Prisma {
 
   export type AggregateProperty = {
     _count: PropertyCountAggregateOutputType | null
+    _avg: PropertyAvgAggregateOutputType | null
+    _sum: PropertySumAggregateOutputType | null
     _min: PropertyMinAggregateOutputType | null
     _max: PropertyMaxAggregateOutputType | null
+  }
+
+  export type PropertyAvgAggregateOutputType = {
+    latitude: Decimal | null
+    longitude: Decimal | null
+  }
+
+  export type PropertySumAggregateOutputType = {
+    latitude: Decimal | null
+    longitude: Decimal | null
   }
 
   export type PropertyMinAggregateOutputType = {
@@ -6587,10 +6730,14 @@ export namespace Prisma {
     wilayat: string | null
     area: string | null
     wayNumber: string | null
+    buildingName: string | null
     buildingNumber: string | null
     postalCode: string | null
     titleDeedNumber: string | null
     plotNumber: string | null
+    latitude: Decimal | null
+    longitude: Decimal | null
+    locationMapPosition: string | null
     notes: string | null
     associationRegistrationNumber: string | null
     associationPhone: string | null
@@ -6617,10 +6764,14 @@ export namespace Prisma {
     wilayat: string | null
     area: string | null
     wayNumber: string | null
+    buildingName: string | null
     buildingNumber: string | null
     postalCode: string | null
     titleDeedNumber: string | null
     plotNumber: string | null
+    latitude: Decimal | null
+    longitude: Decimal | null
+    locationMapPosition: string | null
     notes: string | null
     associationRegistrationNumber: string | null
     associationPhone: string | null
@@ -6647,10 +6798,14 @@ export namespace Prisma {
     wilayat: number
     area: number
     wayNumber: number
+    buildingName: number
     buildingNumber: number
     postalCode: number
     titleDeedNumber: number
     plotNumber: number
+    latitude: number
+    longitude: number
+    locationMapPosition: number
     notes: number
     associationRegistrationNumber: number
     associationPhone: number
@@ -6670,6 +6825,16 @@ export namespace Prisma {
   }
 
 
+  export type PropertyAvgAggregateInputType = {
+    latitude?: true
+    longitude?: true
+  }
+
+  export type PropertySumAggregateInputType = {
+    latitude?: true
+    longitude?: true
+  }
+
   export type PropertyMinAggregateInputType = {
     id?: true
     name?: true
@@ -6679,10 +6844,14 @@ export namespace Prisma {
     wilayat?: true
     area?: true
     wayNumber?: true
+    buildingName?: true
     buildingNumber?: true
     postalCode?: true
     titleDeedNumber?: true
     plotNumber?: true
+    latitude?: true
+    longitude?: true
+    locationMapPosition?: true
     notes?: true
     associationRegistrationNumber?: true
     associationPhone?: true
@@ -6709,10 +6878,14 @@ export namespace Prisma {
     wilayat?: true
     area?: true
     wayNumber?: true
+    buildingName?: true
     buildingNumber?: true
     postalCode?: true
     titleDeedNumber?: true
     plotNumber?: true
+    latitude?: true
+    longitude?: true
+    locationMapPosition?: true
     notes?: true
     associationRegistrationNumber?: true
     associationPhone?: true
@@ -6739,10 +6912,14 @@ export namespace Prisma {
     wilayat?: true
     area?: true
     wayNumber?: true
+    buildingName?: true
     buildingNumber?: true
     postalCode?: true
     titleDeedNumber?: true
     plotNumber?: true
+    latitude?: true
+    longitude?: true
+    locationMapPosition?: true
     notes?: true
     associationRegistrationNumber?: true
     associationPhone?: true
@@ -6799,6 +6976,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: PropertyAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PropertySumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: PropertyMinAggregateInputType
@@ -6829,6 +7018,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: PropertyCountAggregateInputType | true
+    _avg?: PropertyAvgAggregateInputType
+    _sum?: PropertySumAggregateInputType
     _min?: PropertyMinAggregateInputType
     _max?: PropertyMaxAggregateInputType
   }
@@ -6842,10 +7033,14 @@ export namespace Prisma {
     wilayat: string | null
     area: string | null
     wayNumber: string | null
+    buildingName: string | null
     buildingNumber: string | null
     postalCode: string | null
     titleDeedNumber: string | null
     plotNumber: string | null
+    latitude: Decimal | null
+    longitude: Decimal | null
+    locationMapPosition: string | null
     notes: string | null
     associationRegistrationNumber: string | null
     associationPhone: string | null
@@ -6862,6 +7057,8 @@ export namespace Prisma {
     createdAt: Date
     updatedAt: Date
     _count: PropertyCountAggregateOutputType | null
+    _avg: PropertyAvgAggregateOutputType | null
+    _sum: PropertySumAggregateOutputType | null
     _min: PropertyMinAggregateOutputType | null
     _max: PropertyMaxAggregateOutputType | null
   }
@@ -6889,10 +7086,14 @@ export namespace Prisma {
     wilayat?: boolean
     area?: boolean
     wayNumber?: boolean
+    buildingName?: boolean
     buildingNumber?: boolean
     postalCode?: boolean
     titleDeedNumber?: boolean
     plotNumber?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    locationMapPosition?: boolean
     notes?: boolean
     associationRegistrationNumber?: boolean
     associationPhone?: boolean
@@ -6928,10 +7129,14 @@ export namespace Prisma {
     wilayat?: boolean
     area?: boolean
     wayNumber?: boolean
+    buildingName?: boolean
     buildingNumber?: boolean
     postalCode?: boolean
     titleDeedNumber?: boolean
     plotNumber?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    locationMapPosition?: boolean
     notes?: boolean
     associationRegistrationNumber?: boolean
     associationPhone?: boolean
@@ -6959,10 +7164,14 @@ export namespace Prisma {
     wilayat?: boolean
     area?: boolean
     wayNumber?: boolean
+    buildingName?: boolean
     buildingNumber?: boolean
     postalCode?: boolean
     titleDeedNumber?: boolean
     plotNumber?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    locationMapPosition?: boolean
     notes?: boolean
     associationRegistrationNumber?: boolean
     associationPhone?: boolean
@@ -6990,10 +7199,14 @@ export namespace Prisma {
     wilayat?: boolean
     area?: boolean
     wayNumber?: boolean
+    buildingName?: boolean
     buildingNumber?: boolean
     postalCode?: boolean
     titleDeedNumber?: boolean
     plotNumber?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    locationMapPosition?: boolean
     notes?: boolean
     associationRegistrationNumber?: boolean
     associationPhone?: boolean
@@ -7011,7 +7224,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "notes" | "associationRegistrationNumber" | "associationPhone" | "bankName" | "bankSwiftCode" | "bankAccountNumber" | "paymentReference" | "chequePayableTo" | "poBox" | "approved" | "submittedAt" | "rejectedAt" | "rejectionReason" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
+  export type PropertyOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "propertyTypeId" | "address" | "governorate" | "wilayat" | "area" | "wayNumber" | "buildingName" | "buildingNumber" | "postalCode" | "titleDeedNumber" | "plotNumber" | "latitude" | "longitude" | "locationMapPosition" | "notes" | "associationRegistrationNumber" | "associationPhone" | "bankName" | "bankSwiftCode" | "bankAccountNumber" | "paymentReference" | "chequePayableTo" | "poBox" | "approved" | "submittedAt" | "rejectedAt" | "rejectionReason" | "createdAt" | "updatedAt", ExtArgs["result"]["property"]>
   export type PropertyInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     propertyType?: boolean | PropertyTypeDefaultArgs<ExtArgs>
     units?: boolean | Property$unitsArgs<ExtArgs>
@@ -7051,10 +7264,29 @@ export namespace Prisma {
       wilayat: string | null
       area: string | null
       wayNumber: string | null
+      /**
+       * The building's own name/number as Rawazen's source data has it —
+       * kept distinct from buildingNumber (the official municipal building
+       * number) rather than merged into one field, since the two source
+       * fields aren't always the same value.
+       */
+      buildingName: string | null
       buildingNumber: string | null
       postalCode: string | null
       titleDeedNumber: string | null
       plotNumber: string | null
+      /**
+       * Retained against the property for location-based functions (map
+       * pins, JAHEZ property identification), independent of the free-text
+       * address fields above.
+       */
+      latitude: Prisma.Decimal | null
+      longitude: Prisma.Decimal | null
+      /**
+       * A map link, plus code, or other location reference that isn't a raw
+       * coordinate pair — e.g. a pasted Google Maps URL.
+       */
+      locationMapPosition: string | null
       notes: string | null
       /**
        * Owners' association letterhead + bank details, printed on every
@@ -7533,10 +7765,14 @@ export namespace Prisma {
     readonly wilayat: FieldRef<"Property", 'String'>
     readonly area: FieldRef<"Property", 'String'>
     readonly wayNumber: FieldRef<"Property", 'String'>
+    readonly buildingName: FieldRef<"Property", 'String'>
     readonly buildingNumber: FieldRef<"Property", 'String'>
     readonly postalCode: FieldRef<"Property", 'String'>
     readonly titleDeedNumber: FieldRef<"Property", 'String'>
     readonly plotNumber: FieldRef<"Property", 'String'>
+    readonly latitude: FieldRef<"Property", 'Decimal'>
+    readonly longitude: FieldRef<"Property", 'Decimal'>
+    readonly locationMapPosition: FieldRef<"Property", 'String'>
     readonly notes: FieldRef<"Property", 'String'>
     readonly associationRegistrationNumber: FieldRef<"Property", 'String'>
     readonly associationPhone: FieldRef<"Property", 'String'>
@@ -8482,6 +8718,7 @@ export namespace Prisma {
     serviceChargePayments?: boolean | Unit$serviceChargePaymentsArgs<ExtArgs>
     installmentPlans?: boolean | Unit$installmentPlansArgs<ExtArgs>
     fundBalances?: boolean | Unit$fundBalancesArgs<ExtArgs>
+    ownershipTransfers?: boolean | Unit$ownershipTransfersArgs<ExtArgs>
     _count?: boolean | UnitCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["unit"]>
 
@@ -8572,6 +8809,7 @@ export namespace Prisma {
     serviceChargePayments?: boolean | Unit$serviceChargePaymentsArgs<ExtArgs>
     installmentPlans?: boolean | Unit$installmentPlansArgs<ExtArgs>
     fundBalances?: boolean | Unit$fundBalancesArgs<ExtArgs>
+    ownershipTransfers?: boolean | Unit$ownershipTransfersArgs<ExtArgs>
     _count?: boolean | UnitCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UnitIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8601,6 +8839,7 @@ export namespace Prisma {
       serviceChargePayments: Prisma.$ServiceChargePaymentPayload<ExtArgs>[]
       installmentPlans: Prisma.$ServiceChargeInstallmentPlanPayload<ExtArgs>[]
       fundBalances: Prisma.$UnitFundBalancePayload<ExtArgs>[]
+      ownershipTransfers: Prisma.$OwnershipTransferPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -9087,6 +9326,7 @@ export namespace Prisma {
     serviceChargePayments<T extends Unit$serviceChargePaymentsArgs<ExtArgs> = {}>(args?: Subset<T, Unit$serviceChargePaymentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServiceChargePaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     installmentPlans<T extends Unit$installmentPlansArgs<ExtArgs> = {}>(args?: Subset<T, Unit$installmentPlansArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServiceChargeInstallmentPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     fundBalances<T extends Unit$fundBalancesArgs<ExtArgs> = {}>(args?: Subset<T, Unit$fundBalancesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UnitFundBalancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    ownershipTransfers<T extends Unit$ownershipTransfersArgs<ExtArgs> = {}>(args?: Subset<T, Unit$ownershipTransfersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9811,6 +10051,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: UnitFundBalanceScalarFieldEnum | UnitFundBalanceScalarFieldEnum[]
+  }
+
+  /**
+   * Unit.ownershipTransfers
+   */
+  export type Unit$ownershipTransfersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    where?: OwnershipTransferWhereInput
+    orderBy?: OwnershipTransferOrderByWithRelationInput | OwnershipTransferOrderByWithRelationInput[]
+    cursor?: OwnershipTransferWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OwnershipTransferScalarFieldEnum | OwnershipTransferScalarFieldEnum[]
   }
 
   /**
@@ -10952,6 +11216,1192 @@ export namespace Prisma {
 
 
   /**
+   * Model OwnershipTransfer
+   */
+
+  export type AggregateOwnershipTransfer = {
+    _count: OwnershipTransferCountAggregateOutputType | null
+    _min: OwnershipTransferMinAggregateOutputType | null
+    _max: OwnershipTransferMaxAggregateOutputType | null
+  }
+
+  export type OwnershipTransferMinAggregateOutputType = {
+    id: string | null
+    unitId: string | null
+    fromOwnerId: string | null
+    toOwnerId: string | null
+    transferDate: Date | null
+    keptServiceCharge: boolean | null
+    notes: string | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type OwnershipTransferMaxAggregateOutputType = {
+    id: string | null
+    unitId: string | null
+    fromOwnerId: string | null
+    toOwnerId: string | null
+    transferDate: Date | null
+    keptServiceCharge: boolean | null
+    notes: string | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type OwnershipTransferCountAggregateOutputType = {
+    id: number
+    unitId: number
+    fromOwnerId: number
+    toOwnerId: number
+    transferDate: number
+    keptServiceCharge: number
+    notes: number
+    createdById: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type OwnershipTransferMinAggregateInputType = {
+    id?: true
+    unitId?: true
+    fromOwnerId?: true
+    toOwnerId?: true
+    transferDate?: true
+    keptServiceCharge?: true
+    notes?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type OwnershipTransferMaxAggregateInputType = {
+    id?: true
+    unitId?: true
+    fromOwnerId?: true
+    toOwnerId?: true
+    transferDate?: true
+    keptServiceCharge?: true
+    notes?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type OwnershipTransferCountAggregateInputType = {
+    id?: true
+    unitId?: true
+    fromOwnerId?: true
+    toOwnerId?: true
+    transferDate?: true
+    keptServiceCharge?: true
+    notes?: true
+    createdById?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type OwnershipTransferAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OwnershipTransfer to aggregate.
+     */
+    where?: OwnershipTransferWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OwnershipTransfers to fetch.
+     */
+    orderBy?: OwnershipTransferOrderByWithRelationInput | OwnershipTransferOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OwnershipTransferWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OwnershipTransfers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OwnershipTransfers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OwnershipTransfers
+    **/
+    _count?: true | OwnershipTransferCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OwnershipTransferMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OwnershipTransferMaxAggregateInputType
+  }
+
+  export type GetOwnershipTransferAggregateType<T extends OwnershipTransferAggregateArgs> = {
+        [P in keyof T & keyof AggregateOwnershipTransfer]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOwnershipTransfer[P]>
+      : GetScalarType<T[P], AggregateOwnershipTransfer[P]>
+  }
+
+
+
+
+  export type OwnershipTransferGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OwnershipTransferWhereInput
+    orderBy?: OwnershipTransferOrderByWithAggregationInput | OwnershipTransferOrderByWithAggregationInput[]
+    by: OwnershipTransferScalarFieldEnum[] | OwnershipTransferScalarFieldEnum
+    having?: OwnershipTransferScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OwnershipTransferCountAggregateInputType | true
+    _min?: OwnershipTransferMinAggregateInputType
+    _max?: OwnershipTransferMaxAggregateInputType
+  }
+
+  export type OwnershipTransferGroupByOutputType = {
+    id: string
+    unitId: string
+    fromOwnerId: string | null
+    toOwnerId: string
+    transferDate: Date
+    keptServiceCharge: boolean
+    notes: string | null
+    createdById: string | null
+    createdAt: Date
+    _count: OwnershipTransferCountAggregateOutputType | null
+    _min: OwnershipTransferMinAggregateOutputType | null
+    _max: OwnershipTransferMaxAggregateOutputType | null
+  }
+
+  type GetOwnershipTransferGroupByPayload<T extends OwnershipTransferGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OwnershipTransferGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OwnershipTransferGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OwnershipTransferGroupByOutputType[P]>
+            : GetScalarType<T[P], OwnershipTransferGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OwnershipTransferSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    unitId?: boolean
+    fromOwnerId?: boolean
+    toOwnerId?: boolean
+    transferDate?: boolean
+    keptServiceCharge?: boolean
+    notes?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    fromOwner?: boolean | OwnershipTransfer$fromOwnerArgs<ExtArgs>
+    toOwner?: boolean | UserDefaultArgs<ExtArgs>
+    createdBy?: boolean | OwnershipTransfer$createdByArgs<ExtArgs>
+  }, ExtArgs["result"]["ownershipTransfer"]>
+
+  export type OwnershipTransferSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    unitId?: boolean
+    fromOwnerId?: boolean
+    toOwnerId?: boolean
+    transferDate?: boolean
+    keptServiceCharge?: boolean
+    notes?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    fromOwner?: boolean | OwnershipTransfer$fromOwnerArgs<ExtArgs>
+    toOwner?: boolean | UserDefaultArgs<ExtArgs>
+    createdBy?: boolean | OwnershipTransfer$createdByArgs<ExtArgs>
+  }, ExtArgs["result"]["ownershipTransfer"]>
+
+  export type OwnershipTransferSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    unitId?: boolean
+    fromOwnerId?: boolean
+    toOwnerId?: boolean
+    transferDate?: boolean
+    keptServiceCharge?: boolean
+    notes?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    fromOwner?: boolean | OwnershipTransfer$fromOwnerArgs<ExtArgs>
+    toOwner?: boolean | UserDefaultArgs<ExtArgs>
+    createdBy?: boolean | OwnershipTransfer$createdByArgs<ExtArgs>
+  }, ExtArgs["result"]["ownershipTransfer"]>
+
+  export type OwnershipTransferSelectScalar = {
+    id?: boolean
+    unitId?: boolean
+    fromOwnerId?: boolean
+    toOwnerId?: boolean
+    transferDate?: boolean
+    keptServiceCharge?: boolean
+    notes?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+  }
+
+  export type OwnershipTransferOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "unitId" | "fromOwnerId" | "toOwnerId" | "transferDate" | "keptServiceCharge" | "notes" | "createdById" | "createdAt", ExtArgs["result"]["ownershipTransfer"]>
+  export type OwnershipTransferInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    fromOwner?: boolean | OwnershipTransfer$fromOwnerArgs<ExtArgs>
+    toOwner?: boolean | UserDefaultArgs<ExtArgs>
+    createdBy?: boolean | OwnershipTransfer$createdByArgs<ExtArgs>
+  }
+  export type OwnershipTransferIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    fromOwner?: boolean | OwnershipTransfer$fromOwnerArgs<ExtArgs>
+    toOwner?: boolean | UserDefaultArgs<ExtArgs>
+    createdBy?: boolean | OwnershipTransfer$createdByArgs<ExtArgs>
+  }
+  export type OwnershipTransferIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    fromOwner?: boolean | OwnershipTransfer$fromOwnerArgs<ExtArgs>
+    toOwner?: boolean | UserDefaultArgs<ExtArgs>
+    createdBy?: boolean | OwnershipTransfer$createdByArgs<ExtArgs>
+  }
+
+  export type $OwnershipTransferPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OwnershipTransfer"
+    objects: {
+      unit: Prisma.$UnitPayload<ExtArgs>
+      fromOwner: Prisma.$UserPayload<ExtArgs> | null
+      toOwner: Prisma.$UserPayload<ExtArgs>
+      createdBy: Prisma.$UserPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      unitId: string
+      /**
+       * Null when the unit had no owner before this (a first assignment
+       * recorded through the same flow, not just a bare transfer).
+       */
+      fromOwnerId: string | null
+      toOwnerId: string
+      transferDate: Date
+      /**
+       * Whether the unit's existing service charge amount/cycle/due date carry
+       * over to the new owner unchanged, or were cleared for the admin to set
+       * up fresh for them.
+       */
+      keptServiceCharge: boolean
+      notes: string | null
+      createdById: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["ownershipTransfer"]>
+    composites: {}
+  }
+
+  type OwnershipTransferGetPayload<S extends boolean | null | undefined | OwnershipTransferDefaultArgs> = $Result.GetResult<Prisma.$OwnershipTransferPayload, S>
+
+  type OwnershipTransferCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OwnershipTransferFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OwnershipTransferCountAggregateInputType | true
+    }
+
+  export interface OwnershipTransferDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OwnershipTransfer'], meta: { name: 'OwnershipTransfer' } }
+    /**
+     * Find zero or one OwnershipTransfer that matches the filter.
+     * @param {OwnershipTransferFindUniqueArgs} args - Arguments to find a OwnershipTransfer
+     * @example
+     * // Get one OwnershipTransfer
+     * const ownershipTransfer = await prisma.ownershipTransfer.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OwnershipTransferFindUniqueArgs>(args: SelectSubset<T, OwnershipTransferFindUniqueArgs<ExtArgs>>): Prisma__OwnershipTransferClient<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one OwnershipTransfer that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {OwnershipTransferFindUniqueOrThrowArgs} args - Arguments to find a OwnershipTransfer
+     * @example
+     * // Get one OwnershipTransfer
+     * const ownershipTransfer = await prisma.ownershipTransfer.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OwnershipTransferFindUniqueOrThrowArgs>(args: SelectSubset<T, OwnershipTransferFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OwnershipTransferClient<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OwnershipTransfer that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnershipTransferFindFirstArgs} args - Arguments to find a OwnershipTransfer
+     * @example
+     * // Get one OwnershipTransfer
+     * const ownershipTransfer = await prisma.ownershipTransfer.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OwnershipTransferFindFirstArgs>(args?: SelectSubset<T, OwnershipTransferFindFirstArgs<ExtArgs>>): Prisma__OwnershipTransferClient<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OwnershipTransfer that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnershipTransferFindFirstOrThrowArgs} args - Arguments to find a OwnershipTransfer
+     * @example
+     * // Get one OwnershipTransfer
+     * const ownershipTransfer = await prisma.ownershipTransfer.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OwnershipTransferFindFirstOrThrowArgs>(args?: SelectSubset<T, OwnershipTransferFindFirstOrThrowArgs<ExtArgs>>): Prisma__OwnershipTransferClient<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more OwnershipTransfers that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnershipTransferFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OwnershipTransfers
+     * const ownershipTransfers = await prisma.ownershipTransfer.findMany()
+     * 
+     * // Get first 10 OwnershipTransfers
+     * const ownershipTransfers = await prisma.ownershipTransfer.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const ownershipTransferWithIdOnly = await prisma.ownershipTransfer.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OwnershipTransferFindManyArgs>(args?: SelectSubset<T, OwnershipTransferFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a OwnershipTransfer.
+     * @param {OwnershipTransferCreateArgs} args - Arguments to create a OwnershipTransfer.
+     * @example
+     * // Create one OwnershipTransfer
+     * const OwnershipTransfer = await prisma.ownershipTransfer.create({
+     *   data: {
+     *     // ... data to create a OwnershipTransfer
+     *   }
+     * })
+     * 
+     */
+    create<T extends OwnershipTransferCreateArgs>(args: SelectSubset<T, OwnershipTransferCreateArgs<ExtArgs>>): Prisma__OwnershipTransferClient<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many OwnershipTransfers.
+     * @param {OwnershipTransferCreateManyArgs} args - Arguments to create many OwnershipTransfers.
+     * @example
+     * // Create many OwnershipTransfers
+     * const ownershipTransfer = await prisma.ownershipTransfer.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OwnershipTransferCreateManyArgs>(args?: SelectSubset<T, OwnershipTransferCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OwnershipTransfers and returns the data saved in the database.
+     * @param {OwnershipTransferCreateManyAndReturnArgs} args - Arguments to create many OwnershipTransfers.
+     * @example
+     * // Create many OwnershipTransfers
+     * const ownershipTransfer = await prisma.ownershipTransfer.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OwnershipTransfers and only return the `id`
+     * const ownershipTransferWithIdOnly = await prisma.ownershipTransfer.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OwnershipTransferCreateManyAndReturnArgs>(args?: SelectSubset<T, OwnershipTransferCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a OwnershipTransfer.
+     * @param {OwnershipTransferDeleteArgs} args - Arguments to delete one OwnershipTransfer.
+     * @example
+     * // Delete one OwnershipTransfer
+     * const OwnershipTransfer = await prisma.ownershipTransfer.delete({
+     *   where: {
+     *     // ... filter to delete one OwnershipTransfer
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OwnershipTransferDeleteArgs>(args: SelectSubset<T, OwnershipTransferDeleteArgs<ExtArgs>>): Prisma__OwnershipTransferClient<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one OwnershipTransfer.
+     * @param {OwnershipTransferUpdateArgs} args - Arguments to update one OwnershipTransfer.
+     * @example
+     * // Update one OwnershipTransfer
+     * const ownershipTransfer = await prisma.ownershipTransfer.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OwnershipTransferUpdateArgs>(args: SelectSubset<T, OwnershipTransferUpdateArgs<ExtArgs>>): Prisma__OwnershipTransferClient<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more OwnershipTransfers.
+     * @param {OwnershipTransferDeleteManyArgs} args - Arguments to filter OwnershipTransfers to delete.
+     * @example
+     * // Delete a few OwnershipTransfers
+     * const { count } = await prisma.ownershipTransfer.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OwnershipTransferDeleteManyArgs>(args?: SelectSubset<T, OwnershipTransferDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OwnershipTransfers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnershipTransferUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OwnershipTransfers
+     * const ownershipTransfer = await prisma.ownershipTransfer.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OwnershipTransferUpdateManyArgs>(args: SelectSubset<T, OwnershipTransferUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OwnershipTransfers and returns the data updated in the database.
+     * @param {OwnershipTransferUpdateManyAndReturnArgs} args - Arguments to update many OwnershipTransfers.
+     * @example
+     * // Update many OwnershipTransfers
+     * const ownershipTransfer = await prisma.ownershipTransfer.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more OwnershipTransfers and only return the `id`
+     * const ownershipTransferWithIdOnly = await prisma.ownershipTransfer.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends OwnershipTransferUpdateManyAndReturnArgs>(args: SelectSubset<T, OwnershipTransferUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one OwnershipTransfer.
+     * @param {OwnershipTransferUpsertArgs} args - Arguments to update or create a OwnershipTransfer.
+     * @example
+     * // Update or create a OwnershipTransfer
+     * const ownershipTransfer = await prisma.ownershipTransfer.upsert({
+     *   create: {
+     *     // ... data to create a OwnershipTransfer
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OwnershipTransfer we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OwnershipTransferUpsertArgs>(args: SelectSubset<T, OwnershipTransferUpsertArgs<ExtArgs>>): Prisma__OwnershipTransferClient<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of OwnershipTransfers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnershipTransferCountArgs} args - Arguments to filter OwnershipTransfers to count.
+     * @example
+     * // Count the number of OwnershipTransfers
+     * const count = await prisma.ownershipTransfer.count({
+     *   where: {
+     *     // ... the filter for the OwnershipTransfers we want to count
+     *   }
+     * })
+    **/
+    count<T extends OwnershipTransferCountArgs>(
+      args?: Subset<T, OwnershipTransferCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OwnershipTransferCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OwnershipTransfer.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnershipTransferAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OwnershipTransferAggregateArgs>(args: Subset<T, OwnershipTransferAggregateArgs>): Prisma.PrismaPromise<GetOwnershipTransferAggregateType<T>>
+
+    /**
+     * Group by OwnershipTransfer.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnershipTransferGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OwnershipTransferGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OwnershipTransferGroupByArgs['orderBy'] }
+        : { orderBy?: OwnershipTransferGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OwnershipTransferGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOwnershipTransferGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OwnershipTransfer model
+   */
+  readonly fields: OwnershipTransferFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OwnershipTransfer.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OwnershipTransferClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    unit<T extends UnitDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UnitDefaultArgs<ExtArgs>>): Prisma__UnitClient<$Result.GetResult<Prisma.$UnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    fromOwner<T extends OwnershipTransfer$fromOwnerArgs<ExtArgs> = {}>(args?: Subset<T, OwnershipTransfer$fromOwnerArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    toOwner<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    createdBy<T extends OwnershipTransfer$createdByArgs<ExtArgs> = {}>(args?: Subset<T, OwnershipTransfer$createdByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OwnershipTransfer model
+   */
+  interface OwnershipTransferFieldRefs {
+    readonly id: FieldRef<"OwnershipTransfer", 'String'>
+    readonly unitId: FieldRef<"OwnershipTransfer", 'String'>
+    readonly fromOwnerId: FieldRef<"OwnershipTransfer", 'String'>
+    readonly toOwnerId: FieldRef<"OwnershipTransfer", 'String'>
+    readonly transferDate: FieldRef<"OwnershipTransfer", 'DateTime'>
+    readonly keptServiceCharge: FieldRef<"OwnershipTransfer", 'Boolean'>
+    readonly notes: FieldRef<"OwnershipTransfer", 'String'>
+    readonly createdById: FieldRef<"OwnershipTransfer", 'String'>
+    readonly createdAt: FieldRef<"OwnershipTransfer", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OwnershipTransfer findUnique
+   */
+  export type OwnershipTransferFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which OwnershipTransfer to fetch.
+     */
+    where: OwnershipTransferWhereUniqueInput
+  }
+
+  /**
+   * OwnershipTransfer findUniqueOrThrow
+   */
+  export type OwnershipTransferFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which OwnershipTransfer to fetch.
+     */
+    where: OwnershipTransferWhereUniqueInput
+  }
+
+  /**
+   * OwnershipTransfer findFirst
+   */
+  export type OwnershipTransferFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which OwnershipTransfer to fetch.
+     */
+    where?: OwnershipTransferWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OwnershipTransfers to fetch.
+     */
+    orderBy?: OwnershipTransferOrderByWithRelationInput | OwnershipTransferOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OwnershipTransfers.
+     */
+    cursor?: OwnershipTransferWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OwnershipTransfers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OwnershipTransfers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OwnershipTransfers.
+     */
+    distinct?: OwnershipTransferScalarFieldEnum | OwnershipTransferScalarFieldEnum[]
+  }
+
+  /**
+   * OwnershipTransfer findFirstOrThrow
+   */
+  export type OwnershipTransferFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which OwnershipTransfer to fetch.
+     */
+    where?: OwnershipTransferWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OwnershipTransfers to fetch.
+     */
+    orderBy?: OwnershipTransferOrderByWithRelationInput | OwnershipTransferOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OwnershipTransfers.
+     */
+    cursor?: OwnershipTransferWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OwnershipTransfers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OwnershipTransfers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OwnershipTransfers.
+     */
+    distinct?: OwnershipTransferScalarFieldEnum | OwnershipTransferScalarFieldEnum[]
+  }
+
+  /**
+   * OwnershipTransfer findMany
+   */
+  export type OwnershipTransferFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which OwnershipTransfers to fetch.
+     */
+    where?: OwnershipTransferWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OwnershipTransfers to fetch.
+     */
+    orderBy?: OwnershipTransferOrderByWithRelationInput | OwnershipTransferOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OwnershipTransfers.
+     */
+    cursor?: OwnershipTransferWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OwnershipTransfers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OwnershipTransfers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OwnershipTransfers.
+     */
+    distinct?: OwnershipTransferScalarFieldEnum | OwnershipTransferScalarFieldEnum[]
+  }
+
+  /**
+   * OwnershipTransfer create
+   */
+  export type OwnershipTransferCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * The data needed to create a OwnershipTransfer.
+     */
+    data: XOR<OwnershipTransferCreateInput, OwnershipTransferUncheckedCreateInput>
+  }
+
+  /**
+   * OwnershipTransfer createMany
+   */
+  export type OwnershipTransferCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OwnershipTransfers.
+     */
+    data: OwnershipTransferCreateManyInput | OwnershipTransferCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OwnershipTransfer createManyAndReturn
+   */
+  export type OwnershipTransferCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * The data used to create many OwnershipTransfers.
+     */
+    data: OwnershipTransferCreateManyInput | OwnershipTransferCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * OwnershipTransfer update
+   */
+  export type OwnershipTransferUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * The data needed to update a OwnershipTransfer.
+     */
+    data: XOR<OwnershipTransferUpdateInput, OwnershipTransferUncheckedUpdateInput>
+    /**
+     * Choose, which OwnershipTransfer to update.
+     */
+    where: OwnershipTransferWhereUniqueInput
+  }
+
+  /**
+   * OwnershipTransfer updateMany
+   */
+  export type OwnershipTransferUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OwnershipTransfers.
+     */
+    data: XOR<OwnershipTransferUpdateManyMutationInput, OwnershipTransferUncheckedUpdateManyInput>
+    /**
+     * Filter which OwnershipTransfers to update
+     */
+    where?: OwnershipTransferWhereInput
+    /**
+     * Limit how many OwnershipTransfers to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OwnershipTransfer updateManyAndReturn
+   */
+  export type OwnershipTransferUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * The data used to update OwnershipTransfers.
+     */
+    data: XOR<OwnershipTransferUpdateManyMutationInput, OwnershipTransferUncheckedUpdateManyInput>
+    /**
+     * Filter which OwnershipTransfers to update
+     */
+    where?: OwnershipTransferWhereInput
+    /**
+     * Limit how many OwnershipTransfers to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * OwnershipTransfer upsert
+   */
+  export type OwnershipTransferUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * The filter to search for the OwnershipTransfer to update in case it exists.
+     */
+    where: OwnershipTransferWhereUniqueInput
+    /**
+     * In case the OwnershipTransfer found by the `where` argument doesn't exist, create a new OwnershipTransfer with this data.
+     */
+    create: XOR<OwnershipTransferCreateInput, OwnershipTransferUncheckedCreateInput>
+    /**
+     * In case the OwnershipTransfer was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OwnershipTransferUpdateInput, OwnershipTransferUncheckedUpdateInput>
+  }
+
+  /**
+   * OwnershipTransfer delete
+   */
+  export type OwnershipTransferDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    /**
+     * Filter which OwnershipTransfer to delete.
+     */
+    where: OwnershipTransferWhereUniqueInput
+  }
+
+  /**
+   * OwnershipTransfer deleteMany
+   */
+  export type OwnershipTransferDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OwnershipTransfers to delete
+     */
+    where?: OwnershipTransferWhereInput
+    /**
+     * Limit how many OwnershipTransfers to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * OwnershipTransfer.fromOwner
+   */
+  export type OwnershipTransfer$fromOwnerArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * OwnershipTransfer.createdBy
+   */
+  export type OwnershipTransfer$createdByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * OwnershipTransfer without action
+   */
+  export type OwnershipTransferDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model User
    */
 
@@ -11387,6 +12837,9 @@ export namespace Prisma {
     whatsappSessions?: boolean | User$whatsappSessionsArgs<ExtArgs>
     rejectionLogs?: boolean | User$rejectionLogsArgs<ExtArgs>
     unitPermissionChanges?: boolean | User$unitPermissionChangesArgs<ExtArgs>
+    ownershipTransfersFrom?: boolean | User$ownershipTransfersFromArgs<ExtArgs>
+    ownershipTransfersTo?: boolean | User$ownershipTransfersToArgs<ExtArgs>
+    ownershipTransfersCreated?: boolean | User$ownershipTransfersCreatedArgs<ExtArgs>
     familyMembers?: boolean | User$familyMembersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
@@ -11538,6 +12991,9 @@ export namespace Prisma {
     whatsappSessions?: boolean | User$whatsappSessionsArgs<ExtArgs>
     rejectionLogs?: boolean | User$rejectionLogsArgs<ExtArgs>
     unitPermissionChanges?: boolean | User$unitPermissionChangesArgs<ExtArgs>
+    ownershipTransfersFrom?: boolean | User$ownershipTransfersFromArgs<ExtArgs>
+    ownershipTransfersTo?: boolean | User$ownershipTransfersToArgs<ExtArgs>
+    ownershipTransfersCreated?: boolean | User$ownershipTransfersCreatedArgs<ExtArgs>
     familyMembers?: boolean | User$familyMembersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -11588,6 +13044,9 @@ export namespace Prisma {
        * permissions — see UnitPermissionChange.
        */
       unitPermissionChanges: Prisma.$UnitPermissionChangePayload<ExtArgs>[]
+      ownershipTransfersFrom: Prisma.$OwnershipTransferPayload<ExtArgs>[]
+      ownershipTransfersTo: Prisma.$OwnershipTransferPayload<ExtArgs>[]
+      ownershipTransfersCreated: Prisma.$OwnershipTransferPayload<ExtArgs>[]
       /**
        * Only populated when employeeType = "family" — the worker's tracked
        * dependents (see WorkerFamilyMember).
@@ -12101,6 +13560,9 @@ export namespace Prisma {
     whatsappSessions<T extends User$whatsappSessionsArgs<ExtArgs> = {}>(args?: Subset<T, User$whatsappSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WhatsappSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     rejectionLogs<T extends User$rejectionLogsArgs<ExtArgs> = {}>(args?: Subset<T, User$rejectionLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RejectionLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     unitPermissionChanges<T extends User$unitPermissionChangesArgs<ExtArgs> = {}>(args?: Subset<T, User$unitPermissionChangesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UnitPermissionChangePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    ownershipTransfersFrom<T extends User$ownershipTransfersFromArgs<ExtArgs> = {}>(args?: Subset<T, User$ownershipTransfersFromArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    ownershipTransfersTo<T extends User$ownershipTransfersToArgs<ExtArgs> = {}>(args?: Subset<T, User$ownershipTransfersToArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    ownershipTransfersCreated<T extends User$ownershipTransfersCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$ownershipTransfersCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     familyMembers<T extends User$familyMembersArgs<ExtArgs> = {}>(args?: Subset<T, User$familyMembersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -13224,6 +14686,78 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: UnitPermissionChangeScalarFieldEnum | UnitPermissionChangeScalarFieldEnum[]
+  }
+
+  /**
+   * User.ownershipTransfersFrom
+   */
+  export type User$ownershipTransfersFromArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    where?: OwnershipTransferWhereInput
+    orderBy?: OwnershipTransferOrderByWithRelationInput | OwnershipTransferOrderByWithRelationInput[]
+    cursor?: OwnershipTransferWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OwnershipTransferScalarFieldEnum | OwnershipTransferScalarFieldEnum[]
+  }
+
+  /**
+   * User.ownershipTransfersTo
+   */
+  export type User$ownershipTransfersToArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    where?: OwnershipTransferWhereInput
+    orderBy?: OwnershipTransferOrderByWithRelationInput | OwnershipTransferOrderByWithRelationInput[]
+    cursor?: OwnershipTransferWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OwnershipTransferScalarFieldEnum | OwnershipTransferScalarFieldEnum[]
+  }
+
+  /**
+   * User.ownershipTransfersCreated
+   */
+  export type User$ownershipTransfersCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnershipTransfer
+     */
+    select?: OwnershipTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnershipTransfer
+     */
+    omit?: OwnershipTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OwnershipTransferInclude<ExtArgs> | null
+    where?: OwnershipTransferWhereInput
+    orderBy?: OwnershipTransferOrderByWithRelationInput | OwnershipTransferOrderByWithRelationInput[]
+    cursor?: OwnershipTransferWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OwnershipTransferScalarFieldEnum | OwnershipTransferScalarFieldEnum[]
   }
 
   /**
@@ -21198,6 +22732,7 @@ export namespace Prisma {
     fundId: string | null
     paymentReference: string | null
     paidBy: $Enums.PaymentCollector | null
+    ownerChargeMethod: string | null
     notes: string | null
     date: Date | null
     receiptFileName: string | null
@@ -21221,6 +22756,7 @@ export namespace Prisma {
     fundId: string | null
     paymentReference: string | null
     paidBy: $Enums.PaymentCollector | null
+    ownerChargeMethod: string | null
     notes: string | null
     date: Date | null
     receiptFileName: string | null
@@ -21244,6 +22780,7 @@ export namespace Prisma {
     fundId: number
     paymentReference: number
     paidBy: number
+    ownerChargeMethod: number
     notes: number
     date: number
     receiptFileName: number
@@ -21281,6 +22818,7 @@ export namespace Prisma {
     fundId?: true
     paymentReference?: true
     paidBy?: true
+    ownerChargeMethod?: true
     notes?: true
     date?: true
     receiptFileName?: true
@@ -21304,6 +22842,7 @@ export namespace Prisma {
     fundId?: true
     paymentReference?: true
     paidBy?: true
+    ownerChargeMethod?: true
     notes?: true
     date?: true
     receiptFileName?: true
@@ -21327,6 +22866,7 @@ export namespace Prisma {
     fundId?: true
     paymentReference?: true
     paidBy?: true
+    ownerChargeMethod?: true
     notes?: true
     date?: true
     receiptFileName?: true
@@ -21437,6 +22977,7 @@ export namespace Prisma {
     fundId: string
     paymentReference: string | null
     paidBy: $Enums.PaymentCollector
+    ownerChargeMethod: string
     notes: string | null
     date: Date
     receiptFileName: string | null
@@ -21479,6 +23020,7 @@ export namespace Prisma {
     fundId?: boolean
     paymentReference?: boolean
     paidBy?: boolean
+    ownerChargeMethod?: boolean
     notes?: boolean
     date?: boolean
     receiptFileName?: boolean
@@ -21509,6 +23051,7 @@ export namespace Prisma {
     fundId?: boolean
     paymentReference?: boolean
     paidBy?: boolean
+    ownerChargeMethod?: boolean
     notes?: boolean
     date?: boolean
     receiptFileName?: boolean
@@ -21537,6 +23080,7 @@ export namespace Prisma {
     fundId?: boolean
     paymentReference?: boolean
     paidBy?: boolean
+    ownerChargeMethod?: boolean
     notes?: boolean
     date?: boolean
     receiptFileName?: boolean
@@ -21565,6 +23109,7 @@ export namespace Prisma {
     fundId?: boolean
     paymentReference?: boolean
     paidBy?: boolean
+    ownerChargeMethod?: boolean
     notes?: boolean
     date?: boolean
     receiptFileName?: boolean
@@ -21576,7 +23121,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type ExpenseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "propertyId" | "categoryId" | "subcategory" | "supplierId" | "description" | "amount" | "vatAmount" | "fundId" | "paymentReference" | "paidBy" | "notes" | "date" | "receiptFileName" | "receiptFilePath" | "receiptFileType" | "receiptFileSize" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["expense"]>
+  export type ExpenseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "propertyId" | "categoryId" | "subcategory" | "supplierId" | "description" | "amount" | "vatAmount" | "fundId" | "paymentReference" | "paidBy" | "ownerChargeMethod" | "notes" | "date" | "receiptFileName" | "receiptFilePath" | "receiptFileType" | "receiptFileSize" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["expense"]>
   export type ExpenseInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     property?: boolean | Expense$propertyArgs<ExtArgs>
     category?: boolean | ExpenseCategoryTypeDefaultArgs<ExtArgs>
@@ -21658,6 +23203,17 @@ export namespace Prisma {
        * float, or did the owner pay the supplier directly.
        */
       paidBy: $Enums.PaymentCollector
+      /**
+       * Only meaningful for a non-OA property (villa/apartment/office/building
+       * management) — those never had a "service charge" concept before this,
+       * so an expense against one of their units needs to say whether it's
+       * billed to the owner as its own extra charge, or absorbed by/deducted
+       * from the OA service charge already being collected for that unit.
+       * Same idiom as clearanceStatus: a plain string, not an enum, since it's
+       * two admin-picked values that would only cause migration friction as
+       * an enum if a third ever gets added. Ignored entirely for OA units.
+       */
+      ownerChargeMethod: string
       notes: string | null
       date: Date
       /**
@@ -22112,6 +23668,7 @@ export namespace Prisma {
     readonly fundId: FieldRef<"Expense", 'String'>
     readonly paymentReference: FieldRef<"Expense", 'String'>
     readonly paidBy: FieldRef<"Expense", 'PaymentCollector'>
+    readonly ownerChargeMethod: FieldRef<"Expense", 'String'>
     readonly notes: FieldRef<"Expense", 'String'>
     readonly date: FieldRef<"Expense", 'DateTime'>
     readonly receiptFileName: FieldRef<"Expense", 'String'>
@@ -51173,10 +52730,14 @@ export namespace Prisma {
     wilayat: 'wilayat',
     area: 'area',
     wayNumber: 'wayNumber',
+    buildingName: 'buildingName',
     buildingNumber: 'buildingNumber',
     postalCode: 'postalCode',
     titleDeedNumber: 'titleDeedNumber',
     plotNumber: 'plotNumber',
+    latitude: 'latitude',
+    longitude: 'longitude',
+    locationMapPosition: 'locationMapPosition',
     notes: 'notes',
     associationRegistrationNumber: 'associationRegistrationNumber',
     associationPhone: 'associationPhone',
@@ -51233,6 +52794,21 @@ export namespace Prisma {
   };
 
   export type UnitPermissionChangeScalarFieldEnum = (typeof UnitPermissionChangeScalarFieldEnum)[keyof typeof UnitPermissionChangeScalarFieldEnum]
+
+
+  export const OwnershipTransferScalarFieldEnum: {
+    id: 'id',
+    unitId: 'unitId',
+    fromOwnerId: 'fromOwnerId',
+    toOwnerId: 'toOwnerId',
+    transferDate: 'transferDate',
+    keptServiceCharge: 'keptServiceCharge',
+    notes: 'notes',
+    createdById: 'createdById',
+    createdAt: 'createdAt'
+  };
+
+  export type OwnershipTransferScalarFieldEnum = (typeof OwnershipTransferScalarFieldEnum)[keyof typeof OwnershipTransferScalarFieldEnum]
 
 
   export const UserScalarFieldEnum: {
@@ -51419,6 +52995,7 @@ export namespace Prisma {
     fundId: 'fundId',
     paymentReference: 'paymentReference',
     paidBy: 'paidBy',
+    ownerChargeMethod: 'ownerChargeMethod',
     notes: 'notes',
     date: 'date',
     receiptFileName: 'receiptFileName',
@@ -51865,20 +53442,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Int'
-   */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-  /**
-   * Reference to a field of type 'Int[]'
-   */
-  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-  /**
    * Reference to a field of type 'Decimal'
    */
   export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
@@ -51889,6 +53452,20 @@ export namespace Prisma {
    * Reference to a field of type 'Decimal[]'
    */
   export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int'
+   */
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int[]'
+   */
+  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -52244,10 +53821,14 @@ export namespace Prisma {
     wilayat?: StringNullableFilter<"Property"> | string | null
     area?: StringNullableFilter<"Property"> | string | null
     wayNumber?: StringNullableFilter<"Property"> | string | null
+    buildingName?: StringNullableFilter<"Property"> | string | null
     buildingNumber?: StringNullableFilter<"Property"> | string | null
     postalCode?: StringNullableFilter<"Property"> | string | null
     titleDeedNumber?: StringNullableFilter<"Property"> | string | null
     plotNumber?: StringNullableFilter<"Property"> | string | null
+    latitude?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    longitude?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: StringNullableFilter<"Property"> | string | null
     notes?: StringNullableFilter<"Property"> | string | null
     associationRegistrationNumber?: StringNullableFilter<"Property"> | string | null
     associationPhone?: StringNullableFilter<"Property"> | string | null
@@ -52282,10 +53863,14 @@ export namespace Prisma {
     wilayat?: SortOrderInput | SortOrder
     area?: SortOrderInput | SortOrder
     wayNumber?: SortOrderInput | SortOrder
+    buildingName?: SortOrderInput | SortOrder
     buildingNumber?: SortOrderInput | SortOrder
     postalCode?: SortOrderInput | SortOrder
     titleDeedNumber?: SortOrderInput | SortOrder
     plotNumber?: SortOrderInput | SortOrder
+    latitude?: SortOrderInput | SortOrder
+    longitude?: SortOrderInput | SortOrder
+    locationMapPosition?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
     associationRegistrationNumber?: SortOrderInput | SortOrder
     associationPhone?: SortOrderInput | SortOrder
@@ -52323,10 +53908,14 @@ export namespace Prisma {
     wilayat?: StringNullableFilter<"Property"> | string | null
     area?: StringNullableFilter<"Property"> | string | null
     wayNumber?: StringNullableFilter<"Property"> | string | null
+    buildingName?: StringNullableFilter<"Property"> | string | null
     buildingNumber?: StringNullableFilter<"Property"> | string | null
     postalCode?: StringNullableFilter<"Property"> | string | null
     titleDeedNumber?: StringNullableFilter<"Property"> | string | null
     plotNumber?: StringNullableFilter<"Property"> | string | null
+    latitude?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    longitude?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: StringNullableFilter<"Property"> | string | null
     notes?: StringNullableFilter<"Property"> | string | null
     associationRegistrationNumber?: StringNullableFilter<"Property"> | string | null
     associationPhone?: StringNullableFilter<"Property"> | string | null
@@ -52361,10 +53950,14 @@ export namespace Prisma {
     wilayat?: SortOrderInput | SortOrder
     area?: SortOrderInput | SortOrder
     wayNumber?: SortOrderInput | SortOrder
+    buildingName?: SortOrderInput | SortOrder
     buildingNumber?: SortOrderInput | SortOrder
     postalCode?: SortOrderInput | SortOrder
     titleDeedNumber?: SortOrderInput | SortOrder
     plotNumber?: SortOrderInput | SortOrder
+    latitude?: SortOrderInput | SortOrder
+    longitude?: SortOrderInput | SortOrder
+    locationMapPosition?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
     associationRegistrationNumber?: SortOrderInput | SortOrder
     associationPhone?: SortOrderInput | SortOrder
@@ -52381,8 +53974,10 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: PropertyCountOrderByAggregateInput
+    _avg?: PropertyAvgOrderByAggregateInput
     _max?: PropertyMaxOrderByAggregateInput
     _min?: PropertyMinOrderByAggregateInput
+    _sum?: PropertySumOrderByAggregateInput
   }
 
   export type PropertyScalarWhereWithAggregatesInput = {
@@ -52397,10 +53992,14 @@ export namespace Prisma {
     wilayat?: StringNullableWithAggregatesFilter<"Property"> | string | null
     area?: StringNullableWithAggregatesFilter<"Property"> | string | null
     wayNumber?: StringNullableWithAggregatesFilter<"Property"> | string | null
+    buildingName?: StringNullableWithAggregatesFilter<"Property"> | string | null
     buildingNumber?: StringNullableWithAggregatesFilter<"Property"> | string | null
     postalCode?: StringNullableWithAggregatesFilter<"Property"> | string | null
     titleDeedNumber?: StringNullableWithAggregatesFilter<"Property"> | string | null
     plotNumber?: StringNullableWithAggregatesFilter<"Property"> | string | null
+    latitude?: DecimalNullableWithAggregatesFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    longitude?: DecimalNullableWithAggregatesFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: StringNullableWithAggregatesFilter<"Property"> | string | null
     notes?: StringNullableWithAggregatesFilter<"Property"> | string | null
     associationRegistrationNumber?: StringNullableWithAggregatesFilter<"Property"> | string | null
     associationPhone?: StringNullableWithAggregatesFilter<"Property"> | string | null
@@ -52454,6 +54053,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentListRelationFilter
     installmentPlans?: ServiceChargeInstallmentPlanListRelationFilter
     fundBalances?: UnitFundBalanceListRelationFilter
+    ownershipTransfers?: OwnershipTransferListRelationFilter
   }
 
   export type UnitOrderByWithRelationInput = {
@@ -52489,6 +54089,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentOrderByRelationAggregateInput
     installmentPlans?: ServiceChargeInstallmentPlanOrderByRelationAggregateInput
     fundBalances?: UnitFundBalanceOrderByRelationAggregateInput
+    ownershipTransfers?: OwnershipTransferOrderByRelationAggregateInput
   }
 
   export type UnitWhereUniqueInput = Prisma.AtLeast<{
@@ -52528,6 +54129,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentListRelationFilter
     installmentPlans?: ServiceChargeInstallmentPlanListRelationFilter
     fundBalances?: UnitFundBalanceListRelationFilter
+    ownershipTransfers?: OwnershipTransferListRelationFilter
   }, "id" | "tenantId" | "propertyId_label">
 
   export type UnitOrderByWithAggregationInput = {
@@ -52650,6 +54252,90 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"UnitPermissionChange"> | Date | string
   }
 
+  export type OwnershipTransferWhereInput = {
+    AND?: OwnershipTransferWhereInput | OwnershipTransferWhereInput[]
+    OR?: OwnershipTransferWhereInput[]
+    NOT?: OwnershipTransferWhereInput | OwnershipTransferWhereInput[]
+    id?: UuidFilter<"OwnershipTransfer"> | string
+    unitId?: UuidFilter<"OwnershipTransfer"> | string
+    fromOwnerId?: UuidNullableFilter<"OwnershipTransfer"> | string | null
+    toOwnerId?: UuidFilter<"OwnershipTransfer"> | string
+    transferDate?: DateTimeFilter<"OwnershipTransfer"> | Date | string
+    keptServiceCharge?: BoolFilter<"OwnershipTransfer"> | boolean
+    notes?: StringNullableFilter<"OwnershipTransfer"> | string | null
+    createdById?: UuidNullableFilter<"OwnershipTransfer"> | string | null
+    createdAt?: DateTimeFilter<"OwnershipTransfer"> | Date | string
+    unit?: XOR<UnitScalarRelationFilter, UnitWhereInput>
+    fromOwner?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    toOwner?: XOR<UserScalarRelationFilter, UserWhereInput>
+    createdBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }
+
+  export type OwnershipTransferOrderByWithRelationInput = {
+    id?: SortOrder
+    unitId?: SortOrder
+    fromOwnerId?: SortOrderInput | SortOrder
+    toOwnerId?: SortOrder
+    transferDate?: SortOrder
+    keptServiceCharge?: SortOrder
+    notes?: SortOrderInput | SortOrder
+    createdById?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    unit?: UnitOrderByWithRelationInput
+    fromOwner?: UserOrderByWithRelationInput
+    toOwner?: UserOrderByWithRelationInput
+    createdBy?: UserOrderByWithRelationInput
+  }
+
+  export type OwnershipTransferWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: OwnershipTransferWhereInput | OwnershipTransferWhereInput[]
+    OR?: OwnershipTransferWhereInput[]
+    NOT?: OwnershipTransferWhereInput | OwnershipTransferWhereInput[]
+    unitId?: UuidFilter<"OwnershipTransfer"> | string
+    fromOwnerId?: UuidNullableFilter<"OwnershipTransfer"> | string | null
+    toOwnerId?: UuidFilter<"OwnershipTransfer"> | string
+    transferDate?: DateTimeFilter<"OwnershipTransfer"> | Date | string
+    keptServiceCharge?: BoolFilter<"OwnershipTransfer"> | boolean
+    notes?: StringNullableFilter<"OwnershipTransfer"> | string | null
+    createdById?: UuidNullableFilter<"OwnershipTransfer"> | string | null
+    createdAt?: DateTimeFilter<"OwnershipTransfer"> | Date | string
+    unit?: XOR<UnitScalarRelationFilter, UnitWhereInput>
+    fromOwner?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    toOwner?: XOR<UserScalarRelationFilter, UserWhereInput>
+    createdBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }, "id">
+
+  export type OwnershipTransferOrderByWithAggregationInput = {
+    id?: SortOrder
+    unitId?: SortOrder
+    fromOwnerId?: SortOrderInput | SortOrder
+    toOwnerId?: SortOrder
+    transferDate?: SortOrder
+    keptServiceCharge?: SortOrder
+    notes?: SortOrderInput | SortOrder
+    createdById?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: OwnershipTransferCountOrderByAggregateInput
+    _max?: OwnershipTransferMaxOrderByAggregateInput
+    _min?: OwnershipTransferMinOrderByAggregateInput
+  }
+
+  export type OwnershipTransferScalarWhereWithAggregatesInput = {
+    AND?: OwnershipTransferScalarWhereWithAggregatesInput | OwnershipTransferScalarWhereWithAggregatesInput[]
+    OR?: OwnershipTransferScalarWhereWithAggregatesInput[]
+    NOT?: OwnershipTransferScalarWhereWithAggregatesInput | OwnershipTransferScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"OwnershipTransfer"> | string
+    unitId?: UuidWithAggregatesFilter<"OwnershipTransfer"> | string
+    fromOwnerId?: UuidNullableWithAggregatesFilter<"OwnershipTransfer"> | string | null
+    toOwnerId?: UuidWithAggregatesFilter<"OwnershipTransfer"> | string
+    transferDate?: DateTimeWithAggregatesFilter<"OwnershipTransfer"> | Date | string
+    keptServiceCharge?: BoolWithAggregatesFilter<"OwnershipTransfer"> | boolean
+    notes?: StringNullableWithAggregatesFilter<"OwnershipTransfer"> | string | null
+    createdById?: UuidNullableWithAggregatesFilter<"OwnershipTransfer"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"OwnershipTransfer"> | Date | string
+  }
+
   export type UserWhereInput = {
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
@@ -52718,6 +54404,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionListRelationFilter
     rejectionLogs?: RejectionLogListRelationFilter
     unitPermissionChanges?: UnitPermissionChangeListRelationFilter
+    ownershipTransfersFrom?: OwnershipTransferListRelationFilter
+    ownershipTransfersTo?: OwnershipTransferListRelationFilter
+    ownershipTransfersCreated?: OwnershipTransferListRelationFilter
     familyMembers?: WorkerFamilyMemberListRelationFilter
   }
 
@@ -52786,6 +54475,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionOrderByRelationAggregateInput
     rejectionLogs?: RejectionLogOrderByRelationAggregateInput
     unitPermissionChanges?: UnitPermissionChangeOrderByRelationAggregateInput
+    ownershipTransfersFrom?: OwnershipTransferOrderByRelationAggregateInput
+    ownershipTransfersTo?: OwnershipTransferOrderByRelationAggregateInput
+    ownershipTransfersCreated?: OwnershipTransferOrderByRelationAggregateInput
     familyMembers?: WorkerFamilyMemberOrderByRelationAggregateInput
   }
 
@@ -52858,6 +54550,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionListRelationFilter
     rejectionLogs?: RejectionLogListRelationFilter
     unitPermissionChanges?: UnitPermissionChangeListRelationFilter
+    ownershipTransfersFrom?: OwnershipTransferListRelationFilter
+    ownershipTransfersTo?: OwnershipTransferListRelationFilter
+    ownershipTransfersCreated?: OwnershipTransferListRelationFilter
     familyMembers?: WorkerFamilyMemberListRelationFilter
   }, "id" | "phone" | "civilId" | "email_userType">
 
@@ -53673,6 +55368,7 @@ export namespace Prisma {
     fundId?: UuidFilter<"Expense"> | string
     paymentReference?: StringNullableFilter<"Expense"> | string | null
     paidBy?: EnumPaymentCollectorFilter<"Expense"> | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFilter<"Expense"> | string
     notes?: StringNullableFilter<"Expense"> | string | null
     date?: DateTimeFilter<"Expense"> | Date | string
     receiptFileName?: StringNullableFilter<"Expense"> | string | null
@@ -53702,6 +55398,7 @@ export namespace Prisma {
     fundId?: SortOrder
     paymentReference?: SortOrderInput | SortOrder
     paidBy?: SortOrder
+    ownerChargeMethod?: SortOrder
     notes?: SortOrderInput | SortOrder
     date?: SortOrder
     receiptFileName?: SortOrderInput | SortOrder
@@ -53734,6 +55431,7 @@ export namespace Prisma {
     fundId?: UuidFilter<"Expense"> | string
     paymentReference?: StringNullableFilter<"Expense"> | string | null
     paidBy?: EnumPaymentCollectorFilter<"Expense"> | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFilter<"Expense"> | string
     notes?: StringNullableFilter<"Expense"> | string | null
     date?: DateTimeFilter<"Expense"> | Date | string
     receiptFileName?: StringNullableFilter<"Expense"> | string | null
@@ -53763,6 +55461,7 @@ export namespace Prisma {
     fundId?: SortOrder
     paymentReference?: SortOrderInput | SortOrder
     paidBy?: SortOrder
+    ownerChargeMethod?: SortOrder
     notes?: SortOrderInput | SortOrder
     date?: SortOrder
     receiptFileName?: SortOrderInput | SortOrder
@@ -53794,6 +55493,7 @@ export namespace Prisma {
     fundId?: UuidWithAggregatesFilter<"Expense"> | string
     paymentReference?: StringNullableWithAggregatesFilter<"Expense"> | string | null
     paidBy?: EnumPaymentCollectorWithAggregatesFilter<"Expense"> | $Enums.PaymentCollector
+    ownerChargeMethod?: StringWithAggregatesFilter<"Expense"> | string
     notes?: StringNullableWithAggregatesFilter<"Expense"> | string | null
     date?: DateTimeWithAggregatesFilter<"Expense"> | Date | string
     receiptFileName?: StringNullableWithAggregatesFilter<"Expense"> | string | null
@@ -55838,10 +57538,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -55876,10 +57580,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -55912,10 +57620,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -55950,10 +57662,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -55987,10 +57703,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -56016,10 +57736,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -56046,10 +57770,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -56097,6 +57825,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateInput = {
@@ -56129,6 +57858,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUpdateInput = {
@@ -56161,6 +57891,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateInput = {
@@ -56193,6 +57924,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitCreateManyInput = {
@@ -56326,6 +58058,86 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type OwnershipTransferCreateInput = {
+    id?: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdAt?: Date | string
+    unit: UnitCreateNestedOneWithoutOwnershipTransfersInput
+    fromOwner?: UserCreateNestedOneWithoutOwnershipTransfersFromInput
+    toOwner: UserCreateNestedOneWithoutOwnershipTransfersToInput
+    createdBy?: UserCreateNestedOneWithoutOwnershipTransfersCreatedInput
+  }
+
+  export type OwnershipTransferUncheckedCreateInput = {
+    id?: string
+    unitId: string
+    fromOwnerId?: string | null
+    toOwnerId: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneRequiredWithoutOwnershipTransfersNestedInput
+    fromOwner?: UserUpdateOneWithoutOwnershipTransfersFromNestedInput
+    toOwner?: UserUpdateOneRequiredWithoutOwnershipTransfersToNestedInput
+    createdBy?: UserUpdateOneWithoutOwnershipTransfersCreatedNestedInput
+  }
+
+  export type OwnershipTransferUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    fromOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    toOwnerId?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferCreateManyInput = {
+    id?: string
+    unitId: string
+    fromOwnerId?: string | null
+    toOwnerId: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    fromOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    toOwnerId?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type UserCreateInput = {
     id: string
     email: string
@@ -56391,6 +58203,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -56459,6 +58274,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -56527,6 +58345,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -56595,6 +58416,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -57509,6 +59333,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -57537,6 +59362,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -57557,6 +59383,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -57585,6 +59412,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -57609,6 +59437,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -57628,6 +59457,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -57650,6 +59480,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -59849,6 +61680,17 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type DecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
   export type DateTimeNullableFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -59944,10 +61786,14 @@ export namespace Prisma {
     wilayat?: SortOrder
     area?: SortOrder
     wayNumber?: SortOrder
+    buildingName?: SortOrder
     buildingNumber?: SortOrder
     postalCode?: SortOrder
     titleDeedNumber?: SortOrder
     plotNumber?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    locationMapPosition?: SortOrder
     notes?: SortOrder
     associationRegistrationNumber?: SortOrder
     associationPhone?: SortOrder
@@ -59965,6 +61811,11 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type PropertyAvgOrderByAggregateInput = {
+    latitude?: SortOrder
+    longitude?: SortOrder
+  }
+
   export type PropertyMaxOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
@@ -59974,10 +61825,14 @@ export namespace Prisma {
     wilayat?: SortOrder
     area?: SortOrder
     wayNumber?: SortOrder
+    buildingName?: SortOrder
     buildingNumber?: SortOrder
     postalCode?: SortOrder
     titleDeedNumber?: SortOrder
     plotNumber?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    locationMapPosition?: SortOrder
     notes?: SortOrder
     associationRegistrationNumber?: SortOrder
     associationPhone?: SortOrder
@@ -60004,10 +61859,14 @@ export namespace Prisma {
     wilayat?: SortOrder
     area?: SortOrder
     wayNumber?: SortOrder
+    buildingName?: SortOrder
     buildingNumber?: SortOrder
     postalCode?: SortOrder
     titleDeedNumber?: SortOrder
     plotNumber?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    locationMapPosition?: SortOrder
     notes?: SortOrder
     associationRegistrationNumber?: SortOrder
     associationPhone?: SortOrder
@@ -60023,6 +61882,27 @@ export namespace Prisma {
     rejectionReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type PropertySumOrderByAggregateInput = {
+    latitude?: SortOrder
+    longitude?: SortOrder
+  }
+
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
   export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -60060,17 +61940,6 @@ export namespace Prisma {
     gte?: string | StringFieldRefInput<$PrismaModel>
     mode?: QueryMode
     not?: NestedUuidNullableFilter<$PrismaModel> | string | null
-  }
-
-  export type DecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
   }
 
   export type DecimalFilter<$PrismaModel = never> = {
@@ -60142,6 +62011,12 @@ export namespace Prisma {
     none?: UnitFundBalanceWhereInput
   }
 
+  export type OwnershipTransferListRelationFilter = {
+    every?: OwnershipTransferWhereInput
+    some?: OwnershipTransferWhereInput
+    none?: OwnershipTransferWhereInput
+  }
+
   export type TenancyOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -60171,6 +62046,10 @@ export namespace Prisma {
   }
 
   export type UnitFundBalanceOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type OwnershipTransferOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -60294,22 +62173,6 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
-  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedDecimalNullableFilter<$PrismaModel>
-    _sum?: NestedDecimalNullableFilter<$PrismaModel>
-    _min?: NestedDecimalNullableFilter<$PrismaModel>
-    _max?: NestedDecimalNullableFilter<$PrismaModel>
-  }
-
   export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -60358,6 +62221,47 @@ export namespace Prisma {
     fromValue?: SortOrder
     toValue?: SortOrder
     changedById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type UserScalarRelationFilter = {
+    is?: UserWhereInput
+    isNot?: UserWhereInput
+  }
+
+  export type OwnershipTransferCountOrderByAggregateInput = {
+    id?: SortOrder
+    unitId?: SortOrder
+    fromOwnerId?: SortOrder
+    toOwnerId?: SortOrder
+    transferDate?: SortOrder
+    keptServiceCharge?: SortOrder
+    notes?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type OwnershipTransferMaxOrderByAggregateInput = {
+    id?: SortOrder
+    unitId?: SortOrder
+    fromOwnerId?: SortOrder
+    toOwnerId?: SortOrder
+    transferDate?: SortOrder
+    keptServiceCharge?: SortOrder
+    notes?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type OwnershipTransferMinOrderByAggregateInput = {
+    id?: SortOrder
+    unitId?: SortOrder
+    fromOwnerId?: SortOrder
+    toOwnerId?: SortOrder
+    transferDate?: SortOrder
+    keptServiceCharge?: SortOrder
+    notes?: SortOrder
+    createdById?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -60674,11 +62578,6 @@ export namespace Prisma {
     in?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
     notIn?: $Enums.FamilyRelationship[] | ListEnumFamilyRelationshipFieldRefInput<$PrismaModel>
     not?: NestedEnumFamilyRelationshipFilter<$PrismaModel> | $Enums.FamilyRelationship
-  }
-
-  export type UserScalarRelationFilter = {
-    is?: UserWhereInput
-    isNot?: UserWhereInput
   }
 
   export type WorkerFamilyMemberCountOrderByAggregateInput = {
@@ -61299,6 +63198,7 @@ export namespace Prisma {
     fundId?: SortOrder
     paymentReference?: SortOrder
     paidBy?: SortOrder
+    ownerChargeMethod?: SortOrder
     notes?: SortOrder
     date?: SortOrder
     receiptFileName?: SortOrder
@@ -61328,6 +63228,7 @@ export namespace Prisma {
     fundId?: SortOrder
     paymentReference?: SortOrder
     paidBy?: SortOrder
+    ownerChargeMethod?: SortOrder
     notes?: SortOrder
     date?: SortOrder
     receiptFileName?: SortOrder
@@ -61351,6 +63252,7 @@ export namespace Prisma {
     fundId?: SortOrder
     paymentReference?: SortOrder
     paidBy?: SortOrder
+    ownerChargeMethod?: SortOrder
     notes?: SortOrder
     date?: SortOrder
     receiptFileName?: SortOrder
@@ -62775,6 +64677,14 @@ export namespace Prisma {
     connect?: BuildingServiceContractWhereUniqueInput | BuildingServiceContractWhereUniqueInput[]
   }
 
+  export type NullableDecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string | null
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
   }
@@ -63071,6 +64981,13 @@ export namespace Prisma {
     connect?: UnitFundBalanceWhereUniqueInput | UnitFundBalanceWhereUniqueInput[]
   }
 
+  export type OwnershipTransferCreateNestedManyWithoutUnitInput = {
+    create?: XOR<OwnershipTransferCreateWithoutUnitInput, OwnershipTransferUncheckedCreateWithoutUnitInput> | OwnershipTransferCreateWithoutUnitInput[] | OwnershipTransferUncheckedCreateWithoutUnitInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutUnitInput | OwnershipTransferCreateOrConnectWithoutUnitInput[]
+    createMany?: OwnershipTransferCreateManyUnitInputEnvelope
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+  }
+
   export type MaintenanceRequestUncheckedCreateNestedManyWithoutUnitInput = {
     create?: XOR<MaintenanceRequestCreateWithoutUnitInput, MaintenanceRequestUncheckedCreateWithoutUnitInput> | MaintenanceRequestCreateWithoutUnitInput[] | MaintenanceRequestUncheckedCreateWithoutUnitInput[]
     connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutUnitInput | MaintenanceRequestCreateOrConnectWithoutUnitInput[]
@@ -63141,20 +65058,19 @@ export namespace Prisma {
     connect?: UnitFundBalanceWhereUniqueInput | UnitFundBalanceWhereUniqueInput[]
   }
 
+  export type OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput = {
+    create?: XOR<OwnershipTransferCreateWithoutUnitInput, OwnershipTransferUncheckedCreateWithoutUnitInput> | OwnershipTransferCreateWithoutUnitInput[] | OwnershipTransferUncheckedCreateWithoutUnitInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutUnitInput | OwnershipTransferCreateOrConnectWithoutUnitInput[]
+    createMany?: OwnershipTransferCreateManyUnitInputEnvelope
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+  }
+
   export type NullableIntFieldUpdateOperationsInput = {
     set?: number | null
     increment?: number
     decrement?: number
     multiply?: number
     divide?: number
-  }
-
-  export type NullableDecimalFieldUpdateOperationsInput = {
-    set?: Decimal | DecimalJsLike | number | string | null
-    increment?: Decimal | DecimalJsLike | number | string
-    decrement?: Decimal | DecimalJsLike | number | string
-    multiply?: Decimal | DecimalJsLike | number | string
-    divide?: Decimal | DecimalJsLike | number | string
   }
 
   export type DecimalFieldUpdateOperationsInput = {
@@ -63333,6 +65249,20 @@ export namespace Prisma {
     deleteMany?: UnitFundBalanceScalarWhereInput | UnitFundBalanceScalarWhereInput[]
   }
 
+  export type OwnershipTransferUpdateManyWithoutUnitNestedInput = {
+    create?: XOR<OwnershipTransferCreateWithoutUnitInput, OwnershipTransferUncheckedCreateWithoutUnitInput> | OwnershipTransferCreateWithoutUnitInput[] | OwnershipTransferUncheckedCreateWithoutUnitInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutUnitInput | OwnershipTransferCreateOrConnectWithoutUnitInput[]
+    upsert?: OwnershipTransferUpsertWithWhereUniqueWithoutUnitInput | OwnershipTransferUpsertWithWhereUniqueWithoutUnitInput[]
+    createMany?: OwnershipTransferCreateManyUnitInputEnvelope
+    set?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    disconnect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    delete?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    update?: OwnershipTransferUpdateWithWhereUniqueWithoutUnitInput | OwnershipTransferUpdateWithWhereUniqueWithoutUnitInput[]
+    updateMany?: OwnershipTransferUpdateManyWithWhereWithoutUnitInput | OwnershipTransferUpdateManyWithWhereWithoutUnitInput[]
+    deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+  }
+
   export type MaintenanceRequestUncheckedUpdateManyWithoutUnitNestedInput = {
     create?: XOR<MaintenanceRequestCreateWithoutUnitInput, MaintenanceRequestUncheckedCreateWithoutUnitInput> | MaintenanceRequestCreateWithoutUnitInput[] | MaintenanceRequestUncheckedCreateWithoutUnitInput[]
     connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutUnitInput | MaintenanceRequestCreateOrConnectWithoutUnitInput[]
@@ -63473,6 +65403,20 @@ export namespace Prisma {
     deleteMany?: UnitFundBalanceScalarWhereInput | UnitFundBalanceScalarWhereInput[]
   }
 
+  export type OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput = {
+    create?: XOR<OwnershipTransferCreateWithoutUnitInput, OwnershipTransferUncheckedCreateWithoutUnitInput> | OwnershipTransferCreateWithoutUnitInput[] | OwnershipTransferUncheckedCreateWithoutUnitInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutUnitInput | OwnershipTransferCreateOrConnectWithoutUnitInput[]
+    upsert?: OwnershipTransferUpsertWithWhereUniqueWithoutUnitInput | OwnershipTransferUpsertWithWhereUniqueWithoutUnitInput[]
+    createMany?: OwnershipTransferCreateManyUnitInputEnvelope
+    set?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    disconnect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    delete?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    update?: OwnershipTransferUpdateWithWhereUniqueWithoutUnitInput | OwnershipTransferUpdateWithWhereUniqueWithoutUnitInput[]
+    updateMany?: OwnershipTransferUpdateManyWithWhereWithoutUnitInput | OwnershipTransferUpdateManyWithWhereWithoutUnitInput[]
+    deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+  }
+
   export type UnitCreateNestedOneWithoutPermissionChangesInput = {
     create?: XOR<UnitCreateWithoutPermissionChangesInput, UnitUncheckedCreateWithoutPermissionChangesInput>
     connectOrCreate?: UnitCreateOrConnectWithoutPermissionChangesInput
@@ -63501,6 +65445,66 @@ export namespace Prisma {
     delete?: UserWhereInput | boolean
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutUnitPermissionChangesInput, UserUpdateWithoutUnitPermissionChangesInput>, UserUncheckedUpdateWithoutUnitPermissionChangesInput>
+  }
+
+  export type UnitCreateNestedOneWithoutOwnershipTransfersInput = {
+    create?: XOR<UnitCreateWithoutOwnershipTransfersInput, UnitUncheckedCreateWithoutOwnershipTransfersInput>
+    connectOrCreate?: UnitCreateOrConnectWithoutOwnershipTransfersInput
+    connect?: UnitWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutOwnershipTransfersFromInput = {
+    create?: XOR<UserCreateWithoutOwnershipTransfersFromInput, UserUncheckedCreateWithoutOwnershipTransfersFromInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOwnershipTransfersFromInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutOwnershipTransfersToInput = {
+    create?: XOR<UserCreateWithoutOwnershipTransfersToInput, UserUncheckedCreateWithoutOwnershipTransfersToInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOwnershipTransfersToInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutOwnershipTransfersCreatedInput = {
+    create?: XOR<UserCreateWithoutOwnershipTransfersCreatedInput, UserUncheckedCreateWithoutOwnershipTransfersCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOwnershipTransfersCreatedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UnitUpdateOneRequiredWithoutOwnershipTransfersNestedInput = {
+    create?: XOR<UnitCreateWithoutOwnershipTransfersInput, UnitUncheckedCreateWithoutOwnershipTransfersInput>
+    connectOrCreate?: UnitCreateOrConnectWithoutOwnershipTransfersInput
+    upsert?: UnitUpsertWithoutOwnershipTransfersInput
+    connect?: UnitWhereUniqueInput
+    update?: XOR<XOR<UnitUpdateToOneWithWhereWithoutOwnershipTransfersInput, UnitUpdateWithoutOwnershipTransfersInput>, UnitUncheckedUpdateWithoutOwnershipTransfersInput>
+  }
+
+  export type UserUpdateOneWithoutOwnershipTransfersFromNestedInput = {
+    create?: XOR<UserCreateWithoutOwnershipTransfersFromInput, UserUncheckedCreateWithoutOwnershipTransfersFromInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOwnershipTransfersFromInput
+    upsert?: UserUpsertWithoutOwnershipTransfersFromInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutOwnershipTransfersFromInput, UserUpdateWithoutOwnershipTransfersFromInput>, UserUncheckedUpdateWithoutOwnershipTransfersFromInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutOwnershipTransfersToNestedInput = {
+    create?: XOR<UserCreateWithoutOwnershipTransfersToInput, UserUncheckedCreateWithoutOwnershipTransfersToInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOwnershipTransfersToInput
+    upsert?: UserUpsertWithoutOwnershipTransfersToInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutOwnershipTransfersToInput, UserUpdateWithoutOwnershipTransfersToInput>, UserUncheckedUpdateWithoutOwnershipTransfersToInput>
+  }
+
+  export type UserUpdateOneWithoutOwnershipTransfersCreatedNestedInput = {
+    create?: XOR<UserCreateWithoutOwnershipTransfersCreatedInput, UserUncheckedCreateWithoutOwnershipTransfersCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOwnershipTransfersCreatedInput
+    upsert?: UserUpsertWithoutOwnershipTransfersCreatedInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutOwnershipTransfersCreatedInput, UserUpdateWithoutOwnershipTransfersCreatedInput>, UserUncheckedUpdateWithoutOwnershipTransfersCreatedInput>
   }
 
   export type UnitCreateNestedOneWithoutTenantInput = {
@@ -63696,6 +65700,27 @@ export namespace Prisma {
     connectOrCreate?: UnitPermissionChangeCreateOrConnectWithoutChangedByInput | UnitPermissionChangeCreateOrConnectWithoutChangedByInput[]
     createMany?: UnitPermissionChangeCreateManyChangedByInputEnvelope
     connect?: UnitPermissionChangeWhereUniqueInput | UnitPermissionChangeWhereUniqueInput[]
+  }
+
+  export type OwnershipTransferCreateNestedManyWithoutFromOwnerInput = {
+    create?: XOR<OwnershipTransferCreateWithoutFromOwnerInput, OwnershipTransferUncheckedCreateWithoutFromOwnerInput> | OwnershipTransferCreateWithoutFromOwnerInput[] | OwnershipTransferUncheckedCreateWithoutFromOwnerInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutFromOwnerInput | OwnershipTransferCreateOrConnectWithoutFromOwnerInput[]
+    createMany?: OwnershipTransferCreateManyFromOwnerInputEnvelope
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+  }
+
+  export type OwnershipTransferCreateNestedManyWithoutToOwnerInput = {
+    create?: XOR<OwnershipTransferCreateWithoutToOwnerInput, OwnershipTransferUncheckedCreateWithoutToOwnerInput> | OwnershipTransferCreateWithoutToOwnerInput[] | OwnershipTransferUncheckedCreateWithoutToOwnerInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutToOwnerInput | OwnershipTransferCreateOrConnectWithoutToOwnerInput[]
+    createMany?: OwnershipTransferCreateManyToOwnerInputEnvelope
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+  }
+
+  export type OwnershipTransferCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<OwnershipTransferCreateWithoutCreatedByInput, OwnershipTransferUncheckedCreateWithoutCreatedByInput> | OwnershipTransferCreateWithoutCreatedByInput[] | OwnershipTransferUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutCreatedByInput | OwnershipTransferCreateOrConnectWithoutCreatedByInput[]
+    createMany?: OwnershipTransferCreateManyCreatedByInputEnvelope
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
   }
 
   export type WorkerFamilyMemberCreateNestedManyWithoutWorkerInput = {
@@ -63898,6 +65923,27 @@ export namespace Prisma {
     connectOrCreate?: UnitPermissionChangeCreateOrConnectWithoutChangedByInput | UnitPermissionChangeCreateOrConnectWithoutChangedByInput[]
     createMany?: UnitPermissionChangeCreateManyChangedByInputEnvelope
     connect?: UnitPermissionChangeWhereUniqueInput | UnitPermissionChangeWhereUniqueInput[]
+  }
+
+  export type OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput = {
+    create?: XOR<OwnershipTransferCreateWithoutFromOwnerInput, OwnershipTransferUncheckedCreateWithoutFromOwnerInput> | OwnershipTransferCreateWithoutFromOwnerInput[] | OwnershipTransferUncheckedCreateWithoutFromOwnerInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutFromOwnerInput | OwnershipTransferCreateOrConnectWithoutFromOwnerInput[]
+    createMany?: OwnershipTransferCreateManyFromOwnerInputEnvelope
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+  }
+
+  export type OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput = {
+    create?: XOR<OwnershipTransferCreateWithoutToOwnerInput, OwnershipTransferUncheckedCreateWithoutToOwnerInput> | OwnershipTransferCreateWithoutToOwnerInput[] | OwnershipTransferUncheckedCreateWithoutToOwnerInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutToOwnerInput | OwnershipTransferCreateOrConnectWithoutToOwnerInput[]
+    createMany?: OwnershipTransferCreateManyToOwnerInputEnvelope
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+  }
+
+  export type OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<OwnershipTransferCreateWithoutCreatedByInput, OwnershipTransferUncheckedCreateWithoutCreatedByInput> | OwnershipTransferCreateWithoutCreatedByInput[] | OwnershipTransferUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutCreatedByInput | OwnershipTransferCreateOrConnectWithoutCreatedByInput[]
+    createMany?: OwnershipTransferCreateManyCreatedByInputEnvelope
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
   }
 
   export type WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput = {
@@ -64303,6 +66349,48 @@ export namespace Prisma {
     deleteMany?: UnitPermissionChangeScalarWhereInput | UnitPermissionChangeScalarWhereInput[]
   }
 
+  export type OwnershipTransferUpdateManyWithoutFromOwnerNestedInput = {
+    create?: XOR<OwnershipTransferCreateWithoutFromOwnerInput, OwnershipTransferUncheckedCreateWithoutFromOwnerInput> | OwnershipTransferCreateWithoutFromOwnerInput[] | OwnershipTransferUncheckedCreateWithoutFromOwnerInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutFromOwnerInput | OwnershipTransferCreateOrConnectWithoutFromOwnerInput[]
+    upsert?: OwnershipTransferUpsertWithWhereUniqueWithoutFromOwnerInput | OwnershipTransferUpsertWithWhereUniqueWithoutFromOwnerInput[]
+    createMany?: OwnershipTransferCreateManyFromOwnerInputEnvelope
+    set?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    disconnect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    delete?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    update?: OwnershipTransferUpdateWithWhereUniqueWithoutFromOwnerInput | OwnershipTransferUpdateWithWhereUniqueWithoutFromOwnerInput[]
+    updateMany?: OwnershipTransferUpdateManyWithWhereWithoutFromOwnerInput | OwnershipTransferUpdateManyWithWhereWithoutFromOwnerInput[]
+    deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+  }
+
+  export type OwnershipTransferUpdateManyWithoutToOwnerNestedInput = {
+    create?: XOR<OwnershipTransferCreateWithoutToOwnerInput, OwnershipTransferUncheckedCreateWithoutToOwnerInput> | OwnershipTransferCreateWithoutToOwnerInput[] | OwnershipTransferUncheckedCreateWithoutToOwnerInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutToOwnerInput | OwnershipTransferCreateOrConnectWithoutToOwnerInput[]
+    upsert?: OwnershipTransferUpsertWithWhereUniqueWithoutToOwnerInput | OwnershipTransferUpsertWithWhereUniqueWithoutToOwnerInput[]
+    createMany?: OwnershipTransferCreateManyToOwnerInputEnvelope
+    set?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    disconnect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    delete?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    update?: OwnershipTransferUpdateWithWhereUniqueWithoutToOwnerInput | OwnershipTransferUpdateWithWhereUniqueWithoutToOwnerInput[]
+    updateMany?: OwnershipTransferUpdateManyWithWhereWithoutToOwnerInput | OwnershipTransferUpdateManyWithWhereWithoutToOwnerInput[]
+    deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+  }
+
+  export type OwnershipTransferUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<OwnershipTransferCreateWithoutCreatedByInput, OwnershipTransferUncheckedCreateWithoutCreatedByInput> | OwnershipTransferCreateWithoutCreatedByInput[] | OwnershipTransferUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutCreatedByInput | OwnershipTransferCreateOrConnectWithoutCreatedByInput[]
+    upsert?: OwnershipTransferUpsertWithWhereUniqueWithoutCreatedByInput | OwnershipTransferUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: OwnershipTransferCreateManyCreatedByInputEnvelope
+    set?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    disconnect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    delete?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    update?: OwnershipTransferUpdateWithWhereUniqueWithoutCreatedByInput | OwnershipTransferUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: OwnershipTransferUpdateManyWithWhereWithoutCreatedByInput | OwnershipTransferUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+  }
+
   export type WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput = {
     create?: XOR<WorkerFamilyMemberCreateWithoutWorkerInput, WorkerFamilyMemberUncheckedCreateWithoutWorkerInput> | WorkerFamilyMemberCreateWithoutWorkerInput[] | WorkerFamilyMemberUncheckedCreateWithoutWorkerInput[]
     connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
@@ -64703,6 +66791,48 @@ export namespace Prisma {
     update?: UnitPermissionChangeUpdateWithWhereUniqueWithoutChangedByInput | UnitPermissionChangeUpdateWithWhereUniqueWithoutChangedByInput[]
     updateMany?: UnitPermissionChangeUpdateManyWithWhereWithoutChangedByInput | UnitPermissionChangeUpdateManyWithWhereWithoutChangedByInput[]
     deleteMany?: UnitPermissionChangeScalarWhereInput | UnitPermissionChangeScalarWhereInput[]
+  }
+
+  export type OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput = {
+    create?: XOR<OwnershipTransferCreateWithoutFromOwnerInput, OwnershipTransferUncheckedCreateWithoutFromOwnerInput> | OwnershipTransferCreateWithoutFromOwnerInput[] | OwnershipTransferUncheckedCreateWithoutFromOwnerInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutFromOwnerInput | OwnershipTransferCreateOrConnectWithoutFromOwnerInput[]
+    upsert?: OwnershipTransferUpsertWithWhereUniqueWithoutFromOwnerInput | OwnershipTransferUpsertWithWhereUniqueWithoutFromOwnerInput[]
+    createMany?: OwnershipTransferCreateManyFromOwnerInputEnvelope
+    set?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    disconnect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    delete?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    update?: OwnershipTransferUpdateWithWhereUniqueWithoutFromOwnerInput | OwnershipTransferUpdateWithWhereUniqueWithoutFromOwnerInput[]
+    updateMany?: OwnershipTransferUpdateManyWithWhereWithoutFromOwnerInput | OwnershipTransferUpdateManyWithWhereWithoutFromOwnerInput[]
+    deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+  }
+
+  export type OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput = {
+    create?: XOR<OwnershipTransferCreateWithoutToOwnerInput, OwnershipTransferUncheckedCreateWithoutToOwnerInput> | OwnershipTransferCreateWithoutToOwnerInput[] | OwnershipTransferUncheckedCreateWithoutToOwnerInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutToOwnerInput | OwnershipTransferCreateOrConnectWithoutToOwnerInput[]
+    upsert?: OwnershipTransferUpsertWithWhereUniqueWithoutToOwnerInput | OwnershipTransferUpsertWithWhereUniqueWithoutToOwnerInput[]
+    createMany?: OwnershipTransferCreateManyToOwnerInputEnvelope
+    set?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    disconnect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    delete?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    update?: OwnershipTransferUpdateWithWhereUniqueWithoutToOwnerInput | OwnershipTransferUpdateWithWhereUniqueWithoutToOwnerInput[]
+    updateMany?: OwnershipTransferUpdateManyWithWhereWithoutToOwnerInput | OwnershipTransferUpdateManyWithWhereWithoutToOwnerInput[]
+    deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+  }
+
+  export type OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<OwnershipTransferCreateWithoutCreatedByInput, OwnershipTransferUncheckedCreateWithoutCreatedByInput> | OwnershipTransferCreateWithoutCreatedByInput[] | OwnershipTransferUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: OwnershipTransferCreateOrConnectWithoutCreatedByInput | OwnershipTransferCreateOrConnectWithoutCreatedByInput[]
+    upsert?: OwnershipTransferUpsertWithWhereUniqueWithoutCreatedByInput | OwnershipTransferUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: OwnershipTransferCreateManyCreatedByInputEnvelope
+    set?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    disconnect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    delete?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+    update?: OwnershipTransferUpdateWithWhereUniqueWithoutCreatedByInput | OwnershipTransferUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: OwnershipTransferUpdateManyWithWhereWithoutCreatedByInput | OwnershipTransferUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
   }
 
   export type WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput = {
@@ -67192,6 +69322,17 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
   export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -67201,6 +69342,22 @@ export namespace Prisma {
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
   export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -67226,17 +69383,6 @@ export namespace Prisma {
     gt?: string | StringFieldRefInput<$PrismaModel>
     gte?: string | StringFieldRefInput<$PrismaModel>
     not?: NestedUuidNullableFilter<$PrismaModel> | string | null
-  }
-
-  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
   }
 
   export type NestedDecimalFilter<$PrismaModel = never> = {
@@ -67289,22 +69435,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedStringNullableFilter<$PrismaModel>
     _max?: NestedStringNullableFilter<$PrismaModel>
-  }
-
-  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedDecimalNullableFilter<$PrismaModel>
-    _sum?: NestedDecimalNullableFilter<$PrismaModel>
-    _min?: NestedDecimalNullableFilter<$PrismaModel>
-    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
   export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
@@ -67687,10 +69817,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -67723,10 +69857,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -67789,10 +69927,14 @@ export namespace Prisma {
     wilayat?: StringNullableFilter<"Property"> | string | null
     area?: StringNullableFilter<"Property"> | string | null
     wayNumber?: StringNullableFilter<"Property"> | string | null
+    buildingName?: StringNullableFilter<"Property"> | string | null
     buildingNumber?: StringNullableFilter<"Property"> | string | null
     postalCode?: StringNullableFilter<"Property"> | string | null
     titleDeedNumber?: StringNullableFilter<"Property"> | string | null
     plotNumber?: StringNullableFilter<"Property"> | string | null
+    latitude?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    longitude?: DecimalNullableFilter<"Property"> | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: StringNullableFilter<"Property"> | string | null
     notes?: StringNullableFilter<"Property"> | string | null
     associationRegistrationNumber?: StringNullableFilter<"Property"> | string | null
     associationPhone?: StringNullableFilter<"Property"> | string | null
@@ -67872,6 +70014,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutPropertyInput = {
@@ -67903,6 +70046,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutPropertyInput = {
@@ -68033,6 +70177,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -68059,6 +70204,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -68364,6 +70510,7 @@ export namespace Prisma {
     fundId?: UuidFilter<"Expense"> | string
     paymentReference?: StringNullableFilter<"Expense"> | string | null
     paidBy?: EnumPaymentCollectorFilter<"Expense"> | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFilter<"Expense"> | string
     notes?: StringNullableFilter<"Expense"> | string | null
     date?: DateTimeFilter<"Expense"> | Date | string
     receiptFileName?: StringNullableFilter<"Expense"> | string | null
@@ -68472,10 +70619,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -68509,10 +70660,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -68605,6 +70760,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -68672,6 +70830,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -68744,6 +70905,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -68811,6 +70975,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -69231,6 +71398,38 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type OwnershipTransferCreateWithoutUnitInput = {
+    id?: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdAt?: Date | string
+    fromOwner?: UserCreateNestedOneWithoutOwnershipTransfersFromInput
+    toOwner: UserCreateNestedOneWithoutOwnershipTransfersToInput
+    createdBy?: UserCreateNestedOneWithoutOwnershipTransfersCreatedInput
+  }
+
+  export type OwnershipTransferUncheckedCreateWithoutUnitInput = {
+    id?: string
+    fromOwnerId?: string | null
+    toOwnerId: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferCreateOrConnectWithoutUnitInput = {
+    where: OwnershipTransferWhereUniqueInput
+    create: XOR<OwnershipTransferCreateWithoutUnitInput, OwnershipTransferUncheckedCreateWithoutUnitInput>
+  }
+
+  export type OwnershipTransferCreateManyUnitInputEnvelope = {
+    data: OwnershipTransferCreateManyUnitInput | OwnershipTransferCreateManyUnitInput[]
+    skipDuplicates?: boolean
+  }
+
   export type PropertyUpsertWithoutUnitsInput = {
     update: XOR<PropertyUpdateWithoutUnitsInput, PropertyUncheckedUpdateWithoutUnitsInput>
     create: XOR<PropertyCreateWithoutUnitsInput, PropertyUncheckedCreateWithoutUnitsInput>
@@ -69250,10 +71449,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -69287,10 +71490,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -69389,6 +71596,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -69456,6 +71666,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -69534,6 +71747,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -69601,6 +71817,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -69900,6 +72119,37 @@ export namespace Prisma {
     balance?: DecimalFilter<"UnitFundBalance"> | Decimal | DecimalJsLike | number | string
   }
 
+  export type OwnershipTransferUpsertWithWhereUniqueWithoutUnitInput = {
+    where: OwnershipTransferWhereUniqueInput
+    update: XOR<OwnershipTransferUpdateWithoutUnitInput, OwnershipTransferUncheckedUpdateWithoutUnitInput>
+    create: XOR<OwnershipTransferCreateWithoutUnitInput, OwnershipTransferUncheckedCreateWithoutUnitInput>
+  }
+
+  export type OwnershipTransferUpdateWithWhereUniqueWithoutUnitInput = {
+    where: OwnershipTransferWhereUniqueInput
+    data: XOR<OwnershipTransferUpdateWithoutUnitInput, OwnershipTransferUncheckedUpdateWithoutUnitInput>
+  }
+
+  export type OwnershipTransferUpdateManyWithWhereWithoutUnitInput = {
+    where: OwnershipTransferScalarWhereInput
+    data: XOR<OwnershipTransferUpdateManyMutationInput, OwnershipTransferUncheckedUpdateManyWithoutUnitInput>
+  }
+
+  export type OwnershipTransferScalarWhereInput = {
+    AND?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+    OR?: OwnershipTransferScalarWhereInput[]
+    NOT?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+    id?: UuidFilter<"OwnershipTransfer"> | string
+    unitId?: UuidFilter<"OwnershipTransfer"> | string
+    fromOwnerId?: UuidNullableFilter<"OwnershipTransfer"> | string | null
+    toOwnerId?: UuidFilter<"OwnershipTransfer"> | string
+    transferDate?: DateTimeFilter<"OwnershipTransfer"> | Date | string
+    keptServiceCharge?: BoolFilter<"OwnershipTransfer"> | boolean
+    notes?: StringNullableFilter<"OwnershipTransfer"> | string | null
+    createdById?: UuidNullableFilter<"OwnershipTransfer"> | string | null
+    createdAt?: DateTimeFilter<"OwnershipTransfer"> | Date | string
+  }
+
   export type UnitCreateWithoutPermissionChangesInput = {
     id?: string
     label: string
@@ -69929,6 +72179,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutPermissionChangesInput = {
@@ -69960,6 +72211,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutPermissionChangesInput = {
@@ -70031,6 +72283,9 @@ export namespace Prisma {
     ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -70098,6 +72353,9 @@ export namespace Prisma {
     ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -70146,6 +72404,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutPermissionChangesInput = {
@@ -70177,6 +72436,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UserUpsertWithoutUnitPermissionChangesInput = {
@@ -70254,6 +72514,9 @@ export namespace Prisma {
     ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -70321,6 +72584,1041 @@ export namespace Prisma {
     ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UnitCreateWithoutOwnershipTransfersInput = {
+    id?: string
+    label: string
+    floor?: number | null
+    bedrooms?: number | null
+    rentBillsEnabled?: boolean
+    maintenanceEnabled?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
+    serviceChargeLastReminderAt?: Date | string | null
+    entitlements?: number | null
+    serviceChargeBalance?: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    property: PropertyCreateNestedOneWithoutUnitsInput
+    owner?: UserCreateNestedOneWithoutOwnedUnitsInput
+    tenant?: UserCreateNestedOneWithoutUnitInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUnitInput
+    tenancies?: TenancyCreateNestedManyWithoutUnitInput
+    charges?: ChargeCreateNestedManyWithoutUnitInput
+    permissionChanges?: UnitPermissionChangeCreateNestedManyWithoutUnitInput
+    documents?: EntityDocumentCreateNestedManyWithoutUnitInput
+    expenseLinks?: ExpenseUnitCreateNestedManyWithoutUnitInput
+    serviceChargeInvoices?: ServiceChargeInvoiceCreateNestedManyWithoutUnitInput
+    serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
+    installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
+    fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+  }
+
+  export type UnitUncheckedCreateWithoutOwnershipTransfersInput = {
+    id?: string
+    propertyId: string
+    label: string
+    floor?: number | null
+    bedrooms?: number | null
+    ownerId?: string | null
+    tenantId?: string | null
+    rentBillsEnabled?: boolean
+    maintenanceEnabled?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
+    serviceChargeLastReminderAt?: Date | string | null
+    entitlements?: number | null
+    serviceChargeBalance?: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUnitInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutUnitInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutUnitInput
+    permissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutUnitInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUnitInput
+    expenseLinks?: ExpenseUnitUncheckedCreateNestedManyWithoutUnitInput
+    serviceChargeInvoices?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutUnitInput
+    serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
+    installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
+    fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+  }
+
+  export type UnitCreateOrConnectWithoutOwnershipTransfersInput = {
+    where: UnitWhereUniqueInput
+    create: XOR<UnitCreateWithoutOwnershipTransfersInput, UnitUncheckedCreateWithoutOwnershipTransfersInput>
+  }
+
+  export type UserCreateWithoutOwnershipTransfersFromInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentCreateNestedManyWithoutCreatedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserUncheckedCreateWithoutOwnershipTransfersFromInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierUncheckedCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserCreateOrConnectWithoutOwnershipTransfersFromInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutOwnershipTransfersFromInput, UserUncheckedCreateWithoutOwnershipTransfersFromInput>
+  }
+
+  export type UserCreateWithoutOwnershipTransfersToInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentCreateNestedManyWithoutCreatedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserUncheckedCreateWithoutOwnershipTransfersToInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierUncheckedCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserCreateOrConnectWithoutOwnershipTransfersToInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutOwnershipTransfersToInput, UserUncheckedCreateWithoutOwnershipTransfersToInput>
+  }
+
+  export type UserCreateWithoutOwnershipTransfersCreatedInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentCreateNestedManyWithoutCreatedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserUncheckedCreateWithoutOwnershipTransfersCreatedInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierUncheckedCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+  }
+
+  export type UserCreateOrConnectWithoutOwnershipTransfersCreatedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutOwnershipTransfersCreatedInput, UserUncheckedCreateWithoutOwnershipTransfersCreatedInput>
+  }
+
+  export type UnitUpsertWithoutOwnershipTransfersInput = {
+    update: XOR<UnitUpdateWithoutOwnershipTransfersInput, UnitUncheckedUpdateWithoutOwnershipTransfersInput>
+    create: XOR<UnitCreateWithoutOwnershipTransfersInput, UnitUncheckedCreateWithoutOwnershipTransfersInput>
+    where?: UnitWhereInput
+  }
+
+  export type UnitUpdateToOneWithWhereWithoutOwnershipTransfersInput = {
+    where?: UnitWhereInput
+    data: XOR<UnitUpdateWithoutOwnershipTransfersInput, UnitUncheckedUpdateWithoutOwnershipTransfersInput>
+  }
+
+  export type UnitUpdateWithoutOwnershipTransfersInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+    floor?: NullableIntFieldUpdateOperationsInput | number | null
+    bedrooms?: NullableIntFieldUpdateOperationsInput | number | null
+    rentBillsEnabled?: BoolFieldUpdateOperationsInput | boolean
+    maintenanceEnabled?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastReminderAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    entitlements?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutUnitsNestedInput
+    owner?: UserUpdateOneWithoutOwnedUnitsNestedInput
+    tenant?: UserUpdateOneWithoutUnitNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUnitNestedInput
+    tenancies?: TenancyUpdateManyWithoutUnitNestedInput
+    charges?: ChargeUpdateManyWithoutUnitNestedInput
+    permissionChanges?: UnitPermissionChangeUpdateManyWithoutUnitNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUnitNestedInput
+    expenseLinks?: ExpenseUnitUpdateManyWithoutUnitNestedInput
+    serviceChargeInvoices?: ServiceChargeInvoiceUpdateManyWithoutUnitNestedInput
+    serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
+    installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
+    fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+  }
+
+  export type UnitUncheckedUpdateWithoutOwnershipTransfersInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    propertyId?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+    floor?: NullableIntFieldUpdateOperationsInput | number | null
+    bedrooms?: NullableIntFieldUpdateOperationsInput | number | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    tenantId?: NullableStringFieldUpdateOperationsInput | string | null
+    rentBillsEnabled?: BoolFieldUpdateOperationsInput | boolean
+    maintenanceEnabled?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastReminderAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    entitlements?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUnitNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutUnitNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutUnitNestedInput
+    permissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutUnitNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUnitNestedInput
+    expenseLinks?: ExpenseUnitUncheckedUpdateManyWithoutUnitNestedInput
+    serviceChargeInvoices?: ServiceChargeInvoiceUncheckedUpdateManyWithoutUnitNestedInput
+    serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
+    installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
+    fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+  }
+
+  export type UserUpsertWithoutOwnershipTransfersFromInput = {
+    update: XOR<UserUpdateWithoutOwnershipTransfersFromInput, UserUncheckedUpdateWithoutOwnershipTransfersFromInput>
+    create: XOR<UserCreateWithoutOwnershipTransfersFromInput, UserUncheckedCreateWithoutOwnershipTransfersFromInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutOwnershipTransfersFromInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutOwnershipTransfersFromInput, UserUncheckedUpdateWithoutOwnershipTransfersFromInput>
+  }
+
+  export type UserUpdateWithoutOwnershipTransfersFromInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUpdateManyWithoutCreatedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutOwnershipTransfersFromInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUncheckedUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UserUpsertWithoutOwnershipTransfersToInput = {
+    update: XOR<UserUpdateWithoutOwnershipTransfersToInput, UserUncheckedUpdateWithoutOwnershipTransfersToInput>
+    create: XOR<UserCreateWithoutOwnershipTransfersToInput, UserUncheckedCreateWithoutOwnershipTransfersToInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutOwnershipTransfersToInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutOwnershipTransfersToInput, UserUncheckedUpdateWithoutOwnershipTransfersToInput>
+  }
+
+  export type UserUpdateWithoutOwnershipTransfersToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUpdateManyWithoutCreatedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutOwnershipTransfersToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUncheckedUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UserUpsertWithoutOwnershipTransfersCreatedInput = {
+    update: XOR<UserUpdateWithoutOwnershipTransfersCreatedInput, UserUncheckedUpdateWithoutOwnershipTransfersCreatedInput>
+    create: XOR<UserCreateWithoutOwnershipTransfersCreatedInput, UserUncheckedCreateWithoutOwnershipTransfersCreatedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutOwnershipTransfersCreatedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutOwnershipTransfersCreatedInput, UserUncheckedUpdateWithoutOwnershipTransfersCreatedInput>
+  }
+
+  export type UserUpdateWithoutOwnershipTransfersCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUpdateManyWithoutCreatedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutOwnershipTransfersCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUncheckedUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -70353,6 +73651,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutTenantInput = {
@@ -70384,6 +73683,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutTenantInput = {
@@ -71177,6 +74477,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -71204,6 +74505,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -71514,6 +74816,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutOwnerInput = {
@@ -71545,6 +74848,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutOwnerInput = {
@@ -71647,6 +74951,102 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type OwnershipTransferCreateWithoutFromOwnerInput = {
+    id?: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdAt?: Date | string
+    unit: UnitCreateNestedOneWithoutOwnershipTransfersInput
+    toOwner: UserCreateNestedOneWithoutOwnershipTransfersToInput
+    createdBy?: UserCreateNestedOneWithoutOwnershipTransfersCreatedInput
+  }
+
+  export type OwnershipTransferUncheckedCreateWithoutFromOwnerInput = {
+    id?: string
+    unitId: string
+    toOwnerId: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferCreateOrConnectWithoutFromOwnerInput = {
+    where: OwnershipTransferWhereUniqueInput
+    create: XOR<OwnershipTransferCreateWithoutFromOwnerInput, OwnershipTransferUncheckedCreateWithoutFromOwnerInput>
+  }
+
+  export type OwnershipTransferCreateManyFromOwnerInputEnvelope = {
+    data: OwnershipTransferCreateManyFromOwnerInput | OwnershipTransferCreateManyFromOwnerInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OwnershipTransferCreateWithoutToOwnerInput = {
+    id?: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdAt?: Date | string
+    unit: UnitCreateNestedOneWithoutOwnershipTransfersInput
+    fromOwner?: UserCreateNestedOneWithoutOwnershipTransfersFromInput
+    createdBy?: UserCreateNestedOneWithoutOwnershipTransfersCreatedInput
+  }
+
+  export type OwnershipTransferUncheckedCreateWithoutToOwnerInput = {
+    id?: string
+    unitId: string
+    fromOwnerId?: string | null
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferCreateOrConnectWithoutToOwnerInput = {
+    where: OwnershipTransferWhereUniqueInput
+    create: XOR<OwnershipTransferCreateWithoutToOwnerInput, OwnershipTransferUncheckedCreateWithoutToOwnerInput>
+  }
+
+  export type OwnershipTransferCreateManyToOwnerInputEnvelope = {
+    data: OwnershipTransferCreateManyToOwnerInput | OwnershipTransferCreateManyToOwnerInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OwnershipTransferCreateWithoutCreatedByInput = {
+    id?: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdAt?: Date | string
+    unit: UnitCreateNestedOneWithoutOwnershipTransfersInput
+    fromOwner?: UserCreateNestedOneWithoutOwnershipTransfersFromInput
+    toOwner: UserCreateNestedOneWithoutOwnershipTransfersToInput
+  }
+
+  export type OwnershipTransferUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    unitId: string
+    fromOwnerId?: string | null
+    toOwnerId: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferCreateOrConnectWithoutCreatedByInput = {
+    where: OwnershipTransferWhereUniqueInput
+    create: XOR<OwnershipTransferCreateWithoutCreatedByInput, OwnershipTransferUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type OwnershipTransferCreateManyCreatedByInputEnvelope = {
+    data: OwnershipTransferCreateManyCreatedByInput | OwnershipTransferCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
   export type WorkerFamilyMemberCreateWithoutWorkerInput = {
     id?: string
     name: string
@@ -71725,6 +75125,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutTenantInput = {
@@ -71756,6 +75157,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type MaintenanceRequestUpsertWithWhereUniqueWithoutUserInput = {
@@ -72350,6 +75752,54 @@ export namespace Prisma {
     data: XOR<UnitPermissionChangeUpdateManyMutationInput, UnitPermissionChangeUncheckedUpdateManyWithoutChangedByInput>
   }
 
+  export type OwnershipTransferUpsertWithWhereUniqueWithoutFromOwnerInput = {
+    where: OwnershipTransferWhereUniqueInput
+    update: XOR<OwnershipTransferUpdateWithoutFromOwnerInput, OwnershipTransferUncheckedUpdateWithoutFromOwnerInput>
+    create: XOR<OwnershipTransferCreateWithoutFromOwnerInput, OwnershipTransferUncheckedCreateWithoutFromOwnerInput>
+  }
+
+  export type OwnershipTransferUpdateWithWhereUniqueWithoutFromOwnerInput = {
+    where: OwnershipTransferWhereUniqueInput
+    data: XOR<OwnershipTransferUpdateWithoutFromOwnerInput, OwnershipTransferUncheckedUpdateWithoutFromOwnerInput>
+  }
+
+  export type OwnershipTransferUpdateManyWithWhereWithoutFromOwnerInput = {
+    where: OwnershipTransferScalarWhereInput
+    data: XOR<OwnershipTransferUpdateManyMutationInput, OwnershipTransferUncheckedUpdateManyWithoutFromOwnerInput>
+  }
+
+  export type OwnershipTransferUpsertWithWhereUniqueWithoutToOwnerInput = {
+    where: OwnershipTransferWhereUniqueInput
+    update: XOR<OwnershipTransferUpdateWithoutToOwnerInput, OwnershipTransferUncheckedUpdateWithoutToOwnerInput>
+    create: XOR<OwnershipTransferCreateWithoutToOwnerInput, OwnershipTransferUncheckedCreateWithoutToOwnerInput>
+  }
+
+  export type OwnershipTransferUpdateWithWhereUniqueWithoutToOwnerInput = {
+    where: OwnershipTransferWhereUniqueInput
+    data: XOR<OwnershipTransferUpdateWithoutToOwnerInput, OwnershipTransferUncheckedUpdateWithoutToOwnerInput>
+  }
+
+  export type OwnershipTransferUpdateManyWithWhereWithoutToOwnerInput = {
+    where: OwnershipTransferScalarWhereInput
+    data: XOR<OwnershipTransferUpdateManyMutationInput, OwnershipTransferUncheckedUpdateManyWithoutToOwnerInput>
+  }
+
+  export type OwnershipTransferUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: OwnershipTransferWhereUniqueInput
+    update: XOR<OwnershipTransferUpdateWithoutCreatedByInput, OwnershipTransferUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<OwnershipTransferCreateWithoutCreatedByInput, OwnershipTransferUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type OwnershipTransferUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: OwnershipTransferWhereUniqueInput
+    data: XOR<OwnershipTransferUpdateWithoutCreatedByInput, OwnershipTransferUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type OwnershipTransferUpdateManyWithWhereWithoutCreatedByInput = {
+    where: OwnershipTransferScalarWhereInput
+    data: XOR<OwnershipTransferUpdateManyMutationInput, OwnershipTransferUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
   export type WorkerFamilyMemberUpsertWithWhereUniqueWithoutWorkerInput = {
     where: WorkerFamilyMemberWhereUniqueInput
     update: XOR<WorkerFamilyMemberUpdateWithoutWorkerInput, WorkerFamilyMemberUncheckedUpdateWithoutWorkerInput>
@@ -72449,6 +75899,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFamilyMembersInput = {
@@ -72516,6 +75969,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFamilyMembersInput = {
@@ -72599,6 +76055,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFamilyMembersInput = {
@@ -72666,6 +76125,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UnitCreateWithoutTenanciesInput = {
@@ -72697,6 +76159,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutTenanciesInput = {
@@ -72728,6 +76191,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutTenanciesInput = {
@@ -72799,6 +76263,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -72866,6 +76333,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -73002,6 +76472,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutTenanciesInput = {
@@ -73033,6 +76504,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UserUpsertWithoutTenanciesInput = {
@@ -73110,6 +76582,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -73177,6 +76652,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -73220,10 +76698,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -73257,10 +76739,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -73318,6 +76804,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutDocumentsInput = {
@@ -73349,6 +76836,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutDocumentsInput = {
@@ -73479,6 +76967,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -73546,6 +77037,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -73618,6 +77112,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -73685,6 +77182,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -73712,10 +77212,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -73749,10 +77253,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -73816,6 +77324,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutDocumentsInput = {
@@ -73847,6 +77356,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type TenancyUpsertWithoutDocumentsInput = {
@@ -73989,6 +77499,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -74056,6 +77569,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -74134,6 +77650,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -74201,6 +77720,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -74292,6 +77814,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutChargesInput = {
@@ -74323,6 +77846,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutChargesInput = {
@@ -74394,6 +77918,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -74461,6 +77988,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -74533,6 +78063,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -74600,6 +78133,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -74805,6 +78341,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutChargesInput = {
@@ -74836,6 +78373,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UserUpsertWithoutChargesInput = {
@@ -74913,6 +78451,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -74980,6 +78521,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -75058,6 +78602,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -75125,6 +78672,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -75267,6 +78817,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -75334,6 +78887,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -75406,6 +78962,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -75473,6 +79032,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -75639,6 +79201,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -75706,6 +79271,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -75784,6 +79352,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -75851,6 +79422,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -76030,6 +79604,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -76097,6 +79674,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -76288,6 +79868,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -76355,6 +79938,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -76366,10 +79952,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -76403,10 +79993,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -76610,6 +80204,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -76677,6 +80274,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -76722,10 +80322,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -76759,10 +80363,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -76990,6 +80598,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -77057,6 +80668,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -77084,6 +80698,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -77111,6 +80726,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -77156,6 +80772,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutExpenseLinksInput = {
@@ -77187,6 +80804,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutExpenseLinksInput = {
@@ -77213,6 +80831,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -77240,6 +80859,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -77291,6 +80911,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutExpenseLinksInput = {
@@ -77322,6 +80943,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type ServiceChargeInvoiceLineCreateWithoutFundInput = {
@@ -77496,6 +81118,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -77522,6 +81145,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -77694,6 +81318,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceCreateNestedManyWithoutUnitInput
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutFundBalancesInput = {
@@ -77725,6 +81350,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutUnitInput
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutFundBalancesInput = {
@@ -77801,6 +81427,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUpdateManyWithoutUnitNestedInput
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutFundBalancesInput = {
@@ -77832,6 +81459,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUncheckedUpdateManyWithoutUnitNestedInput
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type FundUpsertWithoutBalancesInput = {
@@ -77898,6 +81526,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutServiceChargeInvoicesInput = {
@@ -77929,6 +81558,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutServiceChargeInvoicesInput = {
@@ -78029,6 +81659,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -78096,6 +81729,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -78172,6 +81808,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutServiceChargeInvoicesInput = {
@@ -78203,6 +81840,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type FundUpsertWithoutServiceChargeInvoicesInput = {
@@ -78315,6 +81953,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -78382,6 +82023,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -78582,6 +82226,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutServiceChargePaymentsInput = {
@@ -78613,6 +82258,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutServiceChargePaymentsInput = {
@@ -78713,6 +82359,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -78780,6 +82429,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -78853,6 +82505,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutServiceChargePaymentsInput = {
@@ -78884,6 +82537,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type FundUpsertWithoutPaymentsInput = {
@@ -78996,6 +82650,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -79063,6 +82720,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -79126,6 +82786,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceCreateNestedManyWithoutUnitInput
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutInstallmentPlansInput = {
@@ -79157,6 +82818,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutUnitInput
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutInstallmentPlansInput = {
@@ -79228,6 +82890,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -79295,6 +82960,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -79373,6 +83041,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUpdateManyWithoutUnitNestedInput
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutInstallmentPlansInput = {
@@ -79404,6 +83073,7 @@ export namespace Prisma {
     serviceChargeInvoices?: ServiceChargeInvoiceUncheckedUpdateManyWithoutUnitNestedInput
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UserUpsertWithoutServiceChargePlansCreatedInput = {
@@ -79481,6 +83151,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -79548,6 +83221,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -79737,10 +83413,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -79774,10 +83454,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -79870,6 +83554,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -79937,6 +83624,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -80016,10 +83706,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -80053,10 +83747,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -80155,6 +83853,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -80222,6 +83923,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -80475,6 +84179,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -80501,6 +84206,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -80671,6 +84377,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -80738,6 +84447,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -80790,6 +84502,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -80816,6 +84529,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -80957,6 +84671,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -81024,6 +84741,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -81099,10 +84819,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -81136,10 +84860,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -81289,6 +85017,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -81356,6 +85087,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -81383,10 +85117,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -81420,10 +85158,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -81585,6 +85327,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -81652,6 +85397,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -81896,10 +85644,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -81933,10 +85685,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -82047,10 +85803,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -82084,10 +85844,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -82231,6 +85995,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -82298,6 +86065,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -82335,6 +86105,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutRequestsInput = {
@@ -82366,6 +86137,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutRequestsInput = {
@@ -82381,10 +86153,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -82418,10 +86194,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -82514,6 +86294,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -82581,6 +86364,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -82653,6 +86439,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -82720,6 +86509,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -82967,6 +86759,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -83034,6 +86829,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -83077,6 +86875,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutRequestsInput = {
@@ -83108,6 +86907,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type PropertyUpsertWithoutCommonAreaRequestsInput = {
@@ -83129,10 +86929,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -83166,10 +86970,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -83268,6 +87076,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -83335,6 +87146,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -83413,6 +87227,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -83480,6 +87297,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -83692,6 +87512,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -83759,6 +87582,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -83831,6 +87657,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -83898,6 +87727,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -84052,6 +87884,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -84119,6 +87954,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -84197,6 +88035,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -84264,6 +88105,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -84396,6 +88240,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -84463,6 +88310,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -84617,6 +88467,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -84684,6 +88537,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -84816,6 +88672,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -84883,6 +88742,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -85037,6 +88899,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -85104,6 +88969,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -85171,6 +89039,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -85238,6 +89109,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -85386,6 +89260,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -85453,6 +89330,9 @@ export namespace Prisma {
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -85591,6 +89471,9 @@ export namespace Prisma {
     ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
     rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -85658,6 +89541,9 @@ export namespace Prisma {
     ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
     rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -85806,6 +89692,9 @@ export namespace Prisma {
     ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
     rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -85873,6 +89762,9 @@ export namespace Prisma {
     ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
     rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -86011,6 +89903,9 @@ export namespace Prisma {
     ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
     unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
   }
 
@@ -86078,6 +89973,9 @@ export namespace Prisma {
     ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
     whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
   }
 
@@ -86161,6 +90059,9 @@ export namespace Prisma {
     ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
     unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
   }
 
@@ -86228,6 +90129,9 @@ export namespace Prisma {
     ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
     whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
     unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
   }
 
@@ -86239,10 +90143,14 @@ export namespace Prisma {
     wilayat?: string | null
     area?: string | null
     wayNumber?: string | null
+    buildingName?: string | null
     buildingNumber?: string | null
     postalCode?: string | null
     titleDeedNumber?: string | null
     plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
     notes?: string | null
     associationRegistrationNumber?: string | null
     associationPhone?: string | null
@@ -86268,10 +90176,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86304,10 +90216,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86340,10 +90256,14 @@ export namespace Prisma {
     wilayat?: NullableStringFieldUpdateOperationsInput | string | null
     area?: NullableStringFieldUpdateOperationsInput | string | null
     wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
     buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     postalCode?: NullableStringFieldUpdateOperationsInput | string | null
     titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
     plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
     associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86433,6 +90353,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -86502,6 +90423,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutPropertyInput = {
@@ -86533,6 +90455,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateManyWithoutPropertyInput = {
@@ -86694,6 +90617,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86720,6 +90644,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86743,6 +90668,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86987,6 +90913,17 @@ export namespace Prisma {
   export type UnitFundBalanceCreateManyUnitInput = {
     fundId: string
     balance?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type OwnershipTransferCreateManyUnitInput = {
+    id?: string
+    fromOwnerId?: string | null
+    toOwnerId: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
   }
 
   export type MaintenanceRequestUpdateWithoutUnitInput = {
@@ -87445,6 +91382,39 @@ export namespace Prisma {
     balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
   }
 
+  export type OwnershipTransferUpdateWithoutUnitInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fromOwner?: UserUpdateOneWithoutOwnershipTransfersFromNestedInput
+    toOwner?: UserUpdateOneRequiredWithoutOwnershipTransfersToNestedInput
+    createdBy?: UserUpdateOneWithoutOwnershipTransfersCreatedNestedInput
+  }
+
+  export type OwnershipTransferUncheckedUpdateWithoutUnitInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fromOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    toOwnerId?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferUncheckedUpdateManyWithoutUnitInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fromOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    toOwnerId?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type MaintenanceRequestCreateManyUserInput = {
     id?: string
     unitId?: string | null
@@ -87743,6 +91713,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -87892,6 +91863,39 @@ export namespace Prisma {
     field: string
     fromValue: boolean
     toValue: boolean
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferCreateManyFromOwnerInput = {
+    id?: string
+    unitId: string
+    toOwnerId: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferCreateManyToOwnerInput = {
+    id?: string
+    unitId: string
+    fromOwnerId?: string | null
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type OwnershipTransferCreateManyCreatedByInput = {
+    id?: string
+    unitId: string
+    fromOwnerId?: string | null
+    toOwnerId: string
+    transferDate: Date | string
+    keptServiceCharge?: boolean
+    notes?: string | null
     createdAt?: Date | string
   }
 
@@ -88821,6 +92825,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -88848,6 +92853,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -88871,6 +92877,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -89201,6 +93208,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutOwnerInput = {
@@ -89232,6 +93240,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateManyWithoutOwnerInput = {
@@ -89342,6 +93351,105 @@ export namespace Prisma {
     field?: StringFieldUpdateOperationsInput | string
     fromValue?: BoolFieldUpdateOperationsInput | boolean
     toValue?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferUpdateWithoutFromOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneRequiredWithoutOwnershipTransfersNestedInput
+    toOwner?: UserUpdateOneRequiredWithoutOwnershipTransfersToNestedInput
+    createdBy?: UserUpdateOneWithoutOwnershipTransfersCreatedNestedInput
+  }
+
+  export type OwnershipTransferUncheckedUpdateWithoutFromOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    toOwnerId?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferUncheckedUpdateManyWithoutFromOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    toOwnerId?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferUpdateWithoutToOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneRequiredWithoutOwnershipTransfersNestedInput
+    fromOwner?: UserUpdateOneWithoutOwnershipTransfersFromNestedInput
+    createdBy?: UserUpdateOneWithoutOwnershipTransfersCreatedNestedInput
+  }
+
+  export type OwnershipTransferUncheckedUpdateWithoutToOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    fromOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferUncheckedUpdateManyWithoutToOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    fromOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneRequiredWithoutOwnershipTransfersNestedInput
+    fromOwner?: UserUpdateOneWithoutOwnershipTransfersFromNestedInput
+    toOwner?: UserUpdateOneRequiredWithoutOwnershipTransfersToNestedInput
+  }
+
+  export type OwnershipTransferUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    fromOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    toOwnerId?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnershipTransferUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    fromOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    toOwnerId?: StringFieldUpdateOperationsInput | string
+    transferDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -89791,6 +93899,7 @@ export namespace Prisma {
     vatAmount?: Decimal | DecimalJsLike | number | string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -89979,6 +94088,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -90005,6 +94115,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -90028,6 +94139,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -90196,6 +94308,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -90237,6 +94350,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -90263,6 +94377,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -90286,6 +94401,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -90328,6 +94444,7 @@ export namespace Prisma {
     fundId: string
     paymentReference?: string | null
     paidBy?: $Enums.PaymentCollector
+    ownerChargeMethod?: string
     notes?: string | null
     date: Date | string
     receiptFileName?: string | null
@@ -90388,6 +94505,7 @@ export namespace Prisma {
     vatAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -90414,6 +94532,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -90437,6 +94556,7 @@ export namespace Prisma {
     fundId?: StringFieldUpdateOperationsInput | string
     paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidBy?: EnumPaymentCollectorFieldUpdateOperationsInput | $Enums.PaymentCollector
+    ownerChargeMethod?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     receiptFileName?: NullableStringFieldUpdateOperationsInput | string | null

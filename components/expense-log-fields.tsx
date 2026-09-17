@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   ExpenseCategoryPicker,
@@ -11,12 +11,15 @@ import {
   ExpenseTargetPicker,
   type UnitOption,
 } from "@/components/expense-target-picker";
+import { OwnerChargeMethodPicker } from "@/components/owner-charge-method-picker";
 
 /**
  * Wraps the property/unit picker and the category/supplier picker in one
  * shared `propertyId` state — the supplier list depends on which property
  * is selected (see PickableSupplier.propertyIds), but the two pickers are
- * otherwise independent siblings in the "Log an expense" form.
+ * otherwise independent siblings in the "Log an expense" form. Also shows
+ * the owner-charge-method choice once a non-OA property is selected — an
+ * OA property never had that distinction (see OwnerChargeMethodPicker).
  */
 export function ExpenseLogFields({
   properties,
@@ -24,12 +27,18 @@ export function ExpenseLogFields({
   categories,
   suppliers,
 }: {
-  properties: { id: string; name: string }[];
+  properties: { id: string; name: string; propertyType: { name: string } }[];
   units: UnitOption[];
   categories: PickableExpenseCategory[];
   suppliers: PickableSupplier[];
 }) {
   const [propertyId, setPropertyId] = useState(properties[0]?.id ?? "");
+
+  const selectedProperty = useMemo(
+    () => properties.find((p) => p.id === propertyId),
+    [properties, propertyId],
+  );
+  const isOaProperty = selectedProperty?.propertyType.name === "building";
 
   return (
     <>
@@ -44,6 +53,7 @@ export function ExpenseLogFields({
         suppliers={suppliers}
         propertyId={propertyId}
       />
+      {!isOaProperty && <OwnerChargeMethodPicker />}
     </>
   );
 }

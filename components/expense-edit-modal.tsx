@@ -8,6 +8,7 @@ import {
   type PickableExpenseCategory,
   type PickableSupplier,
 } from "@/components/expense-category-picker";
+import { OwnerChargeMethodPicker } from "@/components/owner-charge-method-picker";
 import { SubmitButton } from "@/components/submit-button";
 import { CloseModalOnSubmit, Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -16,13 +17,14 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { UploadFileInput } from "@/components/upload-file-input";
 import { dateInputValue } from "@/lib/finance";
+import { isOwnerChargeMethod, type OwnerChargeMethod } from "@/lib/owner-charge-method";
 
 export function ExpenseEditModal({
   expense,
   categories,
   suppliers,
-  funds,
   targetLabel,
+  isOaExpense,
 }: {
   expense: {
     id: string;
@@ -36,17 +38,25 @@ export function ExpenseEditModal({
     fundId: string;
     paymentReference: string | null;
     paidBy: string;
+    ownerChargeMethod: string;
     notes: string | null;
     date: Date;
     receiptFileName: string | null;
   };
   categories: PickableExpenseCategory[];
   suppliers: PickableSupplier[];
-  funds: { id: string; label: string }[];
   /** Read-only context shown above the form — the property/unit this
    * expense is logged against isn't editable here. */
   targetLabel: string;
+  /** OA properties never had an owner-charge-method distinction — hide
+   * the picker entirely rather than show a meaningless choice. */
+  isOaExpense: boolean;
 }) {
+  const defaultOwnerChargeMethod: OwnerChargeMethod = isOwnerChargeMethod(
+    expense.ownerChargeMethod,
+  )
+    ? expense.ownerChargeMethod
+    : "extra_charge";
   return (
     <Modal
       title="Edit expense"
@@ -122,38 +132,21 @@ export function ExpenseEditModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-[1.2fr_1fr] gap-2">
-          <div className="min-w-0 space-y-1.5">
-            <Label htmlFor={`expense-edit-${expense.id}-fund`} className="text-xs">
-              Fund
-            </Label>
-            <Select
-              id={`expense-edit-${expense.id}-fund`}
-              name="fundId"
-              defaultValue={expense.fundId}
-              required
-            >
-              {funds.map((fund) => (
-                <option key={fund.id} value={fund.id}>
-                  {fund.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="min-w-0 space-y-1.5">
-            <Label htmlFor={`expense-edit-${expense.id}-vat`} className="text-xs">
-              VAT (OMR)
-            </Label>
-            <Input
-              id={`expense-edit-${expense.id}-vat`}
-              name="vatAmount"
-              type="number"
-              min="0"
-              step="0.001"
-              defaultValue={expense.vatAmount || undefined}
-              placeholder="0.000"
-            />
-          </div>
+        <input type="hidden" name="fundId" value={expense.fundId} />
+
+        <div className="min-w-0 space-y-1.5">
+          <Label htmlFor={`expense-edit-${expense.id}-vat`} className="text-xs">
+            VAT (OMR)
+          </Label>
+          <Input
+            id={`expense-edit-${expense.id}-vat`}
+            name="vatAmount"
+            type="number"
+            min="0"
+            step="0.001"
+            defaultValue={expense.vatAmount || undefined}
+            placeholder="0.000"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -185,6 +178,10 @@ export function ExpenseEditModal({
             />
           </div>
         </div>
+
+        {!isOaExpense && (
+          <OwnerChargeMethodPicker defaultValue={defaultOwnerChargeMethod} />
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor={`expense-edit-${expense.id}-notes`} className="text-xs">

@@ -1,9 +1,11 @@
 import "server-only";
 
 import { moneyValue } from "@/lib/finance";
-import { formatUnitLabel } from "@/lib/property-types";
+import { toManagedUnit } from "@/lib/managed-unit";
+import { formatUnitLabel, isBuildingType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { collectionBucket, type CollectionBucket } from "@/lib/service-charge-status";
+import type { ManagedUnit } from "@/components/unit-manage-modal";
 
 export type CollectionPositionRow = {
   id: string;
@@ -24,6 +26,15 @@ export type CollectionPositionRow = {
     installments: { paidAt: Date | null }[];
   } | null;
   bucket: CollectionBucket;
+  /** Full unit shape so "Take Action" can open the same Manage modal used
+   * everywhere else, right from this dashboard, instead of navigating away
+   * to the unit's own property page first. */
+  managedUnit: ManagedUnit;
+  unitNoun: string;
+  unitNounCap: string;
+  hasFloors: boolean;
+  hasBedrooms: boolean;
+  isBuildingType: boolean;
 };
 
 export type CollectionPositionTotals = {
@@ -51,32 +62,49 @@ export async function getCollectionPositionData(
       ...(propertyFilter !== "all" ? { propertyId: propertyFilter } : {}),
     },
     orderBy: [{ property: { name: "asc" } }, { label: "asc" }],
-    select: {
-      id: true,
-      label: true,
-      floor: true,
-      propertyId: true,
-      serviceChargeAmount: true,
-      serviceChargeBalance: true,
-      serviceChargeDueDate: true,
-      serviceChargeLastReminderAt: true,
+    include: {
       property: {
         select: {
           name: true,
           buildingNumber: true,
-          propertyType: { select: { unitPrefix: true, hasFloors: true } },
+          propertyType: {
+            select: {
+              name: true,
+              unitPrefix: true,
+              hasFloors: true,
+              hasBedrooms: true,
+              unitNounSingular: true,
+            },
+          },
         },
       },
-      owner: { select: { firstName: true, lastName: true, email: true } },
-      serviceChargeInvoices: { select: { currentAmount: true } },
+      owner: { select: { id: true, email: true, firstName: true, lastName: true } },
+      tenant: { select: { id: true, email: true } },
+      documents: { orderBy: { createdAt: "desc" } },
+      serviceChargeInvoices: {
+        orderBy: { issueDate: "desc" },
+        select: {
+          id: true,
+          invoiceNumber: true,
+          issueDate: true,
+          currentAmount: true,
+          previousBalance: true,
+          amountPayable: true,
+        },
+      },
       serviceChargePayments: { select: { amount: true } },
       installmentPlans: {
         where: { cancelledAt: null },
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: {
-          installmentCount: true,
-          installments: { select: { paidAt: true } },
+        include: { installments: { orderBy: { sequence: "asc" } } },
+      },
+      ownershipTransfers: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          fromOwner: { select: { email: true, firstName: true, lastName: true } },
+          toOwner: { select: { email: true, firstName: true, lastName: true } },
+          createdBy: { select: { email: true, firstName: true, lastName: true } },
         },
       },
     },
@@ -108,7 +136,14 @@ export async function getCollectionPositionData(
     const balance = moneyValue(unit.serviceChargeBalance);
     const outstanding = Math.max(0, balance);
     const bucket = collectionBucket(unit);
-    const activePlan = unit.installmentPlans[0] ?? null;
+    const activePlan = unit.installmentPlans[0]
+      ? {
+          installmentCount: unit.installmentPlans[0].installmentCount,
+          installments: unit.installmentPlans[0].installments.map((i) => ({
+            paidAt: i.paidAt,
+          })),
+        }
+      : null;
     const daysOverdue =
       unit.serviceChargeDueDate && bucket === "overdue"
         ? Math.abs(
@@ -131,6 +166,8 @@ export async function getCollectionPositionData(
     if (outstanding > 0 && paid > 0) totals.partPaidCount++;
     if (outstanding > 0 && paid === 0) totals.noPaymentCount++;
 
+    const propertyType = unit.property.propertyType;
+
     return {
       id: unit.id,
       propertyId: unit.propertyId,
@@ -150,6 +187,12 @@ export async function getCollectionPositionData(
       hasPaid: paid > 0,
       activePlan,
       bucket,
+      managedUnit: toManagedUnit(unit),
+      unitNoun: propertyType.unitNounSingular.toLowerCase(),
+      unitNounCap: propertyType.unitNounSingular,
+      hasFloors: propertyType.hasFloors,
+      hasBedrooms: propertyType.hasBedrooms,
+      isBuildingType: isBuildingType(propertyType.name),
     };
   });
 

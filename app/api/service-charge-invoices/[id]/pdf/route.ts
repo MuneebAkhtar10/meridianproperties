@@ -21,7 +21,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -41,6 +41,13 @@ export async function GET(
 
   if (!invoice) {
     return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
+  }
+
+  // Admins manage every invoice; an owner may only ever open their own —
+  // this is the link a "Send Invoice" notification hands them.
+  const isOwnInvoice = user.userType === UserType.owner && user.id === invoice.unit.ownerId;
+  if (user.userType !== UserType.admin && !isOwnInvoice) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { unit } = invoice;

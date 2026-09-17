@@ -21,12 +21,22 @@ import { dateInputValue, monthInputValue } from "@/lib/finance";
 export function CashFlowStatementModal({
   properties,
   funds,
+  defaultPropertyId,
+  autoOpen = false,
 }: {
   properties: { id: string; name: string }[];
   funds: { id: string; label: string }[];
+  /** Preselects a property — set when this modal is opened from that
+   * property's own "Cash Flow" quick-link instead of the plain Expenses
+   * page. */
+  defaultPropertyId?: string;
+  /** Opens the modal immediately, for the same deep-link case. */
+  autoOpen?: boolean;
 }) {
-  const [propertyId, setPropertyId] = useState(properties[0]?.id ?? "");
-  const [fundId, setFundId] = useState(funds[0]?.id ?? "");
+  const [propertyId, setPropertyId] = useState(
+    defaultPropertyId ?? properties[0]?.id ?? "",
+  );
+  const fundId = funds[0]?.id ?? "";
   const [from, setFrom] = useState(`${monthInputValue()}-01`);
   const [to, setTo] = useState(dateInputValue());
 
@@ -35,13 +45,14 @@ export function CashFlowStatementModal({
   return (
     <Modal
       title="Detailed Cash Flow Statement"
-      description="Actual revenue and expenditure for one property, one fund, over any date range."
+      description="Actual revenue and expenditure for one property over any date range."
       trigger={
         <Button type="button" variant="outline">
           <ScrollText className="h-4 w-4" />
           Cash Flow Statement
         </Button>
       }
+      defaultOpen={autoOpen}
     >
       <div className="space-y-3">
         <div className="space-y-1.5">
@@ -56,23 +67,6 @@ export function CashFlowStatementModal({
             {properties.map((property) => (
               <option key={property.id} value={property.id}>
                 {property.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="cash-flow-fund" className="text-xs">
-            Fund
-          </Label>
-          <Select
-            id="cash-flow-fund"
-            value={fundId}
-            onChange={(e) => setFundId(e.target.value)}
-          >
-            {funds.map((fund) => (
-              <option key={fund.id} value={fund.id}>
-                {fund.label}
               </option>
             ))}
           </Select>

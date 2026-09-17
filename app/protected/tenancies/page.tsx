@@ -11,6 +11,7 @@ import { EntityDocumentManager } from "@/components/entity-document-manager";
 import { ManageToggle } from "@/components/manage-toggle";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { RentStatementModal } from "@/components/rent-statement-modal";
 import { StartTenancyForm } from "@/components/start-tenancy-form";
 import { SubmitButton } from "@/components/submit-button";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -22,7 +23,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { type PickableUnit } from "@/components/unit-picker";
 import { chargeBalance, dateInputValue, formatMoney } from "@/lib/finance";
-import { formatUnitLabel } from "@/lib/property-types";
+import { formatUnitLabel, isUnitRentStatementType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole } from "@/lib/session";
 import {
@@ -102,7 +103,9 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
           })
         : Promise.resolve([]),
       prisma.property.findMany({
-        where: isOwner ? { units: { some: { ownerId: user.id } } } : {},
+        where: {
+          ...(isOwner ? { units: { some: { ownerId: user.id } } } : {}),
+        },
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
@@ -387,6 +390,15 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                           />
                         </div>
                       )}
+
+                      {isAdmin &&
+                        isUnitRentStatementType(
+                          tenancy.unit.property.propertyType.name,
+                        ) && (
+                          <div className="flex justify-end">
+                            <RentStatementModal tenancyId={tenancy.id} />
+                          </div>
+                        )}
 
                       {isAdmin && (
                       <ManageToggle

@@ -1,10 +1,16 @@
 import {
+  AlertTriangle,
+  Banknote,
   Building2,
+  CheckCircle2,
   ChevronRight,
+  ClipboardCheck,
   ClipboardList,
   DoorOpen,
+  FileClock,
   Home,
   KeyRound,
+  Package,
   Plus,
   ReceiptText,
   Users,
@@ -18,6 +24,7 @@ import { PageHeader } from "@/components/page-header";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
+import { getAgreementExpiryAlerts } from "@/lib/agreement-expiry";
 import {
   NON_UTILITY_CHARGE_TYPES,
   chargeBalance,
@@ -62,6 +69,11 @@ async function AdminDashboard() {
     pendingPayments,
     collectedThisMonth,
     scheduledMonthlyRent,
+    expiryAlerts,
+    pendingApprovals,
+    awaitingRentCheques,
+    awaitingServiceCharges,
+    pendingSupplyRequests,
   ] = await Promise.all([
     prisma.maintenanceRequest.groupBy({
       by: ["status"],
@@ -126,7 +138,23 @@ async function AdminDashboard() {
       where: { endDate: null },
       _sum: { monthlyRent: true },
     }),
+    getAgreementExpiryAlerts(),
+    prisma.property.count({
+      where: { approved: false, submittedAt: { not: null } },
+    }),
+    prisma.payment.count({
+      where: { method: "cheque", clearanceStatus: { not: "cleared" } },
+    }),
+    prisma.serviceChargePayment.count({
+      where: { paymentMethod: "cheque", clearanceStatus: { not: "cleared" } },
+    }),
+    prisma.supplyRequest.count({ where: { status: "pending" } }),
   ]);
+
+  const awaitingCheques = awaitingRentCheques + awaitingServiceCharges;
+  const urgentExpiryCount = expiryAlerts.filter(
+    (a) => a.daysRemaining <= 15,
+  ).length;
 
   const count = (status: RequestStatus) =>
     byStatus.find((row) => row.status === status)?._count._all ?? 0;
@@ -190,6 +218,122 @@ async function AdminDashboard() {
           color="violet"
           href="/protected/properties"
         />
+      </div>
+
+      {/* Spec #9 "Agreement Expiry" — "a priority dashboard function".
+          Paired with a Pending Tasks checklist so everything needing an
+          admin's attention right now lives in one place, above the
+          money/requests summaries below. */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="overflow-hidden border-border/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/60 bg-rose-50/40">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 text-rose-600">
+                <AlertTriangle className="h-4 w-4" />
+              </span>
+              <CardTitle className="text-base">Agreement expiry</CardTitle>
+              {urgentExpiryCount > 0 && (
+                <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
+                  {urgentExpiryCount} urgent
+                </span>
+              )}
+            </div>
+            <Link
+              href="/protected/reports/agreement-expiry"
+              className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              View all
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-4">
+            {expiryAlerts.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Nothing expiring in the next 90 days.
+              </p>
+            ) : (
+              expiryAlerts.slice(0, 6).map((alert) => {
+                const expired = alert.daysRemaining < 0;
+                return (
+                  <Link
+                    key={alert.id}
+                    href={alert.href}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-3 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {alert.title}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {alert.subtitle}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
+                        expired
+                          ? "bg-rose-50 text-rose-700 ring-rose-600/20"
+                          : "bg-amber-50 text-amber-700 ring-amber-600/20"
+                      }`}
+                    >
+                      {expired
+                        ? `Expired ${Math.abs(alert.daysRemaining)}d ago`
+                        : `Due in ${alert.daysRemaining}d`}
+                    </span>
+                  </Link>
+                );
+              })
+            )}
+            {expiryAlerts.length > 6 && (
+              <Link
+                href="/protected/reports/agreement-expiry"
+                className="block pt-1 text-center text-xs font-medium text-primary hover:underline"
+              >
+                +{expiryAlerts.length - 6} more
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden border-border/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center gap-2 space-y-0 border-b border-border/60 bg-amber-50/40">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+              <ClipboardCheck className="h-4 w-4" />
+            </span>
+            <CardTitle className="text-base">Pending tasks</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-4">
+            <PendingTaskRow
+              icon={<ReceiptText className="h-4 w-4" />}
+              label="Payment proofs awaiting review"
+              count={pendingPayments}
+              href="/protected/finances"
+            />
+            <PendingTaskRow
+              icon={<Building2 className="h-4 w-4" />}
+              label="Property approvals pending"
+              count={pendingApprovals}
+              href="/protected/properties"
+            />
+            <PendingTaskRow
+              icon={<Wrench className="h-4 w-4" />}
+              label="Maintenance requests pending"
+              count={count("pending")}
+              href="/protected/maintenance?status=pending"
+            />
+            <PendingTaskRow
+              icon={<FileClock className="h-4 w-4" />}
+              label="Cheques awaiting clearance"
+              count={awaitingCheques}
+              href="/protected/finances/cheque-reminders"
+            />
+            <PendingTaskRow
+              icon={<Package className="h-4 w-4" />}
+              label="Supply requests pending decision"
+              count={pendingSupplyRequests}
+              href="/protected/maintenance"
+            />
+          </CardContent>
+        </Card>
       </div>
 
       <Link href="/protected/finances" className="block">
@@ -796,6 +940,50 @@ const STAT_TILE_COLORS = {
 } as const;
 
 type StatTileColor = keyof typeof STAT_TILE_COLORS;
+
+/** One row of the "Pending tasks" card — a count that's either "all clear"
+ * (muted, no badge) or something waiting on the admin (amber badge). */
+function PendingTaskRow({
+  icon,
+  label,
+  count,
+  href,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  count: number;
+  href: string;
+}) {
+  const clear = count === 0;
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-3 transition-colors hover:bg-muted/50"
+    >
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+            clear
+              ? "bg-emerald-50 text-emerald-600"
+              : "bg-amber-50 text-amber-600"
+          }`}
+        >
+          {clear ? <CheckCircle2 className="h-4 w-4" /> : icon}
+        </span>
+        <span className="truncate text-sm font-medium">{label}</span>
+      </div>
+      <span
+        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+          clear
+            ? "bg-emerald-50 text-emerald-700"
+            : "bg-amber-100 text-amber-800"
+        }`}
+      >
+        {clear ? "All clear" : count}
+      </span>
+    </Link>
+  );
+}
 
 function StatTile({
   label,

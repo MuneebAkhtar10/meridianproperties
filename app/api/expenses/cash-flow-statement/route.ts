@@ -181,7 +181,6 @@ export async function GET(request: NextRequest) {
     CashFlowStatementDocument({
       propertyName: property.name,
       propertyAddress: address,
-      fundLabel: fund.label,
       periodLabel,
       openingBalance: numberFormat.format(Math.abs(openingBalance)),
       openingIsDeficit: openingBalance < 0,

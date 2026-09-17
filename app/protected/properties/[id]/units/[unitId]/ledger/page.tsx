@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
+import { PendingLink } from "@/components/ui/pending-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { formatMoney, moneyValue } from "@/lib/finance";
@@ -13,10 +14,14 @@ import { UserType } from "@/lib/generated/prisma/client";
 import { cn } from "@/lib/utils";
 
 type LedgerEntry = {
-  date: Date;
-  kind: "invoice" | "payment";
+  /** The invoice's due date, or the payment's paid date — one combined
+   * column, same idiom as the property-ledger tools this mirrors. */
+  dueOrPaidDate: Date;
+  issueDate: Date | null;
+  graceDays: number | null;
+  transNumber: string | null;
   description: string;
-  invoiceNumber?: string;
+  periodLabel: string | null;
   debit: number;
   credit: number;
 };
@@ -25,9 +30,12 @@ type LedgerEntry = {
  * Spec #17 "Unit Ledger" — the detailed financial history for one unit,
  * distinct from the collection dashboard (the property page / Service
  * Charge Ledger). Every OA unit has its own, reachable from the "View Unit
- * Ledger" link in components/unit-manage-modal.tsx. Grouped per fund
- * (see UnitFundBalance in schema.prisma) since a unit's balance is really
- * several separate fund balances, not one number.
+ * Ledger" link in components/unit-manage-modal.tsx, or from the property's
+ * Unit Ledgers index. One single chronological running balance — every
+ * invoice/payment funnels through the same fund, so there's nothing to
+ * split by fund anymore (see the reference ledger this mirrors: Due/Paid
+ * Date | Issue Date | Grace | Trans. Number | Description | Period |
+ * Amount | Balance, newest first, ending on a zero "brought forward" row).
  */
 export default async function UnitLedgerPage({
   params,
@@ -51,18 +59,16 @@ export default async function UnitLedgerPage({
       owner: {
         select: { firstName: true, lastName: true, email: true },
       },
-      fundBalances: {
-        select: { fundId: true, balance: true, fund: { select: { label: true } } },
-        orderBy: { fund: { createdAt: "asc" } },
-      },
       serviceChargeInvoices: {
         select: {
           id: true,
           invoiceNumber: true,
           issueDate: true,
+          dueDate: true,
+          graceDays: true,
+          periodStart: true,
+          periodEnd: true,
           currentAmount: true,
-          fundId: true,
-          fund: { select: { label: true } },
         },
         orderBy: { issueDate: "asc" },
       },
@@ -71,8 +77,7 @@ export default async function UnitLedgerPage({
           id: true,
           paidAt: true,
           amount: true,
-          fundId: true,
-          fund: { select: { label: true } },
+          transactionNumber: true,
           note: true,
         },
         orderBy: { paidAt: "asc" },
@@ -102,79 +107,73 @@ export default async function UnitLedgerPage({
 
   const unitLabel = formatUnitLabel(unit.property.propertyType, unit.label);
 
-  // Group invoices+payments by fund so each fund gets its own chronological
-  // running balance, matching the spec's "Opening Balance -> Invoice ->
-  // Payments -> Credits -> Adjustments -> Running Balance" flow.
-  const fundIds = new Set<string>();
-  unit.fundBalances.forEach((b) => fundIds.add(b.fundId));
-  unit.serviceChargeInvoices.forEach((i) => fundIds.add(i.fundId));
-  unit.serviceChargePayments.forEach((p) => p.fundId && fundIds.add(p.fundId));
+  const entries: LedgerEntry[] = [
+    ...unit.serviceChargeInvoices.map((i): LedgerEntry => ({
+      dueOrPaidDate: i.dueDate,
+      issueDate: i.issueDate,
+      graceDays: i.graceDays,
+      transNumber: i.invoiceNumber,
+      description: "Service charge invoice",
+      periodLabel: `${format(i.periodStart, "MMM yyyy")} – ${format(i.periodEnd, "MMM yyyy")}`,
+      debit: moneyValue(i.currentAmount),
+      credit: 0,
+    })),
+    ...unit.serviceChargePayments.map((p): LedgerEntry => ({
+      dueOrPaidDate: p.paidAt,
+      issueDate: null,
+      graceDays: null,
+      transNumber: p.transactionNumber,
+      description: p.note ? `Payment — ${p.note}` : "Payment",
+      periodLabel: null,
+      debit: 0,
+      credit: moneyValue(p.amount),
+    })),
+  ].sort((a, b) => a.dueOrPaidDate.getTime() - b.dueOrPaidDate.getTime());
 
-  const fundLabelById = new Map<string, string>();
-  unit.fundBalances.forEach((b) => fundLabelById.set(b.fundId, b.fund.label));
-  unit.serviceChargeInvoices.forEach((i) =>
-    fundLabelById.set(i.fundId, i.fund.label),
-  );
-  unit.serviceChargePayments.forEach(
-    (p) => p.fundId && p.fund && fundLabelById.set(p.fundId, p.fund.label),
-  );
+  let running = 0;
+  const rowsChronological = entries.map((entry) => {
+    running += entry.debit - entry.credit;
+    return { ...entry, running };
+  });
 
-  const fundGroups = Array.from(fundIds)
-    .map((fundId) => {
-      const entries: LedgerEntry[] = [
-        ...unit.serviceChargeInvoices
-          .filter((i) => i.fundId === fundId)
-          .map((i): LedgerEntry => ({
-            date: i.issueDate,
-            kind: "invoice",
-            description: "Service charge invoice",
-            invoiceNumber: i.invoiceNumber,
-            debit: moneyValue(i.currentAmount),
-            credit: 0,
-          })),
-        ...unit.serviceChargePayments
-          .filter((p) => p.fundId === fundId)
-          .map((p): LedgerEntry => ({
-            date: p.paidAt,
-            kind: "payment",
-            description: p.note ? `Payment — ${p.note}` : "Payment",
-            debit: 0,
-            credit: moneyValue(p.amount),
-          })),
-      ].sort((a, b) => a.date.getTime() - b.date.getTime());
-
-      let running = 0;
-      const rows = entries.map((entry) => {
-        running += entry.debit - entry.credit;
-        return { ...entry, running };
-      });
-
-      return {
-        fundId,
-        label: fundLabelById.get(fundId) ?? "Fund",
-        rows,
-        closingBalance: running,
-      };
-    })
-    .filter((g) => g.rows.length > 0);
-
-  // Payments recorded with no fund selected — they still move the unit's
-  // total (see recordServiceChargePaymentAction) but don't belong to any
-  // fund's own mini-ledger.
-  const unallocatedPayments = unit.serviceChargePayments.filter(
-    (p) => !p.fundId,
-  );
-
+  // Newest first, matching the reference ledger layout — the running
+  // balance itself is still computed oldest-to-newest above.
+  const rows = [...rowsChronological].reverse();
   const totalBalance = moneyValue(unit.serviceChargeBalance);
 
   return (
     <div className="w-full space-y-5 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
+      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+        <PendingLink
+          href="/protected/properties"
+          className="hover:text-foreground"
+        >
+          Properties
+        </PendingLink>
+        <span>/</span>
+        <PendingLink
+          href={`/protected/properties/${propertyId}`}
+          className="hover:text-foreground"
+        >
+          {unit.property.name}
+        </PendingLink>
+        <span>/</span>
+        <PendingLink
+          href={`/protected/properties/${propertyId}/unit-ledgers`}
+          className="hover:text-foreground"
+        >
+          Unit Ledgers
+        </PendingLink>
+        <span>/</span>
+        <span className="font-medium text-foreground">{unitLabel}</span>
+      </div>
+
       <PageHeader
         title="Unit Ledger"
         description={`${unit.property.name} · ${unitLabel}`}
         back={{
-          href: `/protected/properties/${propertyId}`,
-          label: "Back to property",
+          href: `/protected/properties/${propertyId}/unit-ledgers`,
+          label: "Back to Unit Ledgers",
         }}
       >
         <ButtonLink
@@ -214,9 +213,7 @@ export default async function UnitLedgerPage({
             <p className="font-medium">{unit.entitlements ?? "—"}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">
-              Total balance (all funds)
-            </p>
+            <p className="text-xs text-muted-foreground">Service Charge Balance</p>
             <p
               className={cn(
                 "font-semibold",
@@ -231,117 +228,89 @@ export default async function UnitLedgerPage({
         </CardContent>
       </Card>
 
-      {fundGroups.length === 0 && unallocatedPayments.length === 0 && (
-        <Card>
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No service charge activity recorded for this unit yet.
-          </CardContent>
-        </Card>
-      )}
-
-      {fundGroups.map((group) => (
-        <Card key={group.fundId}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">{group.label}</CardTitle>
-            <span
-              className={cn(
-                "text-sm font-semibold",
-                group.closingBalance < 0 ? "text-emerald-600" : "text-rose-600",
-              )}
-            >
-              {group.closingBalance < 0
-                ? `Credit ${formatMoney(Math.abs(group.closingBalance))}`
-                : formatMoney(group.closingBalance)}
-            </span>
-          </CardHeader>
-          <CardContent className="p-0">
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          {rows.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No service charge activity recorded for this unit yet.
+            </p>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-2">Date</th>
+                    <th className="px-4 py-2">Due/Paid Date</th>
+                    <th className="px-4 py-2">Issue Date</th>
+                    <th className="px-4 py-2 text-right">Grace</th>
+                    <th className="px-4 py-2">Trans. Number</th>
                     <th className="px-4 py-2">Description</th>
-                    <th className="px-4 py-2 text-right">Debit</th>
-                    <th className="px-4 py-2 text-right">Credit</th>
-                    <th className="px-4 py-2 text-right">Running balance</th>
+                    <th className="px-4 py-2">Period</th>
+                    <th className="px-4 py-2 text-right">Amount</th>
+                    <th className="px-4 py-2 text-right">Balance</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {group.rows.map((row, idx) => (
-                    <tr key={idx}>
-                      <td className="px-4 py-2 align-top">
-                        {format(row.date, "dd/MM/yyyy")}
-                      </td>
-                      <td className="px-4 py-2 align-top">
-                        {row.description}
-                        {row.invoiceNumber && (
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            #{row.invoiceNumber}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 text-right align-top">
-                        {row.debit > 0 ? formatMoney(row.debit) : "—"}
-                      </td>
-                      <td className="px-4 py-2 text-right align-top">
-                        {row.credit > 0 ? formatMoney(row.credit) : "—"}
-                      </td>
-                      <td
-                        className={cn(
-                          "px-4 py-2 text-right align-top font-medium",
-                          row.running < 0 ? "text-emerald-600" : "text-rose-600",
-                        )}
+                  {rows.map((row, idx) => {
+                    const amount = row.debit > 0 ? row.debit : -row.credit;
+                    return (
+                      <tr
+                        key={idx}
+                        className={row.credit > 0 ? "bg-emerald-50/40" : undefined}
                       >
-                        {row.running < 0
-                          ? `Credit ${formatMoney(Math.abs(row.running))}`
-                          : formatMoney(row.running)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-
-      {unallocatedPayments.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
-              Unallocated payments (no fund selected)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-2">Date</th>
-                    <th className="px-4 py-2">Description</th>
-                    <th className="px-4 py-2 text-right">Credit</th>
+                        <td className="px-4 py-2 align-top whitespace-nowrap">
+                          {format(row.dueOrPaidDate, "dd/MM/yyyy")}
+                        </td>
+                        <td className="px-4 py-2 align-top whitespace-nowrap text-muted-foreground">
+                          {row.issueDate ? format(row.issueDate, "dd/MM/yyyy") : "—"}
+                        </td>
+                        <td className="px-4 py-2 text-right align-top text-muted-foreground">
+                          {row.graceDays ? `${row.graceDays}d` : "—"}
+                        </td>
+                        <td className="px-4 py-2 align-top text-muted-foreground">
+                          {row.transNumber ?? "—"}
+                        </td>
+                        <td className="px-4 py-2 align-top">{row.description}</td>
+                        <td className="px-4 py-2 align-top text-muted-foreground">
+                          {row.periodLabel ?? "—"}
+                        </td>
+                        <td
+                          className={cn(
+                            "px-4 py-2 text-right align-top font-medium whitespace-nowrap",
+                            amount < 0 ? "text-emerald-600" : "text-foreground",
+                          )}
+                        >
+                          {amount < 0
+                            ? `(${formatMoney(Math.abs(amount))})`
+                            : formatMoney(amount)}
+                        </td>
+                        <td
+                          className={cn(
+                            "px-4 py-2 text-right align-top font-medium whitespace-nowrap",
+                            row.running < 0 ? "text-emerald-600" : "text-rose-600",
+                          )}
+                        >
+                          {row.running < 0
+                            ? `Credit ${formatMoney(Math.abs(row.running))}`
+                            : formatMoney(row.running)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="bg-muted/20 text-muted-foreground">
+                    <td className="px-4 py-2 align-top whitespace-nowrap" colSpan={6}>
+                      Brought forward
+                    </td>
+                    <td className="px-4 py-2 text-right align-top">—</td>
+                    <td className="px-4 py-2 text-right align-top">
+                      {formatMoney(0)}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {unallocatedPayments.map((p) => (
-                    <tr key={p.id}>
-                      <td className="px-4 py-2 align-top">
-                        {format(p.paidAt, "dd/MM/yyyy")}
-                      </td>
-                      <td className="px-4 py-2 align-top">
-                        {p.note ? `Payment — ${p.note}` : "Payment"}
-                      </td>
-                      <td className="px-4 py-2 text-right align-top">
-                        {formatMoney(moneyValue(p.amount))}
-                      </td>
-                    </tr>
-                  ))}
                 </tbody>
               </table>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

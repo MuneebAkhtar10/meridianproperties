@@ -49,6 +49,8 @@ export default async function AgreementListPage({ searchParams }: PageProps) {
   const [allRows, properties, tenants] = await Promise.all([
     getAgreementListData(propertyFilter, user, tenantFilter),
     prisma.property.findMany({
+      // OA properties never have tenant agreements.
+      where: { propertyType: { name: { not: "building" } } },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

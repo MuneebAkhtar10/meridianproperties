@@ -158,6 +158,10 @@ export async function getBuildingManagementReport(
     where: {
       date: { gte: period.from, lte: period.to },
       OR: [{ propertyId }, { units: { some: { unit: { propertyId } } } }],
+      // An expense marked to be deducted from the service charge already
+      // being collected isn't billed against rent again here — it belongs
+      // to the OA/service-charge side of the books instead.
+      ownerChargeMethod: "extra_charge",
     },
     select: {
       amount: true,

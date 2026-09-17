@@ -176,10 +176,23 @@ model Property {
   wilayat                       String?
   area                          String?
   wayNumber                     String?   @map("way_number")
+  /// The building's own name/number as Rawazen's source data has it —
+  /// kept distinct from buildingNumber (the official municipal building
+  /// number) rather than merged into one field, since the two source
+  /// fields aren't always the same value.
+  buildingName                  String?   @map("building_name")
   buildingNumber                String?   @map("building_number")
   postalCode                    String?   @map("postal_code")
   titleDeedNumber               String?   @map("title_deed_number")
   plotNumber                    String?   @map("plot_number")
+  /// Retained against the property for location-based functions (map
+  /// pins, JAHEZ property identification), independent of the free-text
+  /// address fields above.
+  latitude                      Decimal?  @db.Decimal(10, 7)
+  longitude                     Decimal?  @db.Decimal(10, 7)
+  /// A map link, plus code, or other location reference that isn't a raw
+  /// coordinate pair — e.g. a pasted Google Maps URL.
+  locationMapPosition           String?   @map("location_map_position")
   notes                         String?
   /// Owners' association letterhead + bank details, printed on every
   /// service charge invoice generated for this property's units — see
@@ -298,6 +311,7 @@ model Unit {
   serviceChargePayments ServiceChargePayment[]
   installmentPlans      ServiceChargeInstallmentPlan[]
   fundBalances          UnitFundBalance[]
+  ownershipTransfers    OwnershipTransfer[]
 
   @@unique([propertyId, label])
   @@index([propertyId])
@@ -327,6 +341,36 @@ model UnitPermissionChange {
 
   @@index([unitId, createdAt])
   @@map("unit_permission_changes")
+}
+
+/// A recorded handover of one unit from its current owner to a new one —
+/// the professional alternative to just overwriting Unit.ownerId, which
+/// left no record of who owned a unit before or when the change happened.
+/// The old ownership ends and the new one starts on the same transferDate,
+/// same as a real sale/handover would.
+model OwnershipTransfer {
+  id                String   @id @default(uuid()) @db.Uuid
+  unitId            String   @map("unit_id") @db.Uuid
+  /// Null when the unit had no owner before this (a first assignment
+  /// recorded through the same flow, not just a bare transfer).
+  fromOwnerId       String?  @map("from_owner_id") @db.Uuid
+  toOwnerId         String   @map("to_owner_id") @db.Uuid
+  transferDate      DateTime @map("transfer_date") @db.Date
+  /// Whether the unit's existing service charge amount/cycle/due date carry
+  /// over to the new owner unchanged, or were cleared for the admin to set
+  /// up fresh for them.
+  keptServiceCharge Boolean  @default(true) @map("kept_service_charge")
+  notes             String?
+  createdById       String?  @map("created_by") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  unit      Unit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  fromOwner User? @relation("OwnershipTransferFromOwner", fields: [fromOwnerId], references: [id], onDelete: SetNull)
+  toOwner   User  @relation("OwnershipTransferToOwner", fields: [toOwnerId], references: [id], onDelete: Restrict)
+  createdBy User? @relation("OwnershipTransferCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([unitId, createdAt])
+  @@map("ownership_transfers")
 }
 
 /// Account and profile in one row. `userType` drives every authorization check.
@@ -430,6 +474,9 @@ model User {
   /// Toggle changes this admin made on a unit's rent-bills/maintenance
   /// permissions — see UnitPermissionChange.
   unitPermissionChanges           UnitPermissionChange[]
+  ownershipTransfersFrom          OwnershipTransfer[]            @relation("OwnershipTransferFromOwner")
+  ownershipTransfersTo            OwnershipTransfer[]            @relation("OwnershipTransferToOwner")
+  ownershipTransfersCreated       OwnershipTransfer[]            @relation("OwnershipTransferCreator")
   /// Only populated when employeeType = "family" — the worker's tracked
   /// dependents (see WorkerFamilyMember).
   familyMembers                   WorkerFamilyMember[]
@@ -651,44 +698,53 @@ model FinancialAttachment {
 /// specific unit. Exactly one of propertyId/unitId is set, same idiom as
 /// MaintenanceRequest's unit-vs-common-area split.
 model Expense {
-  id               String           @id @default(uuid()) @db.Uuid
-  propertyId       String?          @map("property_id") @db.Uuid
-  categoryId       String           @map("category_id") @db.Uuid
+  id                String           @id @default(uuid()) @db.Uuid
+  propertyId        String?          @map("property_id") @db.Uuid
+  categoryId        String           @map("category_id") @db.Uuid
   /// One of the chosen category's ExpenseSubcategoryType labels (validated
   /// in the server action, not a DB FK — kept as a plain string since it's
   /// just a label copy, same idiom the old hardcoded list used).
-  subcategory      String?
+  subcategory       String?
   /// The vendor this was paid to, if any — null means "Company default"
   /// (no external supplier), not a database row. See Supplier above.
-  supplierId       String?          @map("supplier_id") @db.Uuid
-  description      String
-  amount           Decimal          @db.Decimal(14, 3)
+  supplierId        String?          @map("supplier_id") @db.Uuid
+  description       String
+  amount            Decimal          @db.Decimal(14, 3)
   /// VAT charged on this expense, if any — kept as its own amount (not a
   /// rate) since that's what a supplier invoice actually states.
-  vatAmount        Decimal          @default(0) @map("vat_amount") @db.Decimal(14, 3)
+  vatAmount         Decimal          @default(0) @map("vat_amount") @db.Decimal(14, 3)
   /// Which OA fund this expense is paid out of — required, like
   /// ServiceChargeInvoice.fundId, so every fund's Cash Flow Statement can
   /// filter expenditure by it.
-  fundId           String           @map("fund_id") @db.Uuid
+  fundId            String           @map("fund_id") @db.Uuid
   /// Free-form bank transfer/cheque reference, same idiom as
   /// ServiceChargePayment.transactionNumber.
-  paymentReference String?          @map("payment_reference")
+  paymentReference  String?          @map("payment_reference")
   /// Who actually paid this expense — same distinction as
   /// Payment.collectedBy: did it come out of the management company's own
   /// float, or did the owner pay the supplier directly.
-  paidBy           PaymentCollector @default(management) @map("paid_by")
-  notes            String?
-  date             DateTime         @db.Date
+  paidBy            PaymentCollector @default(management) @map("paid_by")
+  /// Only meaningful for a non-OA property (villa/apartment/office/building
+  /// management) — those never had a "service charge" concept before this,
+  /// so an expense against one of their units needs to say whether it's
+  /// billed to the owner as its own extra charge, or absorbed by/deducted
+  /// from the OA service charge already being collected for that unit.
+  /// Same idiom as clearanceStatus: a plain string, not an enum, since it's
+  /// two admin-picked values that would only cause migration friction as
+  /// an enum if a third ever gets added. Ignored entirely for OA units.
+  ownerChargeMethod String           @default("extra_charge") @map("owner_charge_method")
+  notes             String?
+  date              DateTime         @db.Date
   /// The uploaded invoice/receipt, if any. Single file, so inline rather
   /// than a separate attachment table — same idiom as SupplyRequest's
   /// receiptPath/receiptFileName/receiptFileType.
-  receiptFileName  String?          @map("receipt_file_name")
-  receiptFilePath  String?          @map("receipt_file_path")
-  receiptFileType  String?          @map("receipt_file_type")
-  receiptFileSize  Int?             @map("receipt_file_size")
-  createdById      String?          @map("created_by") @db.Uuid
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
+  receiptFileName   String?          @map("receipt_file_name")
+  receiptFilePath   String?          @map("receipt_file_path")
+  receiptFileType   String?          @map("receipt_file_type")
+  receiptFileSize   Int?             @map("receipt_file_size")
+  createdById       String?          @map("created_by") @db.Uuid
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
 
   property  Property?           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   category  ExpenseCategoryType @relation(fields: [categoryId], references: [id], onDelete: Restrict)

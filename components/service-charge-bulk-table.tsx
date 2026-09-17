@@ -60,7 +60,12 @@ export function ServiceChargeBulkTable({
   funds,
 }: {
   rows: ServiceChargeRow[];
-  owners: { id: string; email: string }[];
+  owners: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  }[];
   availableTenants: { id: string; email: string }[];
   funds: { id: string; label: string }[];
 }) {
@@ -214,7 +219,6 @@ export function ServiceChargeBulkTable({
                       <UnitManageModal
                         unit={row.managedUnit}
                         unitLabel={row.unitLabel}
-                        propertyName={row.propertyName}
                         unitNoun={row.unitNoun}
                         unitNounCap={row.unitNounCap}
                         hasFloors={row.hasFloors}

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 
 import { parseDate, parseNonNegativeMoney, parsePositiveMoney } from "@/lib/finance";
+import { isOwnerChargeMethod } from "@/lib/owner-charge-method";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { deleteAttachment, uploadExpenseReceipt } from "@/lib/storage";
@@ -69,6 +70,10 @@ export const createExpenseAction = async (formData: FormData) => {
   ).includes(paidByRaw ?? "")
     ? (paidByRaw as PaymentCollector)
     : PaymentCollector.management;
+  const ownerChargeMethodRaw = formData.get("ownerChargeMethod")?.toString() ?? "";
+  const ownerChargeMethod = isOwnerChargeMethod(ownerChargeMethodRaw)
+    ? ownerChargeMethodRaw
+    : "extra_charge";
   const notes = formData.get("notes")?.toString().trim() || null;
   const date = parseDate(formData.get("date")?.toString());
   const receipt = formData.get("receipt");
@@ -135,6 +140,7 @@ export const createExpenseAction = async (formData: FormData) => {
       fundId: fundId!,
       paymentReference,
       paidBy,
+      ownerChargeMethod,
       notes,
       date,
       createdById: admin.id,
@@ -196,6 +202,10 @@ export const updateExpenseAction = async (formData: FormData) => {
   ).includes(paidByRaw ?? "")
     ? (paidByRaw as PaymentCollector)
     : PaymentCollector.management;
+  const ownerChargeMethodRaw = formData.get("ownerChargeMethod")?.toString() ?? "";
+  const ownerChargeMethod = isOwnerChargeMethod(ownerChargeMethodRaw)
+    ? ownerChargeMethodRaw
+    : "extra_charge";
   const notes = formData.get("notes")?.toString().trim() || null;
   const date = parseDate(formData.get("date")?.toString());
   const receipt = formData.get("receipt");
@@ -271,6 +281,7 @@ export const updateExpenseAction = async (formData: FormData) => {
       fundId: fundId!,
       paymentReference,
       paidBy,
+      ownerChargeMethod,
       notes,
       date,
       ...receiptData,

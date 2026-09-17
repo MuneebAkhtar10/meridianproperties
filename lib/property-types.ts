@@ -52,3 +52,18 @@ export function isBuildingType(propertyTypeName: string): boolean {
 export function isBuildingManagementType(propertyTypeName: string): boolean {
   return propertyTypeName === "building_management";
 }
+
+/** The property types that get a per-tenancy Unit Rent Statement (rent
+ * collected month-by-month vs. the unit's expenses, netting to a balance
+ * owed to/from the landlord) — Rawazen's own rent-managed types. An OA
+ * "building" never has individual tenant rent to reconcile this way. */
+const UNIT_RENT_STATEMENT_TYPES = [
+  "building_management",
+  "villa",
+  "apartment",
+  "office",
+];
+
+export function isUnitRentStatementType(propertyTypeName: string): boolean {
+  return UNIT_RENT_STATEMENT_TYPES.includes(propertyTypeName);
+}

@@ -2,17 +2,18 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 /**
  * Spec #17 "Unit Ledger" — a printable statement of one unit's complete
- * financial history, grouped per fund (see UnitFundBalance in
- * schema.prisma). Styled with this app's own indigo theme, matching
- * lib/pdf/expense-report.tsx, rather than the plain reference-invoice look
- * of lib/pdf/service-charge-invoice.tsx — this is an internal/owner
- * statement, not the formal invoice sent for payment.
+ * financial history: one single chronological running balance (every
+ * invoice/payment funnels through the same fund, so there's nothing left to
+ * split by fund), matching the reference ledger's own columns — Due/Paid
+ * Date | Issue Date | Grace | Trans. Number | Description | Period |
+ * Amount | Balance, newest first, ending on a zero "brought forward" row.
  */
 
 const COLORS = {
   primary: "#5048E5",
   primaryDark: "#2F29A3",
   accentBg: "#EEEDFC",
+  stripe: "#FAFAFB",
   emerald: "#10B981",
   rose: "#F43F5E",
   muted: "#F4F4F5",
@@ -23,70 +24,62 @@ const COLORS = {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 32,
-    fontSize: 9,
+    padding: 36,
+    fontSize: 8.5,
     fontFamily: "Helvetica",
     color: COLORS.foreground,
   },
   headerBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
     borderBottomWidth: 2,
     borderBottomColor: COLORS.primary,
-    paddingBottom: 10,
-    marginBottom: 12,
+    paddingBottom: 12,
+    marginBottom: 16,
   },
   titleText: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
     color: COLORS.primary,
   },
   subtitleText: {
-    fontSize: 9,
+    fontSize: 9.5,
     color: COLORS.mutedForeground,
-    marginTop: 2,
+    marginTop: 3,
   },
+  metaLabel: {
+    fontSize: 7,
+    color: COLORS.mutedForeground,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    textAlign: "right",
+  },
+  metaText: { fontSize: 8, color: COLORS.mutedForeground, textAlign: "right" },
   detailGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   detailBox: {
-    width: "23%",
-    backgroundColor: COLORS.muted,
-    borderRadius: 4,
-    padding: 6,
+    width: "20%",
+    padding: 8,
+    borderRightWidth: 1,
+    borderColor: COLORS.border,
   },
   detailLabel: {
     fontSize: 7,
     color: COLORS.mutedForeground,
     textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
-  detailValue: {
-    fontSize: 9.5,
-    fontFamily: "Helvetica-Bold",
-    marginTop: 2,
-  },
-  fundHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: COLORS.accentBg,
-    padding: 6,
-    marginTop: 10,
-  },
-  fundHeaderLabel: {
-    fontFamily: "Helvetica-Bold",
-    color: COLORS.primaryDark,
-    fontSize: 10,
-  },
-  fundHeaderBalance: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 10,
-  },
+  detailValue: { fontSize: 9.5, fontFamily: "Helvetica-Bold", marginTop: 2 },
   table: {
     borderWidth: 1,
     borderColor: COLORS.border,
     borderTopWidth: 0,
+    marginTop: 16,
   },
   tableHeaderRow: {
     flexDirection: "row",
@@ -99,52 +92,70 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
+  tableRowStripe: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.stripe,
+  },
+  broughtForwardRow: {
+    flexDirection: "row",
+    backgroundColor: COLORS.accentBg,
+  },
   cellHeader: {
     padding: 5,
     fontFamily: "Helvetica-Bold",
-    fontSize: 8,
+    fontSize: 7,
     color: COLORS.mutedForeground,
     textTransform: "uppercase",
   },
-  cell: { padding: 5, fontSize: 8.5 },
-  colDate: { width: "14%" },
-  colDescription: { width: "40%" },
-  colDebit: { width: "15%", textAlign: "right" },
-  colCredit: { width: "15%", textAlign: "right" },
-  colRunning: { width: "16%", textAlign: "right" },
+  cell: { padding: 5, fontSize: 8 },
+  colDate: { width: "12%" },
+  colIssue: { width: "11%" },
+  colGrace: { width: "7%", textAlign: "right" },
+  colTrans: { width: "12%" },
+  colDescription: { width: "20%" },
+  colPeriod: { width: "16%" },
+  colAmount: { width: "11%", textAlign: "right" },
+  colBalance: { width: "11%", textAlign: "right" },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     borderWidth: 1,
     borderTopWidth: 0,
     borderColor: COLORS.border,
-    backgroundColor: COLORS.muted,
-    padding: 8,
-    marginBottom: 4,
+    backgroundColor: COLORS.primary,
+    padding: 10,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
   },
-  totalLabel: { fontFamily: "Helvetica-Bold", fontSize: 11 },
-  totalValue: { fontFamily: "Helvetica-Bold", fontSize: 11 },
-  generatedAt: {
-    marginTop: 16,
-    fontSize: 7.5,
-    color: COLORS.mutedForeground,
+  totalLabel: { fontFamily: "Helvetica-Bold", fontSize: 11, color: "#FFFFFF" },
+  totalValue: { fontFamily: "Helvetica-Bold", fontSize: 12, color: "#FFFFFF" },
+  footer: {
+    position: "absolute",
+    bottom: 20,
+    left: 36,
+    right: 36,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingTop: 6,
   },
+  footerText: { fontSize: 7.5, color: COLORS.mutedForeground },
 });
 
 export type UnitLedgerRow = {
-  date: string;
+  dueOrPaidDate: string;
+  issueDate: string;
+  grace: string;
+  transNumber: string;
   description: string;
-  debit: string | null;
-  credit: string | null;
+  period: string;
+  amount: string;
+  amountNegative: boolean;
   running: string;
   runningNegative: boolean;
-};
-
-export type UnitLedgerFundGroup = {
-  label: string;
-  closingBalance: string;
-  closingNegative: boolean;
-  rows: UnitLedgerRow[];
 };
 
 export function UnitLedgerStatementDocument({
@@ -155,7 +166,7 @@ export function UnitLedgerStatementDocument({
   ownerName,
   totalBalance,
   totalNegative,
-  fundGroups,
+  rows,
   generatedAt,
 }: {
   associationName: string;
@@ -165,15 +176,21 @@ export function UnitLedgerStatementDocument({
   ownerName: string;
   totalBalance: string;
   totalNegative: boolean;
-  fundGroups: UnitLedgerFundGroup[];
+  rows: UnitLedgerRow[];
   generatedAt: string;
 }) {
   return (
     <Document title={`Unit Ledger — ${unitNo}`}>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} orientation="landscape" wrap>
         <View style={styles.headerBar}>
-          <Text style={styles.titleText}>Unit Ledger Statement</Text>
-          <Text style={styles.subtitleText}>{associationName}</Text>
+          <View>
+            <Text style={styles.titleText}>Unit Ledger Statement</Text>
+            <Text style={styles.subtitleText}>{associationName}</Text>
+          </View>
+          <View>
+            <Text style={styles.metaLabel}>Generated</Text>
+            <Text style={styles.metaText}>{generatedAt}</Text>
+          </View>
         </View>
 
         <View style={styles.detailGrid}>
@@ -193,76 +210,96 @@ export function UnitLedgerStatementDocument({
             <Text style={styles.detailLabel}>Unit Entitlement</Text>
             <Text style={styles.detailValue}>{entitlements}</Text>
           </View>
+          <View style={[styles.detailBox, { borderRightWidth: 0 }]}>
+            <Text style={styles.detailLabel}>Service Charge Balance</Text>
+            <Text
+              style={[
+                styles.detailValue,
+                { color: totalNegative ? COLORS.emerald : COLORS.rose },
+              ]}
+            >
+              {totalBalance}
+            </Text>
+          </View>
         </View>
 
-        {fundGroups.map((group) => (
-          <View key={group.label} wrap={false}>
-            <View style={styles.fundHeaderRow}>
-              <Text style={styles.fundHeaderLabel}>{group.label}</Text>
-              <Text
-                style={[
-                  styles.fundHeaderBalance,
-                  { color: group.closingNegative ? COLORS.emerald : COLORS.rose },
-                ]}
-              >
-                {group.closingBalance}
+        <View style={styles.table}>
+          <View style={styles.tableHeaderRow}>
+            <Text style={[styles.cellHeader, styles.colDate]}>Due/Paid Date</Text>
+            <Text style={[styles.cellHeader, styles.colIssue]}>Issue Date</Text>
+            <Text style={[styles.cellHeader, styles.colGrace]}>Grace</Text>
+            <Text style={[styles.cellHeader, styles.colTrans]}>Trans. Number</Text>
+            <Text style={[styles.cellHeader, styles.colDescription]}>
+              Description
+            </Text>
+            <Text style={[styles.cellHeader, styles.colPeriod]}>Period</Text>
+            <Text style={[styles.cellHeader, styles.colAmount]}>Amount</Text>
+            <Text style={[styles.cellHeader, styles.colBalance]}>Balance</Text>
+          </View>
+          {rows.length === 0 ? (
+            <View style={styles.tableRow}>
+              <Text style={[styles.cell, { width: "100%", color: COLORS.mutedForeground }]}>
+                No service charge activity recorded for this unit yet.
               </Text>
             </View>
-            <View style={styles.table}>
-              <View style={styles.tableHeaderRow}>
-                <Text style={[styles.cellHeader, styles.colDate]}>Date</Text>
-                <Text style={[styles.cellHeader, styles.colDescription]}>
-                  Description
+          ) : (
+            rows.map((row, idx) => (
+              <View style={idx % 2 === 1 ? styles.tableRowStripe : styles.tableRow} key={idx}>
+                <Text style={[styles.cell, styles.colDate]}>{row.dueOrPaidDate}</Text>
+                <Text style={[styles.cell, styles.colIssue]}>{row.issueDate}</Text>
+                <Text style={[styles.cell, styles.colGrace]}>{row.grace}</Text>
+                <Text style={[styles.cell, styles.colTrans]}>{row.transNumber}</Text>
+                <Text style={[styles.cell, styles.colDescription]}>
+                  {row.description}
                 </Text>
-                <Text style={[styles.cellHeader, styles.colDebit]}>Debit</Text>
-                <Text style={[styles.cellHeader, styles.colCredit]}>Credit</Text>
-                <Text style={[styles.cellHeader, styles.colRunning]}>
-                  Running balance
+                <Text style={[styles.cell, styles.colPeriod]}>{row.period}</Text>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.colAmount,
+                    row.amountNegative ? { color: COLORS.emerald } : undefined,
+                  ]}
+                >
+                  {row.amount}
+                </Text>
+                <Text
+                  style={[
+                    styles.cell,
+                    styles.colBalance,
+                    {
+                      fontFamily: "Helvetica-Bold",
+                      color: row.runningNegative ? COLORS.emerald : COLORS.rose,
+                    },
+                  ]}
+                >
+                  {row.running}
                 </Text>
               </View>
-              {group.rows.map((row, idx) => (
-                <View style={styles.tableRow} key={idx}>
-                  <Text style={[styles.cell, styles.colDate]}>{row.date}</Text>
-                  <Text style={[styles.cell, styles.colDescription]}>
-                    {row.description}
-                  </Text>
-                  <Text style={[styles.cell, styles.colDebit]}>
-                    {row.debit ?? "—"}
-                  </Text>
-                  <Text style={[styles.cell, styles.colCredit]}>
-                    {row.credit ?? "—"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.cell,
-                      styles.colRunning,
-                      {
-                        color: row.runningNegative ? COLORS.emerald : COLORS.rose,
-                        fontFamily: "Helvetica-Bold",
-                      },
-                    ]}
-                  >
-                    {row.running}
-                  </Text>
-                </View>
-              ))}
-            </View>
+            ))
+          )}
+          <View style={styles.broughtForwardRow}>
+            <Text style={[styles.cell, { width: "78%", color: COLORS.mutedForeground }]}>
+              Brought forward
+            </Text>
+            <Text style={[styles.cell, styles.colAmount]}>—</Text>
+            <Text style={[styles.cell, styles.colBalance, { fontFamily: "Helvetica-Bold" }]}>
+              0.000
+            </Text>
           </View>
-        ))}
-
-        <View style={[styles.totalRow, { marginTop: 12 }]}>
-          <Text style={styles.totalLabel}>Total balance (all funds)</Text>
-          <Text
-            style={[
-              styles.totalValue,
-              { color: totalNegative ? COLORS.emerald : COLORS.rose },
-            ]}
-          >
-            {totalBalance}
-          </Text>
         </View>
 
-        <Text style={styles.generatedAt}>Generated {generatedAt}</Text>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Service Charge Balance</Text>
+          <Text style={styles.totalValue}>{totalBalance}</Text>
+        </View>
+
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>Generated {generatedAt}</Text>
+          <Text
+            style={styles.footerText}
+            render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+          />
+        </View>
       </Page>
     </Document>
   );

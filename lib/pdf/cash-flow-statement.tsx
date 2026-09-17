@@ -63,13 +63,6 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     textAlign: "right",
   },
-  reportSubtitle: {
-    fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
-    color: COLORS.mutedForeground,
-    textAlign: "right",
-    marginTop: 2,
-  },
   period: {
     fontSize: 8,
     color: COLORS.mutedForeground,
@@ -221,7 +214,6 @@ function StatCard({
 export function CashFlowStatementDocument({
   propertyName,
   propertyAddress,
-  fundLabel,
   periodLabel,
   openingBalance,
   openingIsDeficit,
@@ -236,7 +228,6 @@ export function CashFlowStatementDocument({
 }: {
   propertyName: string;
   propertyAddress: string;
-  fundLabel: string;
   periodLabel: string;
   openingBalance: string;
   openingIsDeficit: boolean;
@@ -259,14 +250,13 @@ export function CashFlowStatementDocument({
           </View>
           <View>
             <Text style={styles.reportTitle}>DETAILED CASH FLOW STATEMENT</Text>
-            <Text style={styles.reportSubtitle}>{fundLabel}</Text>
             <Text style={styles.period}>{periodLabel}</Text>
           </View>
         </View>
 
         <View style={styles.statRow}>
           <StatCard
-            label={`Opening ${fundLabel} Balance`}
+            label="Opening Balance"
             value={`OMR ${openingBalance}`}
             accent={openingIsDeficit ? COLORS.rose : COLORS.emerald}
           />
@@ -281,7 +271,7 @@ export function CashFlowStatementDocument({
             accent={COLORS.rose}
           />
           <StatCard
-            label={`Total ${fundLabel} Balance`}
+            label="Closing Balance"
             value={`OMR ${closingBalance}`}
             accent={closingIsDeficit ? COLORS.rose : COLORS.emerald}
           />
@@ -314,7 +304,7 @@ export function CashFlowStatementDocument({
         <View
           style={[styles.grandTotalRow, { backgroundColor: COLORS.emerald }]}
         >
-          <Text style={styles.grandTotalLabel}>Total {fundLabel} Revenue</Text>
+          <Text style={styles.grandTotalLabel}>Total Revenue</Text>
           <Text style={styles.grandTotalAmount}>OMR {revenueTotal}</Text>
         </View>
 
@@ -345,7 +335,7 @@ export function CashFlowStatementDocument({
           </View>
         ))}
         <View style={[styles.grandTotalRow, { backgroundColor: COLORS.rose }]}>
-          <Text style={styles.grandTotalLabel}>Total {fundLabel} Expenditure</Text>
+          <Text style={styles.grandTotalLabel}>Total Expenditure</Text>
           <Text style={styles.grandTotalAmount}>OMR {expenditureTotal}</Text>
         </View>
 
@@ -355,7 +345,7 @@ export function CashFlowStatementDocument({
         <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 4 }}>
           <View style={[styles.itemRow, { paddingLeft: 8, paddingVertical: 4 }]}>
             <Text style={[styles.itemLabel, { width: "70%" }]}>
-              Opening {fundLabel} Balance
+              Opening Balance
             </Text>
             <Text style={[styles.itemAmount, { width: "30%" }]}>
               OMR {openingBalance}
@@ -369,7 +359,7 @@ export function CashFlowStatementDocument({
             ]}
           >
             <Text style={[styles.itemLabel, { width: "70%" }]}>
-              Total {fundLabel} Revenue during period
+              Total Revenue during period
             </Text>
             <Text style={[styles.itemAmount, { width: "30%" }]}>
               OMR {revenueTotal}
@@ -377,7 +367,7 @@ export function CashFlowStatementDocument({
           </View>
           <View style={[styles.itemRow, { paddingLeft: 8, paddingVertical: 4 }]}>
             <Text style={[styles.itemLabel, { width: "70%" }]}>
-              Total {fundLabel} Expenditure during period
+              Total Expenditure during period
             </Text>
             <Text style={[styles.itemAmount, { width: "30%" }]}>
               OMR {expenditureTotal}
@@ -390,7 +380,7 @@ export function CashFlowStatementDocument({
             ]}
           >
             <Text style={[styles.subtotalLabel, { width: "70%" }]}>
-              Total {fundLabel} Balance
+              Closing Balance
             </Text>
             <Text style={[styles.subtotalAmount, { width: "30%" }]}>
               OMR {closingBalance}

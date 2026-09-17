@@ -3,28 +3,32 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import {
-  Bell,
+  ArrowLeftRight,
   Check,
   FileStack,
   FileText,
   KeyRound,
   Mail,
   Pencil,
+  Receipt,
   ScrollText,
+  Send,
   Settings2,
   Trash2,
+  Wallet,
 } from "lucide-react";
 
 import {
   assignTenantAction,
   deleteUnitAction,
+  transferUnitOwnershipAction,
   updateUnitAction,
   updateUnitServiceChargeAction,
 } from "@/app/admin-actions";
 import {
   generateServiceChargeInvoiceAction,
   recordServiceChargePaymentAction,
-  sendServiceChargeReminderAction,
+  sendServiceChargeInvoiceAction,
 } from "@/app/service-charge-invoice-actions";
 import {
   cancelServiceChargeInstallmentPlanAction,
@@ -37,10 +41,10 @@ import {
   type DocumentItem,
 } from "@/components/entity-document-manager";
 import { CloseModalOnSubmit, Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { UploadFileInput } from "@/components/upload-file-input";
 import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/submit-button";
 import {
@@ -65,6 +69,28 @@ const UNIT_CONTRACT_CATEGORY = [
  * than adding a new enum value for it. */
 const UNIT_MISC_CATEGORY = [EntityDocumentCategory.other] as const;
 
+function ownerDisplayName(owner: {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}): string {
+  return [owner.firstName, owner.lastName].filter(Boolean).join(" ") || owner.email;
+}
+
+/** A short avatar-badge label — initials from the name, or just the first
+ * letter of the email when there's no name on file. */
+function ownerInitials(owner: {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}): string {
+  const initials = [owner.firstName, owner.lastName]
+    .filter(Boolean)
+    .map((part) => part!.charAt(0))
+    .join("");
+  return (initials || owner.email.charAt(0)).toUpperCase();
+}
+
 export type ManagedUnit = {
   id: string;
   propertyId: string;
@@ -73,7 +99,12 @@ export type ManagedUnit = {
   bedrooms: number | null;
   ownerId: string | null;
   tenantId: string | null;
-  owner: { id: string; email: string } | null;
+  owner: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
   tenant: { id: string; email: string } | null;
   rentBillsEnabled: boolean;
   maintenanceEnabled: boolean;
@@ -91,13 +122,9 @@ export type ManagedUnit = {
     id: string;
     invoiceNumber: string;
     issueDate: Date;
+    currentAmount: string;
+    previousBalance: string;
     amountPayable: string;
-    fund: { label: string };
-  }[];
-  fundBalances: {
-    fundId: string;
-    balance: string;
-    fund: { label: string };
   }[];
   installmentPlans: {
     id: string;
@@ -113,9 +140,19 @@ export type ManagedUnit = {
     }[];
   }[];
   documents: DocumentItem[];
+  ownershipTransfers: {
+    id: string;
+    transferDate: Date;
+    keptServiceCharge: boolean;
+    notes: string | null;
+    createdAt: Date;
+    fromOwner: { email: string; firstName: string | null; lastName: string | null } | null;
+    toOwner: { email: string; firstName: string | null; lastName: string | null };
+    createdBy: { email: string; firstName: string | null; lastName: string | null } | null;
+  }[];
 };
 
-type TabKey = "details" | "charge" | "documents" | "misc" | "danger";
+type TabKey = "details" | "ownership" | "charge" | "documents" | "misc" | "danger";
 
 /** One consolidated "Manage" surface for a unit, organized into tabs
  * (Details, Tenant, Service charge, Danger zone) rather than one long
@@ -125,7 +162,6 @@ export function UnitManageModal({
   unitLabel,
   unitNoun,
   unitNounCap,
-  propertyName,
   hasFloors,
   hasBedrooms,
   isAdmin,
@@ -135,13 +171,12 @@ export function UnitManageModal({
   availableTenants,
   funds,
   defaultTab = "details",
+  triggerLabel = "Manage",
 }: {
   unit: ManagedUnit;
   unitLabel: string;
   unitNoun: string;
   unitNounCap: string;
-  /** Shown as "Building" in the "Notify Owner" reminder form. */
-  propertyName: string;
   hasFloors: boolean;
   hasBedrooms: boolean;
   isAdmin: boolean;
@@ -153,7 +188,12 @@ export function UnitManageModal({
    * modal (e.g. an owner looking at a co-owner's unit on a shared property)
    * gets a read-only documents list. */
   canManageDocuments: boolean;
-  owners: { id: string; email: string }[];
+  owners: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  }[];
   availableTenants: { id: string; email: string }[];
   /** OA accounting funds (General Administrative, Admin, Sinking, ...) —
    * every invoice/payment picks one, see UnitFundBalance in schema.prisma. */
@@ -161,6 +201,10 @@ export function UnitManageModal({
   /** Opens straight to a given tab — used by the Service Charge Ledger
    * page so "Manage" jumps right to the charge tab instead of Details. */
   defaultTab?: TabKey;
+  /** The trigger button's own label — e.g. Collection Position calls it
+   * "Take Action" since this is the row's one and only action there,
+   * rather than one of several. */
+  triggerLabel?: string;
 }) {
   const hasCharge = Boolean(
     unit.serviceChargeAmount && unit.serviceChargeDueDate,
@@ -168,14 +212,6 @@ export function UnitManageModal({
   const activePlan = unit.installmentPlans[0] ?? null;
   const currentBalance = moneyValue(unit.serviceChargeBalance);
   const defaultFundId = funds[0]?.id ?? "";
-  const defaultReminderMessage =
-    currentBalance > 0
-      ? `Your service charge balance for ${unitLabel} is ${formatMoney(currentBalance)}${
-          unit.serviceChargeDueDate
-            ? `, due ${format(unit.serviceChargeDueDate, "d MMM yyyy")}`
-            : ""
-        }. Please arrange payment at your earliest convenience.`
-      : `This is a reminder regarding the service charge for ${unitLabel}.`;
   const [paymentMethod, setPaymentMethod] = useState<string>("");
 
   // Service charge invoices are billed for a full calendar year — default
@@ -192,6 +228,7 @@ export function UnitManageModal({
 
   const tabs: { key: TabKey; label: string; icon: typeof Pencil }[] = [
     { key: "details", label: "Details", icon: Pencil },
+    { key: "ownership", label: "Ownership", icon: ArrowLeftRight },
     { key: "charge", label: "Service charge", icon: Settings2 },
     { key: "documents", label: "Agreements", icon: FileText },
     { key: "misc", label: "Miscellaneous", icon: FileStack },
@@ -205,26 +242,26 @@ export function UnitManageModal({
   return (
     <Modal
       title={`Manage ${unitLabel}`}
-      widthClassName="max-w-xl"
+      widthClassName="max-w-3xl"
       trigger={
         <button
           type="button"
           className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-muted/60"
         >
           <Pencil className="h-3.5 w-3.5" />
-          Manage
+          {triggerLabel}
         </button>
       }
     >
-      <div className="space-y-4">
-        <div className="flex gap-1 overflow-x-auto rounded-lg bg-muted/50 p-1">
+      <div className="space-y-5">
+        <div className="flex gap-1 overflow-x-auto rounded-xl bg-muted/50 p-1">
           {tabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               type="button"
               onClick={() => setTab(key)}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-all",
                 tab === key
                   ? "bg-white text-foreground shadow-sm ring-1 ring-border/60"
                   : "text-muted-foreground hover:bg-white/60 hover:text-foreground",
@@ -238,7 +275,7 @@ export function UnitManageModal({
 
         {/* ── Details ──────────────────────────────────────────────────── */}
         {tab === "details" && (
-          <form className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <form className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <input type="hidden" name="unitId" value={unit.id} />
             <div className="space-y-1">
               <Label htmlFor={`u-label-${unit.id}`} className="text-xs">
@@ -278,7 +315,20 @@ export function UnitManageModal({
                 />
               </div>
             )}
-            {isAdmin && (
+            <div className="space-y-1">
+              <Label htmlFor={`u-entitlements-${unit.id}`} className="text-xs">
+                Unit entitlement (m²)
+              </Label>
+              <Input
+                id={`u-entitlements-${unit.id}`}
+                name="entitlements"
+                type="number"
+                min={0}
+                placeholder="e.g. 70"
+                defaultValue={unit.entitlements ?? ""}
+              />
+            </div>
+            {isAdmin && !unit.owner && (
               <div className="col-span-full space-y-1">
                 <Label htmlFor={`u-owner-${unit.id}`} className="text-xs">
                   Owner
@@ -286,15 +336,19 @@ export function UnitManageModal({
                 <Select
                   id={`u-owner-${unit.id}`}
                   name="ownerId"
-                  defaultValue={unit.owner?.id ?? ""}
+                  defaultValue=""
                 >
                   <option value="">— Unassigned —</option>
                   {owners.map((owner) => (
                     <option key={owner.id} value={owner.id}>
-                      {owner.email}
+                      {ownerDisplayName(owner)}
                     </option>
                   ))}
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Once assigned, reassigning to someone else moves to the
+                  Ownership tab, which keeps a transfer history.
+                </p>
               </div>
             )}
             {isAdmin && (
@@ -336,7 +390,7 @@ export function UnitManageModal({
               </div>
             )}
             {isAdmin && !isBuildingType && (
-              <div className="col-span-full space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2.5">
+              <div className="col-span-full space-y-1.5 rounded-xl border border-border/60 bg-muted/20 p-3.5">
                 <label className="flex items-center gap-2 text-xs">
                   <input
                     type="checkbox"
@@ -382,9 +436,97 @@ export function UnitManageModal({
           </form>
         )}
 
+        {/* ── Ownership ────────────────────────────────────────────────── */}
+        {tab === "ownership" && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                {unit.owner ? ownerInitials(unit.owner) : "—"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Current owner</p>
+                <p className="truncate text-sm font-medium">
+                  {unit.owner ? ownerDisplayName(unit.owner) : "Unassigned"}
+                </p>
+              </div>
+            </div>
+
+            {!isAdmin && (
+              <p className="text-xs text-muted-foreground">
+                Only an admin can transfer ownership.
+              </p>
+            )}
+            {isAdmin && !unit.owner && (
+              <p className="text-xs text-muted-foreground">
+                This {unitNoun} has no owner yet — assign one from the
+                Details tab first. Once it has an owner, transferring it to
+                someone else (with a recorded history) happens here.
+              </p>
+            )}
+            {isAdmin && unit.owner && (
+              <div>
+                <TransferOwnershipModal
+                  unitId={unit.id}
+                  unitLabel={unitLabel}
+                  currentOwnerName={ownerDisplayName(unit.owner)}
+                  owners={owners.filter((owner) => owner.id !== unit.owner?.id)}
+                />
+              </div>
+            )}
+
+            {isAdmin && unit.owner && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Transfer history
+                </p>
+                {unit.ownershipTransfers.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-border/60 p-3.5 text-xs text-muted-foreground">
+                    No ownership transfers recorded for this {unitNoun} yet.
+                  </p>
+                ) : (
+                  <div className="divide-y rounded-xl border border-border/60">
+                    {unit.ownershipTransfers.map((transfer) => (
+                      <div key={transfer.id} className="flex gap-3 p-3.5 text-xs">
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                          <ArrowLeftRight className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                            <span className="font-medium text-foreground">
+                              {transfer.fromOwner
+                                ? ownerDisplayName(transfer.fromOwner)
+                                : "Unassigned"}{" "}
+                              &rarr; {ownerDisplayName(transfer.toOwner)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {format(transfer.transferDate, "d MMM yyyy")}
+                            </span>
+                          </div>
+                          <p className="text-muted-foreground">
+                            {transfer.keptServiceCharge
+                              ? "Kept the existing service charge and billing setup"
+                              : "Service charge and billing setup was cleared"}
+                            {transfer.createdBy &&
+                              ` · By ${ownerDisplayName(transfer.createdBy)}`}
+                          </p>
+                          {transfer.notes && (
+                            <p className="italic text-muted-foreground">
+                              &ldquo;{transfer.notes}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Service charge ──────────────────────────────────────────── */}
         {tab === "charge" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {hasCharge && unit.serviceChargeLastReceivedAt && (
               <p className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
                 <Check className="h-3 w-3" />
@@ -395,9 +537,10 @@ export function UnitManageModal({
 
             {isAdmin ? (
               <>
-                <form className="space-y-3 rounded-lg border p-2.5">
+                <form className="space-y-3 rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
                   <input type="hidden" name="unitId" value={unit.id} />
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <Settings2 className="h-4 w-4 text-primary" />
                     Service charge settings
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -489,47 +632,9 @@ export function UnitManageModal({
                       View full ledger
                     </a>
                   </div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Balance
-                  </p>
-
-                  {/* Real per-fund balances, not one combined number — see
-                      UnitFundBalance in schema.prisma. */}
-                  {unit.fundBalances.filter((b) => Number(b.balance) !== 0)
-                    .length > 0 && (
-                    <div className="divide-y rounded-lg border text-xs">
-                      {unit.fundBalances
-                        .filter((b) => Number(b.balance) !== 0)
-                        .map((b) => {
-                          const value = moneyValue(b.balance);
-                          return (
-                            <div
-                              key={b.fundId}
-                              className="flex items-center justify-between px-2.5 py-1.5"
-                            >
-                              <span className="text-muted-foreground">
-                                {b.fund.label}
-                              </span>
-                              <span
-                                className={cn(
-                                  "font-medium",
-                                  value < 0
-                                    ? "text-emerald-600"
-                                    : "text-rose-600",
-                                )}
-                              >
-                                {value < 0
-                                  ? `Credit ${formatMoney(Math.abs(value))}`
-                                  : formatMoney(value)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Total
+                      Balance
                     </span>
                     <span
                       className={cn(
@@ -547,82 +652,9 @@ export function UnitManageModal({
                     </span>
                   </div>
 
-                  {unit.owner && (
-                    <Modal
-                      title="Notify Owner"
-                      description="Spec #19 — the OA reminder: compose a message and, optionally, attach a file."
-                      widthClassName="max-w-md"
-                      trigger={
-                        <button
-                          type="button"
-                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-                        >
-                          <Bell className="h-3.5 w-3.5" />
-                          Notify Owner
-                        </button>
-                      }
-                    >
-                      <form
-                        className="space-y-3"
-                        encType="multipart/form-data"
-                      >
-                        <input type="hidden" name="unitId" value={unit.id} />
-                        <CloseModalOnSubmit />
-
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div>
-                            <p className="text-muted-foreground">Owner</p>
-                            <p className="font-medium">{unit.owner.email}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Building</p>
-                            <p className="font-medium">{propertyName}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Apartment</p>
-                            <p className="font-medium">{unitLabel}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`notify-${unit.id}-message`} className="text-xs">
-                            Message
-                          </Label>
-                          <Textarea
-                            id={`notify-${unit.id}-message`}
-                            name="message"
-                            defaultValue={defaultReminderMessage}
-                            className="min-h-24 text-sm"
-                            required
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`notify-${unit.id}-attachment`} className="text-xs">
-                            Upload file (optional)
-                          </Label>
-                          <UploadFileInput
-                            id={`notify-${unit.id}-attachment`}
-                            name="attachment"
-                            hint=""
-                          />
-                        </div>
-
-                        <SubmitButton
-                          formAction={sendServiceChargeReminderAction}
-                          className="w-full"
-                          pendingText="Sending..."
-                        >
-                          <Mail className="h-4 w-4" />
-                          Send reminder
-                        </SubmitButton>
-                      </form>
-                    </Modal>
-                  )}
-
                   {/* ── Payment plan ───────────────────────────────────── */}
                   {activePlan ? (
-                    <div className="space-y-2 rounded-lg border p-2.5">
+                    <div className="space-y-2 rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           Payment plan
@@ -715,7 +747,7 @@ export function UnitManageModal({
                     </div>
                   ) : (
                     currentBalance > 0 && (
-                      <details className="rounded-lg border p-2.5">
+                      <details className="rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
                         <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           Set up a payment plan
                         </summary>
@@ -772,134 +804,29 @@ export function UnitManageModal({
                     )
                   )}
 
-                  <form className="space-y-2 rounded-lg border p-2.5">
-                    <input type="hidden" name="unitId" value={unit.id} />
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Record payment
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        name="amount"
-                        type="number"
-                        min="0.001"
-                        step="0.001"
-                        placeholder="Amount"
-                        defaultValue={
-                          unit.serviceChargeAmount
-                            ? String(unit.serviceChargeAmount)
-                            : ""
-                        }
-                        className="h-8 text-xs"
-                        required
-                      />
-                      <Input
-                        name="paidAt"
-                        type="date"
-                        defaultValue={dateInputValue()}
-                        className="h-8 text-xs"
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Fund</Label>
-                        <Select name="fundId" defaultValue="" className="h-8 text-xs">
-                          <option value="">General (no fund)</option>
-                          {funds.map((fund) => (
-                            <option key={fund.id} value={fund.id}>
-                              {fund.label}
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Payment method</Label>
-                        <Select
-                          name="paymentMethod"
-                          defaultValue=""
-                          className="h-8 text-xs"
-                          onChange={(event) => setPaymentMethod(event.target.value)}
-                        >
-                          <option value="">—</option>
-                          {PAYMENT_METHODS.map((method) => (
-                            <option key={method} value={method}>
-                              {PAYMENT_METHOD_LABEL[method]}
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Transaction number</Label>
-                      <Input
-                        name="transactionNumber"
-                        className="h-8 text-xs"
-                        placeholder="Bank ref / receipt no."
-                      />
-                    </div>
-                    {paymentMethod === "cheque" && (
-                      <div className="grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Cheque number</Label>
-                          <Input name="chequeNumber" className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Cheque date</Label>
-                          <Input name="chequeDate" type="date" className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Bank</Label>
-                          <Input name="bank" className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Clearance status</Label>
-                          <Select
-                            name="clearanceStatus"
-                            defaultValue="pending"
-                            className="h-8 text-xs"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="cleared">Cleared</option>
-                            <option value="bounced">Bounced</option>
-                          </Select>
-                        </div>
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      <Label className="text-xs">Notes</Label>
-                      <Input name="note" className="h-8 text-xs" />
-                    </div>
-                    <SubmitButton
-                      formAction={recordServiceChargePaymentAction}
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      pendingText="Recording..."
-                    >
-                      Record payment
-                    </SubmitButton>
-                  </form>
-
                   {hasCharge && (
-                    <form className="space-y-2 rounded-lg border p-2.5">
+                    <form className="space-y-2 rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
                       <input type="hidden" name="unitId" value={unit.id} />
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <input type="hidden" name="fundId" value={defaultFundId} />
+                      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                        <Receipt className="h-4 w-4 text-primary" />
                         Generate invoice
                       </p>
                       <div className="space-y-1">
-                        <Label className="text-xs">Fund</Label>
-                        <Select
-                          name="fundId"
-                          defaultValue={defaultFundId}
+                        <Label className="text-xs">Amount (OMR)</Label>
+                        <Input
+                          name="currentAmount"
+                          type="number"
+                          min="0.001"
+                          step="0.001"
+                          defaultValue={
+                            unit.serviceChargeAmount
+                              ? String(unit.serviceChargeAmount)
+                              : ""
+                          }
                           className="h-8 text-xs"
                           required
-                        >
-                          {funds.map((fund) => (
-                            <option key={fund.id} value={fund.id}>
-                              {fund.label}
-                            </option>
-                          ))}
-                        </Select>
+                        />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1">
@@ -965,35 +892,163 @@ export function UnitManageModal({
                     </form>
                   )}
 
+                  <form className="space-y-2 rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
+                    <input type="hidden" name="unitId" value={unit.id} />
+                    <input type="hidden" name="fundId" value={defaultFundId} />
+                    <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                      <Wallet className="h-4 w-4 text-primary" />
+                      Record payment
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        name="amount"
+                        type="number"
+                        min="0.001"
+                        step="0.001"
+                        placeholder="Amount"
+                        defaultValue={
+                          unit.serviceChargeAmount
+                            ? String(unit.serviceChargeAmount)
+                            : ""
+                        }
+                        className="h-8 text-xs"
+                        required
+                      />
+                      <Input
+                        name="paidAt"
+                        type="date"
+                        defaultValue={dateInputValue()}
+                        className="h-8 text-xs"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Payment method</Label>
+                      <Select
+                        name="paymentMethod"
+                        defaultValue=""
+                        className="h-8 text-xs"
+                        onChange={(event) => setPaymentMethod(event.target.value)}
+                      >
+                        <option value="">—</option>
+                        {PAYMENT_METHODS.map((method) => (
+                          <option key={method} value={method}>
+                            {PAYMENT_METHOD_LABEL[method]}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Transaction number</Label>
+                      <Input
+                        name="transactionNumber"
+                        className="h-8 text-xs"
+                        placeholder="Bank ref / receipt no."
+                      />
+                    </div>
+                    {paymentMethod === "cheque" && (
+                      <div className="grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Cheque number</Label>
+                          <Input name="chequeNumber" className="h-8 text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Cheque date</Label>
+                          <Input name="chequeDate" type="date" className="h-8 text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Bank</Label>
+                          <Input name="bank" className="h-8 text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Clearance status</Label>
+                          <Select
+                            name="clearanceStatus"
+                            defaultValue="pending"
+                            className="h-8 text-xs"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="cleared">Cleared</option>
+                            <option value="bounced">Bounced</option>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <Label className="text-xs">Notes</Label>
+                      <Input name="note" className="h-8 text-xs" />
+                    </div>
+                    <SubmitButton
+                      formAction={recordServiceChargePaymentAction}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      pendingText="Recording..."
+                    >
+                      Record payment
+                    </SubmitButton>
+                  </form>
+
                   {unit.serviceChargeInvoices.length > 0 && (
                     <div className="space-y-1">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Past invoices
                       </p>
-                      <div className="divide-y rounded-lg border">
-                        {unit.serviceChargeInvoices.map((invoice) => (
+                      <div className="divide-y rounded-xl border border-border/60">
+                        {unit.serviceChargeInvoices.map((invoice) => {
+                          const credit = -moneyValue(invoice.previousBalance);
+                          return (
                           <div
                             key={invoice.id}
-                            className="flex items-center justify-between px-2.5 py-1.5 text-xs"
+                            className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs"
                           >
-                            <span className="flex flex-wrap items-center gap-1.5">
-                              #{invoice.invoiceNumber} ·{" "}
-                              {format(invoice.issueDate, "d MMM yyyy")} ·{" "}
-                              {formatMoney(invoice.amountPayable)}
-                              <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                {invoice.fund.label}
+                            <div className="min-w-0 space-y-0.5">
+                              <span className="flex flex-wrap items-center gap-1.5">
+                                #{invoice.invoiceNumber} ·{" "}
+                                {format(invoice.issueDate, "d MMM yyyy")}
                               </span>
-                            </span>
-                            <a
-                              href={`/api/service-charge-invoices/${invoice.id}/pdf`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-medium text-primary hover:underline"
-                            >
-                              PDF
-                            </a>
+                              {credit > 0 ? (
+                                <p className="text-muted-foreground">
+                                  Invoice {formatMoney(invoice.currentAmount)} &minus;
+                                  Credit {formatMoney(credit)} ={" "}
+                                  <span className="font-medium text-foreground">
+                                    Payable {formatMoney(invoice.amountPayable)}
+                                  </span>
+                                </p>
+                              ) : (
+                                <p className="font-medium text-foreground">
+                                  {formatMoney(invoice.amountPayable)}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <a
+                                href={`/api/service-charge-invoices/${invoice.id}/pdf`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-medium text-primary hover:underline"
+                              >
+                                PDF
+                              </a>
+                              {unit.owner && (
+                                <form>
+                                  <input type="hidden" name="invoiceId" value={invoice.id} />
+                                  <SubmitButton
+                                    formAction={sendServiceChargeInvoiceAction}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-1.5 text-xs text-primary hover:text-primary"
+                                    pendingText="Sending..."
+                                  >
+                                    <Send className="h-3 w-3" />
+                                    Send
+                                  </SubmitButton>
+                                </form>
+                              )}
+                            </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1016,7 +1071,7 @@ export function UnitManageModal({
 
         {/* ── Agreements ───────────────────────────────────────────────── */}
         {tab === "documents" && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div>
               <h3 className="text-sm font-medium">Ownership contract</h3>
               <p className="text-xs text-muted-foreground">
@@ -1036,7 +1091,7 @@ export function UnitManageModal({
               readOnly={!canManageDocuments}
             />
             {!unit.owner && (
-              <p className="text-xs text-amber-700">
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
                 Assign an owner to this {unitNoun} first — the contract is
                 between the property manager and the owner.
               </p>
@@ -1046,7 +1101,7 @@ export function UnitManageModal({
 
         {/* ── Miscellaneous ────────────────────────────────────────────── */}
         {tab === "misc" && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div>
               <h3 className="text-sm font-medium">Other documents</h3>
               <p className="text-xs text-muted-foreground">
@@ -1070,9 +1125,9 @@ export function UnitManageModal({
 
         {/* ── Danger zone ──────────────────────────────────────────────── */}
         {tab === "danger" && (
-          <div className="space-y-3">
-            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <KeyRound className="h-3.5 w-3.5 shrink-0" />
+          <div className="space-y-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <KeyRound className="h-4 w-4 shrink-0 text-destructive" />
               Deleting a {unitNoun} cannot be undone. It must be empty and
               have no tenancy or financial history.
             </p>
@@ -1082,7 +1137,7 @@ export function UnitManageModal({
                 formAction={deleteUnitAction}
                 variant="outline"
                 size="sm"
-                className="w-full text-destructive hover:bg-destructive/10"
+                className="w-full border-destructive/40 text-destructive hover:bg-destructive/10"
                 pendingText="Deleting..."
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -1093,6 +1148,100 @@ export function UnitManageModal({
           </div>
         )}
       </div>
+    </Modal>
+  );
+}
+
+/** Ends the current ownership and starts the new one on the same transfer
+ * date, with a recorded OwnershipTransfer row — the professional
+ * alternative to just overwriting the unit's owner. */
+function TransferOwnershipModal({
+  unitId,
+  unitLabel,
+  currentOwnerName,
+  owners,
+}: {
+  unitId: string;
+  unitLabel: string;
+  currentOwnerName: string;
+  owners: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  }[];
+}) {
+  return (
+    <Modal
+      title="Transfer ownership"
+      description="Ends the current ownership on the transfer date and starts the new owner from the same date."
+      trigger={
+        <Button type="button" variant="outline" size="sm">
+          <ArrowLeftRight className="h-3.5 w-3.5" />
+          Transfer
+        </Button>
+      }
+    >
+      <form action={transferUnitOwnershipAction} className="space-y-4">
+        <input type="hidden" name="unitId" value={unitId} />
+        <p className="text-sm text-muted-foreground">
+          Current owner: <span className="font-medium text-foreground">{currentOwnerName}</span>
+        </p>
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`transfer-owner-${unitId}`}>New owner</Label>
+          <Select id={`transfer-owner-${unitId}`} name="newOwnerId" required defaultValue="">
+            <option value="" disabled>
+              Select an owner
+            </option>
+            {owners.map((owner) => (
+              <option key={owner.id} value={owner.id}>
+                {ownerDisplayName(owner)}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`transfer-date-${unitId}`}>Transfer date</Label>
+          <Input
+            id={`transfer-date-${unitId}`}
+            name="transferDate"
+            type="date"
+            defaultValue={dateInputValue()}
+            required
+          />
+        </div>
+
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="keepServiceCharge"
+            defaultChecked
+            className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+          />
+          Keep the current service charge and billing setup
+        </label>
+
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="alsoTransferOtherUnits"
+            className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+          />
+          Also transfer the units currently held by the same owner
+        </label>
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`transfer-notes-${unitId}`}>Notes</Label>
+          <Textarea id={`transfer-notes-${unitId}`} name="notes" className="min-h-20" />
+        </div>
+
+        <SubmitButton className="w-full" pendingText="Transferring...">
+          Transfer {unitLabel}
+        </SubmitButton>
+        <CloseModalOnSubmit />
+      </form>
     </Modal>
   );
 }

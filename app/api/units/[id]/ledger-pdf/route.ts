@@ -6,7 +6,6 @@ import { formatMoney, moneyValue } from "@/lib/finance";
 import { formatUnitLabel } from "@/lib/property-types";
 import {
   UnitLedgerStatementDocument,
-  type UnitLedgerFundGroup,
   type UnitLedgerRow,
 } from "@/lib/pdf/unit-ledger-statement";
 import { prisma } from "@/lib/prisma";
@@ -36,16 +35,15 @@ export async function GET(
         },
       },
       owner: { select: { firstName: true, lastName: true, email: true } },
-      fundBalances: {
-        select: { fundId: true, balance: true, fund: { select: { label: true } } },
-      },
       serviceChargeInvoices: {
         select: {
           invoiceNumber: true,
           issueDate: true,
+          dueDate: true,
+          graceDays: true,
+          periodStart: true,
+          periodEnd: true,
           currentAmount: true,
-          fundId: true,
-          fund: { select: { label: true } },
         },
         orderBy: { issueDate: "asc" },
       },
@@ -53,8 +51,7 @@ export async function GET(
         select: {
           paidAt: true,
           amount: true,
-          fundId: true,
-          fund: { select: { label: true } },
+          transactionNumber: true,
           note: true,
         },
         orderBy: { paidAt: "asc" },
@@ -76,74 +73,62 @@ export async function GET(
 
   const unitLabel = formatUnitLabel(unit.property.propertyType, unit.label);
 
-  const fundIds = new Set<string>();
-  unit.fundBalances.forEach((b) => fundIds.add(b.fundId));
-  unit.serviceChargeInvoices.forEach((i) => fundIds.add(i.fundId));
-  unit.serviceChargePayments.forEach((p) => p.fundId && fundIds.add(p.fundId));
+  const entries: {
+    dueOrPaidDate: Date;
+    issueDate: Date | null;
+    graceDays: number | null;
+    transNumber: string | null;
+    description: string;
+    periodLabel: string | null;
+    debit: number;
+    credit: number;
+  }[] = [
+    ...unit.serviceChargeInvoices.map((i) => ({
+      dueOrPaidDate: i.dueDate,
+      issueDate: i.issueDate,
+      graceDays: i.graceDays,
+      transNumber: i.invoiceNumber,
+      description: "Service charge invoice",
+      periodLabel: `${format(i.periodStart, "MMM yyyy")} – ${format(i.periodEnd, "MMM yyyy")}`,
+      debit: moneyValue(i.currentAmount),
+      credit: 0,
+    })),
+    ...unit.serviceChargePayments.map((p) => ({
+      dueOrPaidDate: p.paidAt,
+      issueDate: null,
+      graceDays: null,
+      transNumber: p.transactionNumber,
+      description: p.note ? `Payment — ${p.note}` : "Payment",
+      periodLabel: null,
+      debit: 0,
+      credit: moneyValue(p.amount),
+    })),
+  ].sort((a, b) => a.dueOrPaidDate.getTime() - b.dueOrPaidDate.getTime());
 
-  const fundLabelById = new Map<string, string>();
-  unit.fundBalances.forEach((b) => fundLabelById.set(b.fundId, b.fund.label));
-  unit.serviceChargeInvoices.forEach((i) =>
-    fundLabelById.set(i.fundId, i.fund.label),
-  );
-  unit.serviceChargePayments.forEach(
-    (p) => p.fundId && p.fund && fundLabelById.set(p.fundId, p.fund.label),
-  );
+  let running = 0;
+  const rowsChronological: UnitLedgerRow[] = entries.map((entry) => {
+    running += entry.debit - entry.credit;
+    const amount = entry.debit > 0 ? entry.debit : -entry.credit;
+    return {
+      dueOrPaidDate: format(entry.dueOrPaidDate, "dd/MM/yyyy"),
+      issueDate: entry.issueDate ? format(entry.issueDate, "dd/MM/yyyy") : "—",
+      grace: entry.graceDays ? `${entry.graceDays}d` : "—",
+      transNumber: entry.transNumber ?? "—",
+      description: entry.description,
+      period: entry.periodLabel ?? "—",
+      amount:
+        amount < 0 ? `(${formatMoney(Math.abs(amount))})` : formatMoney(amount),
+      amountNegative: amount < 0,
+      running:
+        running < 0
+          ? `Credit ${formatMoney(Math.abs(running))}`
+          : formatMoney(running),
+      runningNegative: running < 0,
+    };
+  });
 
-  const fundGroups: UnitLedgerFundGroup[] = Array.from(fundIds)
-    .map((fundId) => {
-      const entries: {
-        date: Date;
-        description: string;
-        debit: number;
-        credit: number;
-      }[] = [
-        ...unit.serviceChargeInvoices
-          .filter((i) => i.fundId === fundId)
-          .map((i) => ({
-            date: i.issueDate,
-            description: `Service charge invoice #${i.invoiceNumber}`,
-            debit: moneyValue(i.currentAmount),
-            credit: 0,
-          })),
-        ...unit.serviceChargePayments
-          .filter((p) => p.fundId === fundId)
-          .map((p) => ({
-            date: p.paidAt,
-            description: p.note ? `Payment — ${p.note}` : "Payment",
-            debit: 0,
-            credit: moneyValue(p.amount),
-          })),
-      ].sort((a, b) => a.date.getTime() - b.date.getTime());
-
-      let running = 0;
-      const rows: UnitLedgerRow[] = entries.map((entry) => {
-        running += entry.debit - entry.credit;
-        return {
-          date: format(entry.date, "dd/MM/yyyy"),
-          description: entry.description,
-          debit: entry.debit > 0 ? formatMoney(entry.debit) : null,
-          credit: entry.credit > 0 ? formatMoney(entry.credit) : null,
-          running:
-            running < 0
-              ? `Credit ${formatMoney(Math.abs(running))}`
-              : formatMoney(running),
-          runningNegative: running < 0,
-        };
-      });
-
-      return {
-        label: fundLabelById.get(fundId) ?? "Fund",
-        closingBalance:
-          running < 0
-            ? `Credit ${formatMoney(Math.abs(running))}`
-            : formatMoney(running),
-        closingNegative: running < 0,
-        rows,
-      };
-    })
-    .filter((g) => g.rows.length > 0);
-
+  // Newest first, matching the on-screen ledger and the reference layout.
+  const rows = [...rowsChronological].reverse();
   const totalBalance = moneyValue(unit.serviceChargeBalance);
 
   const pdfBuffer = await renderToBuffer(
@@ -158,7 +143,7 @@ export async function GET(
           ? `Credit ${formatMoney(Math.abs(totalBalance))}`
           : formatMoney(totalBalance),
       totalNegative: totalBalance < 0,
-      fundGroups,
+      rows,
       generatedAt: format(new Date(), "dd/MM/yyyy HH:mm"),
     }),
   );

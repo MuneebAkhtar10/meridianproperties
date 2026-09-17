@@ -11,12 +11,12 @@ import {
   Layers,
   Receipt,
   ScrollText,
-  Settings2,
   Wallet,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { SummaryTile } from "@/components/summary-tile";
+import { UnitManageModal } from "@/components/unit-manage-modal";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Label } from "@/components/ui/label";
 import { PendingLink } from "@/components/ui/pending-link";
@@ -26,6 +26,7 @@ import {
   filterCollectionPositionRows,
   getCollectionPositionData,
   type CollectionPositionBucketFilter,
+  type CollectionPositionRow,
 } from "@/lib/collection-position";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
@@ -33,6 +34,32 @@ import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
 type BucketFilter = CollectionPositionBucketFilter;
+
+/** One clear, at-a-glance badge per row — paid off outranks every urgency
+ * bucket (a unit that's settled isn't "due soon" in any way that matters
+ * here), otherwise falls back to whichever due-date bucket applies, or
+ * how much of the outstanding balance has been chipped away at. */
+function statusBadge(row: CollectionPositionRow): { label: string; className: string } {
+  if (row.raised > 0 && row.outstanding <= 0) {
+    return { label: "Paid", className: "bg-emerald-50 text-emerald-700" };
+  }
+  switch (row.bucket) {
+    case "overdue":
+      return { label: "Overdue", className: "bg-red-50 text-red-700" };
+    case "dueToday":
+      return { label: "Due Today", className: "bg-orange-50 text-orange-700" };
+    case "dueSoon":
+      return { label: "Due Soon", className: "bg-amber-50 text-amber-700" };
+    case "dueThisMonth":
+      return { label: "Due This Month", className: "bg-yellow-50 text-yellow-700" };
+    case "none":
+      return { label: "No Charge", className: "bg-slate-100 text-slate-600" };
+    default:
+      return row.hasPaid
+        ? { label: "Part Paid", className: "bg-sky-50 text-sky-700" }
+        : { label: "Outstanding", className: "bg-slate-50 text-slate-600" };
+  }
+}
 
 /**
  * Spec #18 "OA Collection Position" — a portfolio-wide operational
@@ -54,13 +81,28 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
   const propertyFilter =
     typeof rawParams.property === "string" ? rawParams.property : "all";
 
-  const [{ rows, totals }, properties] = await Promise.all([
-    getCollectionPositionData(propertyFilter),
-    prisma.property.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-  ]);
+  const [{ rows, totals }, properties, owners, availableTenants, funds] =
+    await Promise.all([
+      getCollectionPositionData(propertyFilter),
+      prisma.property.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.user.findMany({
+        where: { userType: UserType.owner },
+        orderBy: { email: "asc" },
+        select: { id: true, email: true, firstName: true, lastName: true },
+      }),
+      prisma.user.findMany({
+        where: { userType: UserType.user, unit: null },
+        orderBy: { email: "asc" },
+        select: { id: true, email: true },
+      }),
+      prisma.fund.findMany({
+        orderBy: { createdAt: "asc" },
+        select: { id: true, label: true },
+      }),
+    ]);
   const {
     totalRaised,
     totalCollected,
@@ -247,6 +289,7 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
               <th className="px-3 py-2 text-right">Amount Due</th>
               <th className="px-3 py-2 text-right">Amount Paid</th>
               <th className="px-3 py-2 text-right">Outstanding</th>
+              <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Due Date</th>
               <th className="px-3 py-2 text-right">Days Overdue</th>
               <th className="px-3 py-2">Last Reminder</th>
@@ -257,15 +300,24 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
           <tbody className="divide-y">
             {displayedRows.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={13} className="px-3 py-8 text-center text-sm text-muted-foreground">
                   No units match this filter.
                 </td>
               </tr>
             ) : (
-              displayedRows.map((row) => (
+              displayedRows.map((row) => {
+                const badge = statusBadge(row);
+                return (
                 <tr key={row.id} className="hover:bg-muted/20">
                   <td className="px-3 py-2 align-top">{row.ownerLabel}</td>
-                  <td className="px-3 py-2 align-top">{row.buildingLabel}</td>
+                  <td className="px-3 py-2 align-top">
+                    <a
+                      href={`/protected/properties/${row.propertyId}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {row.buildingLabel}
+                    </a>
+                  </td>
                   <td className="px-3 py-2 align-top">{row.floor ?? "—"}</td>
                   <td className="px-3 py-2 align-top">{row.unitLabel}</td>
                   <td className="px-3 py-2 text-right align-top">
@@ -276,6 +328,13 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
                   </td>
                   <td className="px-3 py-2 text-right align-top font-medium">
                     {formatMoney(row.outstanding)}
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <span
+                      className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
+                    >
+                      {badge.label}
+                    </span>
                   </td>
                   <td className="px-3 py-2 align-top">
                     {row.dueDate ? format(row.dueDate, "d MMM yyyy") : "—"}
@@ -295,14 +354,22 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
                   </td>
                   <td className="px-3 py-2 align-top">
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      <a
-                        href={`/protected/properties/${row.propertyId}?charge=${row.bucket === "none" ? "none" : "all"}`}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        title="Record a payment or change this unit's service charge status"
-                      >
-                        <Settings2 className="h-3 w-3" />
-                        Manage
-                      </a>
+                      <UnitManageModal
+                        unit={row.managedUnit}
+                        unitLabel={row.unitLabel}
+                        unitNoun={row.unitNoun}
+                        unitNounCap={row.unitNounCap}
+                        hasFloors={row.hasFloors}
+                        hasBedrooms={row.hasBedrooms}
+                        isAdmin
+                        isBuildingType={row.isBuildingType}
+                        canManageDocuments
+                        owners={owners}
+                        availableTenants={availableTenants}
+                        funds={funds}
+                        defaultTab="charge"
+                        triggerLabel="Take Action"
+                      />
                       <a
                         href={`/protected/properties/${row.propertyId}/units/${row.id}/ledger`}
                         target="_blank"
@@ -316,7 +383,8 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

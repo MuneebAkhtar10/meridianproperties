@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 
+import { BulkGenerateServiceChargeModal } from "@/components/bulk-generate-service-charge-modal";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
 import { ServiceChargeBulkTable } from "@/components/service-charge-bulk-table";
@@ -71,18 +72,24 @@ export default async function ServiceChargesPage({ searchParams }: PageProps) {
             id: true,
             invoiceNumber: true,
             issueDate: true,
+            currentAmount: true,
+            previousBalance: true,
             amountPayable: true,
-            fund: { select: { label: true } },
           },
-        },
-        fundBalances: {
-          select: { fundId: true, balance: true, fund: { select: { label: true } } },
         },
         installmentPlans: {
           where: { cancelledAt: null },
           orderBy: { createdAt: "desc" },
           take: 1,
           include: { installments: { orderBy: { sequence: "asc" } } },
+        },
+        ownershipTransfers: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            fromOwner: { select: { email: true, firstName: true, lastName: true } },
+            toOwner: { select: { email: true, firstName: true, lastName: true } },
+            createdBy: { select: { email: true, firstName: true, lastName: true } },
+          },
         },
       },
     }),
@@ -208,6 +215,11 @@ export default async function ServiceChargesPage({ searchParams }: PageProps) {
         title="Service Charge Ledger"
         description="Every unit's service charge across every property and owner, in one place — filter it down, or select owners to email in bulk."
       >
+        <BulkGenerateServiceChargeModal
+          properties={properties}
+          owners={owners}
+          funds={funds}
+        />
         <ButtonLink
           href="/protected/service-charge-ledger/collection-position"
           variant="outline"

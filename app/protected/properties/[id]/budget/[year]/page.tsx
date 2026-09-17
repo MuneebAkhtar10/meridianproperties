@@ -9,6 +9,7 @@ import {
 } from "@/app/budget-actions";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { PendingFieldset } from "@/components/pending-fieldset";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -205,31 +206,33 @@ export default async function AnnualBudgetPage({ params, searchParams }: PagePro
           {!isOwner && (
             <form
               action={addBudgetIncomeLineAction}
-              className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_120px_140px_auto]"
+              className="rounded-lg border p-3"
             >
               <input type="hidden" name="propertyId" value={propertyId} />
               <input type="hidden" name="year" value={year} />
-              <Input name="description" placeholder="Description" required />
-              <Input
-                name="units"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="No of units"
-                required
-              />
-              <Input
-                name="amount"
-                type="number"
-                min="0.001"
-                step="0.001"
-                placeholder="Amount per unit"
-                required
-              />
-              <SubmitButton size="sm" pendingText="Adding...">
-                <Plus className="h-4 w-4" />
-                Add
-              </SubmitButton>
+              <PendingFieldset className="grid gap-2 sm:grid-cols-[1fr_120px_140px_auto]">
+                <Input name="description" placeholder="Description" required />
+                <Input
+                  name="units"
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="No of units"
+                  required
+                />
+                <Input
+                  name="amount"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  placeholder="Amount per unit"
+                  required
+                />
+                <SubmitButton size="sm" pendingText="Adding...">
+                  <Plus className="h-4 w-4" />
+                  Add
+                </SubmitButton>
+              </PendingFieldset>
             </form>
           )}
         </CardContent>
@@ -305,41 +308,43 @@ export default async function AnnualBudgetPage({ params, searchParams }: PagePro
           {!isOwner && (
             <form
               action={addBudgetExpenseLineAction}
-              className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1.5fr_1fr_140px_auto]"
+              className="rounded-lg border p-3"
             >
               <input type="hidden" name="propertyId" value={propertyId} />
               <input type="hidden" name="year" value={year} />
-              <Input
-                name="description"
-                placeholder="Description"
-                list="budget-expense-categories"
-                required
-              />
               <datalist id="budget-expense-categories">
                 {BUDGET_EXPENSE_CATEGORIES.map((c) => (
                   <option key={c} value={c} />
                 ))}
               </datalist>
-              <Select name="fundId" defaultValue="">
-                <option value="">No fund</option>
-                {funds.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.label}
-                  </option>
-                ))}
-              </Select>
-              <Input
-                name="ratePerMonth"
-                type="number"
-                min="0.001"
-                step="0.001"
-                placeholder="Rate / month"
-                required
-              />
-              <SubmitButton size="sm" pendingText="Adding...">
-                <Plus className="h-4 w-4" />
-                Add
-              </SubmitButton>
+              <PendingFieldset className="grid gap-2 sm:grid-cols-[1.5fr_1fr_140px_auto]">
+                <Input
+                  name="description"
+                  placeholder="Description"
+                  list="budget-expense-categories"
+                  required
+                />
+                <Select name="fundId" defaultValue="">
+                  <option value="">No fund</option>
+                  {funds.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.label}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  name="ratePerMonth"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  placeholder="Rate / month"
+                  required
+                />
+                <SubmitButton size="sm" pendingText="Adding...">
+                  <Plus className="h-4 w-4" />
+                  Add
+                </SubmitButton>
+              </PendingFieldset>
             </form>
           )}
         </CardContent>

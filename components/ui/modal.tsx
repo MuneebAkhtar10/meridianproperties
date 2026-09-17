@@ -55,6 +55,7 @@ export function Modal({
   widthClassName = "max-w-lg",
   icon,
   headerClassName,
+  defaultOpen = false,
 }: {
   trigger: ReactNode;
   title: string;
@@ -66,8 +67,11 @@ export function Modal({
   /** Optional class override for the header bar — e.g. a gradient — for
    * modals that want more visual presence than the plain default. */
   headerClassName?: string;
+  /** Opens the modal immediately on mount — for a modal that a link
+   * elsewhere deep-links straight into via a query param. */
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);

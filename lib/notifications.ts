@@ -1221,12 +1221,12 @@ export async function notifyServiceChargeReceived(input: {
   await publish({ kind: "notification", userIds: input.recipientIds });
 }
 
-/** Spec #19 "OA Reminder" — an admin-composed, ad-hoc "Notify Owner" message
- * (see the "Notify Owner" button in components/unit-manage-modal.tsx and
- * sendServiceChargeReminderAction), as opposed to the automatic staged
- * reminders above. Same email+WhatsApp fan-out as every other notification
- * here; an attachment (if any) is a link, not a real email attachment —
- * this app's email sender has no attachment API. */
+/** A one-off, system-composed owner message with an optional link
+ * attachment — used by sendServiceChargeInvoiceAction (app/service-charge-invoice-actions.ts)
+ * to send an invoice, as opposed to the automatic staged reminders above.
+ * Same email+WhatsApp fan-out as every other notification here; an
+ * attachment (if any) is a link, not a real email attachment — this app's
+ * email sender has no attachment API. */
 export async function notifyOwnerCustom(input: {
   propertyId: string;
   propertyName: string;
@@ -1234,6 +1234,11 @@ export async function notifyOwnerCustom(input: {
   message: string;
   attachmentUrl?: string;
   recipientIds: string[];
+  /** Defaults to "Service Charge Reminder" — the ad-hoc Notify Owner case
+   * this was originally built for. sendServiceChargeInvoiceAction passes
+   * "Service Charge Invoice" instead so the email/notification title
+   * matches what's actually being sent. */
+  title?: string;
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
@@ -1248,7 +1253,7 @@ export async function notifyOwnerCustom(input: {
   await createNotifications({
     data: input.recipientIds.map((userId) => ({
       userId,
-      title: "Service Charge Reminder",
+      title: input.title ?? "Service Charge Reminder",
       message: input.message,
       href: `/protected/properties/${input.propertyId}`,
       details,

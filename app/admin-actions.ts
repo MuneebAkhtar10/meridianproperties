@@ -43,6 +43,16 @@ const USER_TYPES = Object.values(UserType) as string[];
 /** Allowed service-charge recurrence cycles, in months. */
 const SERVICE_CHARGE_CYCLE_MONTHS = [1, 3, 6, 12] as const;
 
+/** A coordinate (unlike money) can be negative — south/west of the equator
+ * or prime meridian — so this can't reuse parseNonNegativeMoney. Blank is a
+ * valid "not set", not an error. */
+function parseCoordinate(value: FormDataEntryValue | null): number | null {
+  const raw = value?.toString().trim();
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 /** Parses & validates the three service-charge form fields together — either
  * all three are present or none are (a partial charge makes no sense). */
 function parseServiceCharge(formData: FormData):
@@ -100,9 +110,17 @@ export const createPropertyAction = async (formData: FormData) => {
   const wilayat = formData.get("wilayat")?.toString().trim() || null;
   const area = formData.get("area")?.toString().trim() || null;
   const wayNumber = formData.get("wayNumber")?.toString().trim() || null;
+  const buildingName =
+    formData.get("buildingName")?.toString().trim() || null;
   const buildingNumber =
     formData.get("buildingNumber")?.toString().trim() || null;
   const postalCode = formData.get("postalCode")?.toString().trim() || null;
+  const associationRegistrationNumber =
+    formData.get("associationRegistrationNumber")?.toString().trim() || null;
+  const latitude = parseCoordinate(formData.get("latitude"));
+  const longitude = parseCoordinate(formData.get("longitude"));
+  const locationMapPosition =
+    formData.get("locationMapPosition")?.toString().trim() || null;
   const notes = formData.get("notes")?.toString().trim() || null;
 
   if (!name || !address) {
@@ -146,8 +164,13 @@ export const createPropertyAction = async (formData: FormData) => {
       wilayat,
       area,
       wayNumber,
+      buildingName,
       buildingNumber,
       postalCode,
+      associationRegistrationNumber,
+      latitude,
+      longitude,
+      locationMapPosition,
       notes,
       // Admin-created properties are live immediately; an owner's submission
       // waits for an admin to approve it — see the "Pending properties"
@@ -192,9 +215,15 @@ export const updatePropertyAction = async (formData: FormData) => {
   const wilayat = formData.get("wilayat")?.toString().trim() || null;
   const area = formData.get("area")?.toString().trim() || null;
   const wayNumber = formData.get("wayNumber")?.toString().trim() || null;
+  const buildingName =
+    formData.get("buildingName")?.toString().trim() || null;
   const buildingNumber =
     formData.get("buildingNumber")?.toString().trim() || null;
   const postalCode = formData.get("postalCode")?.toString().trim() || null;
+  const latitude = parseCoordinate(formData.get("latitude"));
+  const longitude = parseCoordinate(formData.get("longitude"));
+  const locationMapPosition =
+    formData.get("locationMapPosition")?.toString().trim() || null;
   const notes = formData.get("notes")?.toString().trim() || null;
   const associationRegistrationNumber =
     formData.get("associationRegistrationNumber")?.toString().trim() || null;
@@ -253,8 +282,12 @@ export const updatePropertyAction = async (formData: FormData) => {
       wilayat,
       area,
       wayNumber,
+      buildingName,
       buildingNumber,
       postalCode,
+      latitude,
+      longitude,
+      locationMapPosition,
       notes,
       associationRegistrationNumber,
       associationPhone,
@@ -635,6 +668,99 @@ export const updateUnitServiceChargeAction = async (formData: FormData) => {
   );
 };
 
+/**
+ * Assigns the same owner to many units at once — e.g. right after
+ * generating a batch of new units. Only ever touches units that don't
+ * already have an owner: reassigning an already-owned unit goes through
+ * transferUnitOwnershipAction instead, which keeps a proper transfer
+ * history, so this silently skips those rather than overwriting them.
+ */
+export const bulkAssignUnitOwnerAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+
+  const propertyId = formData.get("propertyId")?.toString();
+  const ownerId = formData.get("ownerId")?.toString().trim();
+  const unitIds = formData.getAll("unitIds").map((v) => v.toString());
+
+  if (!propertyId) {
+    return encodedRedirect("error", "/protected/properties", "Invalid property.");
+  }
+  const back = `/protected/properties/${propertyId}`;
+
+  if (!ownerId) {
+    return encodedRedirect("error", back, "Select an owner.");
+  }
+  if (unitIds.length === 0) {
+    return encodedRedirect("error", back, "Select at least one unit.");
+  }
+
+  const { count } = await prisma.unit.updateMany({
+    where: { id: { in: unitIds }, propertyId, ownerId: null },
+    data: { ownerId },
+  });
+  const skipped = unitIds.length - count;
+
+  await publishDirectoryChange([ownerId]);
+  revalidatePath(back);
+  revalidatePath("/protected/properties");
+
+  return encodedRedirect(
+    "success",
+    back,
+    `Assigned owner to ${count} unit${count === 1 ? "" : "s"}.${
+      skipped > 0
+        ? ` Skipped ${skipped} already-owned unit${skipped === 1 ? "" : "s"} — use that unit's own Ownership tab to transfer it instead.`
+        : ""
+    }`,
+  );
+};
+
+/**
+ * Sets the same service charge (amount, cycle, due date) on many units at
+ * once, unlike updateUnitServiceChargeAction above which only ever touches
+ * one. Reuses the exact same validation so a bulk edit can't save anything
+ * a single-unit edit wouldn't accept.
+ */
+export const bulkSetUnitServiceChargeAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+
+  const propertyId = formData.get("propertyId")?.toString();
+  const unitIds = formData.getAll("unitIds").map((v) => v.toString());
+
+  if (!propertyId) {
+    return encodedRedirect("error", "/protected/properties", "Invalid property.");
+  }
+  const back = `/protected/properties/${propertyId}`;
+
+  if (unitIds.length === 0) {
+    return encodedRedirect("error", back, "Select at least one unit.");
+  }
+
+  const serviceCharge = parseServiceCharge(formData);
+  if (!serviceCharge.ok) {
+    return encodedRedirect("error", back, serviceCharge.error);
+  }
+
+  const { count } = await prisma.unit.updateMany({
+    where: { id: { in: unitIds }, propertyId },
+    data: {
+      serviceChargeAmount: serviceCharge.amount,
+      serviceChargeCycleMonths: serviceCharge.cycleMonths,
+      serviceChargeDueDate: serviceCharge.dueDate,
+      serviceChargeLastStage: null,
+    },
+  });
+
+  revalidatePath(back);
+  revalidatePath("/protected/properties");
+
+  return encodedRedirect(
+    "success",
+    back,
+    `Service charge updated for ${count} unit${count === 1 ? "" : "s"}.`,
+  );
+};
+
 /* ── Property types (fully admin-configurable) ─────────────────────────────── */
 
 function slugifyTypeName(label: string): string {
@@ -833,6 +959,9 @@ export const generateUnitsAction = async (formData: FormData) => {
   const bedrooms = formData.get("bedrooms")
     ? Number(formData.get("bedrooms"))
     : null;
+  const entitlements = formData.get("entitlements")
+    ? Number(formData.get("entitlements"))
+    : null;
 
   if (!propertyId) {
     return encodedRedirect(
@@ -898,6 +1027,7 @@ export const generateUnitsAction = async (formData: FormData) => {
         label: `${floor}${String(n).padStart(2, "0")}`,
         floor,
         bedrooms,
+        entitlements,
         ownerId: generatedOwnerId,
         rentBillsEnabled,
         maintenanceEnabled,
@@ -933,6 +1063,9 @@ export const createUnitAction = async (formData: FormData) => {
   const floor = formData.get("floor") ? Number(formData.get("floor")) : null;
   const bedrooms = formData.get("bedrooms")
     ? Number(formData.get("bedrooms"))
+    : null;
+  const entitlements = formData.get("entitlements")
+    ? Number(formData.get("entitlements"))
     : null;
   // Only an admin can hand a unit to an existing owner; an owner adding a
   // unit is always assigned to themselves.
@@ -1002,6 +1135,7 @@ export const createUnitAction = async (formData: FormData) => {
       label,
       floor,
       bedrooms,
+      entitlements,
       ownerId,
       rentBillsEnabled,
       maintenanceEnabled,
@@ -1043,6 +1177,7 @@ export const updateUnitAction = async (formData: FormData) => {
   const label = formData.get("label")?.toString().trim();
   const floor = formData.get("floor")?.toString().trim();
   const bedrooms = formData.get("bedrooms")?.toString().trim();
+  const entitlements = formData.get("entitlements")?.toString().trim();
 
   if (!unitId) {
     return encodedRedirect(
@@ -1082,6 +1217,7 @@ export const updateUnitAction = async (formData: FormData) => {
 
   const floorValue = floor ? Number(floor) : null;
   const bedroomsValue = bedrooms ? Number(bedrooms) : null;
+  const entitlementsValue = entitlements ? Number(entitlements) : null;
 
   if (floor && (!Number.isInteger(floorValue) || floorValue === null)) {
     return encodedRedirect("error", back, "Floor must be a whole number.");
@@ -1096,6 +1232,16 @@ export const updateUnitAction = async (formData: FormData) => {
       "Bedrooms must be a non-negative whole number.",
     );
   }
+  if (
+    entitlements &&
+    (!Number.isInteger(entitlementsValue) || (entitlementsValue ?? 0) < 0)
+  ) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Unit entitlement must be a non-negative whole number.",
+    );
+  }
 
   const clash = await prisma.unit.findUnique({
     where: { propertyId_label: { propertyId: unit.propertyId, label } },
@@ -1106,12 +1252,17 @@ export const updateUnitAction = async (formData: FormData) => {
     return encodedRedirect("error", back, `Unit ${label} already exists.`);
   }
 
-  // Only an admin may reassign a unit's owner from this form. Service charge
-  // is edited separately, via its own "Manage charge" modal/action, so this
-  // form never touches it.
-  const ownerId = isAdmin
-    ? formData.get("ownerId")?.toString().trim() || null
-    : unit.ownerId;
+  // Only an admin may assign an owner from this form, and only while the
+  // unit is unassigned — once it has one, the field isn't rendered at all
+  // (see components/unit-manage-modal.tsx) and reassignment goes through
+  // transferUnitOwnershipAction instead, which keeps a proper history.
+  // formData.has() distinguishes "field wasn't in this form" from
+  // "submitted blank", so saving other details on an already-owned unit
+  // never silently clears it.
+  const ownerId =
+    isAdmin && formData.has("ownerId")
+      ? formData.get("ownerId")?.toString().trim() || null
+      : unit.ownerId;
   // Only an admin can see (or submit) these checkboxes at all — for anyone
   // else's submission of this form, leave the unit's current values alone
   // rather than reading an absent field as "unchecked".
@@ -1135,6 +1286,7 @@ export const updateUnitAction = async (formData: FormData) => {
       label,
       floor: floorValue,
       bedrooms: bedroomsValue,
+      entitlements: entitlementsValue,
       ownerId,
       rentBillsEnabled,
       maintenanceEnabled,
@@ -1180,6 +1332,114 @@ export const updateUnitAction = async (formData: FormData) => {
   revalidatePath(back);
 
   return encodedRedirect("success", back, `Unit ${label} updated.`);
+};
+
+/** The professional alternative to updateUnitAction's plain owner select —
+ * ends the current ownership and starts the new one on the same
+ * transferDate, with a recorded OwnershipTransfer row instead of silently
+ * overwriting Unit.ownerId. Optionally cascades to every other unit the
+ * same outgoing owner currently holds, for a whole-portfolio handover in
+ * one action. */
+export const transferUnitOwnershipAction = async (formData: FormData) => {
+  const actor = await requireRole(UserType.admin);
+
+  const unitId = formData.get("unitId")?.toString();
+  const newOwnerId = formData.get("newOwnerId")?.toString().trim();
+  const transferDate = parseDateInput(formData.get("transferDate"));
+  const keepServiceCharge = formData.get("keepServiceCharge") === "on";
+  const alsoTransferOtherUnits = formData.get("alsoTransferOtherUnits") === "on";
+  const notes = formData.get("notes")?.toString().trim() || null;
+
+  const unit = await prisma.unit.findUnique({
+    where: { id: unitId },
+    select: { id: true, propertyId: true, label: true, ownerId: true },
+  });
+  const back = unit
+    ? `/protected/properties/${unit.propertyId}`
+    : "/protected/properties";
+
+  if (!unit || !newOwnerId || !transferDate) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Select a new owner and a transfer date.",
+    );
+  }
+
+  const newOwner = await prisma.user.findUnique({
+    where: { id: newOwnerId },
+    select: { id: true, userType: true },
+  });
+  if (!newOwner || newOwner.userType !== UserType.owner) {
+    return encodedRedirect("error", back, "Select a valid owner account.");
+  }
+  if (newOwnerId === unit.ownerId) {
+    return encodedRedirect(
+      "error",
+      back,
+      "That owner already holds this unit.",
+    );
+  }
+
+  const targetUnits = alsoTransferOtherUnits && unit.ownerId
+    ? await prisma.unit.findMany({
+        where: { ownerId: unit.ownerId },
+        select: { id: true, label: true },
+      })
+    : [unit];
+
+  await prisma.$transaction(async (tx) => {
+    for (const target of targetUnits) {
+      await tx.ownershipTransfer.create({
+        data: {
+          unitId: target.id,
+          fromOwnerId: unit.ownerId,
+          toOwnerId: newOwnerId,
+          transferDate,
+          keptServiceCharge: keepServiceCharge,
+          notes,
+          createdById: actor.id,
+        },
+      });
+      await tx.unit.update({
+        where: { id: target.id },
+        data: {
+          ownerId: newOwnerId,
+          ...(keepServiceCharge
+            ? {}
+            : {
+                serviceChargeAmount: null,
+                serviceChargeCycleMonths: null,
+                serviceChargeDueDate: null,
+              }),
+        },
+      });
+    }
+  });
+
+  try {
+    await notifyPropertyAssigned({
+      ownerId: newOwnerId,
+      propertyId: unit.propertyId,
+      propertyName:
+        targetUnits.length > 1
+          ? `${targetUnits.length} units`
+          : `Unit ${unit.label}`,
+    });
+  } catch (error) {
+    console.error("Ownership transfer notification failed:", error);
+  }
+
+  await publishDirectoryChange();
+  revalidatePath(back);
+
+  return encodedRedirect(
+    "success",
+    back,
+    targetUnits.length > 1
+      ? `Ownership of ${targetUnits.length} units transferred.`
+      : `Ownership of unit ${unit.label} transferred.`,
+  );
 };
 
 export const deleteUnitAction = async (formData: FormData) => {

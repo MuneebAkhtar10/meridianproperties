@@ -44,7 +44,7 @@ import {
   moneyValue,
   monthInputValue,
 } from "@/lib/finance";
-import { formatUnitLabel } from "@/lib/property-types";
+import { formatUnitLabel, isBuildingType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import {
@@ -203,7 +203,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
   const [
     charges,
     activeTenancies,
-    properties,
+    allProperties,
     pendingCount,
     collectedThisMonth,
     tenantsWithTenancies,
@@ -262,7 +262,11 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       ? prisma.property.findMany({
           where: isOwner ? { units: { some: { ownerId: user.id } } } : {},
           orderBy: { name: "asc" },
-          select: { id: true, name: true },
+          select: {
+            id: true,
+            name: true,
+            propertyType: { select: { name: true } },
+          },
         })
       : Promise.resolve([]),
     prisma.payment.count({
@@ -298,6 +302,12 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         })
       : Promise.resolve([]),
   ]);
+
+  // OA properties never bill rent — no point offering them as a filter on
+  // a rent & bills page.
+  const properties = allProperties.filter(
+    (property) => !isBuildingType(property.propertyType.name),
+  );
 
   const visibleCharges = sortCharges(
     charges.filter((charge) => {

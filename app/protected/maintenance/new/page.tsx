@@ -2,6 +2,7 @@ import { AdminCreateRequestForm } from "@/components/admin-create-request-form";
 import { PageHeader } from "@/components/page-header";
 import { FormMessage, Message } from "@/components/form-message";
 import { prisma } from "@/lib/prisma";
+import { isBuildingType } from "@/lib/property-types";
 import { requireRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
@@ -12,7 +13,7 @@ export default async function NewMaintenanceRequestPage({
   const message = (await searchParams) as unknown as Message;
   await requireRole(UserType.admin);
 
-  const [properties, workers] = await Promise.all([
+  const [allProperties, workers] = await Promise.all([
     prisma.property.findMany({
       where: {},
       orderBy: { name: "asc" },
@@ -21,6 +22,7 @@ export default async function NewMaintenanceRequestPage({
         name: true,
         propertyType: {
           select: {
+            name: true,
             locationOptions: true,
             hasFloors: true,
             unitPrefix: true,
@@ -48,6 +50,13 @@ export default async function NewMaintenanceRequestPage({
       orderBy: { email: "asc" },
     }),
   ]);
+
+  // An OA/owners-association property never accepts maintenance requests —
+  // its units all default maintenanceEnabled off and the toggle to turn it
+  // back on isn't even offered for this type (see lib/property-types.ts).
+  const properties = allProperties.filter(
+    (property) => !isBuildingType(property.propertyType.name),
+  );
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-4 pt-4 pb-8">

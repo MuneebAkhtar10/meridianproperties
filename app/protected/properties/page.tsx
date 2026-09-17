@@ -1,10 +1,23 @@
-import { Building2, DoorOpen, MapPin, Plus, Settings, Users } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  DoorOpen,
+  Home,
+  Landmark,
+  MapPin,
+  Phone,
+  Plus,
+  Settings,
+  Users,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { createPropertyAction } from "@/app/admin-actions";
 import { EmptyState } from "@/components/empty-state";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { PropertyLocationFields } from "@/components/property-location-fields";
 import { SubmitButton } from "@/components/submit-button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +38,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
   const params = (await searchParams) as unknown as {
     owner?: string;
     q?: string;
+    type?: string;
   };
   const message = params as unknown as Message;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
@@ -34,40 +48,50 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
     isAdmin && typeof params.owner === "string" ? params.owner : "all";
   const search =
     isAdmin && typeof params.q === "string" ? params.q.trim() : "";
+  const typeFilter =
+    isAdmin && typeof params.type === "string" ? params.type : "all";
 
-  const [properties, propertyTypes, pendingProperties, owners] =
+  // Shared by both the main list query and the "by management type" cards
+  // below — the cards themselves always reflect every type (so they all
+  // stay clickable at once), while the list itself also applies typeFilter.
+  const baseWhere = isOwner
+    ? { units: { some: { ownerId: user.id } } }
+    : {
+        // Admin's main list only shows live properties; unapproved
+        // owner-submitted ones surface separately below for review.
+        approved: true,
+        ...(ownerFilter !== "all"
+          ? { units: { some: { ownerId: ownerFilter } } }
+          : {}),
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: "insensitive" as const } },
+                {
+                  units: {
+                    some: {
+                      owner: {
+                        OR: [
+                          { email: { contains: search, mode: "insensitive" as const } },
+                          { firstName: { contains: search, mode: "insensitive" as const } },
+                          { lastName: { contains: search, mode: "insensitive" as const } },
+                        ],
+                      },
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
+      };
+
+  const [properties, propertyTypeCounts, propertyTypes, pendingProperties, owners] =
     await Promise.all([
       prisma.property.findMany({
-        where: isOwner
-          ? { units: { some: { ownerId: user.id } } }
-          : {
-              // Admin's main list only shows live properties; unapproved
-              // owner-submitted ones surface separately below for review.
-              approved: true,
-              ...(ownerFilter !== "all"
-                ? { units: { some: { ownerId: ownerFilter } } }
-                : {}),
-              ...(search
-                ? {
-                    OR: [
-                      { name: { contains: search, mode: "insensitive" } },
-                      {
-                        units: {
-                          some: {
-                            owner: {
-                              OR: [
-                                { email: { contains: search, mode: "insensitive" } },
-                                { firstName: { contains: search, mode: "insensitive" } },
-                                { lastName: { contains: search, mode: "insensitive" } },
-                              ],
-                            },
-                          },
-                        },
-                      },
-                    ],
-                  }
-                : {}),
-            },
+        where: {
+          ...baseWhere,
+          ...(typeFilter !== "all" ? { propertyTypeId: typeFilter } : {}),
+        },
         orderBy: { createdAt: "desc" },
         include: {
           propertyType: true,
@@ -78,6 +102,12 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
               owner: { select: { email: true, firstName: true, lastName: true } },
             },
           },
+        },
+      }),
+      prisma.property.findMany({
+        where: baseWhere,
+        select: {
+          propertyType: { select: { id: true, name: true, label: true } },
         },
       }),
       prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
@@ -110,6 +140,50 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
     (sum, p) => sum + p.units.filter((u) => u.tenantId).length,
     0,
   );
+
+  // Spec #3's four management types (Owners Association, Building
+  // Management, Individual Apartment Management, Villa/Call-Out) get their
+  // own recognizable icon/color; any other admin-added type still gets a
+  // card, just with a generic look, so this never silently drops one.
+  const TYPE_STYLE: Record<string, { icon: LucideIcon; iconBg: string; accent: string }> = {
+    building: { icon: Landmark, iconBg: "bg-indigo-50 text-indigo-600", accent: "bg-indigo-500" },
+    building_management: { icon: Building2, iconBg: "bg-cyan-50 text-cyan-600", accent: "bg-cyan-500" },
+    apartment: { icon: DoorOpen, iconBg: "bg-violet-50 text-violet-600", accent: "bg-violet-500" },
+    villa: { icon: Phone, iconBg: "bg-amber-50 text-amber-600", accent: "bg-amber-500" },
+    office: { icon: Briefcase, iconBg: "bg-slate-100 text-slate-600", accent: "bg-slate-400" },
+  };
+  const DEFAULT_TYPE_STYLE = {
+    icon: Home,
+    iconBg: "bg-teal-50 text-teal-600",
+    accent: "bg-teal-500",
+  };
+
+  const buildTypeHref = (typeId: string) => {
+    const query = new URLSearchParams();
+    if (ownerFilter !== "all") query.set("owner", ownerFilter);
+    if (search) query.set("q", search);
+    if (typeId !== "all") query.set("type", typeId);
+    const qs = query.toString();
+    return `/protected/properties${qs ? `?${qs}` : ""}`;
+  };
+
+  const propertiesByType = Array.from(
+    propertyTypeCounts.reduce((map, property) => {
+      const key = property.propertyType.id;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count++;
+      } else {
+        map.set(key, {
+          id: property.propertyType.id,
+          name: property.propertyType.name,
+          label: property.propertyType.label,
+          count: 1,
+        });
+      }
+      return map;
+    }, new Map<string, { id: string; name: string; label: string; count: number }>()).values(),
+  ).sort((a, b) => b.count - a.count);
 
   /** A property's owners are the distinct set of its units' owners — several
    * units can belong to different landlords under the same building. */
@@ -187,6 +261,63 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
           </Card>
         </Link>
       </div>
+
+      {propertiesByType.length > 0 && (
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              By management type
+            </p>
+            {typeFilter !== "all" && (
+              <Link
+                href={buildTypeHref("all")}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Clear
+              </Link>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {propertiesByType.map((type) => {
+              const style = TYPE_STYLE[type.name] ?? DEFAULT_TYPE_STYLE;
+              const Icon = style.icon;
+              const active = typeFilter === type.id;
+              return (
+                <Link
+                  key={type.id}
+                  href={buildTypeHref(active ? "all" : type.id)}
+                  className="block w-full sm:w-auto"
+                >
+                  <Card
+                    className={`relative w-full overflow-hidden shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:w-auto sm:min-w-40 ${
+                      active
+                        ? "border-transparent ring-2 ring-primary/60"
+                        : "border-border/60"
+                    }`}
+                  >
+                    <span className={`absolute inset-x-0 top-0 h-1 ${style.accent}`} />
+                    <CardContent className="flex items-center gap-3 p-3.5">
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${style.iconBg}`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-lg font-semibold leading-tight">
+                          {type.count}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {type.label}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {isAdmin && pendingProperties.length > 0 && (
         <Card className="relative overflow-hidden border-border/60 shadow-sm">
@@ -280,6 +411,9 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
 
       {isAdmin && (
         <form className="flex flex-wrap items-end gap-2">
+          {typeFilter !== "all" && (
+            <input type="hidden" name="type" value={typeFilter} />
+          )}
           <div className="min-w-56 flex-1 max-w-sm space-y-1.5">
             <Label htmlFor="q">Search</Label>
             <Input
@@ -308,7 +442,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
           <SubmitButton variant="outline" pendingText="Filtering...">
             Filter
           </SubmitButton>
-          {(ownerFilter !== "all" || search) && (
+          {(ownerFilter !== "all" || search || typeFilter !== "all") && (
             <Link
               href="/protected/properties"
               className="text-xs font-medium text-muted-foreground hover:text-foreground"
@@ -537,11 +671,22 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   <Input id="area" name="area" placeholder="Al Khuwair" />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="buildingName">Building name/no.</Label>
+                    <Input
+                      id="buildingName"
+                      name="buildingName"
+                      placeholder="Al Noor Tower"
+                    />
+                  </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="wayNumber">Way no.</Label>
                     <Input id="wayNumber" name="wayNumber" placeholder="3521" />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="buildingNumber">Building no.</Label>
                     <Input
@@ -559,6 +704,19 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="associationRegistrationNumber">
+                    OA registration no.
+                  </Label>
+                  <Input
+                    id="associationRegistrationNumber"
+                    name="associationRegistrationNumber"
+                    placeholder="Optional — owners' association only"
+                  />
+                </div>
+
+                <PropertyLocationFields />
 
                 <div className="space-y-1.5">
                   <Label htmlFor="notes">Notes</Label>

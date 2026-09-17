@@ -62,6 +62,8 @@ export default async function RentPositionPage({ searchParams }: PageProps) {
   const [{ rows, totals }, properties] = await Promise.all([
     getRentPositionData(propertyFilter),
     prisma.property.findMany({
+      // OA properties never bill rent — no point offering them here.
+      where: { propertyType: { name: { not: "building" } } },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

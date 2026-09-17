@@ -45,19 +45,23 @@ export function AppSidebar({
   );
 
   const sidebarBody = (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex h-12 items-center">{brand}</div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1">
+    <div className="flex h-full flex-col gap-4 overflow-y-auto">
+      <div className="flex h-12 shrink-0 items-center">{brand}</div>
+      <div className="shrink-0 px-1">
         <AppNav
           items={items}
           orientation="vertical"
           onNavigate={() => setMobileOpen(false)}
         />
       </div>
-      {/* Extra bottom clearance keeps this row clear of Next.js's dev-mode
+      {/* mt-auto pins this to the very bottom of the column regardless of
+       * how short the nav list above is, instead of sitting right under it.
+       * Extra bottom clearance (pb-2) keeps it clear of Next.js's dev-mode
        * indicator badge, which docks in the same bottom-left corner locally
        * (it isn't present in production builds). */}
-      <div className="border-t border-border/60 px-1 pb-2 pt-3">{footer}</div>
+      <div className="mt-auto shrink-0 border-t border-border/60 px-1 pb-2 pt-3">
+        {footer}
+      </div>
     </div>
   );
 
@@ -90,7 +94,7 @@ export function AppSidebar({
           />
           <aside
             className={cn(
-              "absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-border/60 bg-card px-3 py-4 shadow-2xl",
+              "absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col overflow-y-auto border-r border-border/60 bg-card px-3 py-4 shadow-2xl",
             )}
           >
             <div className="mb-2 flex items-center justify-between">
@@ -104,14 +108,16 @@ export function AppSidebar({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-1">
+            <div className="shrink-0 overflow-y-auto px-1">
               <AppNav
                 items={items}
                 orientation="vertical"
                 onNavigate={() => setMobileOpen(false)}
               />
             </div>
-            <div className="border-t border-border/60 px-1 pt-3">{footer}</div>
+            <div className="mt-auto shrink-0 border-t border-border/60 px-1 pt-3">
+              {footer}
+            </div>
           </aside>
         </div>
       )}

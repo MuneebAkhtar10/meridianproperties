@@ -1,17 +1,22 @@
 import {
   AlertCircle,
+  AlertTriangle,
+  Banknote,
   CheckCircle2,
+  ClipboardList,
   DoorOpen,
   FileCheck,
   FileWarning,
   KeyRound,
-  LayoutGrid,
+  Landmark,
+  type LucideIcon,
   MapPin,
   Phone,
   Receipt,
   ScrollText,
   Store,
   Trash2,
+  TrendingUp,
   UserPlus,
   Wallet,
   Wand2,
@@ -29,6 +34,8 @@ import { EmptyState } from "@/components/empty-state";
 import { EntityDocumentManager } from "@/components/entity-document-manager";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { PropertyLocationFields } from "@/components/property-location-fields";
+import { PropertyUnitsBulkList } from "@/components/property-units-bulk-list";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,6 +43,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { PendingLink } from "@/components/ui/pending-link";
 import { UnitManageModal } from "@/components/unit-manage-modal";
@@ -50,10 +58,28 @@ import {
 } from "@/lib/property-types";
 import { serviceChargeTone } from "@/lib/service-charge-status";
 import { SummaryTile } from "@/components/summary-tile";
+import { cn } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
+
+/** A colored badge behind a toolbar button's icon — the property toolbar
+ * has a dozen identically-styled outline buttons in a row, and a plain
+ * monochrome icon on each makes them hard to tell apart at a glance. */
+function ToolbarIcon({
+  icon: Icon,
+  className,
+}: {
+  icon: LucideIcon;
+  className: string;
+}) {
+  return (
+    <span className={cn("flex items-center justify-center rounded-md p-1", className)}>
+      <Icon className="h-4 w-4" />
+    </span>
+  );
+}
 
 export default async function PropertyDetailPage({
   params,
@@ -108,21 +134,27 @@ export default async function PropertyDetailPage({
               id: true,
               invoiceNumber: true,
               issueDate: true,
+              currentAmount: true,
+              previousBalance: true,
               amountPayable: true,
-              fund: { select: { label: true } },
             },
           },
           serviceChargePayments: {
             select: { amount: true },
-          },
-          fundBalances: {
-            select: { fundId: true, balance: true, fund: { select: { label: true } } },
           },
           installmentPlans: {
             where: { cancelledAt: null },
             orderBy: { createdAt: "desc" },
             take: 1,
             include: { installments: { orderBy: { sequence: "asc" } } },
+          },
+          ownershipTransfers: {
+            orderBy: { createdAt: "desc" },
+            include: {
+              fromOwner: { select: { email: true, firstName: true, lastName: true } },
+              toOwner: { select: { email: true, firstName: true, lastName: true } },
+              createdBy: { select: { email: true, firstName: true, lastName: true } },
+            },
           },
         },
       },
@@ -153,7 +185,7 @@ export default async function PropertyDetailPage({
       isAdmin
         ? prisma.user.findMany({
             where: { userType: UserType.owner },
-            select: { id: true, email: true },
+            select: { id: true, email: true, firstName: true, lastName: true },
             orderBy: { email: "asc" },
           })
         : Promise.resolve([]),
@@ -248,6 +280,17 @@ export default async function PropertyDetailPage({
     }
   }
 
+  // OA buildings never bill rent, so the "Scheduled monthly rent" tile is
+  // meaningless there — this trio (owners still unassigned, service charge
+  // still unconfigured, never invoiced) replaces it instead.
+  const unassignedOwnerCount = property.units.filter((u) => !u.ownerId).length;
+  const unassignedChargeCount = property.units.filter(
+    (u) => !u.serviceChargeAmount,
+  ).length;
+  const neverInvoicedCount = property.units.filter(
+    (u) => u.serviceChargeInvoices.length === 0,
+  ).length;
+
   const searchLower = search.toLowerCase();
   const unitMatchesSearch = (unit: (typeof property.units)[number]) => {
     if (!searchLower) return true;
@@ -339,48 +382,211 @@ export default async function PropertyDetailPage({
     occupancyFilter !== "all" ||
     Boolean(search);
 
+  // Shared between the summary tile's modal and the header's "Suppliers"
+  // quick-link below — both open the same list, just triggered from two
+  // different spots on the page.
+  const suppliersModalContent =
+    propertySuppliers.length === 0 ? (
+      <p className="py-6 text-center text-sm text-muted-foreground">
+        No suppliers are eligible for this property yet.
+      </p>
+    ) : (
+      <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+        {propertySuppliers.map((supplier) => (
+          <div key={supplier.id} className="rounded-lg border border-border/60 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-medium">{supplier.companyName}</p>
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
+                  supplier.availableForAllProperties
+                    ? "bg-slate-100 text-slate-600 ring-slate-500/20"
+                    : "bg-indigo-50 text-indigo-700 ring-indigo-600/20"
+                }`}
+              >
+                {supplier.availableForAllProperties
+                  ? "All properties"
+                  : "This property"}
+              </span>
+            </div>
+            {(supplier.contactPerson || supplier.phone || supplier.whatsapp) && (
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                {supplier.contactPerson && <span>{supplier.contactPerson}</span>}
+                {supplier.phone && (
+                  <span className="inline-flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    {supplier.phone}
+                  </span>
+                )}
+                {supplier.availableForEmergencies && (
+                  <span className="font-medium text-amber-700">
+                    Available for emergencies
+                  </span>
+                )}
+              </p>
+            )}
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {supplier.categories.length === 0 ? (
+                <span className="text-xs text-muted-foreground">
+                  No services listed
+                </span>
+              ) : (
+                supplier.categories.map(({ category }) => (
+                  <span
+                    key={category.label}
+                    className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground/80"
+                  >
+                    {category.label}
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+
   return (
     <div className="w-full space-y-5 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title={property.name}
         description={`${propertyType.label} · ${formatOmanAddress(property)} · Owner: ${ownerLabel}`}
         back={{ href: "/protected/properties", label: "All properties" }}
-      >
-        <ButtonLink
-          href={`/protected/properties/${property.id}/budget/${new Date().getFullYear()}`}
-          variant="outline"
-        >
-          <Wallet className="h-4 w-4" />
-          Annual Budget
-        </ButtonLink>
-        <ButtonLink
-          href={`/protected/properties/${property.id}/building-expenses`}
-          variant="outline"
-        >
-          <Receipt className="h-4 w-4" />
-          Building Expenses
-        </ButtonLink>
-        <ButtonLink
-          href={`/protected/properties/${property.id}/building-contracts`}
-          variant="outline"
-        >
-          <FileCheck className="h-4 w-4" />
-          Building Contracts
-        </ButtonLink>
-        {isPropertyBuildingManagementType && (
-          <ButtonLink
-            href={`/protected/properties/${property.id}/building-management-report`}
-            variant="outline"
-          >
-            <ScrollText className="h-4 w-4" />
-            Building Management Report
-          </ButtonLink>
-        )}
-        <ButtonLink href="/protected/tenancies" variant="outline">
-          <KeyRound className="h-4 w-4" />
-          Tenancy terms
-        </ButtonLink>
-      </PageHeader>
+      />
+
+      {/* One toolbar for everything about this specific property — records
+          kept on the property itself, and the cross-module reports/ledgers
+          each pre-filtered to it — instead of two mismatched button rows. */}
+      <div className="space-y-2.5 rounded-xl border border-border/60 bg-muted/20 p-3">
+        <div>
+          <p className="mb-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Property records
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            <ButtonLink
+              href={`/protected/properties/${property.id}/budget/${new Date().getFullYear()}`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={Wallet} className="bg-emerald-100 text-emerald-600" />
+              Annual Budget
+            </ButtonLink>
+            <ButtonLink
+              href={`/protected/properties/${property.id}/building-expenses`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={Receipt} className="bg-rose-100 text-rose-600" />
+              Building Expenses
+            </ButtonLink>
+            <ButtonLink
+              href={`/protected/properties/${property.id}/building-contracts`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={FileCheck} className="bg-blue-100 text-blue-600" />
+              Building Contracts
+            </ButtonLink>
+            {isPropertyBuildingManagementType && (
+              <ButtonLink
+                href={`/protected/properties/${property.id}/building-management-report`}
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={ScrollText} className="bg-violet-100 text-violet-600" />
+                Building Management Report
+              </ButtonLink>
+            )}
+            <ButtonLink
+              href="/protected/tenancies"
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={KeyRound} className="bg-amber-100 text-amber-600" />
+              Tenancy terms
+            </ButtonLink>
+          </div>
+        </div>
+
+        <div className="border-t border-border/60 pt-2.5">
+          <p className="mb-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Reports &amp; ledgers
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            <Modal
+              trigger={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="bg-background"
+                >
+                  <ToolbarIcon icon={Store} className="bg-indigo-100 text-indigo-600" />
+                  Suppliers
+                </Button>
+              }
+              title="Suppliers"
+              description={`Every active supplier eligible for ${property.name} — linked directly, or available portfolio-wide.`}
+              icon={
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                  <Store className="h-4 w-4" />
+                </span>
+              }
+            >
+              {suppliersModalContent}
+            </Modal>
+            <ButtonLink
+              href={`/protected/expenses?property=${property.id}`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={Banknote} className="bg-rose-100 text-rose-600" />
+              Expenses
+            </ButtonLink>
+            <ButtonLink
+              href={`/protected/properties/${property.id}/unit-ledgers`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={ScrollText} className="bg-violet-100 text-violet-600" />
+              Unit Ledgers
+            </ButtonLink>
+            <ButtonLink
+              href={`/protected/tenancies/report?property=${property.id}`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={ClipboardList} className="bg-teal-100 text-teal-600" />
+              Report
+            </ButtonLink>
+            <ButtonLink
+              href={`/protected/service-charge-ledger?property=${property.id}`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={Landmark} className="bg-cyan-100 text-cyan-600" />
+              Service Charge
+            </ButtonLink>
+            <ButtonLink
+              href={`/protected/expenses?property=${property.id}&cashflow=1`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={TrendingUp} className="bg-emerald-100 text-emerald-600" />
+              Cash Flow
+            </ButtonLink>
+          </div>
+        </div>
+      </div>
 
       {!property.approved && property.rejectedAt && (
         <div className="flex flex-col gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
@@ -442,7 +648,7 @@ export default async function PropertyDetailPage({
         <FormMessage message={message} />
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <SummaryTile
           icon={<DoorOpen className="h-4 w-4" />}
           value={property.units.length}
@@ -459,8 +665,9 @@ export default async function PropertyDetailPage({
         />
         <SummaryTile
           icon={<UserPlus className="h-4 w-4" />}
-          value={occupied}
+          value={`${occupied}/${property.units.length}`}
           label="Occupied"
+          sublabel={`${property.units.length - occupied} empty`}
           accent="bg-emerald-500"
           iconBg="bg-emerald-50 text-emerald-600"
           href={buildFilterHref({
@@ -468,28 +675,49 @@ export default async function PropertyDetailPage({
           })}
           active={occupancyFilter === "occupied"}
         />
-        <SummaryTile
-          icon={<LayoutGrid className="h-4 w-4" />}
-          value={property.units.length - occupied}
-          label="Empty"
-          accent="bg-slate-400"
-          iconBg="bg-slate-50 text-slate-600"
-          href={buildFilterHref({
-            occupancy: occupancyFilter === "empty" ? "all" : "empty",
-          })}
-          active={occupancyFilter === "empty"}
-        />
-        <SummaryTile
-          icon={<KeyRound className="h-4 w-4" />}
-          value={formatMoneyCompact(scheduledMonthlyRent)}
-          label="Scheduled monthly rent"
-          accent="bg-[#0886be]"
-          iconBg="bg-[#0886be]/10 text-[#0886be]"
-          href={buildFilterHref({
-            occupancy: occupancyFilter === "occupied" ? "all" : "occupied",
-          })}
-          active={occupancyFilter === "occupied"}
-        />
+        {isPropertyBuildingType ? (
+          <Card className="relative overflow-hidden border-border/60 shadow-sm">
+            <span className="absolute inset-x-0 top-0 h-1 bg-rose-500" />
+            <CardContent className="flex items-start gap-2 p-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                <AlertTriangle className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 space-y-0.5">
+                <p className="truncate text-[11px] leading-snug text-muted-foreground">
+                  <span className="font-semibold text-foreground">
+                    {unassignedOwnerCount}
+                  </span>{" "}
+                  unassigned owner{unassignedOwnerCount === 1 ? "" : "s"}
+                </p>
+                <p className="truncate text-[11px] leading-snug text-muted-foreground">
+                  <span className="font-semibold text-foreground">
+                    {unassignedChargeCount}
+                  </span>{" "}
+                  unassigned service charge
+                  {unassignedChargeCount === 1 ? "" : "s"}
+                </p>
+                <p className="truncate text-[11px] leading-snug text-muted-foreground">
+                  <span className="font-semibold text-foreground">
+                    {neverInvoicedCount}
+                  </span>{" "}
+                  never invoiced
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <SummaryTile
+            icon={<KeyRound className="h-4 w-4" />}
+            value={formatMoneyCompact(scheduledMonthlyRent)}
+            label="Scheduled monthly rent"
+            accent="bg-[#0886be]"
+            iconBg="bg-[#0886be]/10 text-[#0886be]"
+            href={buildFilterHref({
+              occupancy: occupancyFilter === "occupied" ? "all" : "occupied",
+            })}
+            active={occupancyFilter === "occupied"}
+          />
+        )}
         <SummaryTile
           icon={<AlertCircle className="h-4 w-4" />}
           value={formatMoneyCompact(serviceChargeDueAmount)}
@@ -514,87 +742,6 @@ export default async function PropertyDetailPage({
           })}
           active={chargeFilter === "ok"}
         />
-        <Modal
-          trigger={
-            <SummaryTile
-              icon={<Store className="h-4 w-4" />}
-              value={propertySuppliers.length}
-              label="Suppliers"
-              sublabel="linked to this property"
-              accent="bg-indigo-500"
-              iconBg="bg-indigo-50 text-indigo-600"
-            />
-          }
-          title="Suppliers"
-          description={`Every active supplier eligible for ${property.name} — linked directly, or available portfolio-wide.`}
-          icon={
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-              <Store className="h-4 w-4" />
-            </span>
-          }
-        >
-          {propertySuppliers.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              No suppliers are eligible for this property yet.
-            </p>
-          ) : (
-            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-              {propertySuppliers.map((supplier) => (
-                <div
-                  key={supplier.id}
-                  className="rounded-lg border border-border/60 p-3"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-medium">{supplier.companyName}</p>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
-                        supplier.availableForAllProperties
-                          ? "bg-slate-100 text-slate-600 ring-slate-500/20"
-                          : "bg-indigo-50 text-indigo-700 ring-indigo-600/20"
-                      }`}
-                    >
-                      {supplier.availableForAllProperties
-                        ? "All properties"
-                        : "This property"}
-                    </span>
-                  </div>
-                  {(supplier.contactPerson || supplier.phone || supplier.whatsapp) && (
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                      {supplier.contactPerson && <span>{supplier.contactPerson}</span>}
-                      {supplier.phone && (
-                        <span className="inline-flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {supplier.phone}
-                        </span>
-                      )}
-                      {supplier.availableForEmergencies && (
-                        <span className="font-medium text-amber-700">
-                          Available for emergencies
-                        </span>
-                      )}
-                    </p>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {supplier.categories.length === 0 ? (
-                      <span className="text-xs text-muted-foreground">
-                        No services listed
-                      </span>
-                    ) : (
-                      supplier.categories.map(({ category }) => (
-                        <span
-                          key={category.label}
-                          className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground/80"
-                        >
-                          {category.label}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Modal>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_28rem]">
@@ -769,218 +916,204 @@ export default async function PropertyDetailPage({
               description="Clear a filter above to see all of them again."
             />
           ) : (
-            /* One clean row per unit, not a form-crammed table — a single
-             * "Manage" button opens the full edit surface in a modal. */
-            [...byFloor.entries()].map(([floor, units]) => (
-              <Card key={String(floor)} className="overflow-hidden">
-                <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2.5">
-                  <h2 className="text-sm font-medium">
-                    {!hasFloors
-                      ? propertyType.unitNounPlural
-                      : floor === null
-                        ? "Unassigned floor"
-                        : `Floor ${floor}`}
-                  </h2>
-                  <span className="text-xs text-muted-foreground">
-                    {units.filter((u) => u.tenant).length}/{units.length}{" "}
-                    occupied
-                  </span>
-                </div>
+            <PropertyUnitsBulkList
+              propertyId={property.id}
+              owners={owners}
+              floorGroups={[...byFloor.entries()].map(([floor, units]) => ({
+                key: String(floor),
+                label: !hasFloors
+                  ? propertyType.unitNounPlural
+                  : floor === null
+                    ? "Unassigned floor"
+                    : `Floor ${floor}`,
+                occupiedLabel: `${units.filter((u) => u.tenant).length}/${units.length} occupied`,
+                units: units.map((unit) => {
+                  const unitLabel = propertyType.unitPrefix
+                    ? `${propertyType.unitPrefix} ${unit.label}`
+                    : unit.label;
+                  const chargeTone = chargeToneFor(unit);
+                  const hasCharge = chargeTone !== "none";
+                  const totalPaid = unit.serviceChargePayments.reduce(
+                    (total, payment) => total + Number(payment.amount),
+                    0,
+                  );
+                  const balance = Number(unit.serviceChargeBalance);
+                  const activePlan = unit.installmentPlans[0] ?? null;
+                  const planPaidCount =
+                    activePlan?.installments.filter((i) => i.paidAt)
+                      .length ?? 0;
 
-                <div className="divide-y divide-border/60">
-                  {units.map((unit) => {
-                    const unitLabel = propertyType.unitPrefix
-                      ? `${propertyType.unitPrefix} ${unit.label}`
-                      : unit.label;
-                    const chargeTone = chargeToneFor(unit);
-                    const hasCharge = chargeTone !== "none";
-                    const totalPaid = unit.serviceChargePayments.reduce(
-                      (total, payment) => total + Number(payment.amount),
-                      0,
-                    );
-                    const balance = Number(unit.serviceChargeBalance);
-                    const activePlan = unit.installmentPlans[0] ?? null;
-                    const planPaidCount =
-                      activePlan?.installments.filter((i) => i.paidAt)
-                        .length ?? 0;
-
-                    return (
-                      <div
-                        key={unit.id}
-                        className="flex flex-col gap-2 px-4 py-3.5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold">
-                              {unitLabel}
-                            </p>
+                  return {
+                    id: unit.id,
+                    content: (
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold">
+                            {unitLabel}
+                          </p>
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
+                              unit.tenant
+                                ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+                                : "bg-slate-50 text-slate-600 ring-slate-500/20"
+                            }`}
+                          >
+                            {unit.tenant ? "Occupied" : "Empty"}
+                          </span>
+                          {!isPropertyBuildingType && !unit.rentBillsEnabled && (
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
+                              No billing
+                            </span>
+                          )}
+                          {!isPropertyBuildingType && !unit.maintenanceEnabled && (
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
+                              No maintenance
+                            </span>
+                          )}
+                          {unit.owner &&
+                            (hasContract(unit) ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                <FileCheck className="h-3 w-3" />
+                                Contract on file
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
+                                <FileWarning className="h-3 w-3" />
+                                Contract needed
+                              </span>
+                            ))}
+                          {hasCharge && (
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
-                                unit.tenant
-                                  ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
-                                  : "bg-slate-50 text-slate-600 ring-slate-500/20"
+                                chargeTone === "overdue"
+                                  ? "bg-red-100 text-red-800 ring-red-600/20"
+                                  : chargeTone === "dueSoon"
+                                    ? "bg-amber-100 text-amber-800 ring-amber-600/20"
+                                    : "bg-slate-50 text-slate-600 ring-slate-500/20"
                               }`}
                             >
-                              {unit.tenant ? "Occupied" : "Empty"}
-                            </span>
-                            {!isPropertyBuildingType && !unit.rentBillsEnabled && (
-                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
-                                No billing
-                              </span>
-                            )}
-                            {!isPropertyBuildingType && !unit.maintenanceEnabled && (
-                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
-                                No maintenance
-                              </span>
-                            )}
-                            {unit.owner &&
-                              (hasContract(unit) ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                                  <FileCheck className="h-3 w-3" />
-                                  Contract on file
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
-                                  <FileWarning className="h-3 w-3" />
-                                  Contract needed
-                                </span>
-                              ))}
-                            {hasCharge && (
-                              <span
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
-                                  chargeTone === "overdue"
-                                    ? "bg-red-100 text-red-800 ring-red-600/20"
-                                    : chargeTone === "dueSoon"
-                                      ? "bg-amber-100 text-amber-800 ring-amber-600/20"
-                                      : "bg-slate-50 text-slate-600 ring-slate-500/20"
-                                }`}
-                              >
-                                {formatMoney(unit.serviceChargeAmount as never)}{" "}
-                                · Due{" "}
-                                {format(
-                                  unit.serviceChargeDueDate!,
-                                  "d MMM yyyy",
-                                )}
-                              </span>
-                            )}
-                          </div>
-                          <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-                            <span>
-                              {[
-                                hasFloors && unit.floor !== null
-                                  ? `Floor ${unit.floor}`
-                                  : null,
-                                hasBedrooms && unit.bedrooms
-                                  ? `${unit.bedrooms} bed`
-                                  : null,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </span>
-                            <span className="text-border">·</span>
-                            <span>
-                              Owner:{" "}
-                              {unit.owner ? (
-                                <span className="font-medium text-foreground">
-                                  {unit.owner.email}
-                                </span>
-                              ) : (
-                                <span className="font-medium text-amber-700">
-                                  Unassigned
-                                </span>
+                              {formatMoney(unit.serviceChargeAmount as never)}{" "}
+                              · Due{" "}
+                              {format(
+                                unit.serviceChargeDueDate!,
+                                "d MMM yyyy",
                               )}
                             </span>
-                            <span className="text-border">·</span>
-                            <span>
-                              Tenant:{" "}
-                              <span
-                                className={
-                                  unit.tenant
-                                    ? "font-medium text-foreground"
-                                    : ""
-                                }
-                              >
-                                {unit.tenant?.email ?? "—"}
+                          )}
+                        </div>
+                        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                          <span>
+                            {[
+                              hasFloors && unit.floor !== null
+                                ? `Floor ${unit.floor}`
+                                : null,
+                              hasBedrooms && unit.bedrooms
+                                ? `${unit.bedrooms} bed`
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                          <span className="text-border">·</span>
+                          <span>
+                            Owner:{" "}
+                            {unit.owner ? (
+                              <span className="font-medium text-foreground">
+                                {unit.owner.email}
                               </span>
-                            </span>
-                            {!hasCharge && (
-                              <>
-                                <span className="text-border">·</span>
-                                <span>No service charge</span>
-                              </>
+                            ) : (
+                              <span className="font-medium text-amber-700">
+                                Unassigned
+                              </span>
                             )}
-                            {unit._count.requests > 0 && (
+                          </span>
+                          <span className="text-border">·</span>
+                          <span>
+                            Tenant:{" "}
+                            <span
+                              className={
+                                unit.tenant
+                                  ? "font-medium text-foreground"
+                                  : ""
+                              }
+                            >
+                              {unit.tenant?.email ?? "—"}
+                            </span>
+                          </span>
+                          {!hasCharge && (
+                            <>
+                              <span className="text-border">·</span>
+                              <span>No service charge</span>
+                            </>
+                          )}
+                          {unit._count.requests > 0 && (
+                            <>
+                              <span className="text-border">·</span>
+                              <span>
+                                {unit._count.requests} request
+                                {unit._count.requests === 1 ? "" : "s"}
+                              </span>
+                            </>
+                          )}
+                        </p>
+                        {hasCharge && (
+                          <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
+                            <span className="font-medium text-emerald-700">
+                              Paid {formatMoney(totalPaid)}
+                            </span>
+                            <span className="text-border">·</span>
+                            <span
+                              className={
+                                balance > 0
+                                  ? "font-medium text-rose-700"
+                                  : balance < 0
+                                    ? "font-medium text-emerald-700"
+                                    : "text-muted-foreground"
+                              }
+                            >
+                              {balance > 0
+                                ? `Remaining ${formatMoney(balance)}`
+                                : balance < 0
+                                  ? `Credit ${formatMoney(Math.abs(balance))}`
+                                  : "Fully paid"}
+                            </span>
+                            {activePlan && (
                               <>
                                 <span className="text-border">·</span>
-                                <span>
-                                  {unit._count.requests} request
-                                  {unit._count.requests === 1 ? "" : "s"}
+                                <span className="text-muted-foreground">
+                                  Payment plan: {planPaidCount}/
+                                  {activePlan.installments.length}{" "}
+                                  installments paid
                                 </span>
                               </>
                             )}
                           </p>
-                          {hasCharge && (
-                            <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
-                              <span className="font-medium text-emerald-700">
-                                Paid {formatMoney(totalPaid)}
-                              </span>
-                              <span className="text-border">·</span>
-                              <span
-                                className={
-                                  balance > 0
-                                    ? "font-medium text-rose-700"
-                                    : balance < 0
-                                      ? "font-medium text-emerald-700"
-                                      : "text-muted-foreground"
-                                }
-                              >
-                                {balance > 0
-                                  ? `Remaining ${formatMoney(balance)}`
-                                  : balance < 0
-                                    ? `Credit ${formatMoney(Math.abs(balance))}`
-                                    : "Fully paid"}
-                              </span>
-                              {activePlan && (
-                                <>
-                                  <span className="text-border">·</span>
-                                  <span className="text-muted-foreground">
-                                    Payment plan: {planPaidCount}/
-                                    {activePlan.installments.length}{" "}
-                                    installments paid
-                                  </span>
-                                </>
-                              )}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="shrink-0">
-                          {(isAdmin || isOwner) && (
-                            <UnitManageModal
-                              unit={toManagedUnit(unit)}
-                              unitLabel={unitLabel}
-                              propertyName={property.name}
-                              unitNoun={unitNoun}
-                              unitNounCap={unitNounCap}
-                              hasFloors={hasFloors}
-                              hasBedrooms={hasBedrooms}
-                              isAdmin={isAdmin}
-                              isBuildingType={isPropertyBuildingType}
-                              canManageDocuments={
-                                isAdmin || unit.ownerId === user.id
-                              }
-                              owners={owners}
-                              availableTenants={availableTenants}
-                              funds={funds}
-                            />
-                          )}
-                        </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            ))
+                    ),
+                    manageModal:
+                      isAdmin || isOwner ? (
+                        <UnitManageModal
+                          unit={toManagedUnit(unit)}
+                          unitLabel={unitLabel}
+                          unitNoun={unitNoun}
+                          unitNounCap={unitNounCap}
+                          hasFloors={hasFloors}
+                          hasBedrooms={hasBedrooms}
+                          isAdmin={isAdmin}
+                          isBuildingType={isPropertyBuildingType}
+                          canManageDocuments={
+                            isAdmin || unit.ownerId === user.id
+                          }
+                          owners={owners}
+                          availableTenants={availableTenants}
+                          funds={funds}
+                        />
+                      ) : null,
+                  };
+                }),
+              }))}
+            />
           )}
         </div>
 
@@ -1031,18 +1164,16 @@ export default async function PropertyDetailPage({
                         defaultValue={1}
                       />
                     </div>
-                    {hasBedrooms && (
-                      <div className="space-y-1.5">
-                        <Label htmlFor="bedrooms">Bedrooms</Label>
-                        <Input
-                          id="bedrooms"
-                          name="bedrooms"
-                          type="number"
-                          min={0}
-                          placeholder="—"
-                        />
-                      </div>
-                    )}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="entitlements">Unit entitlement (m²)</Label>
+                      <Input
+                        id="entitlements"
+                        name="entitlements"
+                        type="number"
+                        min={0}
+                        placeholder="e.g. 70"
+                      />
+                    </div>
                   </div>
 
                   <p className="text-xs text-muted-foreground">
@@ -1120,21 +1251,37 @@ export default async function PropertyDetailPage({
                   )}
                 </div>
 
-                {isAdmin && (
+                <div
+                  className={`grid gap-2 ${isAdmin ? "sm:grid-cols-2" : "grid-cols-1"}`}
+                >
+                  {isAdmin && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="add-unit-owner" className="text-xs">
+                        Owner
+                      </Label>
+                      <Select id="add-unit-owner" name="ownerId" defaultValue="">
+                        <option value="">— Unassigned —</option>
+                        {owners.map((owner) => (
+                          <option key={owner.id} value={owner.id}>
+                            {owner.email}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-1.5">
-                    <Label htmlFor="add-unit-owner" className="text-xs">
-                      Owner
+                    <Label htmlFor="add-unit-entitlements" className="text-xs">
+                      Unit entitlement (m²)
                     </Label>
-                    <Select id="add-unit-owner" name="ownerId" defaultValue="">
-                      <option value="">— Unassigned —</option>
-                      {owners.map((owner) => (
-                        <option key={owner.id} value={owner.id}>
-                          {owner.email}
-                        </option>
-                      ))}
-                    </Select>
+                    <Input
+                      id="add-unit-entitlements"
+                      name="entitlements"
+                      type="number"
+                      min={0}
+                      placeholder="e.g. 70"
+                    />
                   </div>
-                )}
+                </div>
 
                 {isOwner && (
                   <p className="text-xs text-muted-foreground">
@@ -1276,7 +1423,17 @@ export default async function PropertyDetailPage({
                       defaultValue={property.area ?? ""}
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="property-building-name" className="text-xs">
+                        Building name/no.
+                      </Label>
+                      <Input
+                        id="property-building-name"
+                        name="buildingName"
+                        defaultValue={property.buildingName ?? ""}
+                      />
+                    </div>
                     <div className="space-y-1">
                       <Label htmlFor="property-way" className="text-xs">
                         Way
@@ -1287,9 +1444,11 @@ export default async function PropertyDetailPage({
                         defaultValue={property.wayNumber ?? ""}
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label htmlFor="property-building" className="text-xs">
-                        Building
+                        Building no.
                       </Label>
                       <Input
                         id="property-building"
@@ -1308,6 +1467,13 @@ export default async function PropertyDetailPage({
                       />
                     </div>
                   </div>
+                  <PropertyLocationFields
+                    idPrefix="property-"
+                    compact
+                    defaultLocationMapPosition={property.locationMapPosition ?? ""}
+                    defaultLatitude={property.latitude?.toString() ?? ""}
+                    defaultLongitude={property.longitude?.toString() ?? ""}
+                  />
                   <p className="text-xs text-muted-foreground">
                     Ownership and service charges are now set per unit — see
                     each {unitNoun}&rsquo;s row above.
@@ -1440,14 +1606,16 @@ export default async function PropertyDetailPage({
                 </form>
               </details>
               )}
-              <ButtonLink
-                href={`/protected/maintenance?property=${property.id}`}
-                variant="outline"
-                size="sm"
-                className="mt-2 w-full"
-              >
-                View this property&apos;s requests
-              </ButtonLink>
+              {!isPropertyBuildingType && (
+                <ButtonLink
+                  href={`/protected/maintenance?property=${property.id}`}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 w-full"
+                >
+                  View this property&apos;s requests
+                </ButtonLink>
+              )}
             </CardContent>
           </Card>
 
