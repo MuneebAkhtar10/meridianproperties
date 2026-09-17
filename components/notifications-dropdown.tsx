@@ -210,19 +210,19 @@ export function NotificationsDropdown() {
                     notification.title,
                   );
                   const body = (
-                    <div className="flex gap-3">
+                    <div className="flex items-start gap-2.5">
                       <span
                         className={cn(
-                          "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                          "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                           iconBg,
                         )}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-3.5 w-3.5" />
                         {!notification.isRead && (
                           <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-card" />
                         )}
                       </span>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 leading-snug">
                         <p
                           className={cn(
                             "truncate text-sm",
@@ -233,10 +233,10 @@ export function NotificationsDropdown() {
                         >
                           {notification.title}
                         </p>
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                        <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
                           {notification.message}
                         </p>
-                        <p className="mt-1 text-[11px] text-muted-foreground/70">
+                        <p className="text-[11px] leading-snug text-muted-foreground/70">
                           {relativeTime(notification.createdAt)}
                         </p>
                       </div>
@@ -255,17 +255,17 @@ export function NotificationsDropdown() {
                         <Link
                           href={notification.href}
                           onClick={() => handleNotificationClick(notification.id)}
-                          className="block px-4 py-3"
+                          className="block px-4 py-2"
                         >
                           {body}
-                          <span className="ml-12 mt-1 inline-flex text-primary">
+                          <span className="ml-[42px] inline-flex text-primary">
                             <LinkPendingIndicator />
                           </span>
                         </Link>
                       ) : (
                         <button
                           type="button"
-                          className="block w-full px-4 py-3 text-left"
+                          className="block w-full px-4 py-2 text-left"
                           onClick={() => handleNotificationClick(notification.id)}
                         >
                           {body}

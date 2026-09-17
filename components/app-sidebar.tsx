@@ -68,7 +68,7 @@ export function AppSidebar({
   return (
     <>
       {/* ── Desktop: fixed left column ─────────────────────────────────── */}
-      <aside className="hidden w-64 shrink-0 border-r border-border/60 bg-card lg:fixed lg:inset-y-0 lg:flex lg:flex-col lg:px-3 lg:pb-12 lg:pt-4">
+      <aside className="hidden w-64 shrink-0 border-r border-border/60 bg-card lg:fixed lg:inset-y-0 lg:flex lg:flex-col lg:px-3 lg:pb-4 lg:pt-4">
         {sidebarBody}
       </aside>
 
