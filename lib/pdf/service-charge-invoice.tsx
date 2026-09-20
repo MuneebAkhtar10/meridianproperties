@@ -173,6 +173,7 @@ export function ServiceChargeInvoiceDocument({
   paymentReference,
   fundLabel,
   graceDays,
+  installmentLabel,
 }: {
   associationName: string;
   associationAddress: string;
@@ -200,6 +201,7 @@ export function ServiceChargeInvoiceDocument({
   paymentReference: string | null;
   fundLabel: string;
   graceDays: number;
+  installmentLabel?: string;
 }) {
   return (
     <Document title={`Invoice ${invoiceNumber}`}>
@@ -224,7 +226,9 @@ export function ServiceChargeInvoiceDocument({
         </View>
 
         <Text style={styles.title}>COMMON OWNER GROUP SERVICE CHARGES</Text>
-        <Text style={styles.subtitle}>Invoice</Text>
+        <Text style={styles.subtitle}>
+          {installmentLabel ? installmentLabel : "Invoice"}
+        </Text>
 
         <View style={styles.boxRow}>
           <View style={styles.box}>

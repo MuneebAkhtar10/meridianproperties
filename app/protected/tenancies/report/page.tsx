@@ -46,7 +46,13 @@ export default async function TenantReportPage({ searchParams }: PageProps) {
         </a>
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+      <div
+        className={
+          report.isOwnerAssociation
+            ? "grid grid-cols-1 gap-3 sm:max-w-xs"
+            : "grid grid-cols-2 gap-3 sm:max-w-md"
+        }
+      >
         <Card className="relative overflow-hidden border-border/60 shadow-sm">
           <span className="absolute inset-x-0 top-0 h-1 bg-primary" />
           <CardContent className="flex items-start gap-2 p-3">
@@ -63,22 +69,26 @@ export default async function TenantReportPage({ searchParams }: PageProps) {
             </div>
           </CardContent>
         </Card>
-        <Card className="relative overflow-hidden border-border/60 shadow-sm">
-          <span className="absolute inset-x-0 top-0 h-1 bg-emerald-500" />
-          <CardContent className="flex items-start gap-2 p-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-              <Users className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-base font-semibold leading-tight">
-                {formatMoney(totalMonthlyRent)}
-              </p>
-              <p className="text-xs leading-snug text-muted-foreground">
-                Scheduled monthly rent
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* An OA property never bills rent — a "Scheduled monthly rent"
+            tile here would always read OMR 0.000, so it stays hidden. */}
+        {!report.isOwnerAssociation && (
+          <Card className="relative overflow-hidden border-border/60 shadow-sm">
+            <span className="absolute inset-x-0 top-0 h-1 bg-emerald-500" />
+            <CardContent className="flex items-start gap-2 p-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <Users className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold leading-tight">
+                  {formatMoney(totalMonthlyRent)}
+                </p>
+                <p className="text-xs leading-snug text-muted-foreground">
+                  Scheduled monthly rent
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {report.rows.length === 0 ? (

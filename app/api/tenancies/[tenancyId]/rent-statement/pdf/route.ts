@@ -9,7 +9,12 @@ import { getCurrentUser } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 function trimOmr(value: number) {
-  return formatMoney(value).replace("OMR", "").trim();
+  // formatMoney puts the sign before "OMR" (e.g. "-OMR 120.000") — stripping
+  // the currency label naively would leave a stray space before the digits
+  // ("- 120.000"), so the sign is pulled out and reattached to the number.
+  const negative = value < 0;
+  const digits = formatMoney(Math.abs(value)).replace("OMR", "").trim();
+  return negative ? `-${digits}` : digits;
 }
 
 /** The printable per-tenancy rent statement — spec's "Building/Owner
@@ -43,29 +48,59 @@ export async function GET(
   const pdfBuffer = await renderToBuffer(
     UnitRentStatementDocument({
       propertyName: statement.propertyName,
+      unitLabel: statement.unitLabel,
       periodLabel: `${format(statement.from, "d MMM yyyy")} – ${format(statement.to, "d MMM yyyy")}`,
       buildingInfo: [
-        { label: "Building No.", value: statement.buildingNumber ?? "—" },
-        { label: "Unit No.", value: statement.unitLabel },
-        { label: "Owner Name", value: statement.ownerName },
-        { label: "Owner Mobile", value: statement.ownerMobile ?? "—" },
-        { label: "Rent (Monthly)", value: `OMR ${trimOmr(statement.monthlyRent)}` },
+        { label: "Building No.", value: statement.buildingNumber ?? "—", icon: "hash" },
+        { label: "Unit No.", value: statement.unitLabel, icon: "home" },
+        { label: "Owner Name", value: statement.ownerName, icon: "user" },
+        { label: "Owner Mobile", value: statement.ownerMobile ?? "—", icon: "phone" },
+        {
+          label: "Rent (Monthly)",
+          value: `OMR ${trimOmr(statement.monthlyRent)}`,
+          icon: "coins",
+        },
         {
           label: "BHK",
           value: statement.bedrooms != null ? `${statement.bedrooms} BHK` : "—",
+          icon: "bedDouble",
         },
       ],
       tenantInfo: [
-        { label: "Name", value: statement.tenantName },
-        { label: "Mobile", value: statement.tenantMobile ?? "—" },
-        { label: "ID No.", value: statement.tenantCivilId ?? "—" },
-        { label: "Agreement No.", value: statement.agreementNo ?? "—" },
-        { label: "Agreement Period", value: statement.agreementPeriod },
-        { label: "Paid By", value: statement.paidBy ?? "—" },
-        { label: "Check-in Date", value: format(statement.checkInDate, "d MMM yyyy") },
+        { label: "Name", value: statement.tenantName, icon: "user" },
+        { label: "ID No.", value: statement.tenantCivilId ?? "—", icon: "idCard" },
+        { label: "Mobile", value: statement.tenantMobile ?? "—", icon: "phone" },
+        {
+          label: "Payment Method",
+          value: statement.paymentMethod ?? "—",
+          icon: "creditCard",
+        },
+        { label: "Agreement No.", value: statement.agreementNo ?? "—", icon: "fileText" },
+        {
+          label: "Agreement Period",
+          value: statement.agreementPeriod,
+          icon: "calendar",
+        },
+        {
+          label: "Check-in Date",
+          value: format(statement.checkInDate, "d MMM yyyy"),
+          icon: "calendarCheck",
+        },
         {
           label: "Security Deposit",
           value: `OMR ${trimOmr(statement.securityDeposit)}`,
+          icon: "shield",
+        },
+        { label: "Paid By", value: statement.paidBy ?? "—", icon: "wallet" },
+        {
+          label: "Starting Date",
+          value: format(statement.from, "d MMM yyyy"),
+          icon: "calendarCheck",
+        },
+        {
+          label: "Expire Date",
+          value: format(statement.to, "d MMM yyyy"),
+          icon: "calendarX",
         },
       ],
       monthlyRows: statement.monthlyRows.map((row) => ({
@@ -81,6 +116,10 @@ export async function GET(
         amount: trimOmr(row.amount),
       })),
       totalRentCollected: trimOmr(statement.totalRentCollected),
+      totalRentCollectedWithLandlord:
+        statement.totalRentCollectedWithLandlord > 0
+          ? trimOmr(statement.totalRentCollectedWithLandlord)
+          : null,
       totalExpenses: trimOmr(statement.totalExpenses),
       balanceLabel: statement.balanceOwedToLandlord
         ? "Balance Amount to Landlord"
@@ -90,7 +129,7 @@ export async function GET(
     }),
   );
 
-  const filename = `rent-statement-${statement.unitLabel.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`;
+  const filename = `landlord-statement-${statement.unitLabel.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`;
 
   return new NextResponse(pdfBuffer, {
     headers: {

@@ -8,6 +8,11 @@ function csvCell(value: string | number): string {
 /// Builds a CSV document (with a header row) from plain string/number cells.
 /// Uses CRLF line endings, which is what Excel expects.
 export function buildCsv(header: string[], rows: (string | number)[][]): string {
-  const lines = [header, ...rows].map((row) => row.map(csvCell).join(","));
-  return lines.join("\r\n") + "\r\n";
+  return buildCsvSheet([header, ...rows]);
+}
+
+/** Variable-width rows (section titles, key/value pairs, tables) without a
+ * forced header — used by multi-section exports like the landlord statement. */
+export function buildCsvSheet(rows: (string | number)[][]): string {
+  return rows.map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }

@@ -66,6 +66,15 @@ export function formatMoneyCompact(value: DecimalLike): string {
   }).format(moneyValue(value));
 }
 
+/** Digits only, always 3 dp — pair with a separate "OMR" label so dashboard
+ * tiles don't clip `OMR 1,234.500` into `OMR 1...`. */
+export function formatOmrAmount(value: DecimalLike): string {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  }).format(moneyValue(value));
+}
+
 export function approvedTotal(
   payments: Array<{ amount: DecimalLike; status: PaymentStatus }>,
 ): number {
@@ -219,6 +228,50 @@ export function parsePositiveMoney(
   }
 
   return amount.toFixed(3);
+}
+
+/** Allowed service-charge recurrence cycles, in months. */
+export const SERVICE_CHARGE_CYCLE_MONTHS = [1, 3, 6, 12] as const;
+
+/** Parses & validates the three service-charge form fields together — either
+ * all three are present or none are (a partial charge makes no sense).
+ * Shared by the plain "save service charge" action and the combined
+ * "save & generate invoice" action, so both apply the exact same rules. */
+export function parseServiceCharge(formData: FormData):
+  | { ok: true; amount: number; cycleMonths: number; dueDate: Date }
+  | { ok: false; error: string } {
+  const amountRaw = formData.get("serviceChargeAmount")?.toString().trim();
+  const cycleRaw =
+    formData.get("serviceChargeCycleMonths")?.toString().trim() || "12";
+  const dueDateRaw = formData.get("serviceChargeDueDate")?.toString().trim();
+
+  if (!amountRaw || !dueDateRaw) {
+    return {
+      ok: false,
+      error: "Service charge amount and billing period are required.",
+    };
+  }
+
+  const amount = Number(amountRaw);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { ok: false, error: "Service charge amount must be a positive number." };
+  }
+
+  const cycleMonths = Number(cycleRaw);
+  if (
+    !SERVICE_CHARGE_CYCLE_MONTHS.includes(
+      cycleMonths as (typeof SERVICE_CHARGE_CYCLE_MONTHS)[number],
+    )
+  ) {
+    return { ok: false, error: "Select a valid service charge cycle." };
+  }
+
+  const dueDate = new Date(`${dueDateRaw}T00:00:00.000Z`);
+  if (Number.isNaN(dueDate.getTime())) {
+    return { ok: false, error: "Select a valid service charge due date." };
+  }
+
+  return { ok: true, amount, cycleMonths, dueDate };
 }
 
 export function parseNonNegativeMoney(

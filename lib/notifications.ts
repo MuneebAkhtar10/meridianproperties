@@ -1,5 +1,7 @@
 import "server-only";
 
+import { after } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
 import {
@@ -8,7 +10,6 @@ import {
   renderInvoiceEmail,
 } from "@/lib/email";
 import { sendWhatsApp, sendWhatsAppTemplate } from "@/lib/whatsapp";
-import { generateWhatsAppMessage } from "@/lib/gemini";
 import { syncWorkerWhatsappSession } from "@/lib/whatsapp-session";
 import { UserType } from "@/lib/generated/prisma/client";
 import type { RequestStatus } from "@/lib/generated/prisma/client";
@@ -48,6 +49,8 @@ type ChannelExtras = {
    * template env var isn't configured, this is silently skipped like every
    * other best-effort channel here. */
   whatsappTemplate?: { envVar: string; bodyParams: string[] };
+  /** Real file attachments on the outbound email (PDF invoices). */
+  attachments?: import("@/lib/email").EmailAttachment[];
 };
 
 /** Every in-app notification also goes out by email and (when the recipient
@@ -80,7 +83,12 @@ async function dispatchExternalChannels(
           renderNotificationEmail(row.title, row.message, row.href, row.details);
 
         tasks.push(
-          sendEmail({ to: user.email, subject: row.title, html: emailHtml }),
+          sendEmail({
+            to: user.email,
+            subject: row.title,
+            html: emailHtml,
+            attachments: row.attachments,
+          }),
         );
 
         // Every property-owner email also goes to this monitoring address —
@@ -91,6 +99,7 @@ async function dispatchExternalChannels(
               to: OWNER_EMAIL_MONITOR,
               subject: `[Owner copy — ${user.email}] ${row.title}`,
               html: emailHtml,
+              attachments: row.attachments,
             }),
           );
         }
@@ -119,16 +128,9 @@ async function dispatchExternalChannels(
           .join("\n");
         const fallbackBody = `*${row.title}*\n${row.message}${detailLines ? `\n\n${detailLines}` : ""}`;
 
-        tasks.push(
-          (async () => {
-            const generated = await generateWhatsAppMessage({
-              title: row.title,
-              message: row.message,
-              details: row.details,
-            });
-            await sendWhatsApp({ to: phone, body: generated ?? fallbackBody });
-          })(),
-        );
+        // Don't wait on Gemini before sending — a 15s model timeout was
+        // blocking charge/expense server actions on the "Adding..." spinner.
+        tasks.push(sendWhatsApp({ to: phone, body: fallbackBody }));
       }
 
       return tasks;
@@ -145,7 +147,13 @@ async function createNotification(args: {
 }) {
   const { details, emailHtml, whatsappTemplate, ...dbData } = args.data;
   const created = await prisma.notification.create({ data: dbData });
-  await dispatchExternalChannels([{ ...dbData, details, emailHtml, whatsappTemplate }]);
+  after(() =>
+    dispatchExternalChannels([
+      { ...dbData, details, emailHtml, whatsappTemplate },
+    ]).catch((error) =>
+      console.error("Notification email/WhatsApp dispatch failed:", error),
+    ),
+  );
   return created;
 }
 
@@ -154,10 +162,14 @@ async function createNotifications(args: {
   data: (NotificationRow & ChannelExtras)[];
 }) {
   const dbData = args.data.map(
-    ({ details, emailHtml, whatsappTemplate, ...rest }) => rest,
+    ({ details, emailHtml, whatsappTemplate, attachments, ...rest }) => rest,
   );
   const created = await prisma.notification.createMany({ data: dbData });
-  await dispatchExternalChannels(args.data);
+  after(() =>
+    dispatchExternalChannels(args.data).catch((error) =>
+      console.error("Notification email/WhatsApp dispatch failed:", error),
+    ),
+  );
   return created;
 }
 
@@ -1106,6 +1118,7 @@ export async function notifyServiceChargeUpcoming(input: {
   amount: string;
   dueDate: string;
   recipientIds: string[];
+  attachments?: import("@/lib/email").EmailAttachment[];
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
@@ -1113,8 +1126,9 @@ export async function notifyServiceChargeUpcoming(input: {
     data: input.recipientIds.map((userId) => ({
       userId,
       title: "Service Charge Due Soon",
-      message: `The ${input.amount} service charge for “${input.propertyName}” is due on ${input.dueDate}.`,
+      message: `The ${input.amount} service charge for “${input.propertyName}” is due on ${input.dueDate}. The invoice PDF is attached.`,
       href: `/protected/properties/${input.propertyId}`,
+      attachments: input.attachments,
     })),
   });
 
@@ -1126,6 +1140,7 @@ export async function notifyServiceChargeDue(input: {
   propertyName: string;
   amount: string;
   recipientIds: string[];
+  attachments?: import("@/lib/email").EmailAttachment[];
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
@@ -1133,8 +1148,9 @@ export async function notifyServiceChargeDue(input: {
     data: input.recipientIds.map((userId) => ({
       userId,
       title: "Service Charge Due Today",
-      message: `The ${input.amount} service charge for “${input.propertyName}” is due today.`,
+      message: `The ${input.amount} service charge for “${input.propertyName}” is due today. The invoice PDF is attached.`,
       href: `/protected/properties/${input.propertyId}`,
+      attachments: input.attachments,
     })),
   });
 
@@ -1153,11 +1169,12 @@ export async function notifyInstallmentDue(input: {
   amount: string;
   dueDate: string;
   recipientIds: string[];
+  attachments?: import("@/lib/email").EmailAttachment[];
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
   const title = "Installment Payment Due Soon";
-  const message = `Installment ${input.sequence} of ${input.installmentCount} for "${input.propertyName} — ${input.unitLabel}" is due ${input.dueDate}.`;
+  const message = `Installment ${input.sequence} of ${input.installmentCount} for "${input.propertyName} — ${input.unitLabel}" is due ${input.dueDate}. The invoice PDF is attached.`;
 
   await createNotifications({
     data: input.recipientIds.map((userId) => ({
@@ -1169,6 +1186,7 @@ export async function notifyInstallmentDue(input: {
         { label: "Amount", value: input.amount },
         { label: "Due date", value: input.dueDate },
       ],
+      attachments: input.attachments,
     })),
   });
 
@@ -1181,6 +1199,7 @@ export async function notifyServiceChargeOverdue(input: {
   amount: string;
   daysOverdue: number;
   recipientIds: string[];
+  attachments?: import("@/lib/email").EmailAttachment[];
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
@@ -1190,8 +1209,9 @@ export async function notifyServiceChargeOverdue(input: {
       title: "Service Charge Overdue",
       message: `The ${input.amount} service charge for “${input.propertyName}” is ${input.daysOverdue} day${
         input.daysOverdue === 1 ? "" : "s"
-      } overdue.`,
+      } overdue. The invoice PDF is attached.`,
       href: `/protected/properties/${input.propertyId}`,
+      attachments: input.attachments,
     })),
   });
 
@@ -1233,6 +1253,7 @@ export async function notifyOwnerCustom(input: {
   unitLabel: string;
   message: string;
   attachmentUrl?: string;
+  attachments?: import("@/lib/email").EmailAttachment[];
   recipientIds: string[];
   /** Defaults to "Service Charge Reminder" — the ad-hoc Notify Owner case
    * this was originally built for. sendServiceChargeInvoiceAction passes
@@ -1245,8 +1266,11 @@ export async function notifyOwnerCustom(input: {
   const details = [
     { label: "Property", value: input.propertyName },
     { label: "Unit", value: input.unitLabel },
-    ...(input.attachmentUrl
+    ...(input.attachmentUrl && !input.attachments?.length
       ? [{ label: "Attachment", value: input.attachmentUrl }]
+      : []),
+    ...(input.attachments?.length
+      ? [{ label: "Invoice", value: "PDF attached to this email" }]
       : []),
   ];
 
@@ -1257,6 +1281,7 @@ export async function notifyOwnerCustom(input: {
       message: input.message,
       href: `/protected/properties/${input.propertyId}`,
       details,
+      attachments: input.attachments,
     })),
   });
 

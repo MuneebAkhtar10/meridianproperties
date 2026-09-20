@@ -3,10 +3,14 @@ import {
   AlertTriangle,
   Banknote,
   CheckCircle2,
+  CircleDollarSign,
+  Building2,
   ClipboardList,
   DoorOpen,
+  FileBarChart,
   FileCheck,
   FileWarning,
+  Home,
   KeyRound,
   Landmark,
   type LucideIcon,
@@ -15,11 +19,13 @@ import {
   Receipt,
   ScrollText,
   Store,
+  Target,
   Trash2,
   TrendingUp,
   UserPlus,
   Wallet,
   Wand2,
+  Wrench,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 
@@ -45,6 +51,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
+import { CashFlowStatementModal } from "@/components/cash-flow-statement-modal";
+import { PropertyExpensesMenu } from "@/components/property-expenses-menu";
+import { RentStatementModal } from "@/components/rent-statement-modal";
+import {
+  getActiveSuppliersWithCategories,
+  getExpenseCategoriesWithSubcategories,
+} from "@/lib/expenses";
 import { PendingLink } from "@/components/ui/pending-link";
 import { UnitManageModal } from "@/components/unit-manage-modal";
 import { toManagedUnit } from "@/lib/managed-unit";
@@ -55,10 +68,15 @@ import {
   formatUnitLabel,
   isBuildingManagementType,
   isBuildingType,
+  propertyManagementCategory,
+  PROPERTY_MANAGEMENT_CATEGORY_LABEL,
+  PROPERTY_MANAGEMENT_SCOPE_NOTE,
+  type PropertyManagementCategory,
 } from "@/lib/property-types";
 import { serviceChargeTone } from "@/lib/service-charge-status";
+import { getRentPositionData } from "@/lib/rent-position";
 import { SummaryTile } from "@/components/summary-tile";
-import { cn } from "@/lib/utils";
+import { cn, personDisplayName } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
@@ -80,6 +98,35 @@ function ToolbarIcon({
     </span>
   );
 }
+
+/** One glance at the property page should say which of Rawazen's four
+ * service scopes this property falls under and what that means in
+ * practice — see PROPERTY_MANAGEMENT_SCOPE_NOTE. */
+const SCOPE_BANNER_STYLE: Record<
+  PropertyManagementCategory,
+  { icon: LucideIcon; className: string; iconClassName: string }
+> = {
+  oa: {
+    icon: Landmark,
+    className: "border-indigo-200 bg-indigo-50 text-indigo-900",
+    iconClassName: "bg-indigo-100 text-indigo-600",
+  },
+  bm: {
+    icon: Building2,
+    className: "border-cyan-200 bg-cyan-50 text-cyan-900",
+    iconClassName: "bg-cyan-100 text-cyan-600",
+  },
+  callout: {
+    icon: Wrench,
+    className: "border-amber-200 bg-amber-50 text-amber-900",
+    iconClassName: "bg-amber-100 text-amber-600",
+  },
+  independent: {
+    icon: Home,
+    className: "border-violet-200 bg-violet-50 text-violet-900",
+    iconClassName: "bg-violet-100 text-violet-600",
+  },
+};
 
 export default async function PropertyDetailPage({
   params,
@@ -117,7 +164,9 @@ export default async function PropertyDetailPage({
       units: {
         orderBy: [{ floor: "asc" }, { label: "asc" }],
         include: {
-          tenant: { select: { id: true, email: true } },
+          tenant: {
+            select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+          },
           owner: {
             select: { id: true, email: true, firstName: true, lastName: true },
           },
@@ -125,7 +174,11 @@ export default async function PropertyDetailPage({
           documents: { orderBy: { createdAt: "desc" } },
           tenancies: {
             where: { endDate: null },
-            select: { monthlyRent: true },
+            select: {
+              id: true,
+              monthlyRent: true,
+              documents: { orderBy: { createdAt: "desc" } },
+            },
             take: 1,
           },
           serviceChargeInvoices: {
@@ -134,13 +187,33 @@ export default async function PropertyDetailPage({
               id: true,
               invoiceNumber: true,
               issueDate: true,
+              dueDate: true,
+              graceDays: true,
+              periodStart: true,
+              periodEnd: true,
               currentAmount: true,
               previousBalance: true,
               amountPayable: true,
+              billedOwner: {
+                select: { id: true, email: true, firstName: true, lastName: true },
+              },
             },
           },
           serviceChargePayments: {
-            select: { amount: true },
+            orderBy: { paidAt: "desc" },
+            select: {
+              id: true,
+              amount: true,
+              paidAt: true,
+              note: true,
+              transactionNumber: true,
+              originalAmount: true,
+              correctionNote: true,
+              installment: { select: { id: true } },
+              billedOwner: {
+                select: { id: true, email: true, firstName: true, lastName: true },
+              },
+            },
           },
           installmentPlans: {
             where: { cancelledAt: null },
@@ -174,12 +247,20 @@ export default async function PropertyDetailPage({
   }
 
   // Tenants who could move in: anyone with the tenant role who isn't already housed.
-  const [availableTenants, propertyTypes, owners, funds, propertySuppliers] =
-    await Promise.all([
+  const [
+    availableTenants,
+    propertyTypes,
+    owners,
+    funds,
+    propertySuppliers,
+    expenseCategories,
+    expenseSuppliers,
+    propertyExpenses,
+  ] = await Promise.all([
       prisma.user.findMany({
         where: { userType: UserType.user, unit: null },
         orderBy: { email: "asc" },
-        select: { id: true, email: true },
+        select: { id: true, email: true, firstName: true, lastName: true },
       }),
       prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
       isAdmin
@@ -216,6 +297,28 @@ export default async function PropertyDetailPage({
           categories: { select: { category: { select: { label: true } } } },
         },
       }),
+      getExpenseCategoriesWithSubcategories(),
+      getActiveSuppliersWithCategories(),
+      // Every expense logged against this property — either property-wide
+      // (common area) or against one of its units — for the "View all
+      // expenses" modal, newest first.
+      prisma.expense.findMany({
+        where: {
+          OR: [
+            { propertyId: id },
+            { units: { some: { unit: { propertyId: id } } } },
+          ],
+        },
+        orderBy: { date: "desc" },
+        select: {
+          id: true,
+          date: true,
+          description: true,
+          amount: true,
+          paidBy: true,
+          category: { select: { label: true } },
+        },
+      }),
     ]);
 
   // A property's owner(s) are the distinct set of its units' owners — units
@@ -244,11 +347,31 @@ export default async function PropertyDetailPage({
   const hasBedrooms = propertyType.hasBedrooms;
   const unitNoun = propertyType.unitNounSingular.toLowerCase();
   const unitNounCap = propertyType.unitNounSingular;
-  const newUnitDefaults = defaultUnitPermissions(propertyType.name);
-  const isPropertyBuildingType = isBuildingType(propertyType.name);
-  const isPropertyBuildingManagementType = isBuildingManagementType(
-    propertyType.name,
-  );
+  const newUnitDefaults = defaultUnitPermissions(propertyType);
+  const isPropertyBuildingType = isBuildingType(propertyType);
+  const isPropertyBuildingManagementType = isBuildingManagementType(propertyType);
+  const managementCategory = propertyManagementCategory(propertyType);
+  const tracksRent =
+    !isPropertyBuildingType &&
+    propertyType.showRentBills &&
+    (property.units.length === 0 ||
+      property.units.some((unit) => unit.rentBillsEnabled));
+  const rentPosition = tracksRent
+    ? await getRentPositionData(property.id)
+    : null;
+  // Only meaningful for "Independent" properties (see the scope banner
+  // above) — every unit here that currently has an active tenancy, each
+  // getting its own Landlord Statement entry point in the toolbar below.
+  const activeStatementTenancies = property.units
+    .filter((unit) => unit.tenancies[0])
+    .map((unit) => ({
+      tenancyId: unit.tenancies[0].id,
+      unitLabel: formatUnitLabel(propertyType, unit.label),
+      tenantName: unit.tenant ? personDisplayName(unit.tenant) : "Unassigned tenant",
+      ownerName: unit.owner ? personDisplayName(unit.owner) : "Unassigned owner",
+      propertyName: property.name,
+      monthlyRent: Number(unit.tenancies[0].monthlyRent ?? 0),
+    }));
   const occupied = property.units.filter((u) => u.tenant).length;
   const scheduledMonthlyRent = property.units.reduce(
     (total, unit) => total + Number(unit.tenancies[0]?.monthlyRent ?? 0),
@@ -453,6 +576,34 @@ export default async function PropertyDetailPage({
         back={{ href: "/protected/properties", label: "All properties" }}
       />
 
+      {/* One-glance scope note — which of Rawazen's four service scopes
+          this property falls under, and what we actually manage here, so
+          nobody has to infer it from the flags. */}
+      {(() => {
+        const style = SCOPE_BANNER_STYLE[managementCategory];
+        const ScopeIcon = style.icon;
+        return (
+          <div className={cn("flex items-start gap-3 rounded-xl border p-4", style.className)}>
+            <span
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                style.iconClassName,
+              )}
+            >
+              <ScopeIcon className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold">
+                {PROPERTY_MANAGEMENT_CATEGORY_LABEL[managementCategory]}
+              </p>
+              <p className="mt-0.5 text-sm">
+                {PROPERTY_MANAGEMENT_SCOPE_NOTE[managementCategory]}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* One toolbar for everything about this specific property — records
           kept on the property itself, and the cross-module reports/ledgers
           each pre-filtered to it — instead of two mismatched button rows. */}
@@ -460,6 +611,70 @@ export default async function PropertyDetailPage({
         <div>
           <p className="mb-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Property records
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            <ButtonLink
+              href={`/protected/properties/${property.id}/building-contracts`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={FileCheck} className="bg-blue-100 text-blue-600" />
+              Building Contracts
+            </ButtonLink>
+            <ButtonLink
+              href="/protected/tenancies"
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={KeyRound} className="bg-amber-100 text-amber-600" />
+              Tenancy terms
+            </ButtonLink>
+            <ButtonLink
+              href={`/protected/tenancies/report?property=${property.id}`}
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={ClipboardList} className="bg-teal-100 text-teal-600" />
+              Tenant Report
+            </ButtonLink>
+            <ButtonLink
+              href={
+                distinctOwners.length === 1
+                  ? `/protected/properties/owner-report?owner=${distinctOwners[0].id}`
+                  : "/protected/properties/owner-report"
+              }
+              variant="outline"
+              size="sm"
+              className="bg-background"
+            >
+              <ToolbarIcon icon={FileBarChart} className="bg-purple-100 text-purple-600" />
+              Owner Report
+            </ButtonLink>
+            {managementCategory === "independent" && (
+              <RentStatementModal
+                options={activeStatementTenancies}
+                trigger={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="bg-background"
+                  >
+                    <ToolbarIcon icon={Banknote} className="bg-rose-100 text-rose-600" />
+                    Landlord Statement
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="border-t border-border/60 pt-2.5">
+          <p className="mb-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Reports &amp; ledgers
           </p>
           <div className="flex flex-wrap gap-1.5">
             <ButtonLink
@@ -480,15 +695,6 @@ export default async function PropertyDetailPage({
               <ToolbarIcon icon={Receipt} className="bg-rose-100 text-rose-600" />
               Building Expenses
             </ButtonLink>
-            <ButtonLink
-              href={`/protected/properties/${property.id}/building-contracts`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={FileCheck} className="bg-blue-100 text-blue-600" />
-              Building Contracts
-            </ButtonLink>
             {isPropertyBuildingManagementType && (
               <ButtonLink
                 href={`/protected/properties/${property.id}/building-management-report`}
@@ -500,23 +706,6 @@ export default async function PropertyDetailPage({
                 Building Management Report
               </ButtonLink>
             )}
-            <ButtonLink
-              href="/protected/tenancies"
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={KeyRound} className="bg-amber-100 text-amber-600" />
-              Tenancy terms
-            </ButtonLink>
-          </div>
-        </div>
-
-        <div className="border-t border-border/60 pt-2.5">
-          <p className="mb-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Reports &amp; ledgers
-          </p>
-          <div className="flex flex-wrap gap-1.5">
             <Modal
               trigger={
                 <Button
@@ -539,15 +728,39 @@ export default async function PropertyDetailPage({
             >
               {suppliersModalContent}
             </Modal>
-            <ButtonLink
-              href={`/protected/expenses?property=${property.id}`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={Banknote} className="bg-rose-100 text-rose-600" />
-              Expenses
-            </ButtonLink>
+            <PropertyExpensesMenu
+              propertyId={property.id}
+              propertyName={property.name}
+              back={`/protected/properties/${property.id}`}
+              funds={funds}
+              expenseFields={{
+                properties: [
+                  {
+                    id: property.id,
+                    name: property.name,
+                    propertyType: {
+                      name: propertyType.name,
+                      isOwnerAssociation: propertyType.isOwnerAssociation,
+                    },
+                  },
+                ],
+                units: property.units.map((unit) => ({
+                  id: unit.id,
+                  propertyId: property.id,
+                  label: unit.label,
+                })),
+                categories: expenseCategories,
+                suppliers: expenseSuppliers,
+              }}
+              expenses={propertyExpenses.map((expense) => ({
+                id: expense.id,
+                date: expense.date,
+                description: expense.description,
+                amount: String(expense.amount),
+                categoryLabel: expense.category.label,
+                paidBy: expense.paidBy,
+              }))}
+            />
             <ButtonLink
               href={`/protected/properties/${property.id}/unit-ledgers`}
               variant="outline"
@@ -557,15 +770,17 @@ export default async function PropertyDetailPage({
               <ToolbarIcon icon={ScrollText} className="bg-violet-100 text-violet-600" />
               Unit Ledgers
             </ButtonLink>
-            <ButtonLink
-              href={`/protected/tenancies/report?property=${property.id}`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={ClipboardList} className="bg-teal-100 text-teal-600" />
-              Report
-            </ButtonLink>
+            {tracksRent && (
+              <ButtonLink
+                href={`/protected/finances/rent-position?property=${property.id}`}
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={CircleDollarSign} className="bg-emerald-100 text-emerald-700" />
+                Rent Position
+              </ButtonLink>
+            )}
             <ButtonLink
               href={`/protected/service-charge-ledger?property=${property.id}`}
               variant="outline"
@@ -576,14 +791,25 @@ export default async function PropertyDetailPage({
               Service Charge
             </ButtonLink>
             <ButtonLink
-              href={`/protected/expenses?property=${property.id}&cashflow=1`}
+              href={`/protected/service-charge-ledger/collection-position?property=${property.id}`}
               variant="outline"
               size="sm"
               className="bg-background"
             >
-              <ToolbarIcon icon={TrendingUp} className="bg-emerald-100 text-emerald-600" />
-              Cash Flow
+              <ToolbarIcon icon={Target} className="bg-indigo-100 text-indigo-600" />
+              Collection Position
             </ButtonLink>
+            <CashFlowStatementModal
+              properties={[{ id: property.id, name: property.name }]}
+              funds={funds}
+              defaultPropertyId={property.id}
+              trigger={
+                <Button type="button" variant="outline" size="sm" className="bg-background">
+                  <ToolbarIcon icon={TrendingUp} className="bg-emerald-100 text-emerald-600" />
+                  Cash Flow
+                </Button>
+              }
+            />
           </div>
         </div>
       </div>
@@ -710,12 +936,14 @@ export default async function PropertyDetailPage({
             icon={<KeyRound className="h-4 w-4" />}
             value={formatMoneyCompact(scheduledMonthlyRent)}
             label="Scheduled monthly rent"
+            sublabel={
+              rentPosition
+                ? `${formatMoneyCompact(rentPosition.totals.totalOutstanding)} outstanding`
+                : undefined
+            }
             accent="bg-[#0886be]"
             iconBg="bg-[#0886be]/10 text-[#0886be]"
-            href={buildFilterHref({
-              occupancy: occupancyFilter === "occupied" ? "all" : "occupied",
-            })}
-            active={occupancyFilter === "occupied"}
+            href={`/protected/finances/rent-position?property=${property.id}`}
           />
         )}
         <SummaryTile
@@ -1037,7 +1265,7 @@ export default async function PropertyDetailPage({
                                   : ""
                               }
                             >
-                              {unit.tenant?.email ?? "—"}
+                              {unit.tenant ? personDisplayName(unit.tenant) : "—"}
                             </span>
                           </span>
                           {!hasCharge && (

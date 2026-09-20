@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
       rows,
       activeCount: report.rows.length,
       totalMonthlyRent: numberFormat.format(totalMonthlyRent),
+      isOwnerAssociation: report.isOwnerAssociation,
     }),
   );
 

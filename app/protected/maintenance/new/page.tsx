@@ -26,6 +26,8 @@ export default async function NewMaintenanceRequestPage({
             locationOptions: true,
             hasFloors: true,
             unitPrefix: true,
+            isOwnerAssociation: true,
+            hasCommonAreas: true,
           },
         },
         units: {
@@ -55,7 +57,7 @@ export default async function NewMaintenanceRequestPage({
   // its units all default maintenanceEnabled off and the toggle to turn it
   // back on isn't even offered for this type (see lib/property-types.ts).
   const properties = allProperties.filter(
-    (property) => !isBuildingType(property.propertyType.name),
+    (property) => !isBuildingType(property.propertyType),
   );
 
   return (

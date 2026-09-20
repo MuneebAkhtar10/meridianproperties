@@ -6,7 +6,7 @@ import {
   moneyValue,
   pendingTotal,
 } from "@/lib/finance";
-import { formatUnitLabel } from "@/lib/property-types";
+import { formatUnitLabel, isIndependentType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { ChargeStatus } from "@/lib/generated/prisma/client";
 
@@ -14,17 +14,21 @@ export type RentPositionBucket = "overdue" | "duesoon" | "partial" | "paid";
 
 export type RentPositionRow = {
   id: string;
+  tenancyId: string;
   propertyId: string;
+  propertyName: string;
   ownerLabel: string;
   buildingLabel: string;
   floor: number | null;
   unitLabel: string;
   tenantName: string;
+  monthlyRent: number;
   raised: number;
   collected: number;
   outstanding: number;
   nextDueDate: Date | null;
   bucket: RentPositionBucket;
+  independent: boolean;
 };
 
 export type RentPositionTotals = {
@@ -48,12 +52,17 @@ export async function getRentPositionData(
   const tenancies = await prisma.tenancy.findMany({
     where: {
       endDate: null,
-      ...(propertyFilter !== "all" ? { unit: { propertyId: propertyFilter } } : {}),
+      unit: {
+        rentBillsEnabled: true,
+        ...(propertyFilter !== "all" ? { propertyId: propertyFilter } : {}),
+        property: { propertyType: { isOwnerAssociation: false } },
+      },
     },
     orderBy: [{ unit: { property: { name: "asc" } } }, { unit: { label: "asc" } }],
     select: {
       id: true,
       unitId: true,
+      monthlyRent: true,
       tenant: { select: { firstName: true, lastName: true, email: true } },
       unit: {
         select: {
@@ -65,7 +74,17 @@ export async function getRentPositionData(
             select: {
               name: true,
               buildingNumber: true,
-              propertyType: { select: { unitPrefix: true, hasFloors: true } },
+              propertyType: {
+                select: {
+                  unitPrefix: true,
+                  hasFloors: true,
+                  isOwnerAssociation: true,
+                  isBuildingManagement: true,
+                  showRentBills: true,
+                  showMaintenance: true,
+                  hasCommonAreas: true,
+                },
+              },
             },
           },
           owner: { select: { firstName: true, lastName: true, email: true } },
@@ -145,7 +164,9 @@ export async function getRentPositionData(
 
     return {
       id: tenancy.unitId,
+      tenancyId: tenancy.id,
       propertyId: tenancy.unit.propertyId,
+      propertyName: tenancy.unit.property.name,
       ownerLabel: tenancy.unit.owner
         ? [tenancy.unit.owner.firstName, tenancy.unit.owner.lastName]
             .filter(Boolean)
@@ -158,11 +179,13 @@ export async function getRentPositionData(
         [tenancy.tenant.firstName, tenancy.tenant.lastName]
           .filter(Boolean)
           .join(" ") || tenancy.tenant.email,
+      monthlyRent: moneyValue(tenancy.monthlyRent),
       raised,
       collected,
       outstanding,
       nextDueDate,
       bucket,
+      independent: isIndependentType(tenancy.unit.property.propertyType),
     };
   });
 

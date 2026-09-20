@@ -19,6 +19,7 @@ type Property = {
     locationOptions: string[] | null;
     hasFloors: boolean;
     unitPrefix: string | null;
+    hasCommonAreas: boolean;
   };
   units: {
     id: string;
@@ -52,7 +53,9 @@ export function AdminCreateRequestForm({
     [properties, propertyId],
   );
 
-  const allowCommonArea = (property?.units.length ?? 0) > 1;
+  const allowCommonArea =
+    (property?.units.length ?? 0) > 1 &&
+    (property?.propertyType.hasCommonAreas ?? false);
   const locationOptions =
     property?.propertyType.locationOptions &&
     property.propertyType.locationOptions.length > 0

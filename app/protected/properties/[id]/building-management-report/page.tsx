@@ -149,9 +149,9 @@ export default async function BuildingManagementReportPage({
         <table className="w-full text-sm">
           <tbody className="divide-y">
             <tr>
-              <td className="px-4 py-2.5">Total Rental Collection</td>
+              <td className="px-4 py-2.5">Rental Collection with Company</td>
               <td className="px-4 py-2.5 text-right font-medium">
-                {formatMoney(report.rentalCollection.total.amount)}
+                {formatMoney(report.rentalCollection.withCompany.amount)}
               </td>
             </tr>
             <tr>

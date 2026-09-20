@@ -12,3 +12,17 @@ export function cn(...inputs: ClassValue[]): string {
 export function attachmentUrl(attachmentId: string): string {
   return `/api/attachment/${attachmentId}`;
 }
+
+/** A person's full name, or their email when no name is on file — the one
+ * display rule every owner/tenant list in the app should use instead of
+ * showing an email address as the primary label. */
+export function personDisplayName(person: {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}): string {
+  return (
+    [person.firstName, person.lastName].filter(Boolean).join(" ") ||
+    person.email
+  );
+}

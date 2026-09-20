@@ -63,18 +63,48 @@ export default async function ServiceChargesPage({ searchParams }: PageProps) {
             },
           },
         },
-        tenant: { select: { id: true, email: true } },
+        tenant: {
+          select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+        },
         owner: { select: { id: true, email: true, firstName: true, lastName: true } },
         documents: { orderBy: { createdAt: "desc" } },
+        tenancies: {
+          where: { endDate: null },
+          take: 1,
+          select: { id: true, documents: { orderBy: { createdAt: "desc" } } },
+        },
         serviceChargeInvoices: {
           orderBy: { issueDate: "desc" },
           select: {
             id: true,
             invoiceNumber: true,
             issueDate: true,
+            dueDate: true,
+            graceDays: true,
+            periodStart: true,
+            periodEnd: true,
             currentAmount: true,
             previousBalance: true,
             amountPayable: true,
+            billedOwner: {
+              select: { id: true, email: true, firstName: true, lastName: true },
+            },
+          },
+        },
+        serviceChargePayments: {
+          orderBy: { paidAt: "desc" },
+          select: {
+            id: true,
+            amount: true,
+            paidAt: true,
+            note: true,
+            transactionNumber: true,
+            originalAmount: true,
+            correctionNote: true,
+            installment: { select: { id: true } },
+            billedOwner: {
+              select: { id: true, email: true, firstName: true, lastName: true },
+            },
           },
         },
         installmentPlans: {
@@ -105,7 +135,7 @@ export default async function ServiceChargesPage({ searchParams }: PageProps) {
     prisma.user.findMany({
       where: { userType: UserType.user, unit: null },
       orderBy: { email: "asc" },
-      select: { id: true, email: true },
+      select: { id: true, email: true, firstName: true, lastName: true },
     }),
     prisma.fund.findMany({
       orderBy: { createdAt: "asc" },

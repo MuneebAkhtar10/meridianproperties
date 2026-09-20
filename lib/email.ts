@@ -17,10 +17,17 @@ import "server-only";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 
+export type EmailAttachment = {
+  filename: string;
+  /** Base64-encoded file contents (Resend's REST attachment format). */
+  content: string;
+};
+
 export async function sendEmail(input: {
   to: string;
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
@@ -45,6 +52,9 @@ export async function sendEmail(input: {
         to: input.to,
         subject: input.subject,
         html: input.html,
+        ...(input.attachments?.length
+          ? { attachments: input.attachments }
+          : {}),
       }),
     });
 

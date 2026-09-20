@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 
 import { parseDate, parsePositiveMoney } from "@/lib/finance";
 import { notifyInstallmentDue } from "@/lib/notifications";
+import {
+  pdfAttachmentFromResult,
+  renderInstallmentInvoicePdf,
+} from "@/lib/pdf/render-service-charge-invoice";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { encodedRedirect } from "@/utils/utils";
@@ -59,6 +63,11 @@ export const createServiceChargeInstallmentPlanAction = async (
         orderBy: { createdAt: "desc" },
         take: 1,
         include: { installments: true },
+      },
+      serviceChargeInvoices: {
+        orderBy: { issueDate: "desc" },
+        take: 1,
+        select: { id: true },
       },
     },
   });
@@ -117,6 +126,7 @@ export const createServiceChargeInstallmentPlanAction = async (
       frequencyMonths,
       startDate,
       createdById: admin.id,
+      sourceInvoiceId: unit.serviceChargeInvoices[0]?.id ?? null,
       installments: {
         create: amounts.map((amount, index) => ({
           sequence: index + 1,
@@ -172,7 +182,7 @@ export const markInstallmentPaidAction = async (formData: FormData) => {
   const unitId = installment.plan.unitId;
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { serviceChargeBalance: true },
+    select: { serviceChargeBalance: true, ownerId: true },
   });
   if (!unit) {
     return encodedRedirect("error", back, "Unit not found.");
@@ -187,6 +197,7 @@ export const markInstallmentPaidAction = async (formData: FormData) => {
         amount,
         paidAt,
         note: `Installment #${installment.sequence} of payment plan`,
+        billedOwnerId: unit.ownerId,
         createdById: admin.id,
       },
     });
@@ -265,6 +276,9 @@ export const sendInstallmentInvoiceAction = async (formData: FormData) => {
     );
   }
 
+  const pdf = await renderInstallmentInvoicePdf(installmentId);
+  const attachments = pdf ? [pdfAttachmentFromResult(pdf)] : undefined;
+
   await notifyInstallmentDue({
     propertyId: unit.propertyId,
     propertyName: unit.property.name,
@@ -274,6 +288,7 @@ export const sendInstallmentInvoiceAction = async (formData: FormData) => {
     amount: `OMR ${Number(installment.amount).toFixed(3)}`,
     dueDate: format(installment.dueDate, "d MMM yyyy"),
     recipientIds,
+    attachments,
   });
 
   await prisma.serviceChargeInstallment.update({

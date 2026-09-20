@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { format } from "date-fns";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 
@@ -694,20 +695,46 @@ export const createChargeAction = async (formData: FormData) => {
     },
   });
 
-  try {
-    const unitLabel = formatUnitLabel(tenancy.unit.property.propertyType, tenancy.unit.label);
-    await pushChargeToDynamics({
-      label: title,
-      tenantName: [tenancy.tenant.firstName, tenancy.tenant.lastName].filter(Boolean).join(" ") || tenancy.tenant.email,
-      unitLabel,
-      chargeType: type,
-      amount: formatMoney(amount),
-      dueDate: format(dueDate, "yyyy-MM-dd"),
-      status: "Open",
-    });
-  } catch (error) {
-    console.error("Dynamics sync failed for charge:", charge.id, error);
-  }
+  const unitLabel = formatUnitLabel(
+    tenancy.unit.property.propertyType,
+    tenancy.unit.label,
+  );
+  const tenantName =
+    [tenancy.tenant.firstName, tenancy.tenant.lastName]
+      .filter(Boolean)
+      .join(" ") || tenancy.tenant.email;
+
+  after(() =>
+    Promise.allSettled([
+      pushChargeToDynamics({
+        label: title,
+        tenantName,
+        unitLabel,
+        chargeType: type,
+        amount: formatMoney(amount),
+        dueDate: format(dueDate, "yyyy-MM-dd"),
+        status: "Open",
+      }),
+      notifyTenantInvoice({
+        tenantId: tenancy.tenantId,
+        tenantName,
+        propertyName: tenancy.unit.property.name,
+        unitLabel,
+        invoiceRef: charge.id,
+        dueDate: format(dueDate, "d MMMM yyyy"),
+        href: `/protected/finances/${charge.id}`,
+        lineItems: [{ label: title, amount: formatMoney(amount) }],
+        total: formatMoney(amount),
+      }),
+      publishFinance([tenancy.tenantId]),
+    ]).then((results) => {
+      for (const result of results) {
+        if (result.status === "rejected") {
+          console.error("Charge post-create side effect failed:", result.reason);
+        }
+      }
+    }),
+  );
 
   let uploadError: string | null = null;
   if (bill instanceof File && bill.size > 0) {
@@ -732,31 +759,6 @@ export const createChargeAction = async (formData: FormData) => {
     }
   }
 
-  // The charge exists now. A failed notification is not worth an error page that
-  // reads as "nothing was saved" and invites a duplicate charge.
-  try {
-    await notifyTenantInvoice({
-      tenantId: tenancy.tenantId,
-      tenantName:
-        [tenancy.tenant.firstName, tenancy.tenant.lastName]
-          .filter(Boolean)
-          .join(" ") || tenancy.tenant.email,
-      propertyName: tenancy.unit.property.name,
-      unitLabel: formatUnitLabel(
-        tenancy.unit.property.propertyType,
-        tenancy.unit.label,
-      ),
-      invoiceRef: charge.id,
-      dueDate: format(dueDate, "d MMMM yyyy"),
-      href: `/protected/finances/${charge.id}`,
-      lineItems: [{ label: title, amount: formatMoney(amount) }],
-      total: formatMoney(amount),
-    });
-  } catch (error) {
-    console.error("Charge notification failed:", error);
-  }
-
-  await publishFinance([tenancy.tenantId]);
   revalidatePath("/protected/finances");
 
   return encodedRedirect(
@@ -858,53 +860,65 @@ export const generateRentChargesAction = async (formData: FormData) => {
       },
     });
 
-    // Same best-effort treatment as the invoice emails below: one Dynamics
-    // record per generated charge, run in parallel, a failure on one doesn't
-    // stop the rest or fail the bulk action.
-    await Promise.allSettled(
-      created.map((charge) =>
-        pushChargeToDynamics({
-          label: charge.title,
-          tenantName:
-            [charge.tenant.firstName, charge.tenant.lastName]
-              .filter(Boolean)
-              .join(" ") || charge.tenant.email,
-          unitLabel: charge.unit
-            ? formatUnitLabel(charge.unit.property.propertyType, charge.unit.label)
-            : "—",
-          chargeType: "Rent",
-          amount: formatMoney(charge.amount),
-          dueDate: format(charge.dueDate, "yyyy-MM-dd"),
-          status: "Open",
-        }),
-      ),
-    );
-
-    // One invoice email per tenant — best-effort, run in parallel; a failed
-    // send for one tenant shouldn't stop the others or fail the bulk action.
-    await Promise.allSettled(
-      created.map((charge) =>
-        notifyTenantInvoice({
-          tenantId: charge.tenantId,
-          tenantName:
-            [charge.tenant.firstName, charge.tenant.lastName]
-              .filter(Boolean)
-              .join(" ") || charge.tenant.email,
-          propertyName: charge.unit?.property.name ?? "—",
-          unitLabel: charge.unit
-            ? formatUnitLabel(charge.unit.property.propertyType, charge.unit.label)
-            : "—",
-          invoiceRef: charge.id,
-          dueDate: format(charge.dueDate, "d MMMM yyyy"),
-          href: financeBack(charge.id),
-          lineItems: [{ label: charge.title, amount: formatMoney(charge.amount) }],
-          total: formatMoney(charge.amount),
-        }),
-      ),
-    );
+    after(() => {
+      const tenantIds = created.map((charge) => charge.tenantId);
+      return Promise.allSettled([
+        ...created.map((charge) =>
+          pushChargeToDynamics({
+            label: charge.title,
+            tenantName:
+              [charge.tenant.firstName, charge.tenant.lastName]
+                .filter(Boolean)
+                .join(" ") || charge.tenant.email,
+            unitLabel: charge.unit
+              ? formatUnitLabel(
+                  charge.unit.property.propertyType,
+                  charge.unit.label,
+                )
+              : "—",
+            chargeType: "Rent",
+            amount: formatMoney(charge.amount),
+            dueDate: format(charge.dueDate, "yyyy-MM-dd"),
+            status: "Open",
+          }),
+        ),
+        ...created.map((charge) =>
+          notifyTenantInvoice({
+            tenantId: charge.tenantId,
+            tenantName:
+              [charge.tenant.firstName, charge.tenant.lastName]
+                .filter(Boolean)
+                .join(" ") || charge.tenant.email,
+            propertyName: charge.unit?.property.name ?? "—",
+            unitLabel: charge.unit
+              ? formatUnitLabel(
+                  charge.unit.property.propertyType,
+                  charge.unit.label,
+                )
+              : "—",
+            invoiceRef: charge.id,
+            dueDate: format(charge.dueDate, "d MMMM yyyy"),
+            href: financeBack(charge.id),
+            lineItems: [
+              { label: charge.title, amount: formatMoney(charge.amount) },
+            ],
+            total: formatMoney(charge.amount),
+          }),
+        ),
+        publishFinance(tenantIds),
+      ]).then((results) => {
+        for (const result of results) {
+          if (result.status === "rejected") {
+            console.error(
+              "Rent generation side effect failed:",
+              result.reason,
+            );
+          }
+        }
+      });
+    });
   }
 
-  await publishFinance(newCharges.map((charge) => charge.tenantId));
   revalidatePath("/protected/finances");
 
   return encodedRedirect(

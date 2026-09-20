@@ -158,7 +158,7 @@ export function BuildingManagementReportDocument({
         </View>
         <View style={styles.table}>
           <View style={styles.tableRow}>
-            <Text style={[styles.cell, { width: "70%" }]}>Total Rental Collection</Text>
+            <Text style={[styles.cell, { width: "70%" }]}>Rental Collection with Company</Text>
             <Text style={[styles.cell, { width: "30%", textAlign: "right" }]}>
               OMR {totalRentalCollection}
             </Text>

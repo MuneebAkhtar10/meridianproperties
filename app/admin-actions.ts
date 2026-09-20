@@ -18,11 +18,13 @@ import {
   pushUnitToDynamics,
   pushTenantToDynamics,
 } from "@/lib/dynamics/entities";
-import { formatMoney } from "@/lib/finance";
+import { formatMoney, parseServiceCharge } from "@/lib/finance";
 import {
   defaultUnitPermissions,
   formatUnitLabel,
-  isBuildingType,
+  PROPERTY_MANAGEMENT_CATEGORY_FLAGS,
+  type PropertyManagementCategory,
+  type PropertyManagementFlags,
 } from "@/lib/property-types";
 import { publish } from "@/lib/realtime";
 import { requireAnyRole, requireRole } from "@/lib/session";
@@ -40,9 +42,6 @@ import {
 
 const USER_TYPES = Object.values(UserType) as string[];
 
-/** Allowed service-charge recurrence cycles, in months. */
-const SERVICE_CHARGE_CYCLE_MONTHS = [1, 3, 6, 12] as const;
-
 /** A coordinate (unlike money) can be negative — south/west of the equator
  * or prime meridian — so this can't reuse parseNonNegativeMoney. Blank is a
  * valid "not set", not an error. */
@@ -51,41 +50,6 @@ function parseCoordinate(value: FormDataEntryValue | null): number | null {
   if (!raw) return null;
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-/** Parses & validates the three service-charge form fields together — either
- * all three are present or none are (a partial charge makes no sense). */
-function parseServiceCharge(formData: FormData):
-  | { ok: true; amount: number; cycleMonths: number; dueDate: Date }
-  | { ok: false; error: string } {
-  const amountRaw = formData.get("serviceChargeAmount")?.toString().trim();
-  const cycleRaw = formData.get("serviceChargeCycleMonths")?.toString().trim();
-  const dueDateRaw = formData.get("serviceChargeDueDate")?.toString().trim();
-
-  if (!amountRaw || !cycleRaw || !dueDateRaw) {
-    return {
-      ok: false,
-      error:
-        "Service charge amount, cycle, and due date are required.",
-    };
-  }
-
-  const amount = Number(amountRaw);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return { ok: false, error: "Service charge amount must be a positive number." };
-  }
-
-  const cycleMonths = Number(cycleRaw);
-  if (!SERVICE_CHARGE_CYCLE_MONTHS.includes(cycleMonths as (typeof SERVICE_CHARGE_CYCLE_MONTHS)[number])) {
-    return { ok: false, error: "Select a valid service charge cycle." };
-  }
-
-  const dueDate = new Date(`${dueDateRaw}T00:00:00.000Z`);
-  if (Number.isNaN(dueDate.getTime())) {
-    return { ok: false, error: "Select a valid service charge due date." };
-  }
-
-  return { ok: true, amount, cycleMonths, dueDate };
 }
 
 /** Buildings, apartments and people only ever change from an admin's screen. */
@@ -784,6 +748,21 @@ function parseLocationOptions(raw: string | undefined): string[] {
   return [...withoutOther, "Other"];
 }
 
+/** Every property type is exactly one of four management categories (OA /
+ * BM / Callout / Independent, see lib/property-types.ts), each a fixed
+ * preset of the five underlying flags — derived here from the submitted
+ * category alone, never from the (now read-only, unnamed) checkboxes the
+ * form displays. An unrecognized or missing category falls back to
+ * "independent", the least restrictive preset. */
+function parsePropertyTypeFlags(formData: FormData): PropertyManagementFlags {
+  const raw = formData.get("managementCategory")?.toString();
+  const category: PropertyManagementCategory =
+    raw && raw in PROPERTY_MANAGEMENT_CATEGORY_FLAGS
+      ? (raw as PropertyManagementCategory)
+      : "independent";
+  return PROPERTY_MANAGEMENT_CATEGORY_FLAGS[category];
+}
+
 export const createPropertyTypeAction = async (formData: FormData) => {
   await requireRole(UserType.admin);
 
@@ -799,6 +778,7 @@ export const createPropertyTypeAction = async (formData: FormData) => {
   const locationOptions = parseLocationOptions(
     formData.get("locationOptions")?.toString(),
   );
+  const flags = parsePropertyTypeFlags(formData);
 
   const back = "/protected/admin/property-types";
 
@@ -834,6 +814,7 @@ export const createPropertyTypeAction = async (formData: FormData) => {
       hasFloors,
       hasBedrooms,
       locationOptions,
+      ...flags,
     },
   });
 
@@ -859,6 +840,7 @@ export const updatePropertyTypeAction = async (formData: FormData) => {
   const locationOptions = parseLocationOptions(
     formData.get("locationOptions")?.toString(),
   );
+  const flags = parsePropertyTypeFlags(formData);
 
   const back = "/protected/admin/property-types";
 
@@ -871,11 +853,10 @@ export const updatePropertyTypeAction = async (formData: FormData) => {
   }
 
   // `name` is a stable machine key set once at creation (see
-  // createPropertyTypeAction) and never touched again — code elsewhere
-  // (defaultUnitPermissions, isBuildingType, isBuildingManagementType in
-  // lib/property-types.ts) branches on it to decide whether a type bills
-  // rent at all, so silently re-deriving it from a relabel would quietly
-  // break that logic for every property already using this type.
+  // createPropertyTypeAction) and never touched again — isBuildingManagementType
+  // in lib/property-types.ts still branches on it, so silently re-deriving
+  // it from a relabel would quietly break that logic for every property
+  // already using this type.
   await prisma.propertyType.update({
     where: { id },
     data: {
@@ -886,6 +867,7 @@ export const updatePropertyTypeAction = async (formData: FormData) => {
       hasFloors,
       hasBedrooms,
       locationOptions,
+      ...flags,
     },
   });
 
@@ -975,7 +957,13 @@ export const generateUnitsAction = async (formData: FormData) => {
     where: { id: propertyId },
     select: {
       propertyType: {
-        select: { name: true, hasFloors: true, unitNounPlural: true },
+        select: {
+          name: true,
+          hasFloors: true,
+          unitNounPlural: true,
+          showRentBills: true,
+          showMaintenance: true,
+        },
       },
     },
   });
@@ -1017,7 +1005,7 @@ export const generateUnitsAction = async (formData: FormData) => {
 
   const generatedOwnerId = actor.userType === UserType.owner ? actor.id : null;
   const { rentBillsEnabled, maintenanceEnabled } = defaultUnitPermissions(
-    property?.propertyType.name ?? "",
+    property?.propertyType ?? { showRentBills: true, showMaintenance: true },
   );
 
   for (let floor = startFloor; floor < startFloor + floors; floor++) {
@@ -1107,10 +1095,14 @@ export const createUnitAction = async (formData: FormData) => {
 
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
-    select: { propertyType: { select: { name: true } } },
+    select: {
+      propertyType: { select: { showRentBills: true, showMaintenance: true } },
+    },
   });
-  if (property && isBuildingType(property.propertyType.name)) {
+  if (property && !property.propertyType.showRentBills) {
     rentBillsEnabled = false;
+  }
+  if (property && !property.propertyType.showMaintenance) {
     maintenanceEnabled = false;
   }
 
@@ -1196,7 +1188,12 @@ export const updateUnitAction = async (formData: FormData) => {
       rentBillsEnabled: true,
       maintenanceEnabled: true,
       property: {
-        select: { name: true, propertyType: { select: { name: true } } },
+        select: {
+          name: true,
+          propertyType: {
+            select: { showRentBills: true, showMaintenance: true },
+          },
+        },
       },
     },
   });
@@ -1266,15 +1263,15 @@ export const updateUnitAction = async (formData: FormData) => {
   // Only an admin can see (or submit) these checkboxes at all — for anyone
   // else's submission of this form, leave the unit's current values alone
   // rather than reading an absent field as "unchecked".
-  // Building-type properties never render these checkboxes at all, so the
-  // toggle stays forced off regardless of what a submission carries.
-  const unitIsBuildingType = isBuildingType(unit.property.propertyType.name);
-  const rentBillsEnabled = unitIsBuildingType
+  // A property type with the feature turned off never renders the
+  // matching checkbox at all, so that toggle stays forced off regardless
+  // of what a submission carries.
+  const rentBillsEnabled = !unit.property.propertyType.showRentBills
     ? false
     : isAdmin
       ? formData.get("rentBillsEnabled") === "on"
       : unit.rentBillsEnabled;
-  const maintenanceEnabled = unitIsBuildingType
+  const maintenanceEnabled = !unit.property.propertyType.showMaintenance
     ? false
     : isAdmin
       ? formData.get("maintenanceEnabled") === "on"
@@ -1347,6 +1344,8 @@ export const transferUnitOwnershipAction = async (formData: FormData) => {
   const newOwnerId = formData.get("newOwnerId")?.toString().trim();
   const transferDate = parseDateInput(formData.get("transferDate"));
   const keepServiceCharge = formData.get("keepServiceCharge") === "on";
+  const installmentPlanAction = formData.get("installmentPlanAction")?.toString();
+  const keepInstallmentPlan = installmentPlanAction !== "cancel";
   const alsoTransferOtherUnits = formData.get("alsoTransferOtherUnits") === "on";
   const notes = formData.get("notes")?.toString().trim() || null;
 
@@ -1397,10 +1396,20 @@ export const transferUnitOwnershipAction = async (formData: FormData) => {
           toOwnerId: newOwnerId,
           transferDate,
           keptServiceCharge: keepServiceCharge,
+          keptInstallmentPlan: keepInstallmentPlan,
           notes,
           createdById: actor.id,
         },
       });
+      if (!keepInstallmentPlan) {
+        await tx.serviceChargeInstallmentPlan.updateMany({
+          where: {
+            unitId: target.id,
+            cancelledAt: null,
+          },
+          data: { cancelledAt: new Date() },
+        });
+      }
       await tx.unit.update({
         where: { id: target.id },
         data: {
@@ -1414,6 +1423,19 @@ export const transferUnitOwnershipAction = async (formData: FormData) => {
               }),
         },
       });
+      if (keepServiceCharge) {
+        const latestInvoice = await tx.serviceChargeInvoice.findFirst({
+          where: { unitId: target.id },
+          orderBy: { createdAt: "desc" },
+          select: { id: true },
+        });
+        if (latestInvoice) {
+          await tx.serviceChargeInvoice.update({
+            where: { id: latestInvoice.id },
+            data: { billedOwnerId: newOwnerId },
+          });
+        }
+      }
     }
   });
 
@@ -1432,13 +1454,18 @@ export const transferUnitOwnershipAction = async (formData: FormData) => {
 
   await publishDirectoryChange();
   revalidatePath(back);
+  revalidatePath("/protected/service-charge-ledger");
 
   return encodedRedirect(
     "success",
     back,
     targetUnits.length > 1
       ? `Ownership of ${targetUnits.length} units transferred.`
-      : `Ownership of unit ${unit.label} transferred.`,
+      : keepServiceCharge
+        ? keepInstallmentPlan
+          ? `Ownership of unit ${unit.label} transferred. The current invoice and payment plan now sit with the new owner.`
+          : `Ownership of unit ${unit.label} transferred. The current invoice is payable by the new owner — set up a new payment plan if needed.`
+        : `Ownership of unit ${unit.label} transferred.`,
   );
 };
 

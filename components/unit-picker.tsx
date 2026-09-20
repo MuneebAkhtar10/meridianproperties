@@ -18,6 +18,10 @@ export type PickableUnit = {
   propertyTypeUnitNounSingular: string;
   propertyTypeUnitNounPlural: string;
   propertyTypeUnitPrefix: string | null;
+  /** Whether this type's units can be billed rent & bills at all — see
+   * lib/property-types.ts's defaultUnitPermissions, which this same flag
+   * feeds. */
+  propertyTypeShowRentBills: boolean;
 };
 
 /**
@@ -40,9 +44,11 @@ export function UnitPicker({
   defaultUnitId?: string;
   required?: boolean;
   /** Fires whenever the chosen property type changes (including back to
-   * none, as ""), for callers that need to react to it — e.g. defaulting
+   * none, as null), for callers that need to react to it — e.g. defaulting
    * other fields based on the type's own conventions. */
-  onPropertyTypeChange?: (propertyTypeName: string) => void;
+  onPropertyTypeChange?: (
+    propertyType: { showRentBills: boolean } | null,
+  ) => void;
 }) {
   const defaultUnit = defaultUnitId
     ? units.find((u) => u.id === defaultUnitId)
@@ -86,7 +92,11 @@ export function UnitPicker({
             const chosen = availableTypes.find(
               (t) => t.propertyTypeId === e.target.value,
             );
-            onPropertyTypeChange?.(chosen?.propertyTypeName ?? "");
+            onPropertyTypeChange?.(
+              chosen
+                ? { showRentBills: chosen.propertyTypeShowRentBills }
+                : null,
+            );
           }}
         >
           <option value="">— Choose a property type —</option>

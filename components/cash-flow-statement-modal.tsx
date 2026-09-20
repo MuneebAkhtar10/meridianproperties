@@ -23,6 +23,7 @@ export function CashFlowStatementModal({
   funds,
   defaultPropertyId,
   autoOpen = false,
+  trigger,
 }: {
   properties: { id: string; name: string }[];
   funds: { id: string; label: string }[];
@@ -32,6 +33,9 @@ export function CashFlowStatementModal({
   defaultPropertyId?: string;
   /** Opens the modal immediately, for the same deep-link case. */
   autoOpen?: boolean;
+  /** Overrides the default trigger button — e.g. to match a property
+   * page's own toolbar styling instead of the plain Expenses page's. */
+  trigger?: React.ReactNode;
 }) {
   const [propertyId, setPropertyId] = useState(
     defaultPropertyId ?? properties[0]?.id ?? "",
@@ -47,10 +51,12 @@ export function CashFlowStatementModal({
       title="Detailed Cash Flow Statement"
       description="Actual revenue and expenditure for one property over any date range."
       trigger={
-        <Button type="button" variant="outline">
-          <ScrollText className="h-4 w-4" />
-          Cash Flow Statement
-        </Button>
+        trigger ?? (
+          <Button type="button" variant="outline">
+            <ScrollText className="h-4 w-4" />
+            Cash Flow Statement
+          </Button>
+        )
       }
       defaultOpen={autoOpen}
     >

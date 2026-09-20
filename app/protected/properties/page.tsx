@@ -16,6 +16,7 @@ import Link from "next/link";
 import { createPropertyAction } from "@/app/admin-actions";
 import { EmptyState } from "@/components/empty-state";
 import { FormMessage, Message } from "@/components/form-message";
+import { OwnerReportModal } from "@/components/owner-report-modal";
 import { PageHeader } from "@/components/page-header";
 import { PropertyLocationFields } from "@/components/property-location-fields";
 import { SubmitButton } from "@/components/submit-button";
@@ -202,10 +203,13 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
         } · ${totalOccupied} of ${totalUnits} units occupied`}
       >
         {isAdmin && (
-          <ButtonLink href="/protected/admin/property-types" variant="outline">
-            <Settings className="h-4 w-4" />
-            Property types
-          </ButtonLink>
+          <>
+            <OwnerReportModal owners={owners} />
+            <ButtonLink href="/protected/admin/property-types" variant="outline">
+              <Settings className="h-4 w-4" />
+              Property types
+            </ButtonLink>
+          </>
         )}
       </PageHeader>
 

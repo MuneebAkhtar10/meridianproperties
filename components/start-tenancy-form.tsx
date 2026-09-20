@@ -15,7 +15,6 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { UnitPicker, type PickableUnit } from "@/components/unit-picker";
 import { dateInputValue } from "@/lib/finance";
-import { defaultUnitPermissions } from "@/lib/property-types";
 import { TenancyPurpose } from "@/lib/generated/prisma/client";
 
 /**
@@ -68,10 +67,8 @@ export function StartTenancyForm({
           name="unitId"
           units={pickableUnits}
           required
-          onPropertyTypeChange={(propertyTypeName) => {
-            const enabled = propertyTypeName
-              ? defaultUnitPermissions(propertyTypeName).rentBillsEnabled
-              : true;
+          onPropertyTypeChange={(propertyType) => {
+            const enabled = propertyType ? propertyType.showRentBills : true;
             setChargeDefaultsEnabled(enabled);
             setCreateFirstRent(enabled);
             setCreateDepositCharge(enabled);

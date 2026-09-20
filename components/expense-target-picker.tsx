@@ -21,6 +21,11 @@ export function ExpenseTargetPicker({
   units,
   propertyId,
   onPropertyIdChange,
+  /** An OA property's units are billed through the service charge ledger,
+   * not split expenses — every expense against one is a common-area cost
+   * of the building itself, so there's nothing to pick a specific unit
+   * for. */
+  hideSpecificUnits = false,
 }: {
   properties: { id: string; name: string }[];
   units: UnitOption[];
@@ -28,11 +33,13 @@ export function ExpenseTargetPicker({
    * react to which property is selected — see ExpenseLogFields. */
   propertyId: string;
   onPropertyIdChange: (propertyId: string) => void;
+  hideSpecificUnits?: boolean;
 }) {
   const [mode, setMode] = useState<"common" | "units">("common");
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(
     new Set(),
   );
+  const effectiveMode = hideSpecificUnits ? "common" : mode;
 
   const unitsForProperty = useMemo(
     () => units.filter((unit) => unit.propertyId === propertyId),
@@ -78,11 +85,11 @@ export function ExpenseTargetPicker({
 
       <div className="space-y-1.5">
         <p className="text-xs font-medium text-foreground">Against</p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={cn("grid gap-2", hideSpecificUnits ? "grid-cols-1" : "grid-cols-2")}>
           <label
             className={cn(
               "flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border px-3 py-2.5 text-center transition-colors",
-              mode === "common"
+              effectiveMode === "common"
                 ? "border-primary bg-primary/5 ring-1 ring-primary"
                 : "border-input hover:bg-muted/50",
             )}
@@ -91,14 +98,14 @@ export function ExpenseTargetPicker({
               type="radio"
               name="mode"
               value="common"
-              checked={mode === "common"}
+              checked={effectiveMode === "common"}
               onChange={() => setMode("common")}
               className="sr-only"
             />
             <Building2
               className={cn(
                 "h-4 w-4",
-                mode === "common" ? "text-primary" : "text-muted-foreground",
+                effectiveMode === "common" ? "text-primary" : "text-muted-foreground",
               )}
             />
             <span className="text-xs font-medium leading-snug">
@@ -107,40 +114,42 @@ export function ExpenseTargetPicker({
               (whole property)
             </span>
           </label>
-          <label
-            className={cn(
-              "flex flex-col items-center gap-1.5 rounded-lg border px-3 py-2.5 text-center transition-colors",
-              unitsForProperty.length === 0
-                ? "cursor-not-allowed border-input opacity-50"
-                : "cursor-pointer",
-              mode === "units"
-                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                : "border-input hover:bg-muted/50",
-            )}
-          >
-            <input
-              type="radio"
-              name="mode"
-              value="units"
-              checked={mode === "units"}
-              onChange={() => setMode("units")}
-              className="sr-only"
-              disabled={unitsForProperty.length === 0}
-            />
-            <LayoutGrid
+          {!hideSpecificUnits && (
+            <label
               className={cn(
-                "h-4 w-4",
-                mode === "units" ? "text-primary" : "text-muted-foreground",
+                "flex flex-col items-center gap-1.5 rounded-lg border px-3 py-2.5 text-center transition-colors",
+                unitsForProperty.length === 0
+                  ? "cursor-not-allowed border-input opacity-50"
+                  : "cursor-pointer",
+                effectiveMode === "units"
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "border-input hover:bg-muted/50",
               )}
-            />
-            <span className="text-xs font-medium leading-snug">
-              Specific unit(s)
-            </span>
-          </label>
+            >
+              <input
+                type="radio"
+                name="mode"
+                value="units"
+                checked={effectiveMode === "units"}
+                onChange={() => setMode("units")}
+                className="sr-only"
+                disabled={unitsForProperty.length === 0}
+              />
+              <LayoutGrid
+                className={cn(
+                  "h-4 w-4",
+                  effectiveMode === "units" ? "text-primary" : "text-muted-foreground",
+                )}
+              />
+              <span className="text-xs font-medium leading-snug">
+                Specific unit(s)
+              </span>
+            </label>
+          )}
         </div>
       </div>
 
-      {mode === "units" && (
+      {effectiveMode === "units" && (
         <div className="space-y-1.5">
           <Label className="text-xs">Units</Label>
           {unitsForProperty.length === 0 ? (

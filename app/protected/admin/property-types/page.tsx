@@ -8,6 +8,7 @@ import {
 import { EmptyState } from "@/components/empty-state";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { PropertyTypeFlagsFields } from "@/components/property-type-flags-fields";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,16 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-1 sm:shrink-0 sm:flex-col sm:items-end">
+                      {propertyType.isOwnerAssociation && (
+                        <span className="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700">
+                          Owner-associated
+                        </span>
+                      )}
+                      {propertyType.isBuildingManagement && (
+                        <span className="inline-flex items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-medium text-cyan-700">
+                          Building management
+                        </span>
+                      )}
                       <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                         {propertyType.hasFloors
                           ? "Organized by floor"
@@ -139,6 +150,13 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
                       />
                       Units have a bedroom count
                     </label>
+                    <PropertyTypeFlagsFields
+                      defaultIsOwnerAssociation={propertyType.isOwnerAssociation}
+                      defaultIsBuildingManagement={propertyType.isBuildingManagement}
+                      defaultShowRentBills={propertyType.showRentBills}
+                      defaultShowMaintenance={propertyType.showMaintenance}
+                      defaultHasCommonAreas={propertyType.hasCommonAreas}
+                    />
                     <div className="space-y-1.5 sm:col-span-2">
                       <Label htmlFor={`locations-${propertyType.id}`}>
                         Where issues happen (one per line)
@@ -253,6 +271,13 @@ export default async function PropertyTypesPage({ searchParams }: PageProps) {
                 />
                 Units have a bedroom count
               </label>
+              <PropertyTypeFlagsFields
+                defaultIsOwnerAssociation={false}
+                defaultIsBuildingManagement={false}
+                defaultShowRentBills={true}
+                defaultShowMaintenance={true}
+                defaultHasCommonAreas={true}
+              />
               <div className="space-y-1.5">
                 <Label htmlFor="new-locations">
                   Where issues happen (one per line)

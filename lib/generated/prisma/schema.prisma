@@ -134,32 +134,60 @@ enum EntityDocumentCategory {
 /// Admins can add their own instead of being limited to a fixed set, which is
 /// why the floor behaviour and unit wording live here as data, not code.
 model PropertyType {
-  id               String   @id @default(uuid()) @db.Uuid
+  id                   String   @id @default(uuid()) @db.Uuid
   /// Stable machine key, e.g. "apartment". Never shown to users.
-  name             String   @unique
+  name                 String   @unique
   /// Shown when picking a property type, e.g. "Apartment building".
-  label            String
+  label                String
   /// Singular noun for one unit of this type, e.g. "Apartment", "Villa", "Office".
-  unitNounSingular String   @map("unit_noun_singular")
+  unitNounSingular     String   @map("unit_noun_singular")
   /// Plural noun, e.g. "Apartments", "Villas", "Offices".
-  unitNounPlural   String   @map("unit_noun_plural")
+  unitNounPlural       String   @map("unit_noun_plural")
   /// Short prefix shown before a unit's label, e.g. "Apt" → "Apt 101". Null
   /// means the unit label is shown on its own, with no prefix — the villa
   /// convention ("Villa 2", not "Villa Villa 2").
-  unitPrefix       String?  @map("unit_prefix")
+  unitPrefix           String?  @map("unit_prefix")
   /// Whether units of this type are organized by floor. Controls the floor
   /// field, the "generate by floor" wizard and the floor grouping in the UI.
-  hasFloors        Boolean  @default(true) @map("has_floors")
+  hasFloors            Boolean  @default(true) @map("has_floors")
   /// Whether units of this type track a bedroom count. Off for commercial
   /// types like offices or shops, where "bedrooms" doesn't apply.
-  hasBedrooms      Boolean  @default(true) @map("has_bedrooms")
+  hasBedrooms          Boolean  @default(true) @map("has_bedrooms")
   /// Choices shown in "Where is the problem?" when a tenant of this type
   /// reports a maintenance issue, e.g. ["Kitchen", "Bathroom", ...] for an
   /// apartment or ["Sales floor", "Storeroom", ...] for a shop. Always ends
   /// with a fallback "Other" entry.
-  locationOptions  String[] @default(["Main area", "Storeroom", "Entrance", "Whole space", "Other"]) @map("location_options")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  locationOptions      String[] @default(["Main area", "Storeroom", "Entrance", "Whole space", "Other"]) @map("location_options")
+  /// An owners' association type — the owner owns the whole property and
+  /// the company only manages it on their behalf. Units never bill rent,
+  /// never take maintenance requests, but the property's common areas are
+  /// always on (an OA's whole point is its shared spaces). Setting this
+  /// forces showRentBills/showMaintenance off and hasCommonAreas on,
+  /// replacing the old hardcoded name === "building" check — see
+  /// lib/property-types.ts. Mutually exclusive with isBuildingManagement.
+  isOwnerAssociation   Boolean  @default(false) @map("is_owner_association")
+  /// A building-management type — the company doesn't own the property,
+  /// only manages several units within it on the landlord's behalf. Units
+  /// bill rent and take maintenance requests same as any rental, but the
+  /// property has no common areas of its own to manage (that's the actual
+  /// owner's concern, not the units the company manages). Setting this
+  /// forces showRentBills/showMaintenance on and hasCommonAreas off —
+  /// the mirror image of isOwnerAssociation. Replaces the old hardcoded
+  /// name === "building_management" check — see lib/property-types.ts.
+  isBuildingManagement Boolean  @default(false) @map("is_building_management")
+  /// Whether units of this type can be billed rent & bills at all — the
+  /// per-unit "Charge rent & bills" toggle only appears when this is on.
+  showRentBills        Boolean  @default(true) @map("show_rent_bills")
+  /// Whether units of this type can take maintenance requests at all — the
+  /// per-unit "Accept maintenance requests" toggle only appears when this
+  /// is on.
+  showMaintenance      Boolean  @default(true) @map("show_maintenance")
+  /// Whether properties of this type have shared common areas (lobby,
+  /// parking, garden, ...) a tenant or admin can report/log against,
+  /// separately from any one unit.
+  hasCommonAreas       Boolean  @default(true) @map("has_common_areas")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
   properties Property[]
 
@@ -349,20 +377,23 @@ model UnitPermissionChange {
 /// The old ownership ends and the new one starts on the same transferDate,
 /// same as a real sale/handover would.
 model OwnershipTransfer {
-  id                String   @id @default(uuid()) @db.Uuid
-  unitId            String   @map("unit_id") @db.Uuid
+  id                  String   @id @default(uuid()) @db.Uuid
+  unitId              String   @map("unit_id") @db.Uuid
   /// Null when the unit had no owner before this (a first assignment
   /// recorded through the same flow, not just a bare transfer).
-  fromOwnerId       String?  @map("from_owner_id") @db.Uuid
-  toOwnerId         String   @map("to_owner_id") @db.Uuid
-  transferDate      DateTime @map("transfer_date") @db.Date
+  fromOwnerId         String?  @map("from_owner_id") @db.Uuid
+  toOwnerId           String   @map("to_owner_id") @db.Uuid
+  transferDate        DateTime @map("transfer_date") @db.Date
   /// Whether the unit's existing service charge amount/cycle/due date carry
   /// over to the new owner unchanged, or were cleared for the admin to set
   /// up fresh for them.
-  keptServiceCharge Boolean  @default(true) @map("kept_service_charge")
-  notes             String?
-  createdById       String?  @map("created_by") @db.Uuid
-  createdAt         DateTime @default(now()) @map("created_at")
+  keptServiceCharge   Boolean  @default(true) @map("kept_service_charge")
+  /// Whether an active installment plan stayed in place for the new owner
+  /// (true) or was cancelled so they can set up a different schedule.
+  keptInstallmentPlan Boolean  @default(true) @map("kept_installment_plan")
+  notes               String?
+  createdById         String?  @map("created_by") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at")
 
   unit      Unit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
   fromOwner User? @relation("OwnershipTransferFromOwner", fields: [fromOwnerId], references: [id], onDelete: SetNull)
@@ -461,7 +492,10 @@ model User {
   supplyRequestsDecided           SupplyRequest[]                @relation("SupplyDecidedBy")
   expensesCreated                 Expense[]                      @relation("ExpenseCreator")
   serviceChargeInvoicesCreated    ServiceChargeInvoice[]         @relation("ServiceChargeInvoiceCreator")
+  serviceChargeInvoicesBilled     ServiceChargeInvoice[]         @relation("ServiceChargeInvoiceBilledOwner")
   serviceChargePaymentsCreated    ServiceChargePayment[]         @relation("ServiceChargePaymentCreator")
+  serviceChargePaymentsBilled     ServiceChargePayment[]         @relation("ServiceChargePaymentBilledOwner")
+  serviceChargePaymentsCorrected  ServiceChargePayment[]         @relation("ServiceChargePaymentCorrector")
   serviceChargePlansCreated       ServiceChargeInstallmentPlan[] @relation("ServiceChargePlanCreator")
   suppliersCreated                Supplier[]                     @relation("SupplierCreator")
   buildingServiceContractsCreated BuildingServiceContract[]      @relation("BuildingServiceContractCreator")
@@ -578,6 +612,11 @@ model EntityDocument {
   filePath     String                 @map("file_path")
   fileType     String                 @map("file_type")
   fileSize     Int                    @map("file_size")
+  /// When this document stops being valid (a contract's term, an ID's
+  /// validity, an insurance policy's coverage, ...). Null means it doesn't
+  /// expire. Feeds the same 90/60/30/15/7-day reminder ladder as tenant
+  /// and building agreements — see lib/agreement-expiry.ts.
+  expiresAt    DateTime?              @map("expires_at") @db.Date
   uploadedById String?                @map("uploaded_by") @db.Uuid
   createdAt    DateTime               @default(now()) @map("created_at")
 
@@ -842,13 +881,18 @@ model ServiceChargeInvoice {
   /// previousBalance + currentAmount — becomes this fund's UnitFundBalance
   /// once this invoice is created, and the next invoice's previousBalance.
   closingBalance  Decimal  @map("closing_balance") @db.Decimal(14, 3)
+  /// Owner billed when this invoice was generated — kept even if the unit
+  /// later changes hands, so the ledger and PDF stay historically accurate.
+  billedOwnerId   String?  @map("billed_owner_id") @db.Uuid
   createdById     String?  @map("created_by") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at")
 
-  unit      Unit                       @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  fund      Fund                       @relation(fields: [fundId], references: [id], onDelete: Restrict)
-  createdBy User?                      @relation("ServiceChargeInvoiceCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  lines     ServiceChargeInvoiceLine[]
+  unit             Unit                           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  fund             Fund                           @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  billedOwner      User?                          @relation("ServiceChargeInvoiceBilledOwner", fields: [billedOwnerId], references: [id], onDelete: SetNull)
+  createdBy        User?                          @relation("ServiceChargeInvoiceCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  lines            ServiceChargeInvoiceLine[]
+  installmentPlans ServiceChargeInstallmentPlan[]
 
   @@index([unitId, issueDate])
   @@map("service_charge_invoices")
@@ -898,12 +942,27 @@ model ServiceChargePayment {
   /// against, so an enum would only add migration friction if it changes.
   clearanceStatus   String?        @map("clearance_status")
   note              String?
+  /// The amount as first recorded, set the first time this payment is
+  /// corrected (and never touched again after that) — so a mistyped 3500
+  /// instead of 350 still has its true original on file even after
+  /// several corrections. Null means it has never been corrected.
+  originalAmount    Decimal?       @map("original_amount") @db.Decimal(14, 3)
+  /// Why the amount was changed after the fact — required by
+  /// correctServiceChargePaymentAction, distinct from `note` (the reason
+  /// for the payment itself).
+  correctionNote    String?        @map("correction_note")
+  correctedAt       DateTime?      @map("corrected_at")
+  correctedById     String?        @map("corrected_by") @db.Uuid
+  /// Owner of the unit when this payment was recorded.
+  billedOwnerId     String?        @map("billed_owner_id") @db.Uuid
   createdById       String?        @map("created_by") @db.Uuid
   createdAt         DateTime       @default(now()) @map("created_at")
 
   unit        Unit                      @relation(fields: [unitId], references: [id], onDelete: Cascade)
   fund        Fund?                     @relation(fields: [fundId], references: [id], onDelete: SetNull)
+  billedOwner User?                     @relation("ServiceChargePaymentBilledOwner", fields: [billedOwnerId], references: [id], onDelete: SetNull)
   createdBy   User?                     @relation("ServiceChargePaymentCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  correctedBy User?                     @relation("ServiceChargePaymentCorrector", fields: [correctedById], references: [id], onDelete: SetNull)
   installment ServiceChargeInstallment?
 
   @@index([unitId, paidAt])
@@ -918,6 +977,9 @@ model ServiceChargePayment {
 model ServiceChargeInstallmentPlan {
   id               String    @id @default(uuid()) @db.Uuid
   unitId           String    @map("unit_id") @db.Uuid
+  /// The annual invoice this plan is paying off, when one exists — used to
+  /// render installment PDFs from the same billed period.
+  sourceInvoiceId  String?   @map("source_invoice_id") @db.Uuid
   /// Unit.serviceChargeBalance as it stood when the plan was created —
   /// fixed at setup time; charges accrued afterwards aren't folded in.
   totalAmount      Decimal   @map("total_amount") @db.Decimal(14, 3)
@@ -930,9 +992,10 @@ model ServiceChargeInstallmentPlan {
   /// differently) — remaining unpaid installments stop counting as active.
   cancelledAt      DateTime? @map("cancelled_at")
 
-  unit         Unit                       @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  createdBy    User?                      @relation("ServiceChargePlanCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  installments ServiceChargeInstallment[]
+  unit          Unit                       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  sourceInvoice ServiceChargeInvoice?      @relation(fields: [sourceInvoiceId], references: [id], onDelete: SetNull)
+  createdBy     User?                      @relation("ServiceChargePlanCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  installments  ServiceChargeInstallment[]
 
   @@index([unitId])
   @@map("service_charge_installment_plans")

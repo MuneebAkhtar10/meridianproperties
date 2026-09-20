@@ -21,24 +21,39 @@ import { OwnerChargeMethodPicker } from "@/components/owner-charge-method-picker
  * the owner-charge-method choice once a non-OA property is selected — an
  * OA property never had that distinction (see OwnerChargeMethodPicker).
  */
+export type ExpenseLogFieldsProps = {
+  properties: {
+    id: string;
+    name: string;
+    propertyType: { name: string; isOwnerAssociation: boolean };
+  }[];
+  units: UnitOption[];
+  categories: PickableExpenseCategory[];
+  suppliers: PickableSupplier[];
+  /** Pre-selects this property instead of the list's first one — set when
+   * the form opens already scoped to a property (e.g. arriving from that
+   * property's own page, or the Expenses page's own property filter), so
+   * "Log an expense" starts on the same property the page is already
+   * filtered to instead of silently defaulting elsewhere. */
+  defaultPropertyId?: string;
+};
+
 export function ExpenseLogFields({
   properties,
   units,
   categories,
   suppliers,
-}: {
-  properties: { id: string; name: string; propertyType: { name: string } }[];
-  units: UnitOption[];
-  categories: PickableExpenseCategory[];
-  suppliers: PickableSupplier[];
-}) {
-  const [propertyId, setPropertyId] = useState(properties[0]?.id ?? "");
+  defaultPropertyId,
+}: ExpenseLogFieldsProps) {
+  const [propertyId, setPropertyId] = useState(
+    defaultPropertyId ?? properties[0]?.id ?? "",
+  );
 
   const selectedProperty = useMemo(
     () => properties.find((p) => p.id === propertyId),
     [properties, propertyId],
   );
-  const isOaProperty = selectedProperty?.propertyType.name === "building";
+  const isOaProperty = selectedProperty?.propertyType.isOwnerAssociation ?? false;
 
   return (
     <>
@@ -47,6 +62,7 @@ export function ExpenseLogFields({
         units={units}
         propertyId={propertyId}
         onPropertyIdChange={setPropertyId}
+        hideSpecificUnits={isOaProperty}
       />
       <ExpenseCategoryPicker
         categories={categories}

@@ -110,11 +110,15 @@ export function TenantReportDocument({
   rows,
   activeCount,
   totalMonthlyRent,
+  isOwnerAssociation,
 }: {
   propertyName: string;
   rows: TenantReportRow[];
   activeCount: number;
   totalMonthlyRent: string;
+  /** An OA property never bills rent — the "Scheduled monthly rent" tile
+   * would always read OMR 0.000, so it's left out entirely. */
+  isOwnerAssociation: boolean;
 }) {
   return (
     <Document title={`Tenant report - ${propertyName}`}>
@@ -132,13 +136,15 @@ export function TenantReportDocument({
               <Text style={styles.statLabel}>Active tenancies</Text>
             </View>
           </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statAccent, { backgroundColor: COLORS.emerald }]} />
-            <View style={styles.statBody}>
-              <Text style={styles.statValue}>OMR {totalMonthlyRent}</Text>
-              <Text style={styles.statLabel}>Scheduled monthly rent</Text>
+          {!isOwnerAssociation && (
+            <View style={styles.statCard}>
+              <View style={[styles.statAccent, { backgroundColor: COLORS.emerald }]} />
+              <View style={styles.statBody}>
+                <Text style={styles.statValue}>OMR {totalMonthlyRent}</Text>
+                <Text style={styles.statLabel}>Scheduled monthly rent</Text>
+              </View>
             </View>
-          </View>
+          )}
         </View>
 
         <View style={[styles.row, styles.headerRow]} fixed>

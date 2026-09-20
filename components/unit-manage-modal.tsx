@@ -1,21 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
+  AlertTriangle,
   ArrowLeftRight,
-  Check,
   FileStack,
   FileText,
   KeyRound,
-  Mail,
   Pencil,
-  Receipt,
-  ScrollText,
-  Send,
   Settings2,
   Trash2,
-  Wallet,
 } from "lucide-react";
 
 import {
@@ -23,23 +18,12 @@ import {
   deleteUnitAction,
   transferUnitOwnershipAction,
   updateUnitAction,
-  updateUnitServiceChargeAction,
 } from "@/app/admin-actions";
-import {
-  generateServiceChargeInvoiceAction,
-  recordServiceChargePaymentAction,
-  sendServiceChargeInvoiceAction,
-} from "@/app/service-charge-invoice-actions";
-import {
-  cancelServiceChargeInstallmentPlanAction,
-  createServiceChargeInstallmentPlanAction,
-  markInstallmentPaidAction,
-  sendInstallmentInvoiceAction,
-} from "@/app/service-charge-installment-actions";
 import {
   EntityDocumentManager,
   type DocumentItem,
 } from "@/components/entity-document-manager";
+import { UnitServiceChargePanel } from "@/components/unit-service-charge-panel";
 import { CloseModalOnSubmit, Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,10 +35,8 @@ import {
   dateInputValue,
   formatMoney,
   moneyValue,
-  PAYMENT_METHODS,
-  PAYMENT_METHOD_LABEL,
 } from "@/lib/finance";
-import { cn } from "@/lib/utils";
+import { cn, personDisplayName as ownerDisplayName } from "@/lib/utils";
 import { EntityDocumentCategory } from "@/lib/generated/prisma/client";
 
 /** Compact mode shows no category picker — it's built for exactly one fixed
@@ -68,14 +50,6 @@ const UNIT_CONTRACT_CATEGORY = [
  * inspection photos, etc.), reusing the catch-all "other" category rather
  * than adding a new enum value for it. */
 const UNIT_MISC_CATEGORY = [EntityDocumentCategory.other] as const;
-
-function ownerDisplayName(owner: {
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-}): string {
-  return [owner.firstName, owner.lastName].filter(Boolean).join(" ") || owner.email;
-}
 
 /** A short avatar-badge label — initials from the name, or just the first
  * letter of the email when there's no name on file. */
@@ -105,7 +79,18 @@ export type ManagedUnit = {
     firstName: string | null;
     lastName: string | null;
   } | null;
-  tenant: { id: string; email: string } | null;
+  tenant: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    phone: string | null;
+  } | null;
+  /** The unit's currently-active tenancy (endDate: null), if any — its own
+   * documents (tenancy agreement, municipality registration, ...) show as
+   * the "Tenant Contract" section in the Agreements tab, below the
+   * ownership contract. Null when the unit has no tenant right now. */
+  activeTenancy: { id: string; documents: DocumentItem[] } | null;
   rentBillsEnabled: boolean;
   maintenanceEnabled: boolean;
   /** Decimal fields arrive pre-serialized to plain strings by every call
@@ -122,9 +107,35 @@ export type ManagedUnit = {
     id: string;
     invoiceNumber: string;
     issueDate: Date;
+    dueDate: Date;
+    graceDays: number;
+    periodStart: Date;
+    periodEnd: Date;
     currentAmount: string;
     previousBalance: string;
     amountPayable: string;
+    billedOwner: {
+      id: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+    } | null;
+  }[];
+  serviceChargePayments: {
+    id: string;
+    amount: string;
+    paidAt: Date;
+    note: string | null;
+    transactionNumber: string | null;
+    originalAmount: string | null;
+    correctionNote: string | null;
+    fromInstallment: boolean;
+    billedOwner: {
+      id: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+    } | null;
   }[];
   installmentPlans: {
     id: string;
@@ -144,6 +155,7 @@ export type ManagedUnit = {
     id: string;
     transferDate: Date;
     keptServiceCharge: boolean;
+    keptInstallmentPlan: boolean;
     notes: string | null;
     createdAt: Date;
     fromOwner: { email: string; firstName: string | null; lastName: string | null } | null;
@@ -153,6 +165,89 @@ export type ManagedUnit = {
 };
 
 type TabKey = "details" | "ownership" | "charge" | "documents" | "misc" | "danger";
+
+/** The tenant-change confirmation modal — a Select + Save button identical
+ * to the one this replaced, just tucked behind an explicit "Manage"/"Assign"
+ * action with a warning first, since swapping the tenant isn't a cosmetic
+ * edit: assignTenantAction (app/admin-actions.ts) ends the unit's current
+ * tenancy record today and opens a new zero-rent placeholder one for
+ * whoever is assigned next, which then needs its real terms filled in on
+ * Tenancies. The Select/Save target the outer Details-tab form via the
+ * `form` attribute, so they work the same whether rendered inline or, as
+ * here, inside a nested modal portalled elsewhere in the DOM. */
+function ChangeTenantModal({
+  unit,
+  unitNoun,
+  availableTenants,
+  tenantFormId,
+}: {
+  unit: ManagedUnit;
+  unitNoun: string;
+  availableTenants: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  }[];
+  tenantFormId: string;
+}) {
+  return (
+    <Modal
+      title={unit.tenant ? "Change tenant" : "Assign tenant"}
+      description={`Move a different tenant into this ${unitNoun}.`}
+      overlayZClassName="z-[70]"
+      trigger={
+        <Button type="button" variant="outline" size="sm" className="shrink-0">
+          {unit.tenant ? "Manage" : "Assign"}
+        </Button>
+      }
+    >
+      <div className="space-y-4">
+        <div className="flex gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <p>
+            {unit.tenant
+              ? `Changing the tenant ends ${ownerDisplayName(unit.tenant)}'s current tenancy record today and starts a new, zero-rent placeholder agreement for whoever moves in next — you'll need to fill in the real rent, deposit and lease terms afterward in Tenancies.`
+              : `Assigning a tenant here starts a new, zero-rent placeholder tenancy — you'll need to fill in the real rent, deposit and lease terms afterward in Tenancies.`}
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`u-tenant-${unit.id}`} className="text-xs">
+            Tenant
+          </Label>
+          <Select
+            id={`u-tenant-${unit.id}`}
+            name="tenantId"
+            form={tenantFormId}
+            defaultValue={unit.tenant?.id ?? ""}
+            aria-label={`Tenant for ${unitNoun} ${unit.label}`}
+          >
+            <option value="">— Empty —</option>
+            {unit.tenant && (
+              <option value={unit.tenant.id}>
+                {ownerDisplayName(unit.tenant)}
+              </option>
+            )}
+            {availableTenants.map((tenant) => (
+              <option key={tenant.id} value={tenant.id}>
+                {ownerDisplayName(tenant)}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <SubmitButton
+          form={tenantFormId}
+          formAction={assignTenantAction}
+          size="sm"
+          className="w-full"
+          pendingText="Saving..."
+        >
+          Save
+        </SubmitButton>
+      </div>
+    </Modal>
+  );
+}
 
 /** One consolidated "Manage" surface for a unit, organized into tabs
  * (Details, Tenant, Service charge, Danger zone) rather than one long
@@ -194,7 +289,12 @@ export function UnitManageModal({
     firstName: string | null;
     lastName: string | null;
   }[];
-  availableTenants: { id: string; email: string }[];
+  availableTenants: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  }[];
   /** OA accounting funds (General Administrative, Admin, Sinking, ...) —
    * every invoice/payment picks one, see UnitFundBalance in schema.prisma. */
   funds: { id: string; label: string }[];
@@ -206,25 +306,8 @@ export function UnitManageModal({
    * rather than one of several. */
   triggerLabel?: string;
 }) {
-  const hasCharge = Boolean(
-    unit.serviceChargeAmount && unit.serviceChargeDueDate,
-  );
   const activePlan = unit.installmentPlans[0] ?? null;
   const currentBalance = moneyValue(unit.serviceChargeBalance);
-  const defaultFundId = funds[0]?.id ?? "";
-  const [paymentMethod, setPaymentMethod] = useState<string>("");
-
-  // Service charge invoices are billed for a full calendar year — default
-  // the period to Jan 1–Dec 31 of the year the invoice is being issued in,
-  // and the due date to 10 days after issuing, so the common case (invoice
-  // this year's charge, right now) needs no manual date entry at all.
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const defaultPeriodStart = `${currentYear}-01-01`;
-  const defaultPeriodEnd = `${currentYear}-12-31`;
-  const defaultInvoiceDueDate = dateInputValue(
-    new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000),
-  );
 
   const tabs: { key: TabKey; label: string; icon: typeof Pencil }[] = [
     { key: "details", label: "Details", icon: Pencil },
@@ -236,13 +319,43 @@ export function UnitManageModal({
   ];
 
   const tenantFormId = `unit-tenant-form-${unit.id}`;
+  const persistOpenKey = `unit-manage-open:${unit.id}`;
+  const persistTabKey = `unit-manage-tab:${unit.id}`;
 
   const [tab, setTab] = useState<TabKey>(defaultTab);
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(persistOpenKey) !== "1") return;
+      const stored = sessionStorage.getItem(persistTabKey);
+      if (
+        stored === "details" ||
+        stored === "ownership" ||
+        stored === "charge" ||
+        stored === "documents" ||
+        stored === "misc" ||
+        stored === "danger"
+      ) {
+        setTab(stored);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [persistOpenKey, persistTabKey]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(persistTabKey, tab);
+    } catch {
+      /* ignore */
+    }
+  }, [persistTabKey, tab]);
 
   return (
     <Modal
       title={`Manage ${unitLabel}`}
       widthClassName="max-w-3xl"
+      persistOpenKey={persistOpenKey}
       trigger={
         <button
           type="button"
@@ -352,41 +465,40 @@ export function UnitManageModal({
               </div>
             )}
             {isAdmin && (
-              <div className="col-span-full space-y-1">
-                <Label htmlFor={`u-tenant-${unit.id}`} className="text-xs">
-                  Tenant
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Select
-                    id={`u-tenant-${unit.id}`}
-                    name="tenantId"
-                    form={tenantFormId}
-                    defaultValue={unit.tenant?.id ?? ""}
-                    className="flex-1"
-                    aria-label={`Tenant for ${unitNoun} ${unit.label}`}
-                  >
-                    <option value="">— Empty —</option>
-                    {unit.tenant && (
-                      <option value={unit.tenant.id}>
-                        {unit.tenant.email}
-                      </option>
-                    )}
-                    {availableTenants.map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {tenant.email}
-                      </option>
-                    ))}
-                  </Select>
-                  <SubmitButton
-                    form={tenantFormId}
-                    formAction={assignTenantAction}
-                    variant="outline"
-                    size="sm"
-                    pendingText="Saving..."
-                  >
-                    Save
-                  </SubmitButton>
-                </div>
+              <div className="col-span-full space-y-1.5">
+                <Label className="text-xs">Tenant</Label>
+                {unit.tenant ? (
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 p-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {ownerDisplayName(unit.tenant)}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {[unit.tenant.phone, unit.tenant.email]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                    <ChangeTenantModal
+                      unit={unit}
+                      unitNoun={unitNoun}
+                      availableTenants={availableTenants}
+                      tenantFormId={tenantFormId}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border/60 p-3">
+                    <p className="text-xs text-muted-foreground">
+                      This {unitNoun} is empty.
+                    </p>
+                    <ChangeTenantModal
+                      unit={unit}
+                      unitNoun={unitNoun}
+                      availableTenants={availableTenants}
+                      tenantFormId={tenantFormId}
+                    />
+                  </div>
+                )}
               </div>
             )}
             {isAdmin && !isBuildingType && (
@@ -470,6 +582,10 @@ export function UnitManageModal({
                   unitLabel={unitLabel}
                   currentOwnerName={ownerDisplayName(unit.owner)}
                   owners={owners.filter((owner) => owner.id !== unit.owner?.id)}
+                  currentBalance={currentBalance}
+                  hasActivePlan={Boolean(
+                    activePlan?.installments.some((item) => !item.paidAt),
+                  )}
                 />
               </div>
             )}
@@ -504,8 +620,12 @@ export function UnitManageModal({
                           </div>
                           <p className="text-muted-foreground">
                             {transfer.keptServiceCharge
-                              ? "Kept the existing service charge and billing setup"
-                              : "Service charge and billing setup was cleared"}
+                              ? "Kept the existing annual service charge"
+                              : "Annual service charge setup was cleared"}
+                            {" · "}
+                            {transfer.keptInstallmentPlan
+                              ? "continued the payment plan"
+                              : "cancelled the payment plan for a new schedule"}
                             {transfer.createdBy &&
                               ` · By ${ownerDisplayName(transfer.createdBy)}`}
                           </p>
@@ -524,549 +644,8 @@ export function UnitManageModal({
           </div>
         )}
 
-        {/* ── Service charge ──────────────────────────────────────────── */}
         {tab === "charge" && (
-          <div className="space-y-4">
-            {hasCharge && unit.serviceChargeLastReceivedAt && (
-              <p className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                <Check className="h-3 w-3" />
-                Last invoiced{" "}
-                {format(unit.serviceChargeLastReceivedAt, "d MMM yyyy")}
-              </p>
-            )}
-
-            {isAdmin ? (
-              <>
-                <form className="space-y-3 rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
-                  <input type="hidden" name="unitId" value={unit.id} />
-                  <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                    <Settings2 className="h-4 w-4 text-primary" />
-                    Service charge settings
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label
-                        htmlFor={`sc-amount-${unit.id}`}
-                        className="text-xs"
-                      >
-                        Amount (OMR)
-                      </Label>
-                      <Input
-                        id={`sc-amount-${unit.id}`}
-                        name="serviceChargeAmount"
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        defaultValue={
-                          unit.serviceChargeAmount
-                            ? String(unit.serviceChargeAmount)
-                            : ""
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label
-                        htmlFor={`sc-cycle-${unit.id}`}
-                        className="text-xs"
-                      >
-                        Repeats every
-                      </Label>
-                      <Select
-                        id={`sc-cycle-${unit.id}`}
-                        name="serviceChargeCycleMonths"
-                        defaultValue={
-                          unit.serviceChargeCycleMonths?.toString() ?? "12"
-                        }
-                        required
-                      >
-                        <option value="1">1 month</option>
-                        <option value="3">3 months</option>
-                        <option value="6">6 months</option>
-                        <option value="12">12 months</option>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor={`sc-due-${unit.id}`} className="text-xs">
-                      Due date
-                    </Label>
-                    <Input
-                      id={`sc-due-${unit.id}`}
-                      name="serviceChargeDueDate"
-                      type="date"
-                      defaultValue={
-                        unit.serviceChargeDueDate
-                          ? unit.serviceChargeDueDate
-                              .toISOString()
-                              .slice(0, 10)
-                          : ""
-                      }
-                      required
-                    />
-                  </div>
-                  <SubmitButton
-                    formAction={updateUnitServiceChargeAction}
-                    size="sm"
-                    className="w-full"
-                    pendingText="Saving..."
-                  >
-                    Save service charge
-                  </SubmitButton>
-                  <CloseModalOnSubmit />
-                </form>
-
-                {/* ── Unit ledger ──────────────────────────────────────────── */}
-                <div className="space-y-3 border-t pt-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-                      <ScrollText className="h-4 w-4 text-muted-foreground" />
-                      Unit Ledger
-                    </h3>
-                    <a
-                      href={`/protected/properties/${unit.propertyId}/units/${unit.id}/ledger`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-medium text-primary hover:underline"
-                    >
-                      View full ledger
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Balance
-                    </span>
-                    <span
-                      className={cn(
-                        "text-sm font-semibold",
-                        moneyValue(unit.serviceChargeBalance) < 0
-                          ? "text-emerald-600"
-                          : moneyValue(unit.serviceChargeBalance) > 0
-                            ? "text-rose-600"
-                            : "text-muted-foreground",
-                      )}
-                    >
-                      {moneyValue(unit.serviceChargeBalance) < 0
-                        ? `Credit ${formatMoney(Math.abs(moneyValue(unit.serviceChargeBalance)))}`
-                        : formatMoney(unit.serviceChargeBalance)}
-                    </span>
-                  </div>
-
-                  {/* ── Payment plan ───────────────────────────────────── */}
-                  {activePlan ? (
-                    <div className="space-y-2 rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Payment plan
-                        </p>
-                        <form>
-                          <input type="hidden" name="planId" value={activePlan.id} />
-                          <SubmitButton
-                            formAction={cancelServiceChargeInstallmentPlanAction}
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs text-rose-600 hover:text-rose-700"
-                            pendingText="Cancelling..."
-                          >
-                            Cancel plan
-                          </SubmitButton>
-                        </form>
-                      </div>
-                      <div className="divide-y rounded-md border">
-                        {activePlan.installments.map((installment) => (
-                          <div key={installment.id} className="p-2 text-xs">
-                            <div className="flex items-center justify-between gap-2">
-                              <span>
-                                #{installment.sequence} ·{" "}
-                                {formatMoney(installment.amount)} · due{" "}
-                                {format(installment.dueDate, "d MMM yyyy")}
-                              </span>
-                              {installment.paidAt && (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 font-medium text-emerald-800">
-                                  <Check className="h-3 w-3" />
-                                  Paid {format(installment.paidAt, "d MMM yyyy")}
-                                </span>
-                              )}
-                            </div>
-                            {!installment.paidAt && (
-                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                <form>
-                                  <input
-                                    type="hidden"
-                                    name="installmentId"
-                                    value={installment.id}
-                                  />
-                                  <input
-                                    type="hidden"
-                                    name="amount"
-                                    value={String(installment.amount)}
-                                  />
-                                  <input
-                                    type="hidden"
-                                    name="paidAt"
-                                    value={dateInputValue()}
-                                  />
-                                  <SubmitButton
-                                    formAction={markInstallmentPaidAction}
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 px-2 text-xs"
-                                    pendingText="Saving..."
-                                  >
-                                    Mark paid
-                                  </SubmitButton>
-                                </form>
-                                <form>
-                                  <input
-                                    type="hidden"
-                                    name="installmentId"
-                                    value={installment.id}
-                                  />
-                                  <SubmitButton
-                                    formAction={sendInstallmentInvoiceAction}
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 px-2 text-xs"
-                                    pendingText="Sending..."
-                                  >
-                                    <Mail className="h-3 w-3" />
-                                    Send invoice
-                                  </SubmitButton>
-                                </form>
-                                {installment.reminderSentAt && (
-                                  <span className="text-[10px] text-muted-foreground">
-                                    Sent{" "}
-                                    {format(installment.reminderSentAt, "d MMM")}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    currentBalance > 0 && (
-                      <details className="rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
-                        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Set up a payment plan
-                        </summary>
-                        <form className="mt-2 space-y-2">
-                          <input type="hidden" name="unitId" value={unit.id} />
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Installments</Label>
-                              <Input
-                                name="installmentCount"
-                                type="number"
-                                min="2"
-                                max="24"
-                                defaultValue="3"
-                                className="h-8 text-xs"
-                                required
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Every</Label>
-                              <Select
-                                name="frequencyMonths"
-                                defaultValue="1"
-                                className="h-8 text-xs"
-                              >
-                                <option value="1">1 month</option>
-                                <option value="2">2 months</option>
-                                <option value="3">3 months</option>
-                                <option value="6">6 months</option>
-                              </Select>
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Start date</Label>
-                            <Input
-                              name="startDate"
-                              type="date"
-                              defaultValue={dateInputValue()}
-                              className="h-8 text-xs"
-                              required
-                            />
-                          </div>
-                          <SubmitButton
-                            formAction={createServiceChargeInstallmentPlanAction}
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            pendingText="Creating..."
-                          >
-                            Create payment plan for {formatMoney(currentBalance)}
-                          </SubmitButton>
-                        </form>
-                      </details>
-                    )
-                  )}
-
-                  {hasCharge && (
-                    <form className="space-y-2 rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
-                      <input type="hidden" name="unitId" value={unit.id} />
-                      <input type="hidden" name="fundId" value={defaultFundId} />
-                      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                        <Receipt className="h-4 w-4 text-primary" />
-                        Generate invoice
-                      </p>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Amount (OMR)</Label>
-                        <Input
-                          name="currentAmount"
-                          type="number"
-                          min="0.001"
-                          step="0.001"
-                          defaultValue={
-                            unit.serviceChargeAmount
-                              ? String(unit.serviceChargeAmount)
-                              : ""
-                          }
-                          className="h-8 text-xs"
-                          required
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Period start</Label>
-                          <Input
-                            name="periodStart"
-                            type="date"
-                            defaultValue={defaultPeriodStart}
-                            className="h-8 text-xs"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Period end</Label>
-                          <Input
-                            name="periodEnd"
-                            type="date"
-                            defaultValue={defaultPeriodEnd}
-                            className="h-8 text-xs"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Issue date</Label>
-                          <Input
-                            name="issueDate"
-                            type="date"
-                            defaultValue={dateInputValue()}
-                            className="h-8 text-xs"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Due date</Label>
-                          <Input
-                            name="dueDate"
-                            type="date"
-                            defaultValue={defaultInvoiceDueDate}
-                            className="h-8 text-xs"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Grace (days)</Label>
-                        <Input
-                          name="graceDays"
-                          type="number"
-                          min="0"
-                          defaultValue="0"
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                      <SubmitButton
-                        formAction={generateServiceChargeInvoiceAction}
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        pendingText="Generating..."
-                      >
-                        Generate invoice
-                      </SubmitButton>
-                    </form>
-                  )}
-
-                  <form className="space-y-2 rounded-xl border border-border bg-muted/10 p-4 shadow-sm">
-                    <input type="hidden" name="unitId" value={unit.id} />
-                    <input type="hidden" name="fundId" value={defaultFundId} />
-                    <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                      <Wallet className="h-4 w-4 text-primary" />
-                      Record payment
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        name="amount"
-                        type="number"
-                        min="0.001"
-                        step="0.001"
-                        placeholder="Amount"
-                        defaultValue={
-                          unit.serviceChargeAmount
-                            ? String(unit.serviceChargeAmount)
-                            : ""
-                        }
-                        className="h-8 text-xs"
-                        required
-                      />
-                      <Input
-                        name="paidAt"
-                        type="date"
-                        defaultValue={dateInputValue()}
-                        className="h-8 text-xs"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Payment method</Label>
-                      <Select
-                        name="paymentMethod"
-                        defaultValue=""
-                        className="h-8 text-xs"
-                        onChange={(event) => setPaymentMethod(event.target.value)}
-                      >
-                        <option value="">—</option>
-                        {PAYMENT_METHODS.map((method) => (
-                          <option key={method} value={method}>
-                            {PAYMENT_METHOD_LABEL[method]}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Transaction number</Label>
-                      <Input
-                        name="transactionNumber"
-                        className="h-8 text-xs"
-                        placeholder="Bank ref / receipt no."
-                      />
-                    </div>
-                    {paymentMethod === "cheque" && (
-                      <div className="grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Cheque number</Label>
-                          <Input name="chequeNumber" className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Cheque date</Label>
-                          <Input name="chequeDate" type="date" className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Bank</Label>
-                          <Input name="bank" className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Clearance status</Label>
-                          <Select
-                            name="clearanceStatus"
-                            defaultValue="pending"
-                            className="h-8 text-xs"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="cleared">Cleared</option>
-                            <option value="bounced">Bounced</option>
-                          </Select>
-                        </div>
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      <Label className="text-xs">Notes</Label>
-                      <Input name="note" className="h-8 text-xs" />
-                    </div>
-                    <SubmitButton
-                      formAction={recordServiceChargePaymentAction}
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      pendingText="Recording..."
-                    >
-                      Record payment
-                    </SubmitButton>
-                  </form>
-
-                  {unit.serviceChargeInvoices.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Past invoices
-                      </p>
-                      <div className="divide-y rounded-xl border border-border/60">
-                        {unit.serviceChargeInvoices.map((invoice) => {
-                          const credit = -moneyValue(invoice.previousBalance);
-                          return (
-                          <div
-                            key={invoice.id}
-                            className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs"
-                          >
-                            <div className="min-w-0 space-y-0.5">
-                              <span className="flex flex-wrap items-center gap-1.5">
-                                #{invoice.invoiceNumber} ·{" "}
-                                {format(invoice.issueDate, "d MMM yyyy")}
-                              </span>
-                              {credit > 0 ? (
-                                <p className="text-muted-foreground">
-                                  Invoice {formatMoney(invoice.currentAmount)} &minus;
-                                  Credit {formatMoney(credit)} ={" "}
-                                  <span className="font-medium text-foreground">
-                                    Payable {formatMoney(invoice.amountPayable)}
-                                  </span>
-                                </p>
-                              ) : (
-                                <p className="font-medium text-foreground">
-                                  {formatMoney(invoice.amountPayable)}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                              <a
-                                href={`/api/service-charge-invoices/${invoice.id}/pdf`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="font-medium text-primary hover:underline"
-                              >
-                                PDF
-                              </a>
-                              {unit.owner && (
-                                <form>
-                                  <input type="hidden" name="invoiceId" value={invoice.id} />
-                                  <SubmitButton
-                                    formAction={sendServiceChargeInvoiceAction}
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 px-1.5 text-xs text-primary hover:text-primary"
-                                    pendingText="Sending..."
-                                  >
-                                    <Send className="h-3 w-3" />
-                                    Send
-                                  </SubmitButton>
-                                </form>
-                              )}
-                            </div>
-                          </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : hasCharge ? (
-              <p className="text-sm text-muted-foreground">
-                {formatMoney(unit.serviceChargeAmount!)} every{" "}
-                {unit.serviceChargeCycleMonths}{" "}
-                {unit.serviceChargeCycleMonths === 1 ? "month" : "months"} ·
-                Due {format(unit.serviceChargeDueDate!, "d MMM yyyy")}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No service charge set up yet.
-              </p>
-            )}
-          </div>
+          <UnitServiceChargePanel unit={unit} funds={funds} isAdmin={isAdmin} />
         )}
 
         {/* ── Agreements ───────────────────────────────────────────────── */}
@@ -1088,13 +667,36 @@ export function UnitManageModal({
               back={`/protected/properties/${unit.propertyId}`}
               categories={UNIT_CONTRACT_CATEGORY}
               compact
+              inline
               readOnly={!canManageDocuments}
+              expiryRequired
             />
             {!unit.owner && (
               <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
                 Assign an owner to this {unitNoun} first — the contract is
                 between the property manager and the owner.
               </p>
+            )}
+
+            {unit.activeTenancy && (
+              <div className="space-y-3 border-t pt-3">
+                <div>
+                  <h3 className="text-sm font-medium">Tenant contract</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Agreement, municipality registration and move-in records
+                    for this {unitNoun}&rsquo;s current tenancy — the same
+                    documents shown on the tenancy&rsquo;s own record.
+                  </p>
+                </div>
+                <EntityDocumentManager
+                  documents={unit.activeTenancy.documents}
+                  targetType="tenancy"
+                  targetId={unit.activeTenancy.id}
+                  back={`/protected/properties/${unit.propertyId}`}
+                  inline
+                  readOnly={!canManageDocuments}
+                />
+              </div>
             )}
           </div>
         )}
@@ -1118,6 +720,7 @@ export function UnitManageModal({
               back={`/protected/properties/${unit.propertyId}`}
               categories={UNIT_MISC_CATEGORY}
               compact
+              inline
               readOnly={!canManageDocuments}
             />
           </div>
@@ -1160,6 +763,8 @@ function TransferOwnershipModal({
   unitLabel,
   currentOwnerName,
   owners,
+  currentBalance,
+  hasActivePlan,
 }: {
   unitId: string;
   unitLabel: string;
@@ -1170,11 +775,14 @@ function TransferOwnershipModal({
     firstName: string | null;
     lastName: string | null;
   }[];
+  currentBalance: number;
+  hasActivePlan: boolean;
 }) {
   return (
     <Modal
       title="Transfer ownership"
       description="Ends the current ownership on the transfer date and starts the new owner from the same date."
+      overlayZClassName="z-[70]"
       trigger={
         <Button type="button" variant="outline" size="sm">
           <ArrowLeftRight className="h-3.5 w-3.5" />
@@ -1187,6 +795,20 @@ function TransferOwnershipModal({
         <p className="text-sm text-muted-foreground">
           Current owner: <span className="font-medium text-foreground">{currentOwnerName}</span>
         </p>
+
+        {currentBalance > 0 ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            This unit has an outstanding balance of{" "}
+            <span className="font-semibold">{formatMoney(currentBalance)}</span>{" "}
+            from the current owner — it carries over to the new owner as-is.
+          </p>
+        ) : (
+          <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+            {currentBalance < 0
+              ? `This unit is in credit by ${formatMoney(Math.abs(currentBalance))} — the new owner inherits that credit.`
+              : "This unit's service charge is fully cleared — nothing outstanding to carry over."}
+          </p>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor={`transfer-owner-${unitId}`}>New owner</Label>
@@ -1220,8 +842,39 @@ function TransferOwnershipModal({
             defaultChecked
             className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
           />
-          Keep the current service charge and billing setup
+          Keep the current annual service charge for the new owner
         </label>
+
+        {hasActivePlan ? (
+          <fieldset className="space-y-2 rounded-lg border border-border p-3">
+            <legend className="px-1 text-sm font-medium">Payment plan</legend>
+            <p className="text-xs text-muted-foreground">
+              This unit has an active installment plan. Choose whether the new
+              owner continues it or starts a different schedule.
+            </p>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="radio"
+                name="installmentPlanAction"
+                value="continue"
+                defaultChecked
+                className="mt-0.5 h-4 w-4 accent-primary"
+              />
+              Continue the same payment plan
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="radio"
+                name="installmentPlanAction"
+                value="cancel"
+                className="mt-0.5 h-4 w-4 accent-primary"
+              />
+              Cancel it — the new owner will set up a different plan
+            </label>
+          </fieldset>
+        ) : (
+          <input type="hidden" name="installmentPlanAction" value="continue" />
+        )}
 
         <label className="flex items-start gap-2 text-sm">
           <input

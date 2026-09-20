@@ -2,6 +2,7 @@ import { Download } from "lucide-react";
 import { format } from "date-fns";
 import { notFound } from "next/navigation";
 
+import { CorrectPaymentModal } from "@/components/correct-payment-modal";
 import { PageHeader } from "@/components/page-header";
 import { PendingLink } from "@/components/ui/pending-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,19 +12,33 @@ import { formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
+import { ownerAtDate, personName } from "@/lib/unit-owner-at";
 import { cn } from "@/lib/utils";
 
 type LedgerEntry = {
   /** The invoice's due date, or the payment's paid date — one combined
    * column, same idiom as the property-ledger tools this mirrors. */
   dueOrPaidDate: Date;
+  /** When the row actually happened, for ordering — an invoice's own due
+   * date can land well after a payment made against it, so sorting by
+   * dueOrPaidDate alone can show a payment before the invoice it settles.
+   * An invoice sorts by its issue date instead; a payment has no separate
+   * issue date, so it's the same as dueOrPaidDate. */
+  sortDate: Date;
   issueDate: Date | null;
   graceDays: number | null;
   transNumber: string | null;
   description: string;
+  ownerName: string;
   periodLabel: string | null;
   debit: number;
   credit: number;
+  /** Set only for a payment row — lets an admin open "Correct Invoice" on
+   * it. Null for an invoice row (there's nothing to correct there yet). */
+  paymentId: string | null;
+  fromInstallment: boolean;
+  wasCorrected: boolean;
+  originalAmount: number | null;
 };
 
 /**
@@ -35,7 +50,8 @@ type LedgerEntry = {
  * invoice/payment funnels through the same fund, so there's nothing to
  * split by fund anymore (see the reference ledger this mirrors: Due/Paid
  * Date | Issue Date | Grace | Trans. Number | Description | Period |
- * Amount | Balance, newest first, ending on a zero "brought forward" row).
+ * Amount | Balance, oldest first, ending on a "brought forward" row that
+ * carries the same closing balance as the Service Charge Balance above it).
  */
 export default async function UnitLedgerPage({
   params,
@@ -45,6 +61,7 @@ export default async function UnitLedgerPage({
   const { id: propertyId, unitId } = await params;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = user.userType === UserType.owner;
+  const isAdmin = user.userType === UserType.admin;
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId, propertyId },
@@ -59,6 +76,13 @@ export default async function UnitLedgerPage({
       owner: {
         select: { firstName: true, lastName: true, email: true },
       },
+      ownershipTransfers: {
+        orderBy: { transferDate: "asc" },
+        select: {
+          transferDate: true,
+          fromOwner: { select: { firstName: true, lastName: true, email: true } },
+        },
+      },
       serviceChargeInvoices: {
         select: {
           id: true,
@@ -69,6 +93,9 @@ export default async function UnitLedgerPage({
           periodStart: true,
           periodEnd: true,
           currentAmount: true,
+          billedOwner: {
+            select: { firstName: true, lastName: true, email: true },
+          },
         },
         orderBy: { issueDate: "asc" },
       },
@@ -79,6 +106,11 @@ export default async function UnitLedgerPage({
           amount: true,
           transactionNumber: true,
           note: true,
+          originalAmount: true,
+          installment: { select: { id: true } },
+          billedOwner: {
+            select: { firstName: true, lastName: true, email: true },
+          },
         },
         orderBy: { paidAt: "asc" },
       },
@@ -110,25 +142,53 @@ export default async function UnitLedgerPage({
   const entries: LedgerEntry[] = [
     ...unit.serviceChargeInvoices.map((i): LedgerEntry => ({
       dueOrPaidDate: i.dueDate,
+      sortDate: i.issueDate,
       issueDate: i.issueDate,
       graceDays: i.graceDays,
       transNumber: i.invoiceNumber,
       description: "Service charge invoice",
+      ownerName:
+        personName(
+          ownerAtDate({
+            asOf: i.issueDate,
+            currentOwner: unit.owner,
+            billedOwner: i.billedOwner,
+            transfers: unit.ownershipTransfers,
+          }),
+        ) ?? "Unassigned",
       periodLabel: `${format(i.periodStart, "MMM yyyy")} – ${format(i.periodEnd, "MMM yyyy")}`,
       debit: moneyValue(i.currentAmount),
       credit: 0,
+      paymentId: null,
+      fromInstallment: false,
+      wasCorrected: false,
+      originalAmount: null,
     })),
     ...unit.serviceChargePayments.map((p): LedgerEntry => ({
       dueOrPaidDate: p.paidAt,
+      sortDate: p.paidAt,
       issueDate: null,
       graceDays: null,
       transNumber: p.transactionNumber,
       description: p.note ? `Payment — ${p.note}` : "Payment",
+      ownerName:
+        personName(
+          ownerAtDate({
+            asOf: p.paidAt,
+            currentOwner: unit.owner,
+            billedOwner: p.billedOwner,
+            transfers: unit.ownershipTransfers,
+          }),
+        ) ?? "Unassigned",
       periodLabel: null,
       debit: 0,
       credit: moneyValue(p.amount),
+      paymentId: p.id,
+      fromInstallment: p.installment != null,
+      wasCorrected: p.originalAmount != null,
+      originalAmount: p.originalAmount != null ? moneyValue(p.originalAmount) : null,
     })),
-  ].sort((a, b) => a.dueOrPaidDate.getTime() - b.dueOrPaidDate.getTime());
+  ].sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
   let running = 0;
   const rowsChronological = entries.map((entry) => {
@@ -136,9 +196,9 @@ export default async function UnitLedgerPage({
     return { ...entry, running };
   });
 
-  // Newest first, matching the reference ledger layout — the running
-  // balance itself is still computed oldest-to-newest above.
-  const rows = [...rowsChronological].reverse();
+  // Oldest first — the invoice that opened a period shows before the
+  // payment that settled it, so the sequence reads the way it happened.
+  const rows = rowsChronological;
   const totalBalance = moneyValue(unit.serviceChargeBalance);
 
   return (
@@ -244,9 +304,11 @@ export default async function UnitLedgerPage({
                     <th className="px-4 py-2 text-right">Grace</th>
                     <th className="px-4 py-2">Trans. Number</th>
                     <th className="px-4 py-2">Description</th>
+                    <th className="px-4 py-2">Owner</th>
                     <th className="px-4 py-2">Period</th>
                     <th className="px-4 py-2 text-right">Amount</th>
                     <th className="px-4 py-2 text-right">Balance</th>
+                    {isAdmin && <th className="px-4 py-2" />}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -269,7 +331,17 @@ export default async function UnitLedgerPage({
                         <td className="px-4 py-2 align-top text-muted-foreground">
                           {row.transNumber ?? "—"}
                         </td>
-                        <td className="px-4 py-2 align-top">{row.description}</td>
+                        <td className="px-4 py-2 align-top">
+                          {row.description}
+                          {row.wasCorrected && row.originalAmount != null && (
+                            <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                              Corrected from {formatMoney(row.originalAmount)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 align-top text-muted-foreground">
+                          {row.ownerName}
+                        </td>
                         <td className="px-4 py-2 align-top text-muted-foreground">
                           {row.periodLabel ?? "—"}
                         </td>
@@ -293,17 +365,35 @@ export default async function UnitLedgerPage({
                             ? `Credit ${formatMoney(Math.abs(row.running))}`
                             : formatMoney(row.running)}
                         </td>
+                        {isAdmin && (
+                          <td className="px-4 py-2 align-top">
+                            {row.paymentId && !row.fromInstallment && (
+                              <CorrectPaymentModal
+                                paymentId={row.paymentId}
+                                currentAmount={row.credit}
+                              />
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
-                  <tr className="bg-muted/20 text-muted-foreground">
-                    <td className="px-4 py-2 align-top whitespace-nowrap" colSpan={6}>
+                  <tr className="bg-muted/20 font-medium text-muted-foreground">
+                    <td className="px-4 py-2 align-top whitespace-nowrap" colSpan={7}>
                       Brought forward
                     </td>
                     <td className="px-4 py-2 text-right align-top">—</td>
-                    <td className="px-4 py-2 text-right align-top">
-                      {formatMoney(0)}
+                    <td
+                      className={cn(
+                        "px-4 py-2 text-right align-top",
+                        totalBalance < 0 ? "text-emerald-600" : "text-rose-600",
+                      )}
+                    >
+                      {totalBalance < 0
+                        ? `Credit ${formatMoney(Math.abs(totalBalance))}`
+                        : formatMoney(totalBalance)}
                     </td>
+                    {isAdmin && <td className="px-4 py-2" />}
                   </tr>
                 </tbody>
               </table>

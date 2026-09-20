@@ -23,7 +23,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { type PickableUnit } from "@/components/unit-picker";
 import { chargeBalance, dateInputValue, formatMoney } from "@/lib/finance";
-import { formatUnitLabel, isUnitRentStatementType } from "@/lib/property-types";
+import { formatUnitLabel, isIndependentType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole } from "@/lib/session";
 import {
@@ -62,7 +62,12 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
         orderBy: { createdAt: "desc" },
         include: {
           tenant: true,
-          unit: { include: { property: { include: { propertyType: true } } } },
+          unit: {
+            include: {
+              property: { include: { propertyType: true } },
+              owner: { select: { email: true, firstName: true, lastName: true } },
+            },
+          },
           documents: { orderBy: { createdAt: "desc" } },
           charges: {
             where: { status: ChargeStatus.open },
@@ -134,6 +139,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
     propertyTypeUnitNounSingular: unit.property.propertyType.unitNounSingular,
     propertyTypeUnitNounPlural: unit.property.propertyType.unitNounPlural,
     propertyTypeUnitPrefix: unit.property.propertyType.unitPrefix,
+    propertyTypeShowRentBills: unit.property.propertyType.showRentBills,
   }));
   const scheduledMonthlyRent = active.reduce(
     (total, tenancy) => total + Number(tenancy.monthlyRent),
@@ -392,11 +398,32 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                       )}
 
                       {isAdmin &&
-                        isUnitRentStatementType(
-                          tenancy.unit.property.propertyType.name,
+                        isIndependentType(
+                          tenancy.unit.property.propertyType,
                         ) && (
                           <div className="flex justify-end">
-                            <RentStatementModal tenancyId={tenancy.id} />
+                            <RentStatementModal
+                              options={[
+                                {
+                                  tenancyId: tenancy.id,
+                                  unitLabel: formatUnitLabel(
+                                    tenancy.unit.property.propertyType,
+                                    tenancy.unit.label,
+                                  ),
+                                  tenantName:
+                                    [tenancy.tenant.firstName, tenancy.tenant.lastName]
+                                      .filter(Boolean)
+                                      .join(" ") || tenancy.tenant.email,
+                                  ownerName: tenancy.unit.owner
+                                    ? [tenancy.unit.owner.firstName, tenancy.unit.owner.lastName]
+                                        .filter(Boolean)
+                                        .join(" ") || tenancy.unit.owner.email
+                                    : "Unassigned owner",
+                                  propertyName: tenancy.unit.property.name,
+                                  monthlyRent: Number(tenancy.monthlyRent),
+                                },
+                              ]}
+                            />
                           </div>
                         )}
 

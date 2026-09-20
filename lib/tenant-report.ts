@@ -20,6 +20,9 @@ export type TenantReportRow = {
 
 export type TenantReportData = {
   propertyName: string;
+  /** An OA property never bills rent — the report's own "Scheduled monthly
+   * rent" tile is meaningless there and should stay hidden. */
+  isOwnerAssociation: boolean;
   rows: TenantReportRow[];
 };
 
@@ -33,7 +36,12 @@ export async function getTenantReportData(
 ): Promise<TenantReportData | null> {
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
-    select: { name: true, area: true, buildingNumber: true },
+    select: {
+      name: true,
+      area: true,
+      buildingNumber: true,
+      propertyType: { select: { isOwnerAssociation: true } },
+    },
   });
   if (!property) return null;
 
@@ -80,7 +88,11 @@ export async function getTenantReportData(
     status: "Active",
   }));
 
-  return { propertyName: property.name, rows };
+  return {
+    propertyName: property.name,
+    isOwnerAssociation: property.propertyType.isOwnerAssociation,
+    rows,
+  };
 }
 
 export type AgreementListRow = {

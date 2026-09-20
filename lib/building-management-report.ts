@@ -73,9 +73,9 @@ export type BuildingManagementReport = {
   expenseLines: BuildingManagementReportLine[];
   totalExpense: BuildingManagementReportLine;
   finalBalance: number;
-  /** "Collect from Landlord" when expenses outran rent collected (the
-   * landlord owes the shortfall back); "to Landlord" when collection
-   * outran expenses (Rawazen owes the landlord the surplus). */
+  /** "Collect from Landlord" when company-paid expenses outran rent the
+   * company collected; "to Landlord" when company collection outran those
+   * expenses. Landlord-direct collections are excluded from this net. */
   finalBalanceLabel: "Balance Amount to Collect from Landlord" | "Balance Amount to Landlord";
 };
 
@@ -165,6 +165,7 @@ export async function getBuildingManagementReport(
     },
     select: {
       amount: true,
+      paidBy: true,
       category: { select: { name: true } },
       subcategory: true,
       units: { select: { unitId: true } },
@@ -187,6 +188,7 @@ export async function getBuildingManagementReport(
   };
 
   for (const expense of expenses) {
+    if (expense.paidBy === "owner") continue;
     const bucket = bucketFor(expense.category.name, expense.subcategory);
     bucketAmounts[bucket] += moneyValue(expense.amount);
     if (expense.units.length > 0) {
@@ -209,7 +211,9 @@ export async function getBuildingManagementReport(
   const totalExpenseUnits = new Set<string>();
   EXPENSE_BUCKETS.forEach(({ key }) => bucketUnits[key].forEach((id) => totalExpenseUnits.add(id)));
 
-  const finalBalance = totalRentalAmount - totalExpenseAmount;
+  // Settlement is company cash vs company-paid expenses. Landlord-collected
+  // rent never entered Rawazen's books, so it must not offset what we spent.
+  const finalBalance = companyAmount - totalExpenseAmount;
 
   return {
     propertyName: property.name,

@@ -22,6 +22,7 @@ export type EntityDocumentUploadGroup = {
   category: EntityDocumentCategory;
   files: File[];
   label?: string | null;
+  expiresAt?: Date | null;
 };
 
 export function uploadedFiles(formData: FormData, fieldName: string): File[] {
@@ -65,6 +66,7 @@ export async function storeEntityDocumentGroups({
   const uploaded: Array<{
     category: EntityDocumentCategory;
     label?: string | null;
+    expiresAt?: Date | null;
     file: UploadedObject;
   }> = [];
 
@@ -78,15 +80,17 @@ export async function storeEntityDocumentGroups({
       uploaded.push({
         category: candidate.category,
         label: candidate.label,
+        expiresAt: candidate.expiresAt,
         file,
       });
     }
 
     await prisma.entityDocument.createMany({
-      data: uploaded.map(({ category, label, file }) => ({
+      data: uploaded.map(({ category, label, expiresAt, file }) => ({
         ...targetData(target),
         category,
         label: label?.trim() || null,
+        expiresAt: expiresAt ?? null,
         fileName: file.fileName,
         filePath: file.objectKey,
         fileType: file.fileType,

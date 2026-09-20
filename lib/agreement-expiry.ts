@@ -2,10 +2,15 @@ import "server-only";
 
 import { differenceInCalendarDays } from "date-fns";
 
+import { ENTITY_DOCUMENT_CATEGORY_LABEL } from "@/lib/entity-documents";
 import { formatUnitLabel } from "@/lib/property-types";
+import { personDisplayName } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 
-export type ExpiryAlertKind = "tenant_agreement" | "building_contract";
+export type ExpiryAlertKind =
+  | "tenant_agreement"
+  | "building_contract"
+  | "document";
 
 export type ExpiryAlert = {
   id: string;
@@ -53,7 +58,7 @@ export async function getAgreementExpiryAlerts(): Promise<ExpiryAlert[]> {
   today.setHours(0, 0, 0, 0);
   const horizon = new Date(today.getTime() + LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000);
 
-  const [tenancies, contracts] = await Promise.all([
+  const [tenancies, contracts, documents] = await Promise.all([
     prisma.tenancy.findMany({
       where: { endDate: null, leaseEndDate: { lte: horizon } },
       select: {
@@ -83,6 +88,51 @@ export async function getAgreementExpiryAlerts(): Promise<ExpiryAlert[]> {
         propertyId: true,
         property: { select: { name: true } },
         supplier: { select: { companyName: true } },
+      },
+    }),
+    // Any document with an expiry date — an ID, insurance policy, ownership
+    // or tenancy contract, ... — feeds the same reminder ladder, regardless
+    // of which of the four possible parents (property/unit/tenancy/user)
+    // it's attached to.
+    prisma.entityDocument.findMany({
+      where: { expiresAt: { lte: horizon } },
+      select: {
+        id: true,
+        label: true,
+        category: true,
+        expiresAt: true,
+        property: { select: { id: true, name: true } },
+        unit: {
+          select: {
+            propertyId: true,
+            label: true,
+            property: {
+              select: {
+                name: true,
+                propertyType: { select: { unitPrefix: true, hasFloors: true } },
+              },
+            },
+          },
+        },
+        tenancy: {
+          select: {
+            unit: {
+              select: {
+                propertyId: true,
+                label: true,
+                property: {
+                  select: {
+                    name: true,
+                    propertyType: {
+                      select: { unitPrefix: true, hasFloors: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        user: { select: { firstName: true, lastName: true, email: true } },
       },
     }),
   ]);
@@ -117,6 +167,33 @@ export async function getAgreementExpiryAlerts(): Promise<ExpiryAlert[]> {
       endDate: c.endDate,
       daysRemaining: differenceInCalendarDays(c.endDate, today),
       href: `/protected/properties/${c.propertyId}/building-contracts`,
+    });
+  }
+
+  for (const d of documents) {
+    if (!d.expiresAt) continue;
+    const title = d.label || ENTITY_DOCUMENT_CATEGORY_LABEL[d.category];
+    const unitContext = d.unit ?? d.tenancy?.unit;
+    const subtitle = d.property
+      ? d.property.name
+      : unitContext
+        ? `${unitContext.property.name} · ${formatUnitLabel(unitContext.property.propertyType, unitContext.label)}`
+        : d.user
+          ? personDisplayName(d.user)
+          : "—";
+    const href = d.property
+      ? `/protected/properties/${d.property.id}`
+      : unitContext
+        ? `/protected/properties/${unitContext.propertyId}`
+        : "/protected/users";
+    alerts.push({
+      id: `document-${d.id}`,
+      kind: "document",
+      title,
+      subtitle,
+      endDate: d.expiresAt,
+      daysRemaining: differenceInCalendarDays(d.expiresAt, today),
+      href,
     });
   }
 

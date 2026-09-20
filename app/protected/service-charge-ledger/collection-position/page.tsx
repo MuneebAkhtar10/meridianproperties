@@ -96,7 +96,7 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
       prisma.user.findMany({
         where: { userType: UserType.user, unit: null },
         orderBy: { email: "asc" },
-        select: { id: true, email: true },
+        select: { id: true, email: true, firstName: true, lastName: true },
       }),
       prisma.fund.findMany({
         orderBy: { createdAt: "asc" },

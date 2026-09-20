@@ -265,7 +265,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
           select: {
             id: true,
             name: true,
-            propertyType: { select: { name: true } },
+            propertyType: { select: { name: true, isOwnerAssociation: true } },
           },
         })
       : Promise.resolve([]),
@@ -306,7 +306,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
   // OA properties never bill rent — no point offering them as a filter on
   // a rent & bills page.
   const properties = allProperties.filter(
-    (property) => !isBuildingType(property.propertyType.name),
+    (property) => !isBuildingType(property.propertyType),
   );
 
   const visibleCharges = sortCharges(

@@ -11,6 +11,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
+import { ownerAtDate, personName } from "@/lib/unit-owner-at";
 
 /** Admin, or the unit's own owner — same access rule as the ledger page
  * itself (app/protected/properties/[id]/units/[unitId]/ledger/page.tsx). */
@@ -35,6 +36,13 @@ export async function GET(
         },
       },
       owner: { select: { firstName: true, lastName: true, email: true } },
+      ownershipTransfers: {
+        orderBy: { transferDate: "asc" },
+        select: {
+          transferDate: true,
+          fromOwner: { select: { firstName: true, lastName: true, email: true } },
+        },
+      },
       serviceChargeInvoices: {
         select: {
           invoiceNumber: true,
@@ -44,6 +52,9 @@ export async function GET(
           periodStart: true,
           periodEnd: true,
           currentAmount: true,
+          billedOwner: {
+            select: { firstName: true, lastName: true, email: true },
+          },
         },
         orderBy: { issueDate: "asc" },
       },
@@ -53,6 +64,9 @@ export async function GET(
           amount: true,
           transactionNumber: true,
           note: true,
+          billedOwner: {
+            select: { firstName: true, lastName: true, email: true },
+          },
         },
         orderBy: { paidAt: "asc" },
       },
@@ -75,35 +89,57 @@ export async function GET(
 
   const entries: {
     dueOrPaidDate: Date;
+    sortDate: Date;
     issueDate: Date | null;
     graceDays: number | null;
     transNumber: string | null;
     description: string;
+    ownerName: string;
     periodLabel: string | null;
     debit: number;
     credit: number;
   }[] = [
     ...unit.serviceChargeInvoices.map((i) => ({
       dueOrPaidDate: i.dueDate,
+      sortDate: i.issueDate,
       issueDate: i.issueDate,
       graceDays: i.graceDays,
       transNumber: i.invoiceNumber,
       description: "Service charge invoice",
+      ownerName:
+        personName(
+          ownerAtDate({
+            asOf: i.issueDate,
+            currentOwner: unit.owner,
+            billedOwner: i.billedOwner,
+            transfers: unit.ownershipTransfers,
+          }),
+        ) ?? "Unassigned",
       periodLabel: `${format(i.periodStart, "MMM yyyy")} – ${format(i.periodEnd, "MMM yyyy")}`,
       debit: moneyValue(i.currentAmount),
       credit: 0,
     })),
     ...unit.serviceChargePayments.map((p) => ({
       dueOrPaidDate: p.paidAt,
+      sortDate: p.paidAt,
       issueDate: null,
       graceDays: null,
       transNumber: p.transactionNumber,
       description: p.note ? `Payment — ${p.note}` : "Payment",
+      ownerName:
+        personName(
+          ownerAtDate({
+            asOf: p.paidAt,
+            currentOwner: unit.owner,
+            billedOwner: p.billedOwner,
+            transfers: unit.ownershipTransfers,
+          }),
+        ) ?? "Unassigned",
       periodLabel: null,
       debit: 0,
       credit: moneyValue(p.amount),
     })),
-  ].sort((a, b) => a.dueOrPaidDate.getTime() - b.dueOrPaidDate.getTime());
+  ].sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
   let running = 0;
   const rowsChronological: UnitLedgerRow[] = entries.map((entry) => {
@@ -115,6 +151,7 @@ export async function GET(
       grace: entry.graceDays ? `${entry.graceDays}d` : "—",
       transNumber: entry.transNumber ?? "—",
       description: entry.description,
+      ownerName: entry.ownerName,
       period: entry.periodLabel ?? "—",
       amount:
         amount < 0 ? `(${formatMoney(Math.abs(amount))})` : formatMoney(amount),
@@ -127,8 +164,8 @@ export async function GET(
     };
   });
 
-  // Newest first, matching the on-screen ledger and the reference layout.
-  const rows = [...rowsChronological].reverse();
+  // Oldest first, matching the on-screen ledger.
+  const rows = rowsChronological;
   const totalBalance = moneyValue(unit.serviceChargeBalance);
 
   const pdfBuffer = await renderToBuffer(

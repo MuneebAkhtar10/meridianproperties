@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 
-import { createExpenseAction, deleteExpenseAction } from "@/app/expense-actions";
+import { deleteExpenseAction } from "@/app/expense-actions";
 import {
   createExpenseCategoryAction,
   createExpenseSubcategoryAction,
@@ -19,7 +19,7 @@ import {
 } from "@/app/expense-type-actions";
 import { EmptyState } from "@/components/empty-state";
 import { ExpenseEditModal } from "@/components/expense-edit-modal";
-import { ExpenseLogFields } from "@/components/expense-log-fields";
+import { LogExpenseForm } from "@/components/log-expense-form";
 import { ExpensesExportMenu } from "@/components/expenses-export-menu";
 import { CashFlowStatementModal } from "@/components/cash-flow-statement-modal";
 import { FormMessage, Message } from "@/components/form-message";
@@ -105,7 +105,10 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
         supplier: { select: { id: true, companyName: true } },
         fund: { select: { id: true, label: true } },
         property: {
-          select: { name: true, propertyType: { select: { name: true } } },
+          select: {
+            name: true,
+            propertyType: { select: { name: true, isOwnerAssociation: true } },
+          },
         },
         units: {
           include: {
@@ -117,7 +120,12 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                   select: {
                     name: true,
                     propertyType: {
-                      select: { name: true, unitPrefix: true, hasFloors: true },
+                      select: {
+                        name: true,
+                        unitPrefix: true,
+                        hasFloors: true,
+                        isOwnerAssociation: true,
+                      },
                     },
                   },
                 },
@@ -132,7 +140,7 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
       select: {
         id: true,
         name: true,
-        propertyType: { select: { name: true } },
+        propertyType: { select: { name: true, isOwnerAssociation: true } },
       },
     }),
     prisma.unit.findMany({
@@ -565,11 +573,11 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                             : "—";
                       const expensePropertyId =
                         expense.propertyId ?? expense.units[0]?.unit.propertyId ?? null;
-                      const expensePropertyTypeName =
-                        expense.property?.propertyType.name ??
-                        expense.units[0]?.unit.property.propertyType.name ??
-                        null;
-                      const isOaExpense = expensePropertyTypeName === "building";
+                      const isOaExpense =
+                        expense.property?.propertyType.isOwnerAssociation ??
+                        expense.units[0]?.unit.property.propertyType
+                          .isOwnerAssociation ??
+                        false;
 
                       return (
                         <div
@@ -706,129 +714,17 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
                   <CardTitle className="text-base">Log an expense</CardTitle>
                 </CardHeader>
                 <CardContent className="overflow-y-auto">
-                  <form className="space-y-5" encType="multipart/form-data">
-                    <div className="space-y-3">
-                      <ExpenseLogFields
-                        properties={properties}
-                        units={unitOptions}
-                        categories={categories}
-                        suppliers={suppliers}
-                      />
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="expense-description" className="text-xs">
-                          Description
-                        </Label>
-                        <Textarea
-                          id="expense-description"
-                          name="description"
-                          placeholder="What was this for?"
-                          className="min-h-16 text-sm"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 border-t pt-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Amount &amp; accounting
-                      </p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="min-w-0 space-y-1.5">
-                          <Label htmlFor="expense-amount" className="text-xs">
-                            Amount (OMR)
-                          </Label>
-                          <Input
-                            id="expense-amount"
-                            name="amount"
-                            type="number"
-                            min="0.001"
-                            step="0.001"
-                            required
-                          />
-                        </div>
-                        <div className="min-w-0 space-y-1.5">
-                          <Label htmlFor="expense-date" className="text-xs">
-                            Date
-                          </Label>
-                          <Input
-                            id="expense-date"
-                            name="date"
-                            type="date"
-                            className="px-2"
-                            defaultValue={dateInputValue()}
-                            required
-                          />
-                        </div>
-                        <div className="min-w-0 space-y-1.5">
-                          <Label htmlFor="expense-vat" className="text-xs">
-                            VAT (OMR)
-                          </Label>
-                          <Input
-                            id="expense-vat"
-                            name="vatAmount"
-                            type="number"
-                            min="0"
-                            step="0.001"
-                            placeholder="0.000"
-                          />
-                        </div>
-                      </div>
-                      <input type="hidden" name="fundId" value={funds[0]?.id ?? ""} />
-                    </div>
-
-                    <div className="space-y-3 border-t pt-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Paper trail
-                      </p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="min-w-0 space-y-1.5">
-                          <Label htmlFor="expense-paid-by" className="text-xs">
-                            Paid by
-                          </Label>
-                          <Select id="expense-paid-by" name="paidBy" defaultValue="management">
-                            <option value="management">Management company</option>
-                            <option value="owner">Property owner directly</option>
-                          </Select>
-                        </div>
-                        <div className="min-w-0 space-y-1.5">
-                          <Label htmlFor="expense-payment-reference" className="text-xs">
-                            Payment reference
-                          </Label>
-                          <Input
-                            id="expense-payment-reference"
-                            name="paymentReference"
-                            placeholder="Bank transfer / cheque ref."
-                          />
-                        </div>
-                        <div className="col-span-2 min-w-0 space-y-1.5">
-                          <Label htmlFor="expense-receipt" className="text-xs">
-                            Supplier invoice / receipt
-                          </Label>
-                          <UploadFileInput id="expense-receipt" name="receipt" hint="" />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="expense-notes" className="text-xs">
-                          Notes
-                        </Label>
-                        <Textarea
-                          id="expense-notes"
-                          name="notes"
-                          placeholder="Optional internal notes"
-                          className="min-h-12 text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <SubmitButton
-                      formAction={createExpenseAction}
-                      className="w-full"
-                      pendingText="Saving..."
-                    >
-                      Log expense
-                    </SubmitButton>
-                  </form>
+                  <LogExpenseForm
+                    properties={properties}
+                    units={unitOptions}
+                    categories={categories}
+                    suppliers={suppliers}
+                    defaultPropertyId={
+                      propertyFilter !== "all" ? propertyFilter : undefined
+                    }
+                    funds={funds}
+                    back="/protected/expenses"
+                  />
                 </CardContent>
               </Card>
             </div>

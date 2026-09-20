@@ -20,11 +20,13 @@ import { PageProps } from "@/types/page";
 const KIND_LABEL: Record<ExpiryAlertKind, string> = {
   tenant_agreement: "Tenant Agreement",
   building_contract: "Building Contract",
+  document: "Document",
 };
 
 const KIND_BADGE: Record<ExpiryAlertKind, string> = {
   tenant_agreement: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
   building_contract: "bg-cyan-50 text-cyan-700 ring-cyan-600/20",
+  document: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-600/20",
 };
 
 const BUCKET_ORDER: ExpiryBucket[] = ["expired", "7", "15", "30", "60", "90"];
@@ -62,7 +64,9 @@ export default async function AgreementExpiryReportPage({
     ? (params.bucket as ExpiryBucket)
     : "all";
   const kindFilter =
-    params.kind === "tenant_agreement" || params.kind === "building_contract"
+    params.kind === "tenant_agreement" ||
+    params.kind === "building_contract" ||
+    params.kind === "document"
       ? (params.kind as ExpiryAlertKind)
       : "all";
 
@@ -100,7 +104,7 @@ export default async function AgreementExpiryReportPage({
     <div className="w-full space-y-5 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Agreement Expiry"
-        description="Every tenant, building and supplier agreement approaching or past its expiry date."
+        description="Every tenant, building and supplier agreement, plus any document with its own expiry date, approaching or past due."
         back={{ href: "/protected/reports", label: "Reports" }}
       />
 
@@ -131,6 +135,7 @@ export default async function AgreementExpiryReportPage({
             { value: "all", label: "All types" },
             { value: "tenant_agreement", label: "Tenant Agreements" },
             { value: "building_contract", label: "Building Contracts" },
+            { value: "document", label: "Documents" },
           ] as const
         ).map((option) => {
           const active = kindFilter === option.value;

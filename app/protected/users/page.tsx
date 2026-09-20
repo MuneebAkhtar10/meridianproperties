@@ -152,6 +152,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
     propertyTypeUnitNounSingular: unit.property.propertyType.unitNounSingular,
     propertyTypeUnitNounPlural: unit.property.propertyType.unitNounPlural,
     propertyTypeUnitPrefix: unit.property.propertyType.unitPrefix,
+    propertyTypeShowRentBills: unit.property.propertyType.showRentBills,
   }));
 
   return (

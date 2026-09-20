@@ -21,12 +21,13 @@ async function validCategoryAndSubcategory(
   subcategory: string | undefined,
 ): Promise<boolean> {
   if (!categoryId || !subcategory) return false;
-  const category = await prisma.expenseCategoryType.findUnique({
-    where: { id: categoryId },
-    include: { subcategories: { select: { label: true } } },
+  const match = await prisma.expenseSubcategoryType.findUnique({
+    where: {
+      categoryId_label: { categoryId, label: subcategory },
+    },
+    select: { id: true },
   });
-  if (!category) return false;
-  return category.subcategories.some((s) => s.label === subcategory);
+  return Boolean(match);
 }
 
 /** Empty string (the "Company default" option) means no external
@@ -37,16 +38,21 @@ async function validSupplier(
   categoryId: string,
 ): Promise<boolean> {
   if (!supplierId) return true;
-  const supplier = await prisma.supplier.findUnique({
-    where: { id: supplierId },
-    include: { categories: { select: { categoryId: true } } },
+  const link = await prisma.supplierCategory.findUnique({
+    where: { supplierId_categoryId: { supplierId, categoryId } },
+    select: { supplierId: true },
   });
-  if (!supplier) return false;
-  return supplier.categories.some((c) => c.categoryId === categoryId);
+  return Boolean(link);
 }
 
 export const createExpenseAction = async (formData: FormData) => {
   const admin = await requireRole(UserType.admin);
+
+  // Defaults to the Expenses page itself, but a property page's own "Add
+  // an expense" modal passes its own URL here so logging one doesn't
+  // navigate the admin away from the property they're looking at.
+  const backRaw = formData.get("back")?.toString();
+  const back = backRaw?.startsWith("/protected") ? backRaw : EXPENSES_PATH;
 
   const propertyId = formData.get("propertyId")?.toString();
   const mode = formData.get("mode")?.toString();
@@ -82,8 +88,8 @@ export const createExpenseAction = async (formData: FormData) => {
     !propertyId ||
     (mode !== "common" && mode !== "units") ||
     (mode === "units" && unitIds.length === 0) ||
-    !(await validCategoryAndSubcategory(categoryId, subcategory)) ||
-    !(await validSupplier(supplierId, categoryId!)) ||
+    !categoryId ||
+    !subcategory ||
     !description ||
     !amount ||
     vatAmount === null ||
@@ -92,17 +98,36 @@ export const createExpenseAction = async (formData: FormData) => {
   ) {
     return encodedRedirect(
       "error",
-      EXPENSES_PATH,
+      back,
       "Complete the expense details correctly.",
     );
   }
 
-  const property = await prisma.property.findUnique({
-    where: { id: propertyId },
-    select: { id: true },
-  });
+  const [categoryOk, supplierOk, property, units] = await Promise.all([
+    validCategoryAndSubcategory(categoryId, subcategory),
+    validSupplier(supplierId, categoryId),
+    prisma.property.findUnique({
+      where: { id: propertyId },
+      select: { id: true },
+    }),
+    mode === "units"
+      ? prisma.unit.findMany({
+          where: { id: { in: unitIds }, propertyId },
+          select: { id: true },
+        })
+      : Promise.resolve([] as { id: string }[]),
+  ]);
+
+  if (!categoryOk || !supplierOk) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Complete the expense details correctly.",
+    );
+  }
+
   if (!property) {
-    return encodedRedirect("error", EXPENSES_PATH, "Property not found.");
+    return encodedRedirect("error", back, "Property not found.");
   }
 
   // Common area logs one property-wide row. Specific units log ONE row too
@@ -114,14 +139,10 @@ export const createExpenseAction = async (formData: FormData) => {
   if (mode === "common") {
     targetPropertyId = propertyId;
   } else {
-    const units = await prisma.unit.findMany({
-      where: { id: { in: unitIds }, propertyId },
-      select: { id: true },
-    });
     if (units.length !== unitIds.length) {
       return encodedRedirect(
         "error",
-        EXPENSES_PATH,
+        back,
         "One or more selected units don't belong to that property.",
       );
     }
@@ -172,10 +193,11 @@ export const createExpenseAction = async (formData: FormData) => {
   }
 
   revalidatePath(EXPENSES_PATH);
+  if (back !== EXPENSES_PATH) revalidatePath(back);
 
   return encodedRedirect(
     uploadError ? "error" : "success",
-    EXPENSES_PATH,
+    back,
     uploadError
       ? `Expense saved, but the receipt wasn't: ${uploadError}`
       : "Expense logged.",
@@ -212,14 +234,26 @@ export const updateExpenseAction = async (formData: FormData) => {
 
   if (
     !expenseId ||
-    !(await validCategoryAndSubcategory(categoryId, subcategory)) ||
-    !(await validSupplier(supplierId, categoryId!)) ||
+    !categoryId ||
+    !subcategory ||
     !description ||
     !amount ||
     vatAmount === null ||
     !fundId ||
     !date
   ) {
+    return encodedRedirect(
+      "error",
+      EXPENSES_PATH,
+      "Complete the expense details correctly.",
+    );
+  }
+
+  const [categoryOk, supplierOk] = await Promise.all([
+    validCategoryAndSubcategory(categoryId, subcategory),
+    validSupplier(supplierId, categoryId),
+  ]);
+  if (!categoryOk || !supplierOk) {
     return encodedRedirect(
       "error",
       EXPENSES_PATH,

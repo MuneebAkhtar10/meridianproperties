@@ -74,25 +74,55 @@ export async function getCollectionPositionData(
               hasFloors: true,
               hasBedrooms: true,
               unitNounSingular: true,
+              isOwnerAssociation: true,
             },
           },
         },
       },
       owner: { select: { id: true, email: true, firstName: true, lastName: true } },
-      tenant: { select: { id: true, email: true } },
+      tenant: {
+        select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+      },
       documents: { orderBy: { createdAt: "desc" } },
+      tenancies: {
+        where: { endDate: null },
+        take: 1,
+        select: { id: true, documents: { orderBy: { createdAt: "desc" } } },
+      },
       serviceChargeInvoices: {
         orderBy: { issueDate: "desc" },
         select: {
           id: true,
           invoiceNumber: true,
           issueDate: true,
+          dueDate: true,
+          graceDays: true,
+          periodStart: true,
+          periodEnd: true,
           currentAmount: true,
           previousBalance: true,
           amountPayable: true,
+          billedOwner: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
         },
       },
-      serviceChargePayments: { select: { amount: true } },
+      serviceChargePayments: {
+        orderBy: { paidAt: "desc" },
+        select: {
+          id: true,
+          amount: true,
+          paidAt: true,
+          note: true,
+          transactionNumber: true,
+          originalAmount: true,
+          correctionNote: true,
+          installment: { select: { id: true } },
+          billedOwner: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+        },
+      },
       installmentPlans: {
         where: { cancelledAt: null },
         orderBy: { createdAt: "desc" },
@@ -192,7 +222,7 @@ export async function getCollectionPositionData(
       unitNounCap: propertyType.unitNounSingular,
       hasFloors: propertyType.hasFloors,
       hasBedrooms: propertyType.hasBedrooms,
-      isBuildingType: isBuildingType(propertyType.name),
+      isBuildingType: isBuildingType(propertyType),
     };
   });
 

@@ -66,7 +66,12 @@ export function ServiceChargeBulkTable({
     firstName: string | null;
     lastName: string | null;
   }[];
-  availableTenants: { id: string; email: string }[];
+  availableTenants: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  }[];
   funds: { id: string; label: string }[];
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());

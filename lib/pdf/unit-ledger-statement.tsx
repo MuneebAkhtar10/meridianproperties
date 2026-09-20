@@ -6,7 +6,8 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
  * invoice/payment funnels through the same fund, so there's nothing left to
  * split by fund), matching the reference ledger's own columns — Due/Paid
  * Date | Issue Date | Grace | Trans. Number | Description | Period |
- * Amount | Balance, newest first, ending on a zero "brought forward" row.
+ * Amount | Balance, oldest first, ending on a "brought forward" row that
+ * carries the same closing balance as the Service Charge Balance above it.
  */
 
 const COLORS = {
@@ -110,12 +111,13 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   cell: { padding: 5, fontSize: 8 },
-  colDate: { width: "12%" },
-  colIssue: { width: "11%" },
-  colGrace: { width: "7%", textAlign: "right" },
-  colTrans: { width: "12%" },
-  colDescription: { width: "20%" },
-  colPeriod: { width: "16%" },
+  colDate: { width: "10%" },
+  colIssue: { width: "9%" },
+  colGrace: { width: "6%", textAlign: "right" },
+  colTrans: { width: "10%" },
+  colDescription: { width: "16%" },
+  colOwner: { width: "14%" },
+  colPeriod: { width: "13%" },
   colAmount: { width: "11%", textAlign: "right" },
   colBalance: { width: "11%", textAlign: "right" },
   totalRow: {
@@ -151,6 +153,7 @@ export type UnitLedgerRow = {
   grace: string;
   transNumber: string;
   description: string;
+  ownerName: string;
   period: string;
   amount: string;
   amountNegative: boolean;
@@ -232,6 +235,7 @@ export function UnitLedgerStatementDocument({
             <Text style={[styles.cellHeader, styles.colDescription]}>
               Description
             </Text>
+            <Text style={[styles.cellHeader, styles.colOwner]}>Owner</Text>
             <Text style={[styles.cellHeader, styles.colPeriod]}>Period</Text>
             <Text style={[styles.cellHeader, styles.colAmount]}>Amount</Text>
             <Text style={[styles.cellHeader, styles.colBalance]}>Balance</Text>
@@ -252,6 +256,7 @@ export function UnitLedgerStatementDocument({
                 <Text style={[styles.cell, styles.colDescription]}>
                   {row.description}
                 </Text>
+                <Text style={[styles.cell, styles.colOwner]}>{row.ownerName}</Text>
                 <Text style={[styles.cell, styles.colPeriod]}>{row.period}</Text>
                 <Text
                   style={[
@@ -282,8 +287,17 @@ export function UnitLedgerStatementDocument({
               Brought forward
             </Text>
             <Text style={[styles.cell, styles.colAmount]}>—</Text>
-            <Text style={[styles.cell, styles.colBalance, { fontFamily: "Helvetica-Bold" }]}>
-              0.000
+            <Text
+              style={[
+                styles.cell,
+                styles.colBalance,
+                {
+                  fontFamily: "Helvetica-Bold",
+                  color: totalNegative ? COLORS.emerald : COLORS.rose,
+                },
+              ]}
+            >
+              {totalBalance}
             </Text>
           </View>
         </View>

@@ -3,6 +3,10 @@ import "server-only";
 import { differenceInCalendarDays, format } from "date-fns";
 
 import { notifyInstallmentDue } from "@/lib/notifications";
+import {
+  pdfAttachmentFromResult,
+  renderInstallmentInvoicePdf,
+} from "@/lib/pdf/render-service-charge-invoice";
 import { prisma } from "@/lib/prisma";
 import { UserType } from "@/lib/generated/prisma/client";
 
@@ -70,6 +74,9 @@ export async function runInstallmentReminders(): Promise<{
     );
     if (recipientIds.length === 0) continue;
 
+    const pdf = await renderInstallmentInvoicePdf(installment.id);
+    const attachments = pdf ? [pdfAttachmentFromResult(pdf)] : undefined;
+
     await notifyInstallmentDue({
       propertyId: unit.propertyId,
       propertyName: unit.property.name,
@@ -79,6 +86,7 @@ export async function runInstallmentReminders(): Promise<{
       amount: `OMR ${Number(installment.amount).toFixed(3)}`,
       dueDate: format(installment.dueDate, "d MMM yyyy"),
       recipientIds,
+      attachments,
     });
 
     await prisma.serviceChargeInstallment.update({

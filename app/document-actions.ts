@@ -9,6 +9,7 @@ import {
   uploadedFiles,
   type EntityDocumentTarget,
 } from "@/lib/entity-document-service";
+import { parseDate } from "@/lib/finance";
 import {
   categoriesForTarget,
   type EntityDocumentTargetType,
@@ -100,7 +101,18 @@ async function revalidateDocumentTarget(
   }
 }
 
-export const uploadEntityDocumentsAction = async (formData: FormData) => {
+export type UploadDocumentsState = {
+  ok: boolean;
+  message: string;
+} | null;
+
+/** Shared upload logic for both the redirect-based action (every
+ * standalone documents page) and the inline one (used inside a modal,
+ * where navigating away would close it) — same validation, same storage
+ * call, same revalidation, just a different way of reporting the result. */
+async function performDocumentUpload(
+  formData: FormData,
+): Promise<{ back: string; ok: boolean; message: string }> {
   const user = await requireUser();
   const back = safeBack(formData.get("back"));
   const target = parseDocumentTarget(
@@ -109,6 +121,7 @@ export const uploadEntityDocumentsAction = async (formData: FormData) => {
   );
   const category = formData.get("category")?.toString();
   const label = formData.get("label")?.toString().trim() || null;
+  const expiresAt = parseDate(formData.get("expiresAt")?.toString());
   const documents = uploadedFiles(formData, "documents");
 
   if (
@@ -123,11 +136,26 @@ export const uploadEntityDocumentsAction = async (formData: FormData) => {
     documents.length === 0 ||
     !(await canManageTarget(user, target))
   ) {
-    return encodedRedirect(
-      "error",
+    return {
       back,
-      "Select a valid document category and at least one PDF or image.",
-    );
+      ok: false,
+      message: "Select a valid document category and at least one PDF or image.",
+    };
+  }
+
+  // A tenancy document (agreement, municipality registration, ...) and an
+  // ownership contract both always have a real-world term, so unlike other
+  // document types their expiry isn't optional — must agree with
+  // EntityDocumentManager's matching client-side `expiryRequired`.
+  const expiryRequired =
+    target.type === "tenancy" ||
+    category === EntityDocumentCategory.ownership_contract;
+  if (expiryRequired && !expiresAt) {
+    return {
+      back,
+      ok: false,
+      message: "Enter an expiry date for this document.",
+    };
   }
 
   // The redirect stays outside the try on purpose. `redirect()` reports itself by
@@ -145,6 +173,7 @@ export const uploadEntityDocumentsAction = async (formData: FormData) => {
         {
           category: category as EntityDocumentCategory,
           label,
+          expiresAt,
           files: documents,
         },
       ],
@@ -160,11 +189,30 @@ export const uploadEntityDocumentsAction = async (formData: FormData) => {
     await revalidateDocumentTarget(target, back);
   }
 
-  return encodedRedirect(
-    uploadError ? "error" : "success",
+  return {
     back,
-    uploadError ?? `${count} document${count === 1 ? "" : "s"} uploaded.`,
-  );
+    ok: !uploadError,
+    message:
+      uploadError ?? `${count} document${count === 1 ? "" : "s"} uploaded.`,
+  };
+}
+
+export const uploadEntityDocumentsAction = async (formData: FormData) => {
+  const { back, ok, message } = await performDocumentUpload(formData);
+  return encodedRedirect(ok ? "success" : "error", back, message);
+};
+
+/** Same upload, but for a form embedded inside a modal (e.g. the unit
+ * Manage modal's Agreements tab) — returns the result instead of
+ * redirecting, so the modal stays open and shows the outcome inline via
+ * useActionState rather than navigating away to show a page-level banner
+ * the modal itself would cover up anyway. */
+export const uploadEntityDocumentsInlineAction = async (
+  _prevState: UploadDocumentsState,
+  formData: FormData,
+): Promise<UploadDocumentsState> => {
+  const { ok, message } = await performDocumentUpload(formData);
+  return { ok, message };
 };
 
 export const deleteEntityDocumentAction = async (formData: FormData) => {

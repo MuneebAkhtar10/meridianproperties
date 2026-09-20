@@ -69,7 +69,7 @@ export default async function ReportIssuePage({ searchParams }: PageProps) {
           <ReportForm
             locationOptions={unit.property.propertyType.locationOptions}
             unitNoun={unit.property.propertyType.unitNounSingular.toLowerCase()}
-            allowCommonArea={unitCount > 1}
+            allowCommonArea={unitCount > 1 && unit.property.propertyType.hasCommonAreas}
           />
         </>
       )}

@@ -9,6 +9,10 @@ import {
   notifyServiceChargeOverdue,
   notifyServiceChargeUpcoming,
 } from "@/lib/notifications";
+import {
+  pdfAttachmentFromResult,
+  renderServiceChargeInvoicePdf,
+} from "@/lib/pdf/render-service-charge-invoice";
 import { prisma } from "@/lib/prisma";
 
 const UPCOMING_WINDOW_DAYS = 7;
@@ -95,6 +99,16 @@ export async function runServiceChargeReminders(): Promise<{
     const amount = formatMoney(unit.serviceChargeAmount);
     const propertyName = `${unit.property.name} — Unit ${unit.label}`;
 
+    const latestInvoice = await prisma.serviceChargeInvoice.findFirst({
+      where: { unitId: unit.id },
+      orderBy: { issueDate: "desc" },
+      select: { id: true },
+    });
+    const pdf = latestInvoice
+      ? await renderServiceChargeInvoicePdf(latestInvoice.id)
+      : null;
+    const attachments = pdf ? [pdfAttachmentFromResult(pdf)] : undefined;
+
     if (stageKey === "upcoming") {
       await notifyServiceChargeUpcoming({
         propertyId: unit.propertyId,
@@ -102,6 +116,7 @@ export async function runServiceChargeReminders(): Promise<{
         amount,
         dueDate: format(unit.serviceChargeDueDate, "d MMM yyyy"),
         recipientIds,
+        attachments,
       });
     } else if (stageKey === "due") {
       await notifyServiceChargeDue({
@@ -109,6 +124,7 @@ export async function runServiceChargeReminders(): Promise<{
         propertyName,
         amount,
         recipientIds,
+        attachments,
       });
     } else {
       await notifyServiceChargeOverdue({
@@ -117,6 +133,7 @@ export async function runServiceChargeReminders(): Promise<{
         amount,
         daysOverdue: Math.abs(daysUntilDue),
         recipientIds,
+        attachments,
       });
     }
 

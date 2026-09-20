@@ -68,7 +68,7 @@ export async function GET(
       rentalTotal: toLine(report.rentalCollection.total),
       expenseRows: report.expenseLines.map(toLine),
       expenseTotal: toLine(report.totalExpense),
-      totalRentalCollection: trimOmr(report.rentalCollection.total.amount),
+      totalRentalCollection: trimOmr(report.rentalCollection.withCompany.amount),
       totalExpense: trimOmr(report.totalExpense.amount),
       finalBalanceLabel: report.finalBalanceLabel,
       finalBalance: trimOmr(report.finalBalance),

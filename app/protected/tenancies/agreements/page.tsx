@@ -50,7 +50,7 @@ export default async function AgreementListPage({ searchParams }: PageProps) {
     getAgreementListData(propertyFilter, user, tenantFilter),
     prisma.property.findMany({
       // OA properties never have tenant agreements.
-      where: { propertyType: { name: { not: "building" } } },
+      where: { propertyType: { isOwnerAssociation: false } },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

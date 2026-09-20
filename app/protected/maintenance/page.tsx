@@ -137,7 +137,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
     }),
     prisma.property.findMany({
       where: isOwner ? { units: { some: { ownerId: user.id } } } : {},
-      select: { id: true, name: true, propertyType: { select: { name: true } } },
+      select: { id: true, name: true, propertyType: { select: { name: true, isOwnerAssociation: true } } },
       orderBy: { name: "asc" },
     }),
   ]);
@@ -145,7 +145,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
   // OA properties never accept maintenance requests — no point offering
   // them as a filter here.
   const properties = allProperties.filter(
-    (property) => !isBuildingType(property.propertyType.name),
+    (property) => !isBuildingType(property.propertyType),
   );
 
   const buildHref = (next: Record<string, string>) => {

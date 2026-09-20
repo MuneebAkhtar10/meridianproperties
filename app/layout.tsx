@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { Building2 } from "lucide-react";
 
 import "./globals.css";
@@ -64,45 +65,42 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const user = await getCurrentUser();
+  const cookieStore = await cookies();
+  const defaultCollapsed = cookieStore.get("sidebar_collapsed")?.value === "1";
 
   const shell = user ? (
-    <div className="min-h-screen">
-      <AppSidebar
-        items={NAV_BY_ROLE[user.userType]}
-        homeHref="/protected"
-        footer={
-          <UserMenu
-            email={user.email}
-            userType={user.userType}
-            firstName={user.firstName}
-            lastName={user.lastName}
-          />
-        }
-        topbar={<AppTopbar items={TOOLBAR_BY_ROLE[user.userType]} />}
-      />
-
-      {/* Offset by the fixed sidebar's width on desktop; the sidebar itself
-          becomes a slide-in drawer below `lg`, so no offset is needed there. */}
-      <div className="flex min-h-screen flex-col lg:pl-64">
-        {/* Mirrors the mobile bar rendered inside AppSidebar — desktop has no
-            top bar of its own otherwise, so quick links + notifications need
-            a home here instead. */}
-        <div className="hidden h-14 items-center justify-end border-b border-border/60 px-4 lg:flex sm:px-6 lg:px-8">
-          <AppTopbar items={TOOLBAR_BY_ROLE[user.userType]} />
-        </div>
-
-        <main className="min-w-0 flex-1">{children}</main>
-
-        <footer className="border-t border-border/60 py-6">
-          <div className="w-full px-4 sm:px-6 lg:px-8">
-            <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} PropertyCare. All rights
-              reserved.
-            </p>
-          </div>
-        </footer>
+    <AppSidebar
+      items={NAV_BY_ROLE[user.userType]}
+      homeHref="/protected"
+      defaultCollapsed={defaultCollapsed}
+      footer={
+        <UserMenu
+          email={user.email}
+          userType={user.userType}
+          firstName={user.firstName}
+          lastName={user.lastName}
+        />
+      }
+      topbar={<AppTopbar items={TOOLBAR_BY_ROLE[user.userType]} />}
+    >
+      {/* Mirrors the mobile bar rendered inside AppSidebar — desktop has no
+          top bar of its own otherwise, so quick links + notifications need
+          a home here instead. */}
+      <div className="hidden h-14 items-center justify-end border-b border-border/60 px-4 lg:flex sm:px-6 lg:px-8">
+        <AppTopbar items={TOOLBAR_BY_ROLE[user.userType]} />
       </div>
-    </div>
+
+      <main className="min-w-0 flex-1">{children}</main>
+
+      <footer className="border-t border-border/60 py-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <p className="text-xs text-muted-foreground">
+            &copy; {new Date().getFullYear()} PropertyCare. All rights
+            reserved.
+          </p>
+        </div>
+      </footer>
+    </AppSidebar>
   ) : (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">

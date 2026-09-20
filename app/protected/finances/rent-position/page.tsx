@@ -63,7 +63,7 @@ export default async function RentPositionPage({ searchParams }: PageProps) {
     getRentPositionData(propertyFilter),
     prisma.property.findMany({
       // OA properties never bill rent — no point offering them here.
-      where: { propertyType: { name: { not: "building" } } },
+      where: { propertyType: { isOwnerAssociation: false } },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
@@ -242,7 +242,7 @@ export default async function RentPositionPage({ searchParams }: PageProps) {
                   </td>
                   <td className="px-3 py-2 align-top">
                     <PendingLink
-                      href={`/protected/properties/${row.propertyId}`}
+                      href={`/protected/finances?property=${row.propertyId}`}
                       className="text-xs font-medium text-primary hover:underline"
                     >
                       Manage

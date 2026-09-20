@@ -2,10 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 
-import { formatMoney, parseDate, parsePositiveMoney } from "@/lib/finance";
+import {
+  formatMoney,
+  parseDate,
+  parseServiceCharge,
+  parsePositiveMoney,
+} from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { notifyOwnerCustom } from "@/lib/notifications";
+import {
+  pdfAttachmentFromResult,
+  renderServiceChargeInvoicePdf,
+} from "@/lib/pdf/render-service-charge-invoice";
 import { formatUnitLabel } from "@/lib/property-types";
 import { encodedRedirect } from "@/utils/utils";
 import { PaymentMethod, UserType } from "@/lib/generated/prisma/client";
@@ -20,6 +29,18 @@ async function nextInvoiceNumber(): Promise<string> {
   return nextval.toString().padStart(7, "0");
 }
 
+type InvoiceGenerationInput = {
+  unitId: string;
+  fundId: string | undefined;
+  periodStart: Date | null;
+  periodEnd: Date | null;
+  issueDate: Date | null;
+  dueDate: Date | null;
+  graceDays: number;
+  currentAmount: string | null;
+  createdById: string;
+};
+
 /**
  * Generates one invoice against ONE fund's running balance (see
  * UnitFundBalance) — billing two funds in the same period means
@@ -27,58 +48,46 @@ async function nextInvoiceNumber(): Promise<string> {
  * that fund's own balance row (creating it at 0 first if the unit has
  * never been billed against this fund before), and keeps
  * Unit.serviceChargeBalance (the maintained grand total across every
- * fund) moving by the exact same delta in the same transaction.
+ * fund) moving by the exact same delta in the same transaction. Shared by
+ * the standalone "Generate invoice" action and the combined "Save service
+ * charge & generate invoice" one, so both bill exactly the same way.
  */
-export const generateServiceChargeInvoiceAction = async (
-  formData: FormData,
-) => {
-  const admin = await requireRole(UserType.admin);
-
-  const unitId = formData.get("unitId")?.toString();
-  const fundId = formData.get("fundId")?.toString();
-  const periodStart = parseDate(formData.get("periodStart")?.toString());
-  const periodEnd = parseDate(formData.get("periodEnd")?.toString());
-  const issueDate = parseDate(formData.get("issueDate")?.toString());
-  const dueDate = parseDate(formData.get("dueDate")?.toString());
-  const graceDaysRaw = formData.get("graceDays")?.toString();
-  const graceDays = graceDaysRaw ? Number(graceDaysRaw) : 0;
-  const currentAmount = parsePositiveMoney(formData.get("currentAmount"));
-
-  if (!unitId) {
-    return encodedRedirect("error", "/protected/properties", "Invalid unit.");
+async function generateServiceChargeInvoice({
+  unitId,
+  fundId,
+  periodStart,
+  periodEnd,
+  issueDate,
+  dueDate,
+  graceDays,
+  currentAmount,
+  createdById,
+}: InvoiceGenerationInput): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!fundId) {
+    return { ok: false, error: "Select which fund this invoice bills." };
+  }
+  if (!periodStart || !periodEnd || !issueDate || !dueDate) {
+    return { ok: false, error: "Enter valid dates." };
+  }
+  if (periodEnd < periodStart) {
+    return { ok: false, error: "The period end can't be before its start." };
+  }
+  if (!Number.isInteger(graceDays) || graceDays < 0) {
+    return { ok: false, error: "Enter a valid grace period." };
+  }
+  if (!currentAmount) {
+    return { ok: false, error: "Enter a valid invoice amount." };
   }
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
     select: {
-      propertyId: true,
+      ownerId: true,
       fundBalances: { select: { fundId: true, balance: true } },
     },
   });
   if (!unit) {
-    return encodedRedirect("error", "/protected/properties", "Unit not found.");
-  }
-
-  const back = `/protected/properties/${unit.propertyId}`;
-
-  if (!fundId) {
-    return encodedRedirect("error", back, "Select which fund this invoice bills.");
-  }
-  if (!periodStart || !periodEnd || !issueDate || !dueDate) {
-    return encodedRedirect("error", back, "Enter valid dates.");
-  }
-  if (periodEnd < periodStart) {
-    return encodedRedirect(
-      "error",
-      back,
-      "The period end can't be before its start.",
-    );
-  }
-  if (!Number.isInteger(graceDays) || graceDays < 0) {
-    return encodedRedirect("error", back, "Enter a valid grace period.");
-  }
-  if (!currentAmount) {
-    return encodedRedirect("error", back, "Enter a valid invoice amount.");
+    return { ok: false, error: "Unit not found." };
   }
 
   // One invoice per fund per billed period — generating a second one for a
@@ -94,11 +103,10 @@ export const generateServiceChargeInvoiceAction = async (
     select: { invoiceNumber: true, periodStart: true, periodEnd: true },
   });
   if (overlapping) {
-    return encodedRedirect(
-      "error",
-      back,
-      `An invoice already covers this period — #${overlapping.invoiceNumber} (${overlapping.periodStart.toLocaleDateString("en-GB")}–${overlapping.periodEnd.toLocaleDateString("en-GB")}).`,
-    );
+    return {
+      ok: false,
+      error: `An invoice already covers this period — #${overlapping.invoiceNumber} (${overlapping.periodStart.toLocaleDateString("en-GB")}–${overlapping.periodEnd.toLocaleDateString("en-GB")}).`,
+    };
   }
 
   const existingFundBalance = unit.fundBalances.find((b) => b.fundId === fundId);
@@ -122,7 +130,8 @@ export const generateServiceChargeInvoiceAction = async (
         currentAmount,
         amountPayable,
         closingBalance,
-        createdById: admin.id,
+        billedOwnerId: unit.ownerId,
+        createdById,
         lines: {
           create: {
             fundId,
@@ -154,10 +163,270 @@ export const generateServiceChargeInvoiceAction = async (
     }),
   ]);
 
+  return { ok: true };
+}
+
+function parseInvoiceFormFields(formData: FormData) {
+  return {
+    unitId: formData.get("unitId")?.toString(),
+    fundId: formData.get("fundId")?.toString(),
+    periodStart: parseDate(formData.get("periodStart")?.toString()),
+    periodEnd: parseDate(formData.get("periodEnd")?.toString()),
+    issueDate: parseDate(formData.get("issueDate")?.toString()),
+    dueDate: parseDate(formData.get("dueDate")?.toString()),
+    graceDays: formData.get("graceDays")?.toString()
+      ? Number(formData.get("graceDays")?.toString())
+      : 0,
+    currentAmount: parsePositiveMoney(formData.get("currentAmount")),
+  };
+}
+
+export const generateServiceChargeInvoiceAction = async (
+  formData: FormData,
+) => {
+  const admin = await requireRole(UserType.admin);
+  const fields = parseInvoiceFormFields(formData);
+
+  if (!fields.unitId) {
+    return encodedRedirect("error", "/protected/properties", "Invalid unit.");
+  }
+
+  const unit = await prisma.unit.findUnique({
+    where: { id: fields.unitId },
+    select: { propertyId: true },
+  });
+  if (!unit) {
+    return encodedRedirect("error", "/protected/properties", "Unit not found.");
+  }
+  const back = `/protected/properties/${unit.propertyId}`;
+
+  const result = await generateServiceChargeInvoice({
+    ...fields,
+    unitId: fields.unitId,
+    createdById: admin.id,
+  });
+  if (!result.ok) {
+    return encodedRedirect("error", back, result.error);
+  }
+
   revalidatePath(back);
   revalidatePath("/protected/service-charge-ledger");
 
   return encodedRedirect("success", back, "Invoice generated.");
+};
+
+/**
+ * The "Save service charge & generate invoice" button in the merged
+ * service-charge panel — same as saving the recurring charge settings
+ * (updateUnitServiceChargeAction in app/admin-actions.ts) immediately
+ * followed by generating one invoice for it, in a single submission
+ * instead of two separate forms.
+ */
+export const saveServiceChargeAndGenerateInvoiceAction = async (
+  formData: FormData,
+) => {
+  const admin = await requireRole(UserType.admin);
+
+  const unitId = formData.get("unitId")?.toString();
+  if (!unitId) {
+    return encodedRedirect("error", "/protected/properties", "Invalid unit.");
+  }
+
+  const unit = await prisma.unit.findUnique({
+    where: { id: unitId },
+    select: { propertyId: true },
+  });
+  if (!unit) {
+    return encodedRedirect("error", "/protected/properties", "Unit not found.");
+  }
+  const back = `/protected/properties/${unit.propertyId}`;
+
+  const serviceCharge = parseServiceCharge(formData);
+  if (!serviceCharge.ok) {
+    return encodedRedirect("error", back, serviceCharge.error);
+  }
+
+  const fields = parseInvoiceFormFields(formData);
+  const result = await generateServiceChargeInvoice({
+    ...fields,
+    unitId,
+    // The invoice bills the same amount the settings panel just saved —
+    // there's only one "Amount" field in the merged form.
+    currentAmount: serviceCharge.amount.toFixed(3),
+    createdById: admin.id,
+  });
+  if (!result.ok) {
+    return encodedRedirect("error", back, result.error);
+  }
+
+  // Runs after generateServiceChargeInvoice's own transaction (which rolls
+  // serviceChargeDueDate forward to the invoice's due date) so the
+  // settings panel's own Due date field — the unit's *next* recurring due
+  // date, normally set to land after this period's end rather than this
+  // invoice's own payment due date — wins as the final stored value.
+  await prisma.unit.update({
+    where: { id: unitId },
+    data: {
+      serviceChargeAmount: serviceCharge.amount,
+      serviceChargeCycleMonths: serviceCharge.cycleMonths,
+      serviceChargeDueDate: serviceCharge.dueDate,
+      serviceChargeLastStage: null,
+    },
+  });
+
+  revalidatePath(back);
+  revalidatePath("/protected/properties");
+  revalidatePath("/protected/service-charge-ledger");
+
+  return encodedRedirect(
+    "success",
+    back,
+    "Service charge saved and invoice generated.",
+  );
+};
+
+/**
+ * Edits the most recent invoice for a unit. Older invoices stay frozen so
+ * the ledger doesn't rewrite history; the live running balance is adjusted
+ * by the difference in billed amount.
+ */
+export const updateServiceChargeInvoiceAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+  const invoiceId = formData.get("invoiceId")?.toString();
+  const fields = parseInvoiceFormFields(formData);
+
+  if (!invoiceId) {
+    return encodedRedirect("error", "/protected/properties", "Invalid invoice.");
+  }
+
+  const invoice = await prisma.serviceChargeInvoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      unit: { select: { propertyId: true } },
+      lines: { select: { id: true }, take: 1 },
+    },
+  });
+  if (!invoice) {
+    return encodedRedirect("error", "/protected/properties", "Invoice not found.");
+  }
+  const back = `/protected/properties/${invoice.unit.propertyId}`;
+
+  const latest = await prisma.serviceChargeInvoice.findFirst({
+    where: { unitId: invoice.unitId, fundId: invoice.fundId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (latest?.id !== invoice.id) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Only the latest invoice for this unit can be edited.",
+    );
+  }
+
+  if (
+    !fields.periodStart ||
+    !fields.periodEnd ||
+    !fields.issueDate ||
+    !fields.dueDate
+  ) {
+    return encodedRedirect("error", back, "Enter valid dates.");
+  }
+  if (fields.periodEnd < fields.periodStart) {
+    return encodedRedirect(
+      "error",
+      back,
+      "The period end can't be before its start.",
+    );
+  }
+  if (!Number.isInteger(fields.graceDays) || fields.graceDays < 0) {
+    return encodedRedirect("error", back, "Enter a valid grace period.");
+  }
+  if (!fields.currentAmount) {
+    return encodedRedirect("error", back, "Enter a valid invoice amount.");
+  }
+
+  const overlapping = await prisma.serviceChargeInvoice.findFirst({
+    where: {
+      unitId: invoice.unitId,
+      fundId: invoice.fundId,
+      id: { not: invoice.id },
+      periodStart: { lte: fields.periodEnd },
+      periodEnd: { gte: fields.periodStart },
+    },
+    select: { invoiceNumber: true },
+  });
+  if (overlapping) {
+    return encodedRedirect(
+      "error",
+      back,
+      `Invoice #${overlapping.invoiceNumber} already covers that period.`,
+    );
+  }
+
+  const oldAmount = Number(invoice.currentAmount);
+  const newAmount = Number(fields.currentAmount);
+  const delta = newAmount - oldAmount;
+  const closingBalance = Number(invoice.previousBalance) + newAmount;
+  const amountPayable = Math.max(0, closingBalance);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.serviceChargeInvoice.update({
+      where: { id: invoice.id },
+      data: {
+        issueDate: fields.issueDate!,
+        dueDate: fields.dueDate!,
+        graceDays: fields.graceDays,
+        periodStart: fields.periodStart!,
+        periodEnd: fields.periodEnd!,
+        currentAmount: newAmount,
+        amountPayable,
+        closingBalance,
+      },
+    });
+    if (invoice.lines[0]) {
+      await tx.serviceChargeInvoiceLine.update({
+        where: { id: invoice.lines[0].id },
+        data: {
+          unitRate: newAmount,
+          total: newAmount,
+        },
+      });
+    }
+    if (delta !== 0) {
+      await tx.unit.update({
+        where: { id: invoice.unitId },
+        data: { serviceChargeBalance: { increment: delta } },
+      });
+      await tx.unitFundBalance.upsert({
+        where: {
+          unitId_fundId: { unitId: invoice.unitId, fundId: invoice.fundId },
+        },
+        create: {
+          unitId: invoice.unitId,
+          fundId: invoice.fundId,
+          balance: closingBalance,
+        },
+        update: { balance: { increment: delta } },
+      });
+    }
+    await tx.unit.update({
+      where: { id: invoice.unitId },
+      data: {
+        serviceChargeDueDate: fields.dueDate,
+        serviceChargeLastStage: null,
+        serviceChargeLastReceivedAt: fields.issueDate,
+      },
+    });
+  });
+
+  revalidatePath(back);
+  revalidatePath("/protected/service-charge-ledger");
+  revalidatePath(
+    `/protected/properties/${invoice.unit.propertyId}/units/${invoice.unitId}/ledger`,
+  );
+
+  return encodedRedirect("success", back, "Invoice updated.");
 };
 
 export type BulkServiceChargePreviewRow = {
@@ -586,7 +855,7 @@ export const recordServiceChargePaymentAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { propertyId: true },
+    select: { propertyId: true, ownerId: true },
   });
   if (!unit) {
     return encodedRedirect("error", "/protected/properties", "Unit not found.");
@@ -616,6 +885,7 @@ export const recordServiceChargePaymentAction = async (formData: FormData) => {
         chequeDate,
         bank,
         clearanceStatus,
+        billedOwnerId: unit.ownerId,
         createdById: admin.id,
       },
     });
@@ -636,6 +906,143 @@ export const recordServiceChargePaymentAction = async (formData: FormData) => {
   revalidatePath("/protected/service-charge-ledger");
 
   return encodedRedirect("success", back, "Payment recorded.");
+};
+
+/**
+ * "Correct Invoice" — fixes a payment recorded with the wrong amount (a
+ * typo like 3500 instead of 350) after the fact, instead of leaving a bad
+ * figure on the ledger forever. Requires a note explaining why, and keeps
+ * the true first-recorded amount in `originalAmount` (set only once, on
+ * the first correction) so the audit trail survives even several
+ * corrections later. Adjusts the unit's running balance — and its fund
+ * balance, if the payment was against one — by the exact delta between
+ * the old and new amounts, the same way recording a fresh payment does.
+ */
+export const correctServiceChargePaymentAction = async (
+  formData: FormData,
+) => {
+  const admin = await requireRole(UserType.admin);
+
+  const paymentId = formData.get("paymentId")?.toString();
+  const newAmount = parsePositiveMoney(formData.get("amount"));
+  const correctionNote = formData.get("correctionNote")?.toString().trim();
+
+  if (!paymentId) {
+    return encodedRedirect("error", "/protected/properties", "Invalid payment.");
+  }
+
+  const payment = await prisma.serviceChargePayment.findUnique({
+    where: { id: paymentId },
+    select: {
+      amount: true,
+      originalAmount: true,
+      unitId: true,
+      fundId: true,
+      installment: { select: { id: true } },
+      unit: { select: { propertyId: true } },
+    },
+  });
+  if (!payment) {
+    return encodedRedirect("error", "/protected/properties", "Payment not found.");
+  }
+
+  const back = `/protected/properties/${payment.unit.propertyId}`;
+
+  if (payment.installment) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Installment payments can't be corrected. Cancel the plan and record a new payment if needed.",
+    );
+  }
+
+  if (!newAmount) {
+    return encodedRedirect("error", back, "Enter a valid corrected amount.");
+  }
+  if (!correctionNote) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Explain why this payment is being corrected.",
+    );
+  }
+
+  const delta = Number(newAmount) - Number(payment.amount);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.serviceChargePayment.update({
+      where: { id: paymentId },
+      data: {
+        amount: newAmount,
+        // Only ever set once — a second correction shouldn't overwrite
+        // the true original with an already-corrected figure.
+        originalAmount: payment.originalAmount ?? payment.amount,
+        correctionNote,
+        correctedAt: new Date(),
+        correctedById: admin.id,
+      },
+    });
+    // A payment decrements the balance by its amount when recorded, so
+    // correcting it decrements by the same delta again — a larger
+    // corrected amount pulls the balance down further, a smaller one
+    // gives some of that back.
+    await tx.unit.update({
+      where: { id: payment.unitId },
+      data: { serviceChargeBalance: { decrement: delta } },
+    });
+    if (payment.fundId) {
+      await tx.unitFundBalance.upsert({
+        where: { unitId_fundId: { unitId: payment.unitId, fundId: payment.fundId } },
+        create: { unitId: payment.unitId, fundId: payment.fundId, balance: -delta },
+        update: { balance: { decrement: delta } },
+      });
+    }
+  });
+
+  revalidatePath(back);
+  revalidatePath("/protected/service-charge-ledger");
+  revalidatePath(
+    `/protected/properties/${payment.unit.propertyId}/units/${payment.unitId}/ledger`,
+  );
+
+  return encodedRedirect("success", back, "Payment corrected.");
+};
+
+export const assignInvoiceToCurrentOwnerAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+
+  const invoiceId = formData.get("invoiceId")?.toString();
+  if (!invoiceId) {
+    return encodedRedirect("error", "/protected/properties", "Invalid invoice.");
+  }
+
+  const invoice = await prisma.serviceChargeInvoice.findUnique({
+    where: { id: invoiceId },
+    select: {
+      unit: { select: { propertyId: true, ownerId: true } },
+    },
+  });
+  if (!invoice) {
+    return encodedRedirect("error", "/protected/properties", "Invoice not found.");
+  }
+  const back = `/protected/properties/${invoice.unit.propertyId}`;
+  if (!invoice.unit.ownerId) {
+    return encodedRedirect("error", back, "Assign an owner to this unit first.");
+  }
+
+  await prisma.serviceChargeInvoice.update({
+    where: { id: invoiceId },
+    data: { billedOwnerId: invoice.unit.ownerId },
+  });
+
+  revalidatePath(back);
+  revalidatePath("/protected/service-charge-ledger");
+
+  return encodedRedirect(
+    "success",
+    back,
+    "This period’s invoice is now payable by the current owner.",
+  );
 };
 
 /**
@@ -692,7 +1099,10 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const message = `Your service charge invoice ${invoice.invoiceNumber} for ${unitLabel} is ready — amount payable ${formatMoney(invoice.amountPayable)}, due ${invoice.dueDate.toLocaleDateString("en-GB")}.`;
+  const message = `Your service charge invoice ${invoice.invoiceNumber} for ${unitLabel} is ready — amount payable ${formatMoney(invoice.amountPayable)}, due ${invoice.dueDate.toLocaleDateString("en-GB")}. The invoice PDF is attached.`;
+
+  const pdf = await renderServiceChargeInvoicePdf(invoiceId);
+  const attachments = pdf ? [pdfAttachmentFromResult(pdf)] : [];
 
   await notifyOwnerCustom({
     propertyId: unit.propertyId,
@@ -700,6 +1110,7 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
     unitLabel,
     message,
     attachmentUrl: `${appUrl}/api/service-charge-invoices/${invoiceId}/pdf`,
+    attachments,
     recipientIds: [unit.ownerId, ...admins.map((a) => a.id)],
     title: "Service Charge Invoice",
   });
