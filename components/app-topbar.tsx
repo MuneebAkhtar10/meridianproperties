@@ -17,7 +17,7 @@ const ICONS = {
   dynamics: Plug,
 } as const;
 
-export const TOOLBAR_BY_ROLE: Record<UserType, ToolbarItem[]> = {
+export const TOOLBAR_BY_ROLE: Partial<Record<UserType, ToolbarItem[]>> = {
   admin: [
     { href: "/protected/rejections", label: "Rejections", icon: "rejections" },
     { href: "/protected/admin/qr-code", label: "QR Code", icon: "qrCode" },

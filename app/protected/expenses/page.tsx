@@ -175,7 +175,7 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
     prisma.expense.groupBy({ by: ["categoryId", "subcategory"], _count: true }),
     prisma.fund.findMany({
       orderBy: { createdAt: "asc" },
-      select: { id: true, label: true },
+      select: { id: true, name: true, label: true },
     }),
   ]);
 
@@ -219,7 +219,6 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
               <ExpensesExportMenu csvHref={exportCsvHref} pdfHref={exportPdfHref} />
               <CashFlowStatementModal
                 properties={properties}
-                funds={funds}
                 defaultPropertyId={
                   propertyFilter !== "all" ? propertyFilter : undefined
                 }

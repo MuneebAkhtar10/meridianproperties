@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { downloadAttachment } from "@/lib/storage";
 import { UserType } from "@/lib/generated/prisma/client";
 
@@ -30,7 +30,7 @@ export async function GET(
 
   const tenantId =
     attachment.charge?.tenantId ?? attachment.payment?.charge.tenantId;
-  if (user.userType !== UserType.admin && tenantId !== user.id) {
+  if (!isStaffAdmin(user.userType) && tenantId !== user.id) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 

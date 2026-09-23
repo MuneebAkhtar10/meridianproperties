@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { formatMoney } from "@/lib/finance";
 import { getUnitRentStatement } from "@/lib/unit-rent-statement";
 import { UnitRentStatementDocument } from "@/lib/pdf/unit-rent-statement";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 function trimOmr(value: number) {
@@ -25,7 +25,7 @@ export async function GET(
   { params }: { params: Promise<{ tenancyId: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user || !isStaffAdmin(user.userType)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

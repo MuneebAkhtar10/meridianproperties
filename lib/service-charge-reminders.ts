@@ -4,6 +4,7 @@ import { differenceInCalendarDays, format } from "date-fns";
 
 import { formatMoney } from "@/lib/finance";
 import { UserType } from "@/lib/generated/prisma/client";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 import {
   notifyServiceChargeDue,
   notifyServiceChargeOverdue,
@@ -56,7 +57,7 @@ export async function runServiceChargeReminders(): Promise<{
   }
 
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
   const adminIds = admins.map((admin) => admin.id);
@@ -97,7 +98,8 @@ export async function runServiceChargeReminders(): Promise<{
       ),
     );
     const amount = formatMoney(unit.serviceChargeAmount);
-    const propertyName = `${unit.property.name} — Unit ${unit.label}`;
+    const propertyName = unit.property.name;
+    const unitLabel = `Unit ${unit.label}`;
 
     const latestInvoice = await prisma.serviceChargeInvoice.findFirst({
       where: { unitId: unit.id },
@@ -113,6 +115,7 @@ export async function runServiceChargeReminders(): Promise<{
       await notifyServiceChargeUpcoming({
         propertyId: unit.propertyId,
         propertyName,
+        unitLabel,
         amount,
         dueDate: format(unit.serviceChargeDueDate, "d MMM yyyy"),
         recipientIds,
@@ -122,7 +125,9 @@ export async function runServiceChargeReminders(): Promise<{
       await notifyServiceChargeDue({
         propertyId: unit.propertyId,
         propertyName,
+        unitLabel,
         amount,
+        dueDate: format(unit.serviceChargeDueDate, "d MMM yyyy"),
         recipientIds,
         attachments,
       });
@@ -130,7 +135,9 @@ export async function runServiceChargeReminders(): Promise<{
       await notifyServiceChargeOverdue({
         propertyId: unit.propertyId,
         propertyName,
+        unitLabel,
         amount,
+        dueDate: format(unit.serviceChargeDueDate, "d MMM yyyy"),
         daysOverdue: Math.abs(daysUntilDue),
         recipientIds,
         attachments,

@@ -18,11 +18,13 @@ import { NewWorkerHrModal } from "@/components/worker-hr-modal";
 export function NewPersonFields({
   units,
   initialRole = "user",
+  allowSuperAdmin = false,
 }: {
   units: PickableUnit[];
   /** Preselects the role — e.g. arriving here from the property form's
    * "create an owner first" link with `?newPersonRole=owner`. */
   initialRole?: string;
+  allowSuperAdmin?: boolean;
 }) {
   const [role, setRole] = useState(initialRole);
   const [workerCategory, setWorkerCategory] = useState("in_house");
@@ -44,6 +46,7 @@ export function NewPersonFields({
           <option value="user">Tenant</option>
           <option value="worker">Worker</option>
           <option value="admin">Admin</option>
+          {allowSuperAdmin && <option value="super_admin">Super admin</option>}
           <option value="owner">Property owner</option>
         </Select>
       </div>

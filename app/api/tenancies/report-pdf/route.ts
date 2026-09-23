@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { moneyValue } from "@/lib/finance";
 import { getTenantReportData } from "@/lib/tenant-report";
 import { TenantReportDocument, type TenantReportRow } from "@/lib/pdf/tenant-report";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 const numberFormat = new Intl.NumberFormat("en-OM", {
@@ -19,7 +19,7 @@ const numberFormat = new Intl.NumberFormat("en-OM", {
  */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
-  if (!user || (user.userType !== UserType.admin && user.userType !== UserType.owner)) {
+  if (!user || (!isStaffAdmin(user.userType) && user.userType !== UserType.owner)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

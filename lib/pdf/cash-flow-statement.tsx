@@ -223,8 +223,7 @@ export function CashFlowStatementDocument({
   expenditureTotal,
   closingBalance,
   closingIsDeficit,
-  netTotal,
-  isSurplus,
+  closingLabel,
 }: {
   propertyName: string;
   propertyAddress: string;
@@ -237,8 +236,7 @@ export function CashFlowStatementDocument({
   expenditureTotal: string;
   closingBalance: string;
   closingIsDeficit: boolean;
-  netTotal: string;
-  isSurplus: boolean;
+  closingLabel: string;
 }) {
   return (
     <Document title={`Cash flow statement - ${propertyName}`}>
@@ -393,14 +391,12 @@ export function CashFlowStatementDocument({
             styles.grandTotalRow,
             {
               marginTop: 14,
-              backgroundColor: isSurplus ? COLORS.emerald : COLORS.rose,
+              backgroundColor: closingIsDeficit ? COLORS.rose : COLORS.emerald,
             },
           ]}
         >
-          <Text style={styles.grandTotalLabel}>
-            {isSurplus ? "NET SURPLUS FOR PERIOD" : "NET DEFICIT FOR PERIOD"}
-          </Text>
-          <Text style={styles.grandTotalAmount}>OMR {netTotal}</Text>
+          <Text style={styles.grandTotalLabel}>{closingLabel}</Text>
+          <Text style={styles.grandTotalAmount}>OMR {closingBalance}</Text>
         </View>
 
         <Text

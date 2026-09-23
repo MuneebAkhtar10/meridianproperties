@@ -35,6 +35,7 @@ import {
   UserType,
   WhatsappFlow,
 } from "@/lib/generated/prisma/client";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 
 /**
  * The other half of the WhatsApp integration (see lib/whatsapp.ts, which
@@ -948,7 +949,7 @@ async function submitTenantRequest(
     reportedBy: user?.email ?? phone,
   });
 
-  await publish({ kind: "request", roles: [UserType.admin], userIds: [userId] });
+  await publish({ kind: "request", roles: [...STAFF_ADMIN_TYPES], userIds: [userId] });
 
   revalidatePath("/protected/requests");
   revalidatePath("/protected/maintenance");
@@ -1576,7 +1577,7 @@ async function handleWorkerTaskReply(
     });
 
     await notifyStatusChange({ ...task, status: RequestStatus.en_route });
-    await publish({ kind: "request", roles: [UserType.admin], userIds: [task.userId, workerId] });
+    await publish({ kind: "request", roles: [...STAFF_ADMIN_TYPES], userIds: [task.userId, workerId] });
     revalidatePath("/protected/tasks");
     revalidatePath(`/protected/maintenance/${taskId}`);
 
@@ -1607,7 +1608,7 @@ async function handleWorkerTaskReply(
     });
 
     await notifyStatusChange({ ...task, status: RequestStatus.in_progress });
-    await publish({ kind: "request", roles: [UserType.admin], userIds: [task.userId, workerId] });
+    await publish({ kind: "request", roles: [...STAFF_ADMIN_TYPES], userIds: [task.userId, workerId] });
     revalidatePath("/protected/tasks");
     revalidatePath(`/protected/maintenance/${taskId}`);
 
@@ -1650,7 +1651,7 @@ async function handleWorkerTaskReply(
       taskId,
     });
 
-    await publish({ kind: "request", roles: [UserType.admin], userIds: [task.userId, workerId] });
+    await publish({ kind: "request", roles: [...STAFF_ADMIN_TYPES], userIds: [task.userId, workerId] });
     revalidatePath("/protected/tasks");
 
     return `Nice work! Anything worth noting about "${task.title}" before we wrap up? Just tell me, or say "no" if there's nothing to add.`;
@@ -1895,7 +1896,7 @@ async function handleHoldReason(
     actorId: workerId,
   });
 
-  await publish({ kind: "request", roles: [UserType.admin], userIds: [task.userId, workerId] });
+  await publish({ kind: "request", roles: [...STAFF_ADMIN_TYPES], userIds: [task.userId, workerId] });
 
   revalidatePath("/protected/tasks");
   revalidatePath("/protected/maintenance");
@@ -2074,7 +2075,7 @@ async function handleCompletionStep(
   await clearSession(phone);
 
   await notifyStatusChange({ ...task, status: RequestStatus.completed });
-  await publish({ kind: "request", roles: [UserType.admin], userIds: [task.userId, workerId] });
+  await publish({ kind: "request", roles: [...STAFF_ADMIN_TYPES], userIds: [task.userId, workerId] });
 
   revalidatePath("/protected/tasks");
   revalidatePath("/protected/history");

@@ -199,12 +199,22 @@ export function UnitServiceChargePanel({
 
   const today = new Date();
   const currentYear = today.getFullYear();
+  const yearStart = `${currentYear}-01-01`;
+  const yearEnd = `${currentYear}-12-31`;
   const latestInvoice = unit.serviceChargeInvoices[0] ?? null;
+  const latestPeriodEnded =
+    latestInvoice != null &&
+    new Date(latestInvoice.periodEnd).getTime() <
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
   const [periodStart, setPeriodStart] = useState(
-    latestInvoice ? toDateInput(latestInvoice.periodStart) : `${currentYear}-01-01`,
+    latestInvoice && !latestPeriodEnded
+      ? toDateInput(latestInvoice.periodStart)
+      : yearStart,
   );
   const [periodEnd, setPeriodEnd] = useState(
-    latestInvoice ? toDateInput(latestInvoice.periodEnd) : `${currentYear}-12-31`,
+    latestInvoice && !latestPeriodEnded
+      ? toDateInput(latestInvoice.periodEnd)
+      : yearEnd,
   );
   const [scDueDate, setScDueDate] = useState(
     `${unit.serviceChargeDueDate ? unit.serviceChargeDueDate.getUTCFullYear() : currentYear}-12-31`,
@@ -346,7 +356,7 @@ export function UnitServiceChargePanel({
               </p>
               <p className="mt-0.5 text-sm font-medium">
                 #{overlappingInvoice.invoiceNumber} ·{" "}
-                {formatMoney(overlappingInvoice.amountPayable)}
+                {formatMoney(overlappingInvoice.currentAmount)}
               </p>
               <p className="text-xs text-muted-foreground">
                 {format(overlappingInvoice.periodStart, "d MMM yyyy")} –{" "}
@@ -512,6 +522,12 @@ export function UnitServiceChargePanel({
             </SubmitButton>
           )}
         </div>
+        <a
+          href={`/protected/invoices/new?property=${unit.propertyId}&unit=${unit.id}`}
+          className="block text-center text-[11px] font-medium text-primary hover:underline"
+        >
+          Additional charge for this unit
+        </a>
       </form>
 
       <div className="space-y-2.5 rounded-xl border border-border bg-background p-3">
@@ -673,6 +689,7 @@ export function UnitServiceChargePanel({
                     name="startDate"
                     type="date"
                     defaultValue={dateInputValue()}
+                    min={dateInputValue()}
                     className="h-8 text-xs"
                     required
                   />
@@ -849,6 +866,12 @@ export function UnitServiceChargePanel({
             <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Invoice history ({unit.serviceChargeInvoices.length})
             </summary>
+            <a
+              href={`/protected/invoices?unit=${unit.id}&bucket=all`}
+              className="mb-1 inline-block text-[11px] font-medium text-primary hover:underline"
+            >
+              Open in Invoices
+            </a>
             <div className="divide-y rounded-xl border border-border/60">
               {unit.serviceChargeInvoices.map((invoice, index) => {
                 const credit = -moneyValue(invoice.previousBalance);
@@ -859,7 +882,14 @@ export function UnitServiceChargePanel({
                   >
                     <div className="min-w-0">
                       <span>
-                        #{invoice.invoiceNumber} · {format(invoice.issueDate, "d MMM yyyy")}
+                        <a
+                          href={`/protected/invoices/${invoice.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          #{invoice.invoiceNumber}
+                        </a>
+                        {" · "}
+                        {format(invoice.issueDate, "d MMM yyyy")}
                         {invoice.billedOwner ? (
                           <span className="text-muted-foreground">
                             {" "}
@@ -876,7 +906,21 @@ export function UnitServiceChargePanel({
                           </span>
                         </p>
                       ) : (
-                        <p className="font-medium">{formatMoney(invoice.amountPayable)}</p>
+                        <p>
+                          <span className="font-medium">
+                            {formatMoney(invoice.currentAmount)}
+                          </span>
+                          {moneyValue(invoice.amountPayable) === 0 &&
+                          moneyValue(invoice.currentAmount) > 0 ? (
+                            <span className="text-muted-foreground"> · Paid</span>
+                          ) : moneyValue(invoice.amountPayable) !==
+                            moneyValue(invoice.currentAmount) ? (
+                            <span className="text-muted-foreground">
+                              {" "}
+                              · Payable {formatMoney(invoice.amountPayable)}
+                            </span>
+                          ) : null}
+                        </p>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">

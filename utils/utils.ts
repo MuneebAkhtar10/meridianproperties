@@ -12,5 +12,19 @@ export function encodedRedirect(
   path: string,
   message: string,
 ) {
-  return redirect(`${path}?${type}=${encodeURIComponent(message)}`);
+  return redirect(
+    `${path}${path.includes("?") ? "&" : "?"}${type}=${encodeURIComponent(message)}`,
+  );
+}
+
+/** Only follow in-app paths from a form's `redirectTo` field. */
+export function internalPath(
+  value: FormDataEntryValue | string | null | undefined,
+  fallback: string,
+): string {
+  const path = typeof value === "string" ? value : value?.toString();
+  if (!path) return fallback;
+  if (!path.startsWith("/protected")) return fallback;
+  if (path.startsWith("//") || path.includes("\\")) return fallback;
+  return path;
 }

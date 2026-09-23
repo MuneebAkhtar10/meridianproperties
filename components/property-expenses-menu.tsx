@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Banknote, ExternalLink, List, Plus } from "lucide-react";
+import { Banknote, ExternalLink, List, Plus, Receipt } from "lucide-react";
 
 import { LogExpenseForm } from "@/components/log-expense-form";
 import type { ExpenseLogFieldsProps } from "@/components/expense-log-fields";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { PendingLink } from "@/components/ui/pending-link";
+import { Tooltip } from "@/components/ui/tooltip";
 import { formatMoney } from "@/lib/finance";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +43,8 @@ export type PropertyExpenseRow = {
  * the portfolio-wide Expenses page, it opens a small menu offering "Add an
  * expense" (a modal with the same Log an expense form, scoped to this
  * property) or "View all expenses" (a modal listing just this property's
- * expenses) — an admin never leaves the property they're looking at.
+ * expenses), or Building expenses (the same records grouped by unit) —
+ * an admin never leaves the property they're looking at.
  *
  * Each menu item is itself a Modal's own trigger (see
  * components/ui/modal.tsx), so both Modals stay mounted at all times —
@@ -70,23 +73,25 @@ export function PropertyExpensesMenu({
 
   return (
     <div className="relative">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="bg-background"
-        onClick={() => setMenuOpen((open) => !open)}
-      >
-        <ToolbarIcon icon={Banknote} className="bg-rose-100 text-rose-600" />
-        Expenses
-      </Button>
+      <Tooltip label="All spending on this property. Add an expense or view the full list (building-wide and unit-tagged). Building expenses is that list grouped by unit — common-area bills stay in the full list only.">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="bg-background"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <ToolbarIcon icon={Banknote} className="bg-rose-100 text-rose-600" />
+          Expenses
+        </Button>
+      </Tooltip>
 
       {menuOpen && (
         <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
       )}
       <div
         className={cn(
-          "absolute left-0 z-50 mt-1.5 w-56 space-y-1 rounded-lg border border-border/60 bg-card p-1.5 shadow-lg",
+          "absolute left-0 z-50 mt-1.5 w-64 space-y-1 rounded-lg border border-border/60 bg-card p-1.5 shadow-lg",
           menuOpen ? "block" : "hidden",
         )}
       >
@@ -170,6 +175,20 @@ export function PropertyExpensesMenu({
             <ExternalLink className="h-3 w-3" />
           </a>
         </Modal>
+
+        <PendingLink
+          href={`/protected/properties/${propertyId}/building-expenses`}
+          className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm hover:bg-muted"
+          onClick={() => setMenuOpen(false)}
+        >
+          <Receipt className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="min-w-0">
+            <span className="block">Building expenses</span>
+            <span className="block text-[11px] font-normal text-muted-foreground">
+              Unit-tagged costs, grouped by unit
+            </span>
+          </span>
+        </PendingLink>
       </div>
     </div>
   );

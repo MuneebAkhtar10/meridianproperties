@@ -124,7 +124,7 @@ export async function generateWhatsAppMessage(input: {
     ?.map((d) => `${d.label}: ${d.value}`)
     .join("\n");
 
-  const prompt = `You write short WhatsApp notifications for a property management app (tenants and maintenance workers read these on their phones).
+  const prompt = `You write short WhatsApp notifications for a property management app. Recipients may be tenants, maintenance workers, or property owners.
 
 Rewrite the notification below as a single WhatsApp message: 1-3 short sentences, plain text, friendly and direct, no markdown headers or bullet lists (WhatsApp *bold* is fine if it helps one key word). Only use facts given below — never invent details. Output only the message text, nothing else.
 

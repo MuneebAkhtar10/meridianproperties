@@ -1,13 +1,16 @@
 import "server-only";
 
+import { readFileSync } from "fs";
+import { join } from "path";
 import { format } from "date-fns";
 import { renderToBuffer } from "@react-pdf/renderer";
 
 import { moneyValue } from "@/lib/finance";
-import { formatOmanAddress } from "@/lib/oman";
+import { formatServiceChargeLetterheadAddress } from "@/lib/oman";
 import { ServiceChargeInvoiceDocument } from "@/lib/pdf/service-charge-invoice";
 import { prisma } from "@/lib/prisma";
 import { ownerAtDate, personName } from "@/lib/unit-owner-at";
+import { isBuildingType } from "@/lib/property-types";
 
 const numberFormat = new Intl.NumberFormat("en-OM", {
   minimumFractionDigits: 3,
@@ -33,7 +36,13 @@ async function loadInvoiceForPdf(invoiceId: string) {
     include: {
       unit: {
         include: {
-          property: true,
+          property: {
+            include: {
+              propertyType: {
+                select: { isOwnerAssociation: true },
+              },
+            },
+          },
           owner: {
             select: {
               id: true,
@@ -102,17 +111,42 @@ function documentProps(
     : moneyValue(invoice.amountPayable);
   const dueDate = overlay ? overlay.dueDate : invoice.dueDate;
 
+  const isOA = isBuildingType(property.propertyType);
+  const associationName = isOA && !/owners?\s*association/i.test(property.name)
+    ? `${property.name} - Owners Association`
+    : property.name;
+
+  let logoSrc: string | null = null;
+  try {
+    const logo = readFileSync(
+      join(process.cwd(), "lib/pdf/assets/oa-invoice-logo.png"),
+    );
+    logoSrc = `data:image/png;base64,${logo.toString("base64")}`;
+  } catch {
+    logoSrc = null;
+  }
+
+  const phone = property.associationPhone?.trim() || null;
+  const formattedPhone = phone
+    ? phone.startsWith("+")
+      ? phone
+      : phone.replace(/\D/g, "").startsWith("968")
+        ? `+${phone.replace(/\D/g, "")}`
+        : `+968 ${phone.replace(/\D/g, "")}`
+    : null;
+
   return {
-    associationName: property.name,
-    associationAddress: formatOmanAddress(property),
+    logoSrc,
+    associationName,
+    letterheadAddressLines: formatServiceChargeLetterheadAddress(property),
     associationRegistrationNumber: property.associationRegistrationNumber,
-    associationPhone: property.associationPhone,
+    associationPhone: formattedPhone,
     ownerName,
     ownerAddress,
     invoiceNumber: overlay
       ? `${invoice.invoiceNumber}-${String(overlay.sequence).padStart(2, "0")}`
       : invoice.invoiceNumber,
-    issueDate: format(invoice.issueDate, "dd/MM/yyyy"),
+    issueDate: format(invoice.issueDate, "dd/MM/yy"),
     dueDate: format(dueDate, "dd/MM/yyyy"),
     unitNo,
     entitlements: unit.entitlements != null ? String(unit.entitlements) : "-",

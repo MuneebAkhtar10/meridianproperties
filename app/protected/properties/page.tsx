@@ -13,21 +13,20 @@ import {
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
-import { createPropertyAction } from "@/app/admin-actions";
 import { EmptyState } from "@/components/empty-state";
 import { FormMessage, Message } from "@/components/form-message";
 import { OwnerReportModal } from "@/components/owner-report-modal";
 import { PageHeader } from "@/components/page-header";
-import { PropertyLocationFields } from "@/components/property-location-fields";
+import { CreatePropertyForm } from "@/components/create-property-form";
 import { SubmitButton } from "@/components/submit-button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { formatOmanAddress, OMAN_GOVERNORATES } from "@/lib/oman";
+import { formatOmanAddress } from "@/lib/oman";
 import { prisma } from "@/lib/prisma";
-import { requireAnyRole } from "@/lib/session";
+import { requireAnyRole, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 import {
@@ -44,7 +43,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
   const message = params as unknown as Message;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = user.userType === UserType.owner;
-  const isAdmin = user.userType === UserType.admin;
+  const isAdmin = isStaffAdmin(user.userType);
   const ownerFilter =
     isAdmin && typeof params.owner === "string" ? params.owner : "all";
   const search =
@@ -588,161 +587,11 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
             </h2>
           </div>
           <CardContent className="pt-5">
-              <form className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Property Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    placeholder="Al Khuwair Heights"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="type">Property type</Label>
-                  {propertyTypes.length === 0 ? (
-                    <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                      No property types yet.{" "}
-                      <Link
-                        href="/protected/admin/property-types"
-                        className="font-medium underline"
-                      >
-                        Add one first
-                      </Link>{" "}
-                      before creating a property.
-                    </p>
-                  ) : (
-                    <Select
-                      id="type"
-                      name="propertyTypeId"
-                      defaultValue={propertyTypes[0]?.id}
-                      required
-                    >
-                      {propertyTypes.map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Whether floors apply and how units are labeled both come
-                    from the type.{" "}
-                    <Link
-                      href="/protected/admin/property-types"
-                      className="underline"
-                    >
-                      Manage property types
-                    </Link>
-                    .
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="address">Address / locality</Label>
-                  <Input
-                    id="address"
-                    name="address"
-                    placeholder="Al Khuwair 33"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="governorate">Governorate</Label>
-                    <Select
-                      id="governorate"
-                      name="governorate"
-                      defaultValue="Muscat"
-                    >
-                      {OMAN_GOVERNORATES.map((governorate) => (
-                        <option key={governorate} value={governorate}>
-                          {governorate}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="wilayat">Wilayat</Label>
-                    <Input id="wilayat" name="wilayat" placeholder="Bawshar" />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="area">Area / village</Label>
-                  <Input id="area" name="area" placeholder="Al Khuwair" />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="buildingName">Building name/no.</Label>
-                    <Input
-                      id="buildingName"
-                      name="buildingName"
-                      placeholder="Al Noor Tower"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="wayNumber">Way no.</Label>
-                    <Input id="wayNumber" name="wayNumber" placeholder="3521" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="buildingNumber">Building no.</Label>
-                    <Input
-                      id="buildingNumber"
-                      name="buildingNumber"
-                      placeholder="214"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="postalCode">Postal code</Label>
-                    <Input
-                      id="postalCode"
-                      name="postalCode"
-                      placeholder="133"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="associationRegistrationNumber">
-                    OA registration no.
-                  </Label>
-                  <Input
-                    id="associationRegistrationNumber"
-                    name="associationRegistrationNumber"
-                    placeholder="Optional — owners' association only"
-                  />
-                </div>
-
-                <PropertyLocationFields />
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Input id="notes" name="notes" placeholder="Optional" />
-                </div>
-
-                {isOwner && (
-                  <p className="text-xs text-muted-foreground">
-                    Your property will be reviewed by an administrator before
-                    it appears anywhere else. Add its units next — you&rsquo;ll
-                    be assigned as the owner of each one you add.
-                  </p>
-                )}
-
-                <SubmitButton
-                  formAction={createPropertyAction}
-                  className="w-full"
-                  pendingText="Creating..."
-                >
-                  Create property
-                </SubmitButton>
-              </form>
+            <CreatePropertyForm
+              propertyTypes={propertyTypes}
+              isOwner={isOwner}
+              isAdmin={isAdmin}
+            />
           </CardContent>
         </Card>
       </div>

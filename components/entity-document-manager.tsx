@@ -111,8 +111,8 @@ export function EntityDocumentManager({
   inline = false,
   /** Overrides the default "tenancy documents always have a term" rule
    * below — set for any other document type that also always has a
-   * real-world expiry (e.g. an ownership contract). Must agree with
-   * performDocumentUpload's matching server-side check in
+   * real-world expiry (e.g. an ownership contract or miscellaneous file).
+   * Must agree with performDocumentUpload's matching server-side check in
    * app/document-actions.ts, since the client-side `required` here is a UX
    * nicety, not the actual enforcement. */
   expiryRequired: expiryRequiredOverride,

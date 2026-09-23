@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { renderServiceChargeInvoicePdf } from "@/lib/pdf/render-service-charge-invoice";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 export async function GET(
@@ -30,7 +30,7 @@ export async function GET(
   const isOwnInvoice =
     user.userType === UserType.owner &&
     (user.id === invoice.unit.ownerId || user.id === invoice.billedOwnerId);
-  if (user.userType !== UserType.admin && !isOwnInvoice) {
+  if (!isStaffAdmin(user.userType) && !isOwnInvoice) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

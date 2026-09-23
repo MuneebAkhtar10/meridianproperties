@@ -10,14 +10,20 @@ import {
 } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
-import { notifyOwnerCustom } from "@/lib/notifications";
+import { notifyOwnerCustom, notifyOwnerServiceChargeIssued } from "@/lib/notifications";
 import {
   pdfAttachmentFromResult,
   renderServiceChargeInvoicePdf,
 } from "@/lib/pdf/render-service-charge-invoice";
-import { formatUnitLabel } from "@/lib/property-types";
-import { encodedRedirect } from "@/utils/utils";
+import {
+  collectsServiceCharge,
+  formatUnitLabel,
+  prismaCollectsServiceChargeTypeWhere,
+} from "@/lib/property-types";
+import { encodedRedirect, internalPath } from "@/utils/utils";
 import { PaymentMethod, UserType } from "@/lib/generated/prisma/client";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
+import { ensureInvoiceColumns } from "@/lib/invoices";
 
 /** Zero-padded to 7 digits, matching the reference invoice's numbering
  * ("0000804"). Backed by a real Postgres sequence so numbers never repeat
@@ -63,6 +69,7 @@ async function generateServiceChargeInvoice({
   currentAmount,
   createdById,
 }: InvoiceGenerationInput): Promise<{ ok: true } | { ok: false; error: string }> {
+  await ensureInvoiceColumns();
   if (!fundId) {
     return { ok: false, error: "Select which fund this invoice bills." };
   }
@@ -83,11 +90,35 @@ async function generateServiceChargeInvoice({
     where: { id: unitId },
     select: {
       ownerId: true,
+      label: true,
+      propertyId: true,
       fundBalances: { select: { fundId: true, balance: true } },
+      property: {
+        select: {
+          name: true,
+          propertyType: {
+            select: {
+              isOwnerAssociation: true,
+              isBuildingManagement: true,
+              showRentBills: true,
+              showMaintenance: true,
+              hasCommonAreas: true,
+              unitPrefix: true,
+              hasFloors: true,
+            },
+          },
+        },
+      },
     },
   });
   if (!unit) {
     return { ok: false, error: "Unit not found." };
+  }
+  if (!collectsServiceCharge(unit.property.propertyType)) {
+    return {
+      ok: false,
+      error: "Independent properties do not take a service charge.",
+    };
   }
 
   // One invoice per fund per billed period — generating a second one for a
@@ -115,8 +146,7 @@ async function generateServiceChargeInvoice({
   const amountPayable = Math.max(0, closingBalance);
   const totalDelta = Number(currentAmount);
 
-  await prisma.$transaction([
-    prisma.serviceChargeInvoice.create({
+  const created = await prisma.serviceChargeInvoice.create({
       data: {
         unitId,
         fundId,
@@ -132,6 +162,8 @@ async function generateServiceChargeInvoice({
         closingBalance,
         billedOwnerId: unit.ownerId,
         createdById,
+        kind: "service_charge",
+        status: "issued",
         lines: {
           create: {
             fundId,
@@ -142,7 +174,15 @@ async function generateServiceChargeInvoice({
           },
         },
       },
-    }),
+      select: {
+        id: true,
+        invoiceNumber: true,
+        amountPayable: true,
+        dueDate: true,
+      },
+    });
+
+  await prisma.$transaction([
     prisma.unitFundBalance.upsert({
       where: { unitId_fundId: { unitId, fundId } },
       create: { unitId, fundId, balance: closingBalance },
@@ -162,6 +202,26 @@ async function generateServiceChargeInvoice({
       },
     }),
   ]);
+
+  if (unit.ownerId) {
+    try {
+      await notifyOwnerServiceChargeIssued({
+        ownerId: unit.ownerId,
+        propertyId: unit.propertyId,
+        propertyName: unit.property.name,
+        unitLabel: formatUnitLabel(unit.property.propertyType, unit.label),
+        amount: formatMoney(created.amountPayable),
+        dueDate: created.dueDate.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        invoiceNumber: created.invoiceNumber,
+      });
+    } catch (error) {
+      console.error("Owner service-charge WhatsApp/email failed:", error);
+    }
+  }
 
   return { ok: true };
 }
@@ -211,6 +271,7 @@ export const generateServiceChargeInvoiceAction = async (
 
   revalidatePath(back);
   revalidatePath("/protected/service-charge-ledger");
+  revalidatePath("/protected/invoices");
 
   return encodedRedirect("success", back, "Invoice generated.");
 };
@@ -467,6 +528,9 @@ export async function previewBulkServiceChargeInvoicesAction(input: {
   const units = await prisma.unit.findMany({
     where: {
       serviceChargeAmount: { gt: 0 },
+      property: {
+        propertyType: prismaCollectsServiceChargeTypeWhere(),
+      },
       ...(input.propertyId !== "all" ? { propertyId: input.propertyId } : {}),
       ...(input.ownerId !== "all" ? { ownerId: input.ownerId } : {}),
     },
@@ -527,7 +591,7 @@ export const bulkGenerateServiceChargeInvoicesAction = async (
 ) => {
   const admin = await requireRole(UserType.admin);
 
-  const back = "/protected/service-charge-ledger";
+  const back = internalPath(formData.get("redirectTo"), "/protected/service-charge-ledger");
 
   const fundId = formData.get("fundId")?.toString();
   const year = Number(formData.get("year"));
@@ -579,6 +643,23 @@ export const bulkGenerateServiceChargeInvoicesAction = async (
   });
   const unitsAlreadyInvoiced = new Set(overlappingInvoices.map((i) => i.unitId));
 
+  const units = await prisma.unit.findMany({
+    where: { id: { in: rows.map((r) => r.unitId) } },
+    select: {
+      id: true,
+      ownerId: true,
+      label: true,
+      propertyId: true,
+      property: {
+        select: {
+          name: true,
+          propertyType: { select: { unitPrefix: true, hasFloors: true } },
+        },
+      },
+    },
+  });
+  const unitById = new Map(units.map((unit) => [unit.id, unit]));
+
   let created = 0;
   let skipped = 0;
   for (const row of rows) {
@@ -610,6 +691,8 @@ export const bulkGenerateServiceChargeInvoicesAction = async (
           amountPayable,
           closingBalance,
           createdById: admin.id,
+          kind: "service_charge",
+          status: "issued",
           lines: {
             create: {
               fundId,
@@ -639,6 +722,29 @@ export const bulkGenerateServiceChargeInvoicesAction = async (
 
     balanceByUnit.set(row.unitId, closingBalance);
     created++;
+
+    const billedUnit = unitById.get(row.unitId);
+    if (billedUnit?.ownerId) {
+      try {
+        await notifyOwnerServiceChargeIssued({
+          ownerId: billedUnit.ownerId,
+          propertyId: billedUnit.propertyId,
+          propertyName: billedUnit.property.name,
+          unitLabel: formatUnitLabel(
+            billedUnit.property.propertyType,
+            billedUnit.label,
+          ),
+          amount: formatMoney(amountPayable),
+          dueDate: dueDate.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+        });
+      } catch (error) {
+        console.error("Owner service-charge alert failed:", error);
+      }
+    }
   }
 
   revalidatePath(back);
@@ -673,6 +779,28 @@ export const bulkGenerateUnitInvoicesAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/properties", "Invalid property.");
   }
   const back = `/protected/properties/${propertyId}`;
+
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: {
+      propertyType: {
+        select: {
+          isOwnerAssociation: true,
+          isBuildingManagement: true,
+          showRentBills: true,
+          showMaintenance: true,
+          hasCommonAreas: true,
+        },
+      },
+    },
+  });
+  if (property && !collectsServiceCharge(property.propertyType)) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Independent properties do not take a service charge.",
+    );
+  }
 
   const unitIds = formData.getAll("unitIds").map((v) => v.toString());
   const periodStart = parseDate(formData.get("periodStart")?.toString());
@@ -766,6 +894,8 @@ export const bulkGenerateUnitInvoicesAction = async (formData: FormData) => {
           amountPayable,
           closingBalance,
           createdById: admin.id,
+          kind: "service_charge",
+          status: "issued",
           lines: {
             create: {
               fundId,
@@ -861,7 +991,10 @@ export const recordServiceChargePaymentAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/properties", "Unit not found.");
   }
 
-  const back = `/protected/properties/${unit.propertyId}`;
+  const back = internalPath(
+    formData.get("redirectTo"),
+    `/protected/properties/${unit.propertyId}`,
+  );
 
   if (!amount || !paidAt) {
     return encodedRedirect(
@@ -904,6 +1037,7 @@ export const recordServiceChargePaymentAction = async (formData: FormData) => {
 
   revalidatePath(back);
   revalidatePath("/protected/service-charge-ledger");
+  revalidatePath("/protected/invoices");
 
   return encodedRedirect("success", back, "Payment recorded.");
 };
@@ -1086,7 +1220,10 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
   }
 
   const { unit } = invoice;
-  const back = `/protected/properties/${unit.propertyId}`;
+  const back = internalPath(
+    formData.get("redirectTo"),
+    `/protected/properties/${unit.propertyId}`,
+  );
 
   if (!unit.ownerId) {
     return encodedRedirect("error", back, "This unit has no owner to send to.");
@@ -1094,7 +1231,7 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
 
   const unitLabel = formatUnitLabel(unit.property.propertyType, unit.label);
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin, id: { not: admin.id } },
+    where: { userType: { in: STAFF_ADMIN_TYPES }, id: { not: admin.id } },
     select: { id: true },
   });
 
@@ -1103,6 +1240,8 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
 
   const pdf = await renderServiceChargeInvoicePdf(invoiceId);
   const attachments = pdf ? [pdfAttachmentFromResult(pdf)] : [];
+
+  await ensureInvoiceColumns();
 
   await notifyOwnerCustom({
     propertyId: unit.propertyId,
@@ -1119,9 +1258,14 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
     where: { id: unit.id },
     data: { serviceChargeLastReminderAt: new Date() },
   });
+  await prisma.serviceChargeInvoice.update({
+    where: { id: invoiceId },
+    data: { sentAt: new Date() },
+  });
 
   revalidatePath(back);
   revalidatePath("/protected/service-charge-ledger");
+  revalidatePath("/protected/invoices");
 
   return encodedRedirect("success", back, "Invoice sent to the owner.");
 };

@@ -10,8 +10,15 @@ import {
   renderInvoiceEmail,
 } from "@/lib/email";
 import { sendWhatsApp, sendWhatsAppTemplate } from "@/lib/whatsapp";
+import {
+  formatOwnerWhatsApp,
+  ownerChargeIssuedCopy,
+  ownerChargeReminderCopy,
+  ownerServiceChargeCopy,
+} from "@/lib/owner-alerts";
 import { syncWorkerWhatsappSession } from "@/lib/whatsapp-session";
 import { UserType } from "@/lib/generated/prisma/client";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 import type { RequestStatus } from "@/lib/generated/prisma/client";
 
 /**
@@ -51,6 +58,9 @@ type ChannelExtras = {
   whatsappTemplate?: { envVar: string; bodyParams: string[] };
   /** Real file attachments on the outbound email (PDF invoices). */
   attachments?: import("@/lib/email").EmailAttachment[];
+  /** Override the default WhatsApp body. Owners otherwise get a formatted
+   * account notice built from title/message/details. */
+  whatsappBody?: string;
 };
 
 /** Every in-app notification also goes out by email and (when the recipient
@@ -122,15 +132,9 @@ async function dispatchExternalChannels(
           );
         }
       } else if (user.phone) {
-        const phone = user.phone;
-        const detailLines = row.details
-          ?.map((d) => `${d.label}: ${d.value}`)
-          .join("\n");
-        const fallbackBody = `*${row.title}*\n${row.message}${detailLines ? `\n\n${detailLines}` : ""}`;
+        const body = row.whatsappBody || row.message || row.title;
 
-        // Don't wait on Gemini before sending — a 15s model timeout was
-        // blocking charge/expense server actions on the "Adding..." spinner.
-        tasks.push(sendWhatsApp({ to: phone, body: fallbackBody }));
+        tasks.push(sendWhatsApp({ to: phone, body, preferTemplate: true }));
       }
 
       return tasks;
@@ -145,15 +149,17 @@ async function dispatchExternalChannels(
 async function createNotification(args: {
   data: NotificationRow & ChannelExtras;
 }) {
-  const { details, emailHtml, whatsappTemplate, ...dbData } = args.data;
+  const { details, emailHtml, whatsappTemplate, whatsappBody, ...dbData } = args.data;
   const created = await prisma.notification.create({ data: dbData });
-  after(() =>
-    dispatchExternalChannels([
-      { ...dbData, details, emailHtml, whatsappTemplate },
-    ]).catch((error) =>
-      console.error("Notification email/WhatsApp dispatch failed:", error),
-    ),
+  const work = dispatchExternalChannels([
+    { ...dbData, details, emailHtml, whatsappTemplate, whatsappBody },
+  ]).catch((error) =>
+    console.error("Notification email/WhatsApp dispatch failed:", error),
   );
+  // Start the send immediately — a nested `after()` from charge create can
+  // otherwise never run WhatsApp. Keep the request alive until it finishes.
+  after(() => work);
+  await work;
   return created;
 }
 
@@ -162,14 +168,14 @@ async function createNotifications(args: {
   data: (NotificationRow & ChannelExtras)[];
 }) {
   const dbData = args.data.map(
-    ({ details, emailHtml, whatsappTemplate, attachments, ...rest }) => rest,
+    ({ details, emailHtml, whatsappTemplate, attachments, whatsappBody, ...rest }) => rest,
   );
   const created = await prisma.notification.createMany({ data: dbData });
-  after(() =>
-    dispatchExternalChannels(args.data).catch((error) =>
-      console.error("Notification email/WhatsApp dispatch failed:", error),
-    ),
+  const work = dispatchExternalChannels(args.data).catch((error) =>
+    console.error("Notification email/WhatsApp dispatch failed:", error),
   );
+  after(() => work);
+  await work;
   return created;
 }
 
@@ -288,7 +294,7 @@ export async function notifyStatusChange(request: {
   // (headed over, started, finished) — admins get their own notice of it,
   // separate from the tenant's, worded for someone managing the job.
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
 
@@ -343,7 +349,7 @@ export async function notifyRequestHeld(input: {
   actorId: string;
 }): Promise<void> {
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin, id: { not: input.actorId } },
+    where: { userType: { in: STAFF_ADMIN_TYPES }, id: { not: input.actorId } },
     select: { id: true },
   });
   const recipientIds = [input.tenantId, ...admins.map((admin) => admin.id)];
@@ -376,7 +382,7 @@ export async function notifyAdminsResumeRequested(input: {
   tenantEmail: string;
 }): Promise<void> {
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
 
@@ -454,7 +460,7 @@ export async function notifyAdminsNewRequest(request: {
   reportedBy: string;
 }): Promise<void> {
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
 
@@ -486,7 +492,7 @@ export async function notifyAdminsPropertySubmitted(input: {
   ownerEmail: string;
 }): Promise<void> {
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
 
@@ -623,7 +629,7 @@ export async function notifySupplyRequested(input: {
   actorId: string;
 }): Promise<void> {
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
 
@@ -655,7 +661,7 @@ export async function notifySupplyReceiptUploaded(input: {
   item: string;
 }): Promise<void> {
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
 
@@ -714,7 +720,7 @@ export async function notifyAdminsWorkerReadyToResume(input: {
   workerEmail: string;
 }): Promise<void> {
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
 
@@ -744,7 +750,7 @@ export async function notifyAdminsPaymentProof(input: {
   title: string;
 }): Promise<void> {
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
 
@@ -846,6 +852,147 @@ export async function notifyTenantInvoice(input: {
   });
 
   await publish({ kind: "notification", userIds: [input.tenantId] });
+}
+
+/** Landlord copy of a rent or bill just issued to their tenant. */
+export async function notifyOwnerChargeIssued(input: {
+  ownerId: string | null | undefined;
+  chargeId: string;
+  kind: "rent" | "bill";
+  propertyName: string;
+  unitLabel: string;
+  tenantName: string;
+  amount: string;
+  dueDate: string;
+  title: string;
+}): Promise<void> {
+  if (!input.ownerId) return;
+
+  const copy = ownerChargeIssuedCopy(input);
+  await createNotification({
+    data: {
+      userId: input.ownerId,
+      title: copy.title,
+      message: copy.message,
+      href: `/protected/finances/${input.chargeId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+/** Upcoming / due / overdue rent or bill — owners only. */
+export async function notifyOwnerChargeReminder(input: {
+  ownerId: string;
+  chargeId: string;
+  stage: "upcoming" | "due" | "overdue";
+  kind: "rent" | "bill";
+  propertyName: string;
+  unitLabel: string;
+  tenantName: string;
+  amount: string;
+  dueDate: string;
+  title: string;
+  daysOverdue?: number;
+}): Promise<void> {
+  const copy = ownerChargeReminderCopy(input);
+  await createNotification({
+    data: {
+      userId: input.ownerId,
+      title: copy.title,
+      message: copy.message,
+      href: `/protected/finances/${input.chargeId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+export async function notifyOwnerServiceChargeIssued(input: {
+  ownerId: string | null | undefined;
+  propertyId: string;
+  propertyName: string;
+  unitLabel: string;
+  amount: string;
+  dueDate: string;
+  invoiceNumber?: string;
+}): Promise<void> {
+  if (!input.ownerId) return;
+
+  const copy = ownerServiceChargeCopy({
+    stage: "issued",
+    propertyName: input.propertyName,
+    unitLabel: input.unitLabel,
+    amount: input.amount,
+    dueDate: input.dueDate,
+    invoiceNumber: input.invoiceNumber,
+  });
+
+  await createNotification({
+    data: {
+      userId: input.ownerId,
+      title: copy.title,
+      message: copy.message,
+      href: `/protected/properties/${input.propertyId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
+}
+
+export async function notifyOwnerChequeUpdate(input: {
+  ownerId: string | null | undefined;
+  chargeId: string;
+  propertyName: string;
+  unitLabel: string;
+  tenantName: string;
+  amount: string;
+  chequeNumber: string | null;
+  clearanceStatus: "cleared" | "bounced";
+}): Promise<void> {
+  if (!input.ownerId) return;
+
+  const cleared = input.clearanceStatus === "cleared";
+  const title = cleared ? "Cheque cleared" : "Cheque bounced";
+  const message = cleared
+    ? `A cheque of ${input.amount} from ${input.tenantName} for ${input.unitLabel} at ${input.propertyName} has cleared.`
+    : `A cheque of ${input.amount} from ${input.tenantName} for ${input.unitLabel} at ${input.propertyName} has bounced. The charge remains outstanding.`;
+  const details = [
+    { label: "Property", value: input.propertyName },
+    { label: "Unit", value: input.unitLabel },
+    { label: "Tenant", value: input.tenantName },
+    { label: "Amount", value: input.amount },
+    ...(input.chequeNumber
+      ? [{ label: "Cheque no.", value: input.chequeNumber }]
+      : []),
+    { label: "Status", value: cleared ? "Cleared" : "Bounced" },
+  ];
+
+  await createNotification({
+    data: {
+      userId: input.ownerId,
+      title,
+      message,
+      href: `/protected/finances/${input.chargeId}`,
+      details,
+      whatsappBody: formatOwnerWhatsApp({
+        heading: title,
+        intro: "",
+        lines: details,
+        closing: cleared
+          ? "The payment is now on the ledger."
+          : "Please follow up with the tenant, or reply here and we will assist.",
+      }),
+    },
+  });
+
+  await publish({ kind: "notification", userIds: [input.ownerId] });
 }
 
 /** A tenant was just moved into a unit — welcomes them with the lease
@@ -966,6 +1113,11 @@ export async function notifyOwnerChargePaid(input: {
       title: "Charge Paid",
       message: `${input.tenantEmail} paid ${input.amount} for “${input.title}”.`,
       href: `/protected/finances/${input.chargeId}`,
+      details: [
+        { label: "Tenant", value: input.tenantEmail },
+        { label: "Charge", value: input.title },
+        { label: "Amount", value: input.amount },
+      ],
     },
   });
 
@@ -988,6 +1140,10 @@ export async function notifyOwnerPaymentProof(input: {
       title: "Payment Proof Submitted",
       message: `${input.tenantEmail} submitted proof for “${input.title}”.`,
       href: `/protected/finances/${input.chargeId}`,
+      details: [
+        { label: "Tenant", value: input.tenantEmail },
+        { label: "Charge", value: input.title },
+      ],
     },
   });
 
@@ -1115,6 +1271,7 @@ export async function notifyPropertyAssigned(input: {
 export async function notifyServiceChargeUpcoming(input: {
   propertyId: string;
   propertyName: string;
+  unitLabel?: string;
   amount: string;
   dueDate: string;
   recipientIds: string[];
@@ -1122,12 +1279,22 @@ export async function notifyServiceChargeUpcoming(input: {
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
+  const copy = ownerServiceChargeCopy({
+    stage: "upcoming",
+    propertyName: input.propertyName,
+    unitLabel: input.unitLabel ?? input.propertyName,
+    amount: input.amount,
+    dueDate: input.dueDate,
+  });
+
   await createNotifications({
     data: input.recipientIds.map((userId) => ({
       userId,
-      title: "Service Charge Due Soon",
-      message: `The ${input.amount} service charge for “${input.propertyName}” is due on ${input.dueDate}. The invoice PDF is attached.`,
+      title: copy.title,
+      message: copy.message,
       href: `/protected/properties/${input.propertyId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
       attachments: input.attachments,
     })),
   });
@@ -1138,18 +1305,30 @@ export async function notifyServiceChargeUpcoming(input: {
 export async function notifyServiceChargeDue(input: {
   propertyId: string;
   propertyName: string;
+  unitLabel?: string;
   amount: string;
   recipientIds: string[];
   attachments?: import("@/lib/email").EmailAttachment[];
+  dueDate?: string;
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
+
+  const copy = ownerServiceChargeCopy({
+    stage: "due",
+    propertyName: input.propertyName,
+    unitLabel: input.unitLabel ?? input.propertyName,
+    amount: input.amount,
+    dueDate: input.dueDate,
+  });
 
   await createNotifications({
     data: input.recipientIds.map((userId) => ({
       userId,
-      title: "Service Charge Due Today",
-      message: `The ${input.amount} service charge for “${input.propertyName}” is due today. The invoice PDF is attached.`,
+      title: copy.title,
+      message: copy.message,
       href: `/protected/properties/${input.propertyId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
       attachments: input.attachments,
     })),
   });
@@ -1173,19 +1352,23 @@ export async function notifyInstallmentDue(input: {
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
-  const title = "Installment Payment Due Soon";
-  const message = `Installment ${input.sequence} of ${input.installmentCount} for "${input.propertyName} — ${input.unitLabel}" is due ${input.dueDate}. The invoice PDF is attached.`;
+  const copy = ownerServiceChargeCopy({
+    stage: "installment",
+    propertyName: input.propertyName,
+    unitLabel: input.unitLabel,
+    amount: input.amount,
+    dueDate: input.dueDate,
+    installmentLabel: `Installment ${input.sequence} of ${input.installmentCount}`,
+  });
 
   await createNotifications({
     data: input.recipientIds.map((userId) => ({
       userId,
-      title,
-      message,
+      title: copy.title,
+      message: copy.message,
       href: `/protected/properties/${input.propertyId}`,
-      details: [
-        { label: "Amount", value: input.amount },
-        { label: "Due date", value: input.dueDate },
-      ],
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
       attachments: input.attachments,
     })),
   });
@@ -1196,21 +1379,32 @@ export async function notifyInstallmentDue(input: {
 export async function notifyServiceChargeOverdue(input: {
   propertyId: string;
   propertyName: string;
+  unitLabel?: string;
   amount: string;
   daysOverdue: number;
   recipientIds: string[];
   attachments?: import("@/lib/email").EmailAttachment[];
+  dueDate?: string;
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
+
+  const copy = ownerServiceChargeCopy({
+    stage: "overdue",
+    propertyName: input.propertyName,
+    unitLabel: input.unitLabel ?? input.propertyName,
+    amount: input.amount,
+    dueDate: input.dueDate,
+    daysOverdue: input.daysOverdue,
+  });
 
   await createNotifications({
     data: input.recipientIds.map((userId) => ({
       userId,
-      title: "Service Charge Overdue",
-      message: `The ${input.amount} service charge for “${input.propertyName}” is ${input.daysOverdue} day${
-        input.daysOverdue === 1 ? "" : "s"
-      } overdue. The invoice PDF is attached.`,
+      title: copy.title,
+      message: copy.message,
       href: `/protected/properties/${input.propertyId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
       attachments: input.attachments,
     })),
   });

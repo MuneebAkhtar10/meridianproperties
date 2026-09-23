@@ -87,6 +87,12 @@ export function StatTile({
       {hint && (
         <p className="mt-1 text-xs leading-snug text-muted-foreground">{hint}</p>
       )}
+      {href ? (
+        <p className="mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium text-primary">
+          View
+          <ChevronRight className="h-3 w-3" />
+        </p>
+      ) : null}
     </CardContent>
   );
 

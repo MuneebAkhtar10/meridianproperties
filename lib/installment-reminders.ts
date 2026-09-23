@@ -9,6 +9,7 @@ import {
 } from "@/lib/pdf/render-service-charge-invoice";
 import { prisma } from "@/lib/prisma";
 import { UserType } from "@/lib/generated/prisma/client";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 
 const REMINDER_WINDOW_DAYS = 7;
 
@@ -52,7 +53,7 @@ export async function runInstallmentReminders(): Promise<{
   }
 
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
   const adminIds = admins.map((admin) => admin.id);

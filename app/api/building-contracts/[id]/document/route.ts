@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { downloadAttachment } from "@/lib/storage";
 import { UserType } from "@/lib/generated/prisma/client";
 
@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user || !isStaffAdmin(user.userType)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -22,11 +22,8 @@ import { prisma } from "@/lib/prisma";
 import { pushMaintenanceRequestToDynamics } from "@/lib/dynamics/entities";
 import { formatUnitLabel } from "@/lib/property-types";
 import { publish } from "@/lib/realtime";
-import {
-  getCurrentUser,
-  requireRole,
-  requireUser,
-} from "@/lib/session";
+import { getCurrentUser, requireRole, requireUser, isStaffAdmin } from "@/lib/session";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 import {
   deleteAttachment,
   uploadAttachment,
@@ -54,7 +51,7 @@ async function canManageRequest(
   actor: { id: string; userType: UserType },
   _requestId: string,
 ): Promise<boolean> {
-  return actor.userType === UserType.admin;
+  return isStaffAdmin(actor.userType);
 }
 const HOLDABLE_STATUSES: RequestStatus[] = [
   RequestStatus.pending,
@@ -312,7 +309,7 @@ export const reportIssueAction = async (formData: FormData) => {
   // Lands on every admin's queue while the tenant is still on the success page.
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [user.id],
   });
 
@@ -390,7 +387,7 @@ export const updateRequestAction = async (formData: FormData) => {
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [user.id, request.assignedToId].filter((id): id is string =>
       Boolean(id),
     ),
@@ -466,7 +463,7 @@ export const deleteRequestAction = async (formData: FormData) => {
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [user.id, request.assignedToId].filter((id): id is string =>
       Boolean(id),
     ),
@@ -569,7 +566,7 @@ export const updateTaskStatusAction = async (
   // The tenant watches this one land; so does every admin's board.
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [task.userId, user.id],
   });
 
@@ -704,7 +701,7 @@ export const holdTaskAction = async (
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [task.userId, task.assignedToId].filter((id): id is string =>
       Boolean(id),
     ),
@@ -829,7 +826,7 @@ export const uploadSupplyReceiptAction = async (
 
   if (
     supplyRequest.requestedById !== actor.id &&
-    actor.userType !== UserType.admin
+    !isStaffAdmin(actor.userType)
   ) {
     return { ok: false, message: "You can only attach a receipt to your own request." };
   }
@@ -1032,7 +1029,7 @@ export const requestHeldTaskResumeAction = async (formData: FormData) => {
 
       await publish({
         kind: "request",
-        roles: [UserType.admin],
+        roles: [...STAFF_ADMIN_TYPES],
         userIds: [tenant.id],
       });
     }
@@ -1114,7 +1111,7 @@ export const workerReadyToResumeAction = async (
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [worker.id],
   });
 
@@ -1265,7 +1262,7 @@ export const resumeHeldTaskAction = async (
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [task.userId, task.assignedToId, worker.id].filter(
       (id): id is string => Boolean(id),
     ),
@@ -1355,7 +1352,7 @@ export const requestCompletionAction = async (
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [task.userId, user.id],
   });
 
@@ -1436,7 +1433,7 @@ export const submitCompletionCodeAction = async (
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [task.userId, user.id],
   });
 
@@ -1646,7 +1643,7 @@ export const createRequestAction = async (formData: FormData) => {
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: workerId ? [workerId] : [],
   });
 
@@ -1815,7 +1812,7 @@ export const assignWorkerAction = async (formData: FormData) => {
   // The worker losing the job needs to hear about it as much as the one getting it.
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [current.userId, workerId, current.assignedToId].filter(
       (id): id is string => Boolean(id),
     ),
@@ -1843,7 +1840,7 @@ function notificationHref(
     return null;
   }
 
-  if (userType === UserType.admin) {
+  if (isStaffAdmin(userType)) {
     return `/protected/maintenance/${relatedId}`;
   }
 

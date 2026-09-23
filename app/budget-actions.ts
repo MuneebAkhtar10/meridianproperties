@@ -20,6 +20,14 @@ function budgetPath(propertyId: string, year: number): string {
   return `/protected/properties/${propertyId}/budget/${year}`;
 }
 
+async function requireOaProperty(propertyId: string) {
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: { propertyType: { select: { isOwnerAssociation: true } } },
+  });
+  return property?.propertyType.isOwnerAssociation === true;
+}
+
 export const addBudgetIncomeLineAction = async (formData: FormData) => {
   await requireRole(UserType.admin);
 
@@ -43,6 +51,10 @@ export const addBudgetIncomeLineAction = async (formData: FormData) => {
       propertyId ? budgetPath(propertyId, year) : "/protected/properties",
       "Enter a valid description, number of units, and amount.",
     );
+  }
+
+  if (!(await requireOaProperty(propertyId))) {
+    return encodedRedirect("error", "/protected/properties", "Annual budget is only available for owner-association properties.");
   }
 
   const budget = await prisma.annualBudget.upsert({
@@ -76,6 +88,10 @@ export const deleteBudgetIncomeLineAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/properties", "Invalid line.");
   }
 
+  if (!(await requireOaProperty(propertyId))) {
+    return encodedRedirect("error", "/protected/properties", "Annual budget is only available for owner-association properties.");
+  }
+
   await prisma.budgetIncomeLine.delete({ where: { id } });
 
   revalidatePath(budgetPath(propertyId, year));
@@ -103,6 +119,10 @@ export const addBudgetExpenseLineAction = async (formData: FormData) => {
       propertyId ? budgetPath(propertyId, year) : "/protected/properties",
       "Enter a valid description and monthly rate.",
     );
+  }
+
+  if (!(await requireOaProperty(propertyId))) {
+    return encodedRedirect("error", "/protected/properties", "Annual budget is only available for owner-association properties.");
   }
 
   const budget = await prisma.annualBudget.upsert({
@@ -134,6 +154,10 @@ export const deleteBudgetExpenseLineAction = async (formData: FormData) => {
   const year = Number(formData.get("year"));
   if (!id || !propertyId) {
     return encodedRedirect("error", "/protected/properties", "Invalid line.");
+  }
+
+  if (!(await requireOaProperty(propertyId))) {
+    return encodedRedirect("error", "/protected/properties", "Annual budget is only available for owner-association properties.");
   }
 
   await prisma.budgetExpenseLine.delete({ where: { id } });

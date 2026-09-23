@@ -66,9 +66,13 @@ export default async function AnnualBudgetPage({ params, searchParams }: PagePro
       id: true,
       name: true,
       units: { select: { ownerId: true } },
+      propertyType: { select: { isOwnerAssociation: true } },
     },
   });
   if (!property) {
+    notFound();
+  }
+  if (!property.propertyType.isOwnerAssociation) {
     notFound();
   }
   if (isOwner && !property.units.some((u) => u.ownerId === user.id)) {

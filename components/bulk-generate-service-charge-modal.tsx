@@ -28,6 +28,9 @@ export function BulkGenerateServiceChargeModal({
   properties,
   owners,
   funds,
+  redirectTo,
+  triggerLabel = "Generate Service Charge",
+  triggerClassName,
 }: {
   properties: { id: string; name: string }[];
   owners: {
@@ -37,6 +40,9 @@ export function BulkGenerateServiceChargeModal({
     lastName: string | null;
   }[];
   funds: { id: string; label: string }[];
+  redirectTo?: string;
+  triggerLabel?: string;
+  triggerClassName?: string;
 }) {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
@@ -105,9 +111,16 @@ export function BulkGenerateServiceChargeModal({
       description="Bill a whole year's service charge across many units at once — review every unit's amount before anything is created."
       widthClassName="max-w-3xl"
       trigger={
-        <Button type="button" variant="outline">
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(
+            "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary",
+            triggerClassName,
+          )}
+        >
           <Calculator className="h-4 w-4" />
-          Generate Service Charge
+          {triggerLabel}
         </Button>
       }
     >
@@ -188,6 +201,7 @@ export function BulkGenerateServiceChargeModal({
           action={bulkGenerateServiceChargeInvoicesAction}
           className="space-y-3"
         >
+          {redirectTo ? <input type="hidden" name="redirectTo" value={redirectTo} /> : null}
           <input type="hidden" name="fundId" value={fundId} />
           <input type="hidden" name="year" value={year} />
           <input type="hidden" name="dueDate" value={dueDate} />

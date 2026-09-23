@@ -9,6 +9,7 @@ import {
   DoorOpen,
   FileBarChart,
   FileCheck,
+  FileText,
   FileWarning,
   Home,
   KeyRound,
@@ -16,7 +17,6 @@ import {
   type LucideIcon,
   MapPin,
   Phone,
-  Receipt,
   ScrollText,
   Store,
   Target,
@@ -51,9 +51,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
+import { Tooltip } from "@/components/ui/tooltip";
 import { CashFlowStatementModal } from "@/components/cash-flow-statement-modal";
 import { PropertyExpensesMenu } from "@/components/property-expenses-menu";
 import { RentStatementModal } from "@/components/rent-statement-modal";
+import { ServicesInvoiceMenu } from "@/components/services-invoice-menu";
 import {
   getActiveSuppliersWithCategories,
   getExpenseCategoriesWithSubcategories,
@@ -66,8 +68,10 @@ import { formatOmanAddress, OMAN_GOVERNORATES } from "@/lib/oman";
 import {
   defaultUnitPermissions,
   formatUnitLabel,
+  collectsServiceCharge,
   isBuildingManagementType,
   isBuildingType,
+  isIndependentType,
   propertyManagementCategory,
   PROPERTY_MANAGEMENT_CATEGORY_LABEL,
   PROPERTY_MANAGEMENT_SCOPE_NOTE,
@@ -78,7 +82,7 @@ import { getRentPositionData } from "@/lib/rent-position";
 import { SummaryTile } from "@/components/summary-tile";
 import { cn, personDisplayName } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
-import { requireAnyRole } from "@/lib/session";
+import { requireAnyRole, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -153,7 +157,7 @@ export default async function PropertyDetailPage({
     typeof rawParams.q === "string" ? rawParams.q.trim() : "";
 
   const user = await requireAnyRole(UserType.admin, UserType.owner);
-  const isAdmin = user.userType === UserType.admin;
+  const isAdmin = isStaffAdmin(user.userType);
   const isOwner = user.userType === UserType.owner;
 
   const property = await prisma.property.findUnique({
@@ -272,7 +276,7 @@ export default async function PropertyDetailPage({
         : Promise.resolve([]),
       prisma.fund.findMany({
         orderBy: { createdAt: "asc" },
-        select: { id: true, label: true },
+        select: { id: true, name: true, label: true },
       }),
       // Suppliers this property can use an expense against — either linked
       // to it specifically, or (the common case) available everywhere. Same
@@ -350,6 +354,11 @@ export default async function PropertyDetailPage({
   const newUnitDefaults = defaultUnitPermissions(propertyType);
   const isPropertyBuildingType = isBuildingType(propertyType);
   const isPropertyBuildingManagementType = isBuildingManagementType(propertyType);
+  const independent = isIndependentType(propertyType);
+  const takesServiceCharge = collectsServiceCharge(propertyType);
+  const canGenerateUnits = (isAdmin || isOwner) && hasFloors && !independent;
+  const canAddUnits =
+    (isAdmin || isOwner) && (!independent || property.units.length === 0);
   const managementCategory = propertyManagementCategory(propertyType);
   const tracksRent =
     !isPropertyBuildingType &&
@@ -613,60 +622,85 @@ export default async function PropertyDetailPage({
             Property records
           </p>
           <div className="flex flex-wrap gap-1.5">
-            <ButtonLink
-              href={`/protected/properties/${property.id}/building-contracts`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={FileCheck} className="bg-blue-100 text-blue-600" />
-              Building Contracts
-            </ButtonLink>
-            <ButtonLink
-              href="/protected/tenancies"
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={KeyRound} className="bg-amber-100 text-amber-600" />
-              Tenancy terms
-            </ButtonLink>
-            <ButtonLink
-              href={`/protected/tenancies/report?property=${property.id}`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={ClipboardList} className="bg-teal-100 text-teal-600" />
-              Tenant Report
-            </ButtonLink>
-            <ButtonLink
-              href={
-                distinctOwners.length === 1
-                  ? `/protected/properties/owner-report?owner=${distinctOwners[0].id}`
-                  : "/protected/properties/owner-report"
-              }
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={FileBarChart} className="bg-purple-100 text-purple-600" />
-              Owner Report
-            </ButtonLink>
-            {managementCategory === "independent" && (
-              <RentStatementModal
-                options={activeStatementTenancies}
-                trigger={
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="bg-background"
-                  >
-                    <ToolbarIcon icon={Banknote} className="bg-rose-100 text-rose-600" />
-                    Landlord Statement
-                  </Button>
+            <Tooltip label="Vendor agreements for this building — lift, fire, pest control, and other shared services.">
+              <ButtonLink
+                href={`/protected/properties/${property.id}/building-contracts`}
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={FileCheck} className="bg-blue-100 text-blue-600" />
+                Building Contracts
+              </ButtonLink>
+            </Tooltip>
+            <Tooltip label="Lease terms and tenancy records for units on this property.">
+              <ButtonLink
+                href="/protected/tenancies"
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={KeyRound} className="bg-amber-100 text-amber-600" />
+                Tenancy terms
+              </ButtonLink>
+            </Tooltip>
+            <Tooltip label="Occupancy and tenancy details for tenants on this property.">
+              <ButtonLink
+                href={`/protected/tenancies/report?property=${property.id}`}
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={ClipboardList} className="bg-teal-100 text-teal-600" />
+                Tenant Report
+              </ButtonLink>
+            </Tooltip>
+            <Tooltip label="Income and charges summary for the owner(s) of this property.">
+              <ButtonLink
+                href={
+                  distinctOwners.length === 1
+                    ? `/protected/properties/owner-report?owner=${distinctOwners[0].id}`
+                    : "/protected/properties/owner-report"
                 }
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={FileBarChart} className="bg-purple-100 text-purple-600" />
+                Owner Report
+              </ButtonLink>
+            </Tooltip>
+            {managementCategory === "independent" && (
+              <Tooltip label="Download the landlord statement — rent collected versus expenses for a tenancy.">
+                <RentStatementModal
+                  options={activeStatementTenancies}
+                  trigger={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="bg-background"
+                    >
+                      <ToolbarIcon icon={Banknote} className="bg-rose-100 text-rose-600" />
+                      Landlord Statement
+                    </Button>
+                  }
+                />
+              </Tooltip>
+            )}
+            {(managementCategory === "independent" || managementCategory === "bm") && (
+              <ServicesInvoiceMenu
+                propertyId={property.id}
+                units={property.units.map((unit) => ({
+                  unitId: unit.id,
+                  unitLabel: formatUnitLabel(propertyType, unit.label),
+                  ownerName: unit.owner
+                    ? personDisplayName(unit.owner)
+                    : "Unassigned owner",
+                  tenantName: unit.tenant
+                    ? personDisplayName(unit.tenant)
+                    : null,
+                }))}
               />
             )}
           </div>
@@ -677,57 +711,69 @@ export default async function PropertyDetailPage({
             Reports &amp; ledgers
           </p>
           <div className="flex flex-wrap gap-1.5">
-            <ButtonLink
-              href={`/protected/properties/${property.id}/budget/${new Date().getFullYear()}`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={Wallet} className="bg-emerald-100 text-emerald-600" />
-              Annual Budget
-            </ButtonLink>
-            <ButtonLink
-              href={`/protected/properties/${property.id}/building-expenses`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={Receipt} className="bg-rose-100 text-rose-600" />
-              Building Expenses
-            </ButtonLink>
-            {isPropertyBuildingManagementType && (
-              <ButtonLink
-                href={`/protected/properties/${property.id}/building-management-report`}
-                variant="outline"
-                size="sm"
-                className="bg-background"
-              >
-                <ToolbarIcon icon={ScrollText} className="bg-violet-100 text-violet-600" />
-                Building Management Report
-              </ButtonLink>
-            )}
-            <Modal
-              trigger={
-                <Button
-                  type="button"
+            {managementCategory === "oa" && (
+              <Tooltip label="Planned income and expenditure for this property’s budget year.">
+                <ButtonLink
+                  href={`/protected/properties/${property.id}/budget/${new Date().getFullYear()}`}
                   variant="outline"
                   size="sm"
                   className="bg-background"
                 >
-                  <ToolbarIcon icon={Store} className="bg-indigo-100 text-indigo-600" />
-                  Suppliers
-                </Button>
-              }
-              title="Suppliers"
-              description={`Every active supplier eligible for ${property.name} — linked directly, or available portfolio-wide.`}
-              icon={
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                  <Store className="h-4 w-4" />
-                </span>
-              }
-            >
-              {suppliersModalContent}
-            </Modal>
+                  <ToolbarIcon icon={Wallet} className="bg-emerald-100 text-emerald-600" />
+                  Annual Budget
+                </ButtonLink>
+              </Tooltip>
+            )}
+            {isPropertyBuildingManagementType && (
+              <Tooltip label="Rent collected versus company-paid expenses for the selected period.">
+                <ButtonLink
+                  href={`/protected/properties/${property.id}/building-management-report`}
+                  variant="outline"
+                  size="sm"
+                  className="bg-background"
+                >
+                  <ToolbarIcon icon={ScrollText} className="bg-violet-100 text-violet-600" />
+                  Building Management Report
+                </ButtonLink>
+              </Tooltip>
+            )}
+            {isIndependentType(propertyType) && (
+              <Tooltip label="Rent collected versus company-paid expenses for the selected period.">
+                <ButtonLink
+                  href={`/protected/properties/${property.id}/building-management-report`}
+                  variant="outline"
+                  size="sm"
+                  className="bg-background"
+                >
+                  <ToolbarIcon icon={Landmark} className="bg-sky-100 text-sky-600" />
+                  Summary Report
+                </ButtonLink>
+              </Tooltip>
+            )}
+            <Tooltip label="Vendors eligible to work on this property — linked here or available portfolio-wide.">
+              <Modal
+                trigger={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="bg-background"
+                  >
+                    <ToolbarIcon icon={Store} className="bg-indigo-100 text-indigo-600" />
+                    Suppliers
+                  </Button>
+                }
+                title="Suppliers"
+                description={`Every active supplier eligible for ${property.name} — linked directly, or available portfolio-wide.`}
+                icon={
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                    <Store className="h-4 w-4" />
+                  </span>
+                }
+              >
+                {suppliersModalContent}
+              </Modal>
+            </Tooltip>
             <PropertyExpensesMenu
               propertyId={property.id}
               propertyName={property.name}
@@ -761,55 +807,79 @@ export default async function PropertyDetailPage({
                 paidBy: expense.paidBy,
               }))}
             />
-            <ButtonLink
-              href={`/protected/properties/${property.id}/unit-ledgers`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={ScrollText} className="bg-violet-100 text-violet-600" />
-              Unit Ledgers
-            </ButtonLink>
             {tracksRent && (
+              <Tooltip label="Which units are paid up, due, or overdue on rent.">
+                <ButtonLink
+                  href={`/protected/finances/rent-position?property=${property.id}`}
+                  variant="outline"
+                  size="sm"
+                  className="bg-background"
+                >
+                  <ToolbarIcon icon={CircleDollarSign} className="bg-emerald-100 text-emerald-700" />
+                  Rent Position
+                </ButtonLink>
+              </Tooltip>
+            )}
+            <Tooltip label="Open and billed owner invoices for this property, including unit-level additional charges.">
               <ButtonLink
-                href={`/protected/finances/rent-position?property=${property.id}`}
+                href={`/protected/invoices?property=${property.id}&bucket=billed`}
                 variant="outline"
                 size="sm"
                 className="bg-background"
               >
-                <ToolbarIcon icon={CircleDollarSign} className="bg-emerald-100 text-emerald-700" />
-                Rent Position
+                <ToolbarIcon icon={FileText} className="bg-sky-100 text-sky-700" />
+                Invoices
               </ButtonLink>
+            </Tooltip>
+            {takesServiceCharge && (
+              <>
+            <Tooltip label="Per-unit service-charge invoices, payments, and balances.">
+              <ButtonLink
+                href={`/protected/properties/${property.id}/unit-ledgers`}
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={ScrollText} className="bg-violet-100 text-violet-600" />
+                Unit Ledgers
+              </ButtonLink>
+            </Tooltip>
+            <Tooltip label="Service-charge invoices and collections for this property.">
+              <ButtonLink
+                href={`/protected/service-charge-ledger?property=${property.id}`}
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={Landmark} className="bg-cyan-100 text-cyan-600" />
+                Service Charge
+              </ButtonLink>
+            </Tooltip>
+            <Tooltip label="How much service charge is billed versus collected on each unit.">
+              <ButtonLink
+                href={`/protected/service-charge-ledger/collection-position?property=${property.id}`}
+                variant="outline"
+                size="sm"
+                className="bg-background"
+              >
+                <ToolbarIcon icon={Target} className="bg-indigo-100 text-indigo-600" />
+                Collection Position
+              </ButtonLink>
+            </Tooltip>
+            <Tooltip label="Detailed cash-flow statement — service-charge revenue and expenditure for a date range.">
+              <CashFlowStatementModal
+                properties={[{ id: property.id, name: property.name }]}
+                defaultPropertyId={property.id}
+                trigger={
+                  <Button type="button" variant="outline" size="sm" className="bg-background">
+                    <ToolbarIcon icon={TrendingUp} className="bg-emerald-100 text-emerald-600" />
+                    Cash Flow
+                  </Button>
+                }
+              />
+            </Tooltip>
+              </>
             )}
-            <ButtonLink
-              href={`/protected/service-charge-ledger?property=${property.id}`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={Landmark} className="bg-cyan-100 text-cyan-600" />
-              Service Charge
-            </ButtonLink>
-            <ButtonLink
-              href={`/protected/service-charge-ledger/collection-position?property=${property.id}`}
-              variant="outline"
-              size="sm"
-              className="bg-background"
-            >
-              <ToolbarIcon icon={Target} className="bg-indigo-100 text-indigo-600" />
-              Collection Position
-            </ButtonLink>
-            <CashFlowStatementModal
-              properties={[{ id: property.id, name: property.name }]}
-              funds={funds}
-              defaultPropertyId={property.id}
-              trigger={
-                <Button type="button" variant="outline" size="sm" className="bg-background">
-                  <ToolbarIcon icon={TrendingUp} className="bg-emerald-100 text-emerald-600" />
-                  Cash Flow
-                </Button>
-              }
-            />
           </div>
         </div>
       </div>
@@ -946,6 +1016,7 @@ export default async function PropertyDetailPage({
             href={`/protected/finances/rent-position?property=${property.id}`}
           />
         )}
+        {takesServiceCharge && (
         <SummaryTile
           icon={<AlertCircle className="h-4 w-4" />}
           value={formatMoneyCompact(serviceChargeDueAmount)}
@@ -958,6 +1029,8 @@ export default async function PropertyDetailPage({
           })}
           active={chargeFilter === "due"}
         />
+        )}
+        {takesServiceCharge && (
         <SummaryTile
           icon={<CheckCircle2 className="h-4 w-4" />}
           value={formatMoneyCompact(serviceChargeCollectedAmount)}
@@ -970,6 +1043,7 @@ export default async function PropertyDetailPage({
           })}
           active={chargeFilter === "ok"}
         />
+        )}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_28rem]">
@@ -1007,6 +1081,7 @@ export default async function PropertyDetailPage({
                     </div>
                   </div>
 
+                  {takesServiceCharge && (
                   <div className="flex items-center gap-1.5">
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Charge
@@ -1041,6 +1116,7 @@ export default async function PropertyDetailPage({
                       })}
                     </div>
                   </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-end gap-2 border-t border-border/60 pt-2">
@@ -1132,7 +1208,9 @@ export default async function PropertyDetailPage({
               icon={DoorOpen}
               title={`No ${propertyType.unitNounPlural.toLowerCase()} yet`}
               description={
-                hasFloors
+                independent
+                  ? `Independent properties have exactly one ${unitNoun} — add it from the sidebar if it was not created with the property.`
+                  : hasFloors
                   ? `Use "Generate ${propertyType.unitNounPlural.toLowerCase()}" to create them all at once — 10 floors × 5 per floor gives you 50.`
                   : `Use "Add ${unitNoun}" to add them one at a time.`
               }
@@ -1147,6 +1225,7 @@ export default async function PropertyDetailPage({
             <PropertyUnitsBulkList
               propertyId={property.id}
               owners={owners}
+              collectsServiceCharge={takesServiceCharge}
               floorGroups={[...byFloor.entries()].map(([floor, units]) => ({
                 key: String(floor),
                 label: !hasFloors
@@ -1210,7 +1289,7 @@ export default async function PropertyDetailPage({
                                 Contract needed
                               </span>
                             ))}
-                          {hasCharge && (
+                          {takesServiceCharge && hasCharge && (
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
                                 chargeTone === "overdue"
@@ -1268,7 +1347,7 @@ export default async function PropertyDetailPage({
                               {unit.tenant ? personDisplayName(unit.tenant) : "—"}
                             </span>
                           </span>
-                          {!hasCharge && (
+                          {takesServiceCharge && !hasCharge && (
                             <>
                               <span className="text-border">·</span>
                               <span>No service charge</span>
@@ -1284,7 +1363,7 @@ export default async function PropertyDetailPage({
                             </>
                           )}
                         </p>
-                        {hasCharge && (
+                        {takesServiceCharge && hasCharge && (
                           <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
                             <span className="font-medium text-emerald-700">
                               Paid {formatMoney(totalPaid)}
@@ -1330,6 +1409,7 @@ export default async function PropertyDetailPage({
                           hasBedrooms={hasBedrooms}
                           isAdmin={isAdmin}
                           isBuildingType={isPropertyBuildingType}
+                          collectsServiceCharge={takesServiceCharge}
                           canManageDocuments={
                             isAdmin || unit.ownerId === user.id
                           }
@@ -1347,7 +1427,7 @@ export default async function PropertyDetailPage({
 
         {/* ── Tools ──────────────────────────────────────────────────────── */}
         <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
-          {(isAdmin || isOwner) && hasFloors && (
+          {canGenerateUnits && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -1422,7 +1502,7 @@ export default async function PropertyDetailPage({
             </Card>
           )}
 
-          {(isAdmin || isOwner) && (
+          {canAddUnits && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Add {unitNoun}</CardTitle>
@@ -1703,8 +1783,9 @@ export default async function PropertyDetailPage({
                     defaultLongitude={property.longitude?.toString() ?? ""}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Ownership and service charges are now set per unit — see
-                    each {unitNoun}&rsquo;s row above.
+                    {takesServiceCharge
+                      ? `Ownership and service charges are now set per unit — see each ${unitNoun}’s row above.`
+                      : `Ownership is set on the ${unitNoun} — this independent property does not take a service charge.`}
                   </p>
                   <div className="space-y-2 rounded-md border p-2">
                     <p className="text-xs font-medium">
@@ -1715,12 +1796,13 @@ export default async function PropertyDetailPage({
                       invoices.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {isPropertyBuildingType && (
                       <div className="space-y-1">
                         <Label
                           htmlFor="property-assoc-regn"
                           className="text-xs"
                         >
-                          Association registration #
+                          OA number
                         </Label>
                         <Input
                           id="property-assoc-regn"
@@ -1728,8 +1810,10 @@ export default async function PropertyDetailPage({
                           defaultValue={
                             property.associationRegistrationNumber ?? ""
                           }
+                          required
                         />
                       </div>
+                      )}
                       <div className="space-y-1">
                         <Label
                           htmlFor="property-assoc-phone"

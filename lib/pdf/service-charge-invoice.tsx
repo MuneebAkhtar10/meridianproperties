@@ -1,59 +1,76 @@
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 /**
- * A formal owner service-charge invoice — deliberately kept close to the
- * plain, professional look of the reference document (a real Rawazen
- * invoice the client sent) rather than this app's own indigo theme, since
- * it's a document that goes out to owners for payment, not an internal
- * screen.
+ * Owners-association service-charge invoice. Layout matches the client's
+ * reference document: logo on the left, association letterhead on the
+ * right, then the two owner/association boxes and the charge table.
  */
 
 const styles = StyleSheet.create({
   page: {
-    padding: 32,
+    paddingTop: 28,
+    paddingHorizontal: 36,
+    paddingBottom: 32,
     fontSize: 9,
     fontFamily: "Helvetica",
     color: "#000000",
   },
   letterhead: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 16,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 14,
+  },
+  logo: {
+    width: 118,
+    height: 82,
+    objectFit: "contain",
+  },
+  letterheadBlock: {
+    flexGrow: 1,
+    paddingLeft: 16,
+    alignItems: "flex-end",
   },
   letterheadText: {
     textAlign: "right",
-    fontSize: 9,
+    fontSize: 9.5,
+    lineHeight: 1.35,
   },
   letterheadName: {
     fontFamily: "Helvetica-Bold",
     fontSize: 11,
-  },
-  title: {
-    fontSize: 16,
-    fontFamily: "Helvetica-Bold",
     marginBottom: 2,
   },
-  subtitle: {
+  title: {
     fontSize: 14,
     fontFamily: "Helvetica-Bold",
+    textAlign: "center",
+    marginBottom: 1,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontFamily: "Helvetica-Bold",
+    textAlign: "center",
     marginBottom: 12,
   },
   boxRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
     marginBottom: 12,
   },
   box: {
     flex: 1,
     borderWidth: 1,
     borderColor: "#000000",
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    minHeight: 72,
   },
-  boxLine: { marginBottom: 2 },
+  boxLine: { marginBottom: 2, lineHeight: 1.35 },
   metaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 4,
+    marginTop: 6,
   },
   metaLabel: { fontFamily: "Helvetica-Bold" },
   associationLine: {
@@ -147,8 +164,9 @@ const styles = StyleSheet.create({
 });
 
 export function ServiceChargeInvoiceDocument({
+  logoSrc,
   associationName,
-  associationAddress,
+  letterheadAddressLines,
   associationRegistrationNumber,
   associationPhone,
   ownerName,
@@ -175,8 +193,9 @@ export function ServiceChargeInvoiceDocument({
   graceDays,
   installmentLabel,
 }: {
+  logoSrc: string | null;
   associationName: string;
-  associationAddress: string;
+  letterheadAddressLines: string[];
   associationRegistrationNumber: string | null;
   associationPhone: string | null;
   ownerName: string;
@@ -203,25 +222,37 @@ export function ServiceChargeInvoiceDocument({
   graceDays: number;
   installmentLabel?: string;
 }) {
+  const ownerLines = ownerAddress
+    .split(/\n|,/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   return (
     <Document title={`Invoice ${invoiceNumber}`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.letterhead}>
-          <View>
+          {logoSrc ? (
+            <Image src={logoSrc} style={styles.logo} />
+          ) : (
+            <View style={styles.logo} />
+          )}
+          <View style={styles.letterheadBlock}>
             <Text style={[styles.letterheadText, styles.letterheadName]}>
               {associationName}
             </Text>
-            <Text style={styles.letterheadText}>{associationAddress}</Text>
-            {associationRegistrationNumber && (
+            {letterheadAddressLines.map((line) => (
+              <Text key={line} style={styles.letterheadText}>
+                {line}
+              </Text>
+            ))}
+            {associationRegistrationNumber ? (
               <Text style={styles.letterheadText}>
                 Regn #: {associationRegistrationNumber}
               </Text>
-            )}
-            {associationPhone && (
-              <Text style={styles.letterheadText}>
-                Phone: {associationPhone}
-              </Text>
-            )}
+            ) : null}
+            {associationPhone ? (
+              <Text style={styles.letterheadText}>Phone: {associationPhone}</Text>
+            ) : null}
           </View>
         </View>
 
@@ -233,13 +264,21 @@ export function ServiceChargeInvoiceDocument({
         <View style={styles.boxRow}>
           <View style={styles.box}>
             <Text style={styles.boxLine}>{ownerName}</Text>
-            <Text style={styles.boxLine}>{ownerAddress}</Text>
+            {ownerLines.map((line) => (
+              <Text key={line} style={styles.boxLine}>
+                {line}
+              </Text>
+            ))}
           </View>
           <View style={styles.box}>
             <Text style={[styles.boxLine, { fontFamily: "Helvetica-Bold" }]}>
               {associationName}
             </Text>
-            <Text style={styles.boxLine}>{associationAddress}</Text>
+            {letterheadAddressLines.map((line) => (
+              <Text key={`box-${line}`} style={styles.boxLine}>
+                {line}
+              </Text>
+            ))}
             <View style={styles.metaRow}>
               <Text>
                 <Text style={styles.metaLabel}>Invoice No: </Text>

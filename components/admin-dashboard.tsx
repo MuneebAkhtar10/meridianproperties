@@ -8,6 +8,7 @@ import {
   FileClock,
   Landmark,
   ListChecks,
+  MessageSquare,
   Package,
   ReceiptText,
   ScrollText,
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { DonutChart, GroupedBarChart, SplitBar } from "@/components/dashboard-charts";
+import { DonutChart, GroupedBarChart, OccupancyBars, SplitBar } from "@/components/dashboard-charts";
 import {
   PendingTaskRow,
   ShortcutTile,
@@ -47,6 +48,15 @@ export async function AdminDashboard() {
     data.unitCount > 0
       ? Math.round((data.occupiedCount / data.unitCount) * 100)
       : 0;
+  const attentionCount =
+    data.pendingRentProofs +
+    data.pendingApprovals +
+    data.requestCounts.pending +
+    data.awaitingCheques +
+    data.pendingSupplyRequests +
+    data.scOverdueUnits +
+    urgentExpiryCount;
+  const cashIn = data.rentCollectedThisMonth + data.scCollectedThisMonth;
 
   return (
     <>
@@ -54,9 +64,9 @@ export async function AdminDashboard() {
         title="Dashboard"
         description={`${today} · Portfolio snapshot across properties, rent, service charges and work.`}
       >
-        <ButtonLink href="/protected/properties" variant="outline">
-          <Building2 className="h-4 w-4" />
-          Properties
+        <ButtonLink href="/protected/invoices" variant="outline">
+          <ReceiptText className="h-4 w-4" />
+          Invoices
         </ButtonLink>
         <ButtonLink href="/protected/service-charge-ledger">
           <Landmark className="h-4 w-4" />
@@ -64,7 +74,7 @@ export async function AdminDashboard() {
         </ButtonLink>
       </PageHeader>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           label="Open requests"
           value={data.openRequests}
@@ -87,15 +97,15 @@ export async function AdminDashboard() {
           hint={`${data.pendingRentProofs} proofs to review`}
           icon={<Banknote className="h-4 w-4" />}
           color="rose"
-          href="/protected/finances"
+          href="/protected/finances?status=open,overdue,partially_paid,under_review"
         />
         <StatTile
-          label="Pending service charge"
+          label="Open invoices"
           value={<TileMoney amount={data.scPendingAmount} />}
           hint={`${data.scPendingUnits} units · ${data.scOverdueUnits} overdue`}
           icon={<Landmark className="h-4 w-4" />}
           color="teal"
-          href="/protected/service-charge-ledger/collection-position?bucket=outstanding"
+          href="/protected/invoices?bucket=open"
         />
         <StatTile
           label="Rent collected"
@@ -103,15 +113,31 @@ export async function AdminDashboard() {
           hint="this month"
           icon={<ReceiptText className="h-4 w-4" />}
           color="emerald"
-          href="/protected/finances"
+          href="/protected/finances/rent-position"
         />
         <StatTile
-          label="SC collected"
+          label="Invoices collected"
           value={<TileMoney amount={data.scCollectedThisMonth} />}
-          hint="this month"
+          hint={`${data.invoicesIssuedThisMonth} issued this month`}
           icon={<Wallet className="h-4 w-4" />}
           color="sky"
-          href="/protected/service-charge-ledger"
+          href="/protected/invoices?bucket=billed"
+        />
+        <StatTile
+          label="Expenses"
+          value={<TileMoney amount={data.expensesThisMonth} />}
+          hint="this month"
+          icon={<ScrollText className="h-4 w-4" />}
+          color="amber"
+          href="/protected/expenses"
+        />
+        <StatTile
+          label="Needs attention"
+          value={attentionCount}
+          hint="proofs, overdue, approvals, cheques"
+          icon={<AlertTriangle className="h-4 w-4" />}
+          color="rose"
+          href="#attention"
         />
       </div>
 
@@ -165,10 +191,10 @@ export async function AdminDashboard() {
               {data.scDueSoonUnits}
             </p>
           </Link>
-          <Link
-            href="/protected/service-charge-ledger"
-            className="rounded-xl border border-teal-100 bg-white p-3.5 transition-colors hover:bg-teal-50/50"
-          >
+            <Link
+              href="/protected/invoices?bucket=billed"
+              className="rounded-xl border border-teal-100 bg-white p-3.5 transition-colors hover:bg-teal-50/50"
+            >
             <p className="text-xs text-teal-800">Collected this month</p>
             <p className="mt-1 text-xl font-semibold text-teal-950">
               {formatMoneyCompact(data.scCollectedThisMonth)}
@@ -181,9 +207,9 @@ export async function AdminDashboard() {
         <Card className="border-border/60 shadow-sm xl:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <CardTitle className="text-base">Collections · last 6 months</CardTitle>
+              <CardTitle className="text-base">Collections & spend · last 6 months</CardTitle>
               <p className="text-xs text-muted-foreground">
-                Approved rent vs recorded service-charge payments
+                Click a series to open rent, invoices, or expenses
               </p>
             </div>
             <Link
@@ -194,7 +220,12 @@ export async function AdminDashboard() {
             </Link>
           </CardHeader>
           <CardContent>
-            <GroupedBarChart months={data.collectionMonths} />
+            <GroupedBarChart
+              months={data.collectionMonths}
+              rentHref="/protected/finances/rent-position"
+              serviceChargeHref="/protected/invoices?bucket=billed"
+              expenseHref="/protected/expenses"
+            />
           </CardContent>
         </Card>
 
@@ -210,42 +241,32 @@ export async function AdminDashboard() {
               centerLabel="occupied"
               centerValue={`${occupancyPct}%`}
               slices={[
-                { label: "Occupied", value: data.occupiedCount, color: "#6366f1" },
-                { label: "Vacant", value: data.vacantCount, color: "#cbd5e1" },
+                {
+                  label: "Occupied",
+                  value: data.occupiedCount,
+                  color: "#6366f1",
+                  href: "/protected/tenancies",
+                },
+                {
+                  label: "Vacant",
+                  value: data.vacantCount,
+                  color: "#cbd5e1",
+                  href: "/protected/properties",
+                },
               ]}
             />
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">
-                Open maintenance mix
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Cash in vs spend this month
               </p>
-              {(
-                [
-                  ["Pending", data.requestCounts.pending, "bg-amber-500"],
-                  ["In progress", data.requestCounts.in_progress, "bg-[#0886be]"],
-                  ["En route", data.requestCounts.en_route, "bg-violet-500"],
-                  ["On hold", data.requestCounts.on_hold, "bg-slate-400"],
-                ] as const
-              ).map(([label, value, bar]) => {
-                const max = Math.max(
-                  1,
-                  data.requestCounts.pending,
-                  data.requestCounts.in_progress,
-                  data.requestCounts.en_route,
-                  data.requestCounts.on_hold,
-                );
-                return (
-                  <div key={label} className="grid grid-cols-[6.5rem_1fr_1.5rem] items-center gap-2 text-[11px]">
-                    <span className="truncate text-muted-foreground">{label}</span>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={`h-full rounded-full ${bar}`}
-                        style={{ width: `${(value / max) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-right font-medium tabular-nums">{value}</span>
-                  </div>
-                );
-              })}
+              <SplitBar
+                left={cashIn}
+                right={data.expensesThisMonth}
+                leftLabel="Collected"
+                rightLabel="Expenses"
+                leftHref="/protected/invoices?bucket=billed"
+                rightHref="/protected/expenses"
+              />
             </div>
             <div>
               <p className="mb-2 text-xs font-medium text-muted-foreground">
@@ -255,9 +276,78 @@ export async function AdminDashboard() {
                 left={data.outstandingRent}
                 right={data.scPendingAmount}
                 leftLabel="Rent & bills"
-                rightLabel="Service charge"
+                rightLabel="Invoices"
+                leftHref="/protected/finances?status=open,overdue,partially_paid,under_review"
+                rightHref="/protected/invoices?bucket=open"
               />
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Occupancy by property</CardTitle>
+              <p className="text-xs text-muted-foreground">Click a building to open it</p>
+            </div>
+            <Link
+              href="/protected/properties"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              All properties
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <OccupancyBars properties={data.properties.slice(0, 8)} />
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Maintenance mix</CardTitle>
+              <p className="text-xs text-muted-foreground">Open work by status</p>
+            </div>
+            <Link
+              href="/protected/maintenance"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              All requests
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <DonutChart
+              centerLabel="open"
+              centerValue={String(data.openRequests)}
+              slices={[
+                {
+                  label: "Pending",
+                  value: data.requestCounts.pending,
+                  color: "#f59e0b",
+                  href: "/protected/maintenance?status=pending",
+                },
+                {
+                  label: "In progress",
+                  value: data.requestCounts.in_progress,
+                  color: "#0886be",
+                  href: "/protected/maintenance?status=in_progress",
+                },
+                {
+                  label: "En route",
+                  value: data.requestCounts.en_route,
+                  color: "#8b5cf6",
+                  href: "/protected/maintenance?status=en_route",
+                },
+                {
+                  label: "On hold",
+                  value: data.requestCounts.on_hold,
+                  color: "#94a3b8",
+                  href: "/protected/maintenance?status=on_hold",
+                },
+              ]}
+            />
           </CardContent>
         </Card>
       </div>
@@ -321,7 +411,10 @@ export async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-border/60 shadow-sm">
+        <Card
+          id="attention"
+          className="scroll-mt-8 overflow-hidden border-border/60 shadow-sm"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/60 bg-amber-50/40">
             <div className="flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
@@ -339,10 +432,10 @@ export async function AdminDashboard() {
           <CardContent className="space-y-2 pt-4">
             <PendingTaskRow
               icon={<Landmark className="h-4 w-4" />}
-              label="Service charge still outstanding"
+              label="Open owner invoices"
               count={data.scPendingUnits}
               amount={formatMoney(data.scPendingAmount)}
-              href="/protected/service-charge-ledger/collection-position?bucket=outstanding"
+              href="/protected/invoices?bucket=open"
             />
             <PendingTaskRow
               icon={<ReceiptText className="h-4 w-4" />}
@@ -372,7 +465,7 @@ export async function AdminDashboard() {
               icon={<Package className="h-4 w-4" />}
               label="Supply requests pending decision"
               count={data.pendingSupplyRequests}
-              href="/protected/maintenance"
+              href="/protected/maintenance?status=on_hold"
             />
           </CardContent>
         </Card>
@@ -406,6 +499,20 @@ export async function AdminDashboard() {
             label="Tenancies"
             description="Agreements and move-ins"
             icon={<ScrollText className="h-4 w-4" />}
+            iconClass="bg-indigo-50 text-indigo-600"
+          />
+          <ShortcutTile
+            href="/protected/invoices"
+            label="Invoices"
+            description="Open, billed and unit charges"
+            icon={<ReceiptText className="h-4 w-4" />}
+            iconClass="bg-sky-50 text-sky-700"
+          />
+          <ShortcutTile
+            href="/protected/communications"
+            label="Communications"
+            description={`${data.communicationsThisWeek} logged this week`}
+            icon={<MessageSquare className="h-4 w-4" />}
             iconClass="bg-indigo-50 text-indigo-600"
           />
           <ShortcutTile

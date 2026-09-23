@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { downloadAttachment } from "@/lib/storage";
 import { UserType } from "@/lib/generated/prisma/client";
 
@@ -36,7 +36,7 @@ export async function GET(
   }
 
   const isOwner = attachment.request.userId === user.id;
-  const isAdmin = user.userType === UserType.admin;
+  const isAdmin = isStaffAdmin(user.userType);
   const isAssignedWorker =
     user.userType === UserType.worker &&
     attachment.request.assignedToId === user.id;

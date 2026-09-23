@@ -1,0 +1,5 @@
+ALTER TABLE "service_charge_invoices"
+  ADD COLUMN IF NOT EXISTS "kind" TEXT NOT NULL DEFAULT 'service_charge',
+  ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'issued',
+  ADD COLUMN IF NOT EXISTS "notes" TEXT,
+  ADD COLUMN IF NOT EXISTS "sent_at" TIMESTAMP(3);

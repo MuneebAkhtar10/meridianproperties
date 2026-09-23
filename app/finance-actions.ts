@@ -9,7 +9,9 @@ import { unstable_rethrow } from "next/navigation";
 import {
   notifyAdminsPaymentProof,
   notifyChargeWaived,
+  notifyOwnerChargeIssued,
   notifyOwnerChargePaid,
+  notifyOwnerChequeUpdate,
   notifyOwnerPaymentProof,
   notifyPaymentReviewed,
   notifyTenantAssigned,
@@ -31,7 +33,8 @@ import { prisma } from "@/lib/prisma";
 import { pushPaymentToDynamics } from "@/lib/dynamics/sync";
 import { pushTenancyToDynamics, pushChargeToDynamics } from "@/lib/dynamics/entities";
 import { publish } from "@/lib/realtime";
-import { requireRole, requireUser } from "@/lib/session";
+import { requireRole, requireUser, isStaffAdmin } from "@/lib/session";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 import { uploadFinancialDocument } from "@/lib/storage";
 import { encodedRedirect } from "@/utils/utils";
 import {
@@ -56,6 +59,36 @@ function financeBack(id?: string): string {
   return id ? `/protected/finances/${id}` : "/protected/finances";
 }
 
+/** Only `/protected/finances…` paths — so a tampered `back` field cannot
+ * send the admin elsewhere after a charge edit. */
+function financesReturn(formData: FormData, fallback: string): string {
+  const back = formData.get("back")?.toString() ?? "";
+  if (
+    back.startsWith("/protected/finances") &&
+    !back.startsWith("//") &&
+    !back.includes("://")
+  ) {
+    return back;
+  }
+  return fallback;
+}
+
+/** Stay on the charge after a payment/review, but keep the ledger filters
+ * on `back` so "Rent & bills" still opens the same filtered list. */
+function chargeReturn(formData: FormData, chargeId: string): string {
+  const detail = `/protected/finances/${chargeId}`;
+  const list = formData.get("back")?.toString() ?? "";
+  if (
+    list.startsWith("/protected/finances") &&
+    !list.startsWith("/protected/finances/") &&
+    !list.startsWith("//") &&
+    !list.includes("://")
+  ) {
+    return `${detail}?back=${encodeURIComponent(list)}`;
+  }
+  return detail;
+}
+
 function dueDateForMonth(period: Date, day: number): Date {
   return new Date(
     Date.UTC(period.getUTCFullYear(), period.getUTCMonth(), Math.min(day, 28)),
@@ -65,7 +98,7 @@ function dueDateForMonth(period: Date, day: number): Date {
 async function publishFinance(userIds: Array<string | null | undefined> = []) {
   await publish({
     kind: "finance",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: userIds.filter((id): id is string => Boolean(id)),
   });
 }
@@ -342,6 +375,25 @@ export const startTenancyAction = async (formData: FormData) => {
         })),
         total: formatMoney(total),
       });
+
+      const tenantName =
+        [tenant.firstName, tenant.lastName].filter(Boolean).join(" ") ||
+        tenant.email;
+      await Promise.all(
+        tenancy.createdCharges.map((charge) =>
+          notifyOwnerChargeIssued({
+            ownerId: unit.ownerId,
+            chargeId: charge.id,
+            kind: charge.title.startsWith("Rent") ? "rent" : "bill",
+            propertyName: unit.property.name,
+            unitLabel,
+            tenantName,
+            amount: formatMoney(charge.amount),
+            dueDate: format(charge.dueDate, "d MMMM yyyy"),
+            title: charge.title,
+          }),
+        ),
+      );
     } catch (error) {
       console.error("Tenancy invoice notification failed:", error);
     }
@@ -383,7 +435,7 @@ export const startTenancyAction = async (formData: FormData) => {
   await publishFinance([tenantId]);
   await publish({
     kind: "directory",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [tenantId],
   });
   revalidatePath("/protected/tenancies");
@@ -598,7 +650,7 @@ export const endTenancyAction = async (formData: FormData) => {
   await publishFinance([tenancy.tenantId]);
   await publish({
     kind: "directory",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [tenancy.tenantId],
   });
   revalidatePath("/protected/tenancies");
@@ -638,7 +690,7 @@ export const createChargeAction = async (formData: FormData) => {
   ) {
     return encodedRedirect(
       "error",
-      "/protected/finances",
+      financesReturn(formData, "/protected/finances"),
       "Complete the charge details correctly.",
     );
   }
@@ -653,6 +705,7 @@ export const createChargeAction = async (formData: FormData) => {
         select: {
           label: true,
           rentBillsEnabled: true,
+          ownerId: true,
           property: {
             select: {
               name: true,
@@ -667,7 +720,7 @@ export const createChargeAction = async (formData: FormData) => {
   if (!tenancy) {
     return encodedRedirect(
       "error",
-      "/protected/finances",
+      financesReturn(formData, "/protected/finances"),
       "Tenancy not found.",
     );
   }
@@ -675,7 +728,7 @@ export const createChargeAction = async (formData: FormData) => {
   if (!tenancy.unit.rentBillsEnabled) {
     return encodedRedirect(
       "error",
-      "/protected/finances",
+      financesReturn(formData, "/protected/finances"),
       "Rent & bills are turned off for this unit — enable it from the unit's settings first.",
     );
   }
@@ -726,6 +779,17 @@ export const createChargeAction = async (formData: FormData) => {
         lineItems: [{ label: title, amount: formatMoney(amount) }],
         total: formatMoney(amount),
       }),
+      notifyOwnerChargeIssued({
+        ownerId: tenancy.unit.ownerId,
+        chargeId: charge.id,
+        kind: type === ChargeType.rent ? "rent" : "bill",
+        propertyName: tenancy.unit.property.name,
+        unitLabel,
+        tenantName,
+        amount: formatMoney(amount),
+        dueDate: format(dueDate, "d MMMM yyyy"),
+        title,
+      }),
       publishFinance([tenancy.tenantId]),
     ]).then((results) => {
       for (const result of results) {
@@ -763,7 +827,7 @@ export const createChargeAction = async (formData: FormData) => {
 
   return encodedRedirect(
     uploadError ? "error" : "success",
-    financeBack(charge.id),
+    financesReturn(formData, financeBack(charge.id)),
     uploadError
       ? `Charge created, but the bill was not attached: ${uploadError}`
       : "Charge created and sent to the tenant ledger.",
@@ -777,7 +841,7 @@ export const generateRentChargesAction = async (formData: FormData) => {
   if (!period) {
     return encodedRedirect(
       "error",
-      "/protected/finances",
+      financesReturn(formData, "/protected/finances"),
       "Select a valid rent month.",
     );
   }
@@ -849,6 +913,7 @@ export const generateRentChargesAction = async (formData: FormData) => {
         unit: {
           select: {
             label: true,
+            ownerId: true,
             property: {
               select: {
                 name: true,
@@ -905,6 +970,27 @@ export const generateRentChargesAction = async (formData: FormData) => {
             total: formatMoney(charge.amount),
           }),
         ),
+        ...created.map((charge) =>
+          notifyOwnerChargeIssued({
+            ownerId: charge.unit?.ownerId,
+            chargeId: charge.id,
+            kind: "rent",
+            propertyName: charge.unit?.property.name ?? "—",
+            unitLabel: charge.unit
+              ? formatUnitLabel(
+                  charge.unit.property.propertyType,
+                  charge.unit.label,
+                )
+              : "—",
+            tenantName:
+              [charge.tenant.firstName, charge.tenant.lastName]
+                .filter(Boolean)
+                .join(" ") || charge.tenant.email,
+            amount: formatMoney(charge.amount),
+            dueDate: format(charge.dueDate, "d MMMM yyyy"),
+            title: charge.title,
+          }),
+        ),
         publishFinance(tenantIds),
       ]).then((results) => {
         for (const result of results) {
@@ -923,7 +1009,7 @@ export const generateRentChargesAction = async (formData: FormData) => {
 
   return encodedRedirect(
     "success",
-    "/protected/finances",
+    financesReturn(formData, "/protected/finances"),
     newCharges.length === 0
       ? "No rent was added. It was already generated or no tenancy has rent configured for that month."
       : `${newCharges.length} monthly rent charge${newCharges.length === 1 ? "" : "s"} generated.`,
@@ -966,7 +1052,7 @@ export const submitPaymentAction = async (formData: FormData) => {
   ) {
     return encodedRedirect(
       "error",
-      financeBack(chargeId),
+      chargeReturn(formData, chargeId),
       "Complete the payment details correctly.",
     );
   }
@@ -1003,7 +1089,7 @@ export const submitPaymentAction = async (formData: FormData) => {
   if (charge.status !== ChargeStatus.open) {
     return encodedRedirect(
       "error",
-      financeBack(chargeId),
+      chargeReturn(formData, chargeId),
       "This charge is already closed.",
     );
   }
@@ -1020,7 +1106,7 @@ export const submitPaymentAction = async (formData: FormData) => {
   if (Number(amount) > available + 0.001) {
     return encodedRedirect(
       "error",
-      financeBack(chargeId),
+      chargeReturn(formData, chargeId),
       `Only OMR ${Math.max(0, available).toLocaleString("en-OM", {
         minimumFractionDigits: 3,
         maximumFractionDigits: 3,
@@ -1030,7 +1116,7 @@ export const submitPaymentAction = async (formData: FormData) => {
 
   // Admins and an owner recording a payment on their own property can mark it
   // as paid outright, same as before — only a plain tenant needs proof.
-  const isAdminStyleActor = user.userType === UserType.admin || isOwnPropertyOwner;
+  const isAdminStyleActor = isStaffAdmin(user.userType) || isOwnPropertyOwner;
 
   if (
     user.userType === UserType.user &&
@@ -1038,7 +1124,7 @@ export const submitPaymentAction = async (formData: FormData) => {
   ) {
     return encodedRedirect(
       "error",
-      financeBack(chargeId),
+      chargeReturn(formData, chargeId),
       "Upload a receipt or payment screenshot for admin verification.",
     );
   }
@@ -1056,7 +1142,7 @@ export const submitPaymentAction = async (formData: FormData) => {
       // The proof is the point of the submission, so nothing is recorded without it.
       return encodedRedirect(
         "error",
-        financeBack(chargeId),
+        chargeReturn(formData, chargeId),
         error instanceof Error ? error.message : "Receipt upload failed.",
       );
     }
@@ -1160,12 +1246,12 @@ export const submitPaymentAction = async (formData: FormData) => {
   }
 
   await publishFinance([charge.tenantId]);
-  revalidatePath(financeBack(chargeId));
+  revalidatePath(chargeReturn(formData, chargeId));
   revalidatePath("/protected/finances");
 
   return encodedRedirect(
     "success",
-    financeBack(chargeId),
+    chargeReturn(formData, chargeId),
     status === PaymentStatus.pending
       ? "Payment proof submitted. It will count as paid after admin approval."
       : "Payment account updated.",
@@ -1224,7 +1310,7 @@ export const reviewPaymentAction = async (
     ) {
       return encodedRedirect(
         "error",
-        financeBack(payment.chargeId),
+        chargeReturn(formData, payment.chargeId),
         "This proof exceeds the remaining balance because another payment was approved first.",
       );
     }
@@ -1304,12 +1390,12 @@ export const reviewPaymentAction = async (
   }
 
   await publishFinance([payment.charge.tenantId]);
-  revalidatePath(financeBack(payment.chargeId));
+  revalidatePath(chargeReturn(formData, payment.chargeId));
   revalidatePath("/protected/finances");
 
   return encodedRedirect(
     "success",
-    financeBack(payment.chargeId),
+    chargeReturn(formData, payment.chargeId),
     approved
       ? "Payment updated."
       : "Payment rejected. The tenant can submit new proof.",
@@ -1334,7 +1420,7 @@ export const waiveChargeAction = async (formData: FormData) => {
   if (!charge || charge.status !== ChargeStatus.open) {
     return encodedRedirect(
       "error",
-      financeBack(chargeId),
+      chargeReturn(formData, chargeId),
       "Open charge not found.",
     );
   }
@@ -1348,7 +1434,7 @@ export const waiveChargeAction = async (formData: FormData) => {
   ) {
     return encodedRedirect(
       "error",
-      financeBack(chargeId),
+      chargeReturn(formData, chargeId),
       "A charge with approved or pending payments cannot be waived.",
     );
   }
@@ -1370,10 +1456,10 @@ export const waiveChargeAction = async (formData: FormData) => {
   }
 
   await publishFinance([charge.tenantId]);
-  revalidatePath(financeBack(chargeId));
+  revalidatePath(chargeReturn(formData, chargeId));
   revalidatePath("/protected/finances");
 
-  return encodedRedirect("success", financeBack(chargeId), "Charge waived.");
+  return encodedRedirect("success", chargeReturn(formData, chargeId), "Charge waived.");
 };
 
 /** Re-sends the invoice email for a single charge, rebuilt fresh from the
@@ -1432,14 +1518,14 @@ export const resendChargeInvoiceEmailAction = async (formData: FormData) => {
     console.error("Resend invoice email failed:", error);
     return encodedRedirect(
       "error",
-      financeBack(chargeId),
+      chargeReturn(formData, chargeId),
       "Could not resend the email. Try again.",
     );
   }
 
   return encodedRedirect(
     "success",
-    financeBack(chargeId),
+    chargeReturn(formData, chargeId),
     "Invoice email resent to the tenant.",
   );
 };
@@ -1469,7 +1555,32 @@ export const updatePaymentClearanceAction = async (formData: FormData) => {
 
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
-    select: { id: true },
+    select: {
+      id: true,
+      amount: true,
+      chequeNumber: true,
+      chargeId: true,
+      charge: {
+        select: {
+          title: true,
+          tenant: {
+            select: { firstName: true, lastName: true, email: true },
+          },
+          unit: {
+            select: {
+              ownerId: true,
+              label: true,
+              property: {
+                select: {
+                  name: true,
+                  propertyType: { select: { unitPrefix: true, hasFloors: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
   if (!payment) {
     return encodedRedirect(
@@ -1483,6 +1594,30 @@ export const updatePaymentClearanceAction = async (formData: FormData) => {
     where: { id: paymentId },
     data: { clearanceStatus },
   });
+
+  if (clearanceStatus === "cleared" || clearanceStatus === "bounced") {
+    const tenant = payment.charge.tenant;
+    const tenantName =
+      [tenant.firstName, tenant.lastName].filter(Boolean).join(" ") ||
+      tenant.email;
+    try {
+      await notifyOwnerChequeUpdate({
+        ownerId: payment.charge.unit.ownerId,
+        chargeId: payment.chargeId,
+        propertyName: payment.charge.unit.property.name,
+        unitLabel: formatUnitLabel(
+          payment.charge.unit.property.propertyType,
+          payment.charge.unit.label,
+        ),
+        tenantName,
+        amount: formatMoney(payment.amount),
+        chequeNumber: payment.chequeNumber,
+        clearanceStatus,
+      });
+    } catch (error) {
+      console.error("Owner cheque alert failed:", error);
+    }
+  }
 
   revalidatePath("/protected/finances/cheque-reminders");
 

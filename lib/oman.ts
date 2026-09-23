@@ -44,3 +44,26 @@ export function formatOmanAddress(property: OmanAddress): string {
     .filter(Boolean)
     .join(" · ");
 }
+
+/** Letterhead lines matching the owners-association service-charge invoice:
+ * "Qurum, Badr Al Qurum Bldg # 1009, Way # 1814"
+ * "Muscat, Sultanate of Oman" */
+export function formatServiceChargeLetterheadAddress(
+  property: OmanAddress & { buildingName?: string | null },
+): string[] {
+  const place = [property.area, property.buildingName]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .join(", ");
+  const numbers = [
+    property.buildingNumber?.trim()
+      ? `Bldg # ${property.buildingNumber.trim()}`
+      : null,
+    property.wayNumber?.trim() ? `Way # ${property.wayNumber.trim()}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const line1 = [place, numbers].filter(Boolean).join(" ");
+  const line2 = `${property.governorate?.trim() || "Muscat"}, Sultanate of Oman`;
+  return [line1, line2].filter(Boolean);
+}

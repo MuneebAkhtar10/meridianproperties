@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { formatMoney } from "@/lib/finance";
 import { getBuildingExpensesData } from "@/lib/building-expenses";
 import { BuildingManagementExpensesDocument } from "@/lib/pdf/building-management-expenses";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 const PAID_BY_LABEL: Record<string, string> = {
@@ -20,7 +20,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user || !isStaffAdmin(user.userType)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

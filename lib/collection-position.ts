@@ -2,7 +2,7 @@ import "server-only";
 
 import { moneyValue } from "@/lib/finance";
 import { toManagedUnit } from "@/lib/managed-unit";
-import { formatUnitLabel, isBuildingType } from "@/lib/property-types";
+import { formatUnitLabel, isBuildingType, prismaCollectsServiceChargeTypeWhere } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { collectionBucket, type CollectionBucket } from "@/lib/service-charge-status";
 import type { ManagedUnit } from "@/components/unit-manage-modal";
@@ -59,6 +59,9 @@ export async function getCollectionPositionData(
   const units = await prisma.unit.findMany({
     where: {
       serviceChargeAmount: { not: null },
+      property: {
+        propertyType: prismaCollectsServiceChargeTypeWhere(),
+      },
       ...(propertyFilter !== "all" ? { propertyId: propertyFilter } : {}),
     },
     orderBy: [{ property: { name: "asc" } }, { label: "asc" }],

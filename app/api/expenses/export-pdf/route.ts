@@ -10,7 +10,7 @@ import {
 } from "@/lib/pdf/expense-report";
 import { formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 const numberFormat = new Intl.NumberFormat("en-OM", {
@@ -36,7 +36,7 @@ function cleanDescription(description: string): string {
  */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user || !isStaffAdmin(user.userType)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

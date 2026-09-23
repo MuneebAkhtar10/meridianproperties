@@ -30,6 +30,7 @@ export function RecordPaymentForm({
   pending,
   canManagePayments,
   receiptRequired,
+  back,
 }: {
   chargeId: string;
   availableToSubmit: number;
@@ -37,12 +38,14 @@ export function RecordPaymentForm({
   canManagePayments: boolean;
   /** True for a plain tenant submitting their own proof of payment. */
   receiptRequired: boolean;
+  back?: string;
 }) {
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
 
   return (
     <form className="space-y-4" encType="multipart/form-data">
       <input type="hidden" name="chargeId" value={chargeId} />
+      {back ? <input type="hidden" name="back" value={back} /> : null}
       <Field label="Amount (OMR)">
         <Input
           name="amount"

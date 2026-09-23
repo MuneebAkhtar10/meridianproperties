@@ -6,7 +6,7 @@ import { formatMoney } from "@/lib/finance";
 import { getRentPositionData } from "@/lib/rent-position";
 import { RentPositionDocument } from "@/lib/pdf/rent-position";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -19,7 +19,7 @@ const STATUS_LABEL: Record<string, string> = {
 /** The printable version of /protected/finances/rent-position (spec #32). */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user || !isStaffAdmin(user.userType)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

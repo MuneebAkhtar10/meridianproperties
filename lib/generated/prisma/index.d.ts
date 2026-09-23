@@ -59,6 +59,12 @@ export type OwnershipTransfer = $Result.DefaultSelection<Prisma.$OwnershipTransf
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
+ * Model AdminModuleGrant
+ * One granted sidebar module for a regular admin. Absence of a row means
+ * that module is hidden. Super admins do not need rows here.
+ */
+export type AdminModuleGrant = $Result.DefaultSelection<Prisma.$AdminModuleGrantPayload>
+/**
  * Model WorkerFamilyMember
  * A dependent (spouse/father/mother) tracked for an in-house worker whose
  * employeeType is "family" — mirrors the worker's own Bataka tracking, one
@@ -275,6 +281,26 @@ export type WhatsappSession = $Result.DefaultSelection<Prisma.$WhatsappSessionPa
  * one single table to query instead of merging three different models.
  */
 export type RejectionLog = $Result.DefaultSelection<Prisma.$RejectionLogPayload>
+/**
+ * Model ServicesInvoice
+ * A Rawazen Services invoice for an Independent or Building Management
+ * unit — maintenance/expenses billed to the landlord, rent Rawazen
+ * collected credited as negative lines. Matches the client's Brisk
+ * "Invoice 75" layout (see lib/pdf/services-invoice.tsx).
+ */
+export type ServicesInvoice = $Result.DefaultSelection<Prisma.$ServicesInvoicePayload>
+/**
+ * Model ServicesInvoiceLine
+ * 
+ */
+export type ServicesInvoiceLine = $Result.DefaultSelection<Prisma.$ServicesInvoiceLinePayload>
+/**
+ * Model CommunicationLog
+ * A conversation Rawazen had with someone — phone, visit, WhatsApp, SMS
+ * or email — logged by staff so the history is complete even when it
+ * didn't go through the in-app channels.
+ */
+export type CommunicationLog = $Result.DefaultSelection<Prisma.$CommunicationLogPayload>
 
 /**
  * Enums
@@ -283,11 +309,35 @@ export namespace $Enums {
   export const UserType: {
   user: 'user',
   admin: 'admin',
+  super_admin: 'super_admin',
   worker: 'worker',
   owner: 'owner'
 };
 
 export type UserType = (typeof UserType)[keyof typeof UserType]
+
+
+export const AdminModule: {
+  dashboard: 'dashboard',
+  onboarding: 'onboarding',
+  properties: 'properties',
+  tenancies: 'tenancies',
+  maintenance: 'maintenance',
+  finances: 'finances',
+  service_charges: 'service_charges',
+  invoices: 'invoices',
+  expenses: 'expenses',
+  communications: 'communications',
+  reports: 'reports',
+  suppliers: 'suppliers',
+  people: 'people',
+  rejections: 'rejections',
+  qr_code: 'qr_code',
+  dynamics: 'dynamics',
+  settings: 'settings'
+};
+
+export type AdminModule = (typeof AdminModule)[keyof typeof AdminModule]
 
 
 export const WorkerCategory: {
@@ -456,6 +506,10 @@ export type RejectionKind = (typeof RejectionKind)[keyof typeof RejectionKind]
 export type UserType = $Enums.UserType
 
 export const UserType: typeof $Enums.UserType
+
+export type AdminModule = $Enums.AdminModule
+
+export const AdminModule: typeof $Enums.AdminModule
 
 export type WorkerCategory = $Enums.WorkerCategory
 
@@ -697,6 +751,16 @@ export class PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.adminModuleGrant`: Exposes CRUD operations for the **AdminModuleGrant** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more AdminModuleGrants
+    * const adminModuleGrants = await prisma.adminModuleGrant.findMany()
+    * ```
+    */
+  get adminModuleGrant(): Prisma.AdminModuleGrantDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.workerFamilyMember`: Exposes CRUD operations for the **WorkerFamilyMember** model.
@@ -1007,6 +1071,36 @@ export class PrismaClient<
     * ```
     */
   get rejectionLog(): Prisma.RejectionLogDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.servicesInvoice`: Exposes CRUD operations for the **ServicesInvoice** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ServicesInvoices
+    * const servicesInvoices = await prisma.servicesInvoice.findMany()
+    * ```
+    */
+  get servicesInvoice(): Prisma.ServicesInvoiceDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.servicesInvoiceLine`: Exposes CRUD operations for the **ServicesInvoiceLine** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ServicesInvoiceLines
+    * const servicesInvoiceLines = await prisma.servicesInvoiceLine.findMany()
+    * ```
+    */
+  get servicesInvoiceLine(): Prisma.ServicesInvoiceLineDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.communicationLog`: Exposes CRUD operations for the **CommunicationLog** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more CommunicationLogs
+    * const communicationLogs = await prisma.communicationLog.findMany()
+    * ```
+    */
+  get communicationLog(): Prisma.CommunicationLogDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -1460,6 +1554,7 @@ export namespace Prisma {
     UnitPermissionChange: 'UnitPermissionChange',
     OwnershipTransfer: 'OwnershipTransfer',
     User: 'User',
+    AdminModuleGrant: 'AdminModuleGrant',
     WorkerFamilyMember: 'WorkerFamilyMember',
     Tenancy: 'Tenancy',
     EntityDocument: 'EntityDocument',
@@ -1490,7 +1585,10 @@ export namespace Prisma {
     TaskLog: 'TaskLog',
     Notification: 'Notification',
     WhatsappSession: 'WhatsappSession',
-    RejectionLog: 'RejectionLog'
+    RejectionLog: 'RejectionLog',
+    ServicesInvoice: 'ServicesInvoice',
+    ServicesInvoiceLine: 'ServicesInvoiceLine',
+    CommunicationLog: 'CommunicationLog'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1506,7 +1604,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "propertyType" | "property" | "unit" | "unitPermissionChange" | "ownershipTransfer" | "user" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "expense" | "expenseUnit" | "fund" | "unitFundBalance" | "serviceChargeInvoice" | "serviceChargeInvoiceLine" | "serviceChargePayment" | "serviceChargeInstallmentPlan" | "serviceChargeInstallment" | "annualBudget" | "budgetIncomeLine" | "budgetExpenseLine" | "expenseCategoryType" | "supplier" | "buildingServiceContract" | "supplierCategory" | "supplierProperty" | "expenseSubcategoryType" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession" | "rejectionLog"
+      modelProps: "propertyType" | "property" | "unit" | "unitPermissionChange" | "ownershipTransfer" | "user" | "adminModuleGrant" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "expense" | "expenseUnit" | "fund" | "unitFundBalance" | "serviceChargeInvoice" | "serviceChargeInvoiceLine" | "serviceChargePayment" | "serviceChargeInstallmentPlan" | "serviceChargeInstallment" | "annualBudget" | "budgetIncomeLine" | "budgetExpenseLine" | "expenseCategoryType" | "supplier" | "buildingServiceContract" | "supplierCategory" | "supplierProperty" | "expenseSubcategoryType" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession" | "rejectionLog" | "servicesInvoice" | "servicesInvoiceLine" | "communicationLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1951,6 +2049,80 @@ export namespace Prisma {
           count: {
             args: Prisma.UserCountArgs<ExtArgs>
             result: $Utils.Optional<UserCountAggregateOutputType> | number
+          }
+        }
+      }
+      AdminModuleGrant: {
+        payload: Prisma.$AdminModuleGrantPayload<ExtArgs>
+        fields: Prisma.AdminModuleGrantFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.AdminModuleGrantFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.AdminModuleGrantFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>
+          }
+          findFirst: {
+            args: Prisma.AdminModuleGrantFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.AdminModuleGrantFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>
+          }
+          findMany: {
+            args: Prisma.AdminModuleGrantFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>[]
+          }
+          create: {
+            args: Prisma.AdminModuleGrantCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>
+          }
+          createMany: {
+            args: Prisma.AdminModuleGrantCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.AdminModuleGrantCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>[]
+          }
+          delete: {
+            args: Prisma.AdminModuleGrantDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>
+          }
+          update: {
+            args: Prisma.AdminModuleGrantUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>
+          }
+          deleteMany: {
+            args: Prisma.AdminModuleGrantDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.AdminModuleGrantUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.AdminModuleGrantUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>[]
+          }
+          upsert: {
+            args: Prisma.AdminModuleGrantUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdminModuleGrantPayload>
+          }
+          aggregate: {
+            args: Prisma.AdminModuleGrantAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateAdminModuleGrant>
+          }
+          groupBy: {
+            args: Prisma.AdminModuleGrantGroupByArgs<ExtArgs>
+            result: $Utils.Optional<AdminModuleGrantGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.AdminModuleGrantCountArgs<ExtArgs>
+            result: $Utils.Optional<AdminModuleGrantCountAggregateOutputType> | number
           }
         }
       }
@@ -4248,6 +4420,228 @@ export namespace Prisma {
           }
         }
       }
+      ServicesInvoice: {
+        payload: Prisma.$ServicesInvoicePayload<ExtArgs>
+        fields: Prisma.ServicesInvoiceFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ServicesInvoiceFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ServicesInvoiceFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>
+          }
+          findFirst: {
+            args: Prisma.ServicesInvoiceFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ServicesInvoiceFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>
+          }
+          findMany: {
+            args: Prisma.ServicesInvoiceFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>[]
+          }
+          create: {
+            args: Prisma.ServicesInvoiceCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>
+          }
+          createMany: {
+            args: Prisma.ServicesInvoiceCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ServicesInvoiceCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>[]
+          }
+          delete: {
+            args: Prisma.ServicesInvoiceDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>
+          }
+          update: {
+            args: Prisma.ServicesInvoiceUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>
+          }
+          deleteMany: {
+            args: Prisma.ServicesInvoiceDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ServicesInvoiceUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ServicesInvoiceUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>[]
+          }
+          upsert: {
+            args: Prisma.ServicesInvoiceUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoicePayload>
+          }
+          aggregate: {
+            args: Prisma.ServicesInvoiceAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateServicesInvoice>
+          }
+          groupBy: {
+            args: Prisma.ServicesInvoiceGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ServicesInvoiceGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ServicesInvoiceCountArgs<ExtArgs>
+            result: $Utils.Optional<ServicesInvoiceCountAggregateOutputType> | number
+          }
+        }
+      }
+      ServicesInvoiceLine: {
+        payload: Prisma.$ServicesInvoiceLinePayload<ExtArgs>
+        fields: Prisma.ServicesInvoiceLineFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ServicesInvoiceLineFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ServicesInvoiceLineFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>
+          }
+          findFirst: {
+            args: Prisma.ServicesInvoiceLineFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ServicesInvoiceLineFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>
+          }
+          findMany: {
+            args: Prisma.ServicesInvoiceLineFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>[]
+          }
+          create: {
+            args: Prisma.ServicesInvoiceLineCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>
+          }
+          createMany: {
+            args: Prisma.ServicesInvoiceLineCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ServicesInvoiceLineCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>[]
+          }
+          delete: {
+            args: Prisma.ServicesInvoiceLineDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>
+          }
+          update: {
+            args: Prisma.ServicesInvoiceLineUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>
+          }
+          deleteMany: {
+            args: Prisma.ServicesInvoiceLineDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ServicesInvoiceLineUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ServicesInvoiceLineUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>[]
+          }
+          upsert: {
+            args: Prisma.ServicesInvoiceLineUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServicesInvoiceLinePayload>
+          }
+          aggregate: {
+            args: Prisma.ServicesInvoiceLineAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateServicesInvoiceLine>
+          }
+          groupBy: {
+            args: Prisma.ServicesInvoiceLineGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ServicesInvoiceLineGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ServicesInvoiceLineCountArgs<ExtArgs>
+            result: $Utils.Optional<ServicesInvoiceLineCountAggregateOutputType> | number
+          }
+        }
+      }
+      CommunicationLog: {
+        payload: Prisma.$CommunicationLogPayload<ExtArgs>
+        fields: Prisma.CommunicationLogFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.CommunicationLogFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.CommunicationLogFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>
+          }
+          findFirst: {
+            args: Prisma.CommunicationLogFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.CommunicationLogFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>
+          }
+          findMany: {
+            args: Prisma.CommunicationLogFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>[]
+          }
+          create: {
+            args: Prisma.CommunicationLogCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>
+          }
+          createMany: {
+            args: Prisma.CommunicationLogCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.CommunicationLogCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>[]
+          }
+          delete: {
+            args: Prisma.CommunicationLogDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>
+          }
+          update: {
+            args: Prisma.CommunicationLogUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>
+          }
+          deleteMany: {
+            args: Prisma.CommunicationLogDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.CommunicationLogUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.CommunicationLogUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>[]
+          }
+          upsert: {
+            args: Prisma.CommunicationLogUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunicationLogPayload>
+          }
+          aggregate: {
+            args: Prisma.CommunicationLogAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCommunicationLog>
+          }
+          groupBy: {
+            args: Prisma.CommunicationLogGroupByArgs<ExtArgs>
+            result: $Utils.Optional<CommunicationLogGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.CommunicationLogCountArgs<ExtArgs>
+            result: $Utils.Optional<CommunicationLogCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -4377,6 +4771,7 @@ export namespace Prisma {
     unitPermissionChange?: UnitPermissionChangeOmit
     ownershipTransfer?: OwnershipTransferOmit
     user?: UserOmit
+    adminModuleGrant?: AdminModuleGrantOmit
     workerFamilyMember?: WorkerFamilyMemberOmit
     tenancy?: TenancyOmit
     entityDocument?: EntityDocumentOmit
@@ -4408,6 +4803,9 @@ export namespace Prisma {
     notification?: NotificationOmit
     whatsappSession?: WhatsappSessionOmit
     rejectionLog?: RejectionLogOmit
+    servicesInvoice?: ServicesInvoiceOmit
+    servicesInvoiceLine?: ServicesInvoiceLineOmit
+    communicationLog?: CommunicationLogOmit
   }
 
   /* Types for Logging */
@@ -4526,6 +4924,7 @@ export namespace Prisma {
     supplierLinks: number
     budgets: number
     serviceContracts: number
+    servicesInvoices: number
   }
 
   export type PropertyCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4536,6 +4935,7 @@ export namespace Prisma {
     supplierLinks?: boolean | PropertyCountOutputTypeCountSupplierLinksArgs
     budgets?: boolean | PropertyCountOutputTypeCountBudgetsArgs
     serviceContracts?: boolean | PropertyCountOutputTypeCountServiceContractsArgs
+    servicesInvoices?: boolean | PropertyCountOutputTypeCountServicesInvoicesArgs
   }
 
   // Custom InputTypes
@@ -4598,6 +4998,13 @@ export namespace Prisma {
     where?: BuildingServiceContractWhereInput
   }
 
+  /**
+   * PropertyCountOutputType without action
+   */
+  export type PropertyCountOutputTypeCountServicesInvoicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServicesInvoiceWhereInput
+  }
+
 
   /**
    * Count Type UnitCountOutputType
@@ -4615,6 +5022,7 @@ export namespace Prisma {
     installmentPlans: number
     fundBalances: number
     ownershipTransfers: number
+    servicesInvoices: number
   }
 
   export type UnitCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4629,6 +5037,7 @@ export namespace Prisma {
     installmentPlans?: boolean | UnitCountOutputTypeCountInstallmentPlansArgs
     fundBalances?: boolean | UnitCountOutputTypeCountFundBalancesArgs
     ownershipTransfers?: boolean | UnitCountOutputTypeCountOwnershipTransfersArgs
+    servicesInvoices?: boolean | UnitCountOutputTypeCountServicesInvoicesArgs
   }
 
   // Custom InputTypes
@@ -4719,6 +5128,13 @@ export namespace Prisma {
     where?: OwnershipTransferWhereInput
   }
 
+  /**
+   * UnitCountOutputType without action
+   */
+  export type UnitCountOutputTypeCountServicesInvoicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServicesInvoiceWhereInput
+  }
+
 
   /**
    * Count Type UserCountOutputType
@@ -4759,6 +5175,10 @@ export namespace Prisma {
     ownershipTransfersTo: number
     ownershipTransfersCreated: number
     familyMembers: number
+    servicesInvoicesCreated: number
+    communicationsLogged: number
+    communicationsAsParty: number
+    adminModuleGrants: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4796,6 +5216,10 @@ export namespace Prisma {
     ownershipTransfersTo?: boolean | UserCountOutputTypeCountOwnershipTransfersToArgs
     ownershipTransfersCreated?: boolean | UserCountOutputTypeCountOwnershipTransfersCreatedArgs
     familyMembers?: boolean | UserCountOutputTypeCountFamilyMembersArgs
+    servicesInvoicesCreated?: boolean | UserCountOutputTypeCountServicesInvoicesCreatedArgs
+    communicationsLogged?: boolean | UserCountOutputTypeCountCommunicationsLoggedArgs
+    communicationsAsParty?: boolean | UserCountOutputTypeCountCommunicationsAsPartyArgs
+    adminModuleGrants?: boolean | UserCountOutputTypeCountAdminModuleGrantsArgs
   }
 
   // Custom InputTypes
@@ -5047,6 +5471,34 @@ export namespace Prisma {
     where?: WorkerFamilyMemberWhereInput
   }
 
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountServicesInvoicesCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServicesInvoiceWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountCommunicationsLoggedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CommunicationLogWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountCommunicationsAsPartyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CommunicationLogWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountAdminModuleGrantsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AdminModuleGrantWhereInput
+  }
+
 
   /**
    * Count Type TenancyCountOutputType
@@ -5055,11 +5507,13 @@ export namespace Prisma {
   export type TenancyCountOutputType = {
     charges: number
     documents: number
+    servicesInvoices: number
   }
 
   export type TenancyCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     charges?: boolean | TenancyCountOutputTypeCountChargesArgs
     documents?: boolean | TenancyCountOutputTypeCountDocumentsArgs
+    servicesInvoices?: boolean | TenancyCountOutputTypeCountServicesInvoicesArgs
   }
 
   // Custom InputTypes
@@ -5085,6 +5539,13 @@ export namespace Prisma {
    */
   export type TenancyCountOutputTypeCountDocumentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EntityDocumentWhereInput
+  }
+
+  /**
+   * TenancyCountOutputType without action
+   */
+  export type TenancyCountOutputTypeCountServicesInvoicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServicesInvoiceWhereInput
   }
 
 
@@ -5435,6 +5896,7 @@ export namespace Prisma {
     properties: number
     expenses: number
     serviceContracts: number
+    communications: number
   }
 
   export type SupplierCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5442,6 +5904,7 @@ export namespace Prisma {
     properties?: boolean | SupplierCountOutputTypeCountPropertiesArgs
     expenses?: boolean | SupplierCountOutputTypeCountExpensesArgs
     serviceContracts?: boolean | SupplierCountOutputTypeCountServiceContractsArgs
+    communications?: boolean | SupplierCountOutputTypeCountCommunicationsArgs
   }
 
   // Custom InputTypes
@@ -5481,6 +5944,13 @@ export namespace Prisma {
    */
   export type SupplierCountOutputTypeCountServiceContractsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: BuildingServiceContractWhereInput
+  }
+
+  /**
+   * SupplierCountOutputType without action
+   */
+  export type SupplierCountOutputTypeCountCommunicationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CommunicationLogWhereInput
   }
 
 
@@ -5548,6 +6018,37 @@ export namespace Prisma {
    */
   export type MaintenanceRequestCountOutputTypeCountWhatsappSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: WhatsappSessionWhereInput
+  }
+
+
+  /**
+   * Count Type ServicesInvoiceCountOutputType
+   */
+
+  export type ServicesInvoiceCountOutputType = {
+    lines: number
+  }
+
+  export type ServicesInvoiceCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    lines?: boolean | ServicesInvoiceCountOutputTypeCountLinesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * ServicesInvoiceCountOutputType without action
+   */
+  export type ServicesInvoiceCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceCountOutputType
+     */
+    select?: ServicesInvoiceCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * ServicesInvoiceCountOutputType without action
+   */
+  export type ServicesInvoiceCountOutputTypeCountLinesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServicesInvoiceLineWhereInput
   }
 
 
@@ -7251,6 +7752,7 @@ export namespace Prisma {
     supplierLinks?: boolean | Property$supplierLinksArgs<ExtArgs>
     budgets?: boolean | Property$budgetsArgs<ExtArgs>
     serviceContracts?: boolean | Property$serviceContractsArgs<ExtArgs>
+    servicesInvoices?: boolean | Property$servicesInvoicesArgs<ExtArgs>
     _count?: boolean | PropertyCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["property"]>
 
@@ -7368,6 +7870,7 @@ export namespace Prisma {
     supplierLinks?: boolean | Property$supplierLinksArgs<ExtArgs>
     budgets?: boolean | Property$budgetsArgs<ExtArgs>
     serviceContracts?: boolean | Property$serviceContractsArgs<ExtArgs>
+    servicesInvoices?: boolean | Property$servicesInvoicesArgs<ExtArgs>
     _count?: boolean | PropertyCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type PropertyIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7388,6 +7891,7 @@ export namespace Prisma {
       supplierLinks: Prisma.$SupplierPropertyPayload<ExtArgs>[]
       budgets: Prisma.$AnnualBudgetPayload<ExtArgs>[]
       serviceContracts: Prisma.$BuildingServiceContractPayload<ExtArgs>[]
+      servicesInvoices: Prisma.$ServicesInvoicePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7862,6 +8366,7 @@ export namespace Prisma {
     supplierLinks<T extends Property$supplierLinksArgs<ExtArgs> = {}>(args?: Subset<T, Property$supplierLinksArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplierPropertyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     budgets<T extends Property$budgetsArgs<ExtArgs> = {}>(args?: Subset<T, Property$budgetsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AnnualBudgetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     serviceContracts<T extends Property$serviceContractsArgs<ExtArgs> = {}>(args?: Subset<T, Property$serviceContractsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BuildingServiceContractPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    servicesInvoices<T extends Property$servicesInvoicesArgs<ExtArgs> = {}>(args?: Subset<T, Property$servicesInvoicesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8491,6 +8996,30 @@ export namespace Prisma {
   }
 
   /**
+   * Property.servicesInvoices
+   */
+  export type Property$servicesInvoicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    where?: ServicesInvoiceWhereInput
+    orderBy?: ServicesInvoiceOrderByWithRelationInput | ServicesInvoiceOrderByWithRelationInput[]
+    cursor?: ServicesInvoiceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServicesInvoiceScalarFieldEnum | ServicesInvoiceScalarFieldEnum[]
+  }
+
+  /**
    * Property without action
    */
   export type PropertyDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8853,6 +9382,7 @@ export namespace Prisma {
     installmentPlans?: boolean | Unit$installmentPlansArgs<ExtArgs>
     fundBalances?: boolean | Unit$fundBalancesArgs<ExtArgs>
     ownershipTransfers?: boolean | Unit$ownershipTransfersArgs<ExtArgs>
+    servicesInvoices?: boolean | Unit$servicesInvoicesArgs<ExtArgs>
     _count?: boolean | UnitCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["unit"]>
 
@@ -8944,6 +9474,7 @@ export namespace Prisma {
     installmentPlans?: boolean | Unit$installmentPlansArgs<ExtArgs>
     fundBalances?: boolean | Unit$fundBalancesArgs<ExtArgs>
     ownershipTransfers?: boolean | Unit$ownershipTransfersArgs<ExtArgs>
+    servicesInvoices?: boolean | Unit$servicesInvoicesArgs<ExtArgs>
     _count?: boolean | UnitCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UnitIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8974,6 +9505,7 @@ export namespace Prisma {
       installmentPlans: Prisma.$ServiceChargeInstallmentPlanPayload<ExtArgs>[]
       fundBalances: Prisma.$UnitFundBalancePayload<ExtArgs>[]
       ownershipTransfers: Prisma.$OwnershipTransferPayload<ExtArgs>[]
+      servicesInvoices: Prisma.$ServicesInvoicePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -9461,6 +9993,7 @@ export namespace Prisma {
     installmentPlans<T extends Unit$installmentPlansArgs<ExtArgs> = {}>(args?: Subset<T, Unit$installmentPlansArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServiceChargeInstallmentPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     fundBalances<T extends Unit$fundBalancesArgs<ExtArgs> = {}>(args?: Subset<T, Unit$fundBalancesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UnitFundBalancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     ownershipTransfers<T extends Unit$ownershipTransfersArgs<ExtArgs> = {}>(args?: Subset<T, Unit$ownershipTransfersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    servicesInvoices<T extends Unit$servicesInvoicesArgs<ExtArgs> = {}>(args?: Subset<T, Unit$servicesInvoicesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -10209,6 +10742,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: OwnershipTransferScalarFieldEnum | OwnershipTransferScalarFieldEnum[]
+  }
+
+  /**
+   * Unit.servicesInvoices
+   */
+  export type Unit$servicesInvoicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    where?: ServicesInvoiceWhereInput
+    orderBy?: ServicesInvoiceOrderByWithRelationInput | ServicesInvoiceOrderByWithRelationInput[]
+    cursor?: ServicesInvoiceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServicesInvoiceScalarFieldEnum | ServicesInvoiceScalarFieldEnum[]
   }
 
   /**
@@ -12995,6 +13552,10 @@ export namespace Prisma {
     ownershipTransfersTo?: boolean | User$ownershipTransfersToArgs<ExtArgs>
     ownershipTransfersCreated?: boolean | User$ownershipTransfersCreatedArgs<ExtArgs>
     familyMembers?: boolean | User$familyMembersArgs<ExtArgs>
+    servicesInvoicesCreated?: boolean | User$servicesInvoicesCreatedArgs<ExtArgs>
+    communicationsLogged?: boolean | User$communicationsLoggedArgs<ExtArgs>
+    communicationsAsParty?: boolean | User$communicationsAsPartyArgs<ExtArgs>
+    adminModuleGrants?: boolean | User$adminModuleGrantsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -13152,6 +13713,10 @@ export namespace Prisma {
     ownershipTransfersTo?: boolean | User$ownershipTransfersToArgs<ExtArgs>
     ownershipTransfersCreated?: boolean | User$ownershipTransfersCreatedArgs<ExtArgs>
     familyMembers?: boolean | User$familyMembersArgs<ExtArgs>
+    servicesInvoicesCreated?: boolean | User$servicesInvoicesCreatedArgs<ExtArgs>
+    communicationsLogged?: boolean | User$communicationsLoggedArgs<ExtArgs>
+    communicationsAsParty?: boolean | User$communicationsAsPartyArgs<ExtArgs>
+    adminModuleGrants?: boolean | User$adminModuleGrantsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -13212,6 +13777,10 @@ export namespace Prisma {
        * dependents (see WorkerFamilyMember).
        */
       familyMembers: Prisma.$WorkerFamilyMemberPayload<ExtArgs>[]
+      servicesInvoicesCreated: Prisma.$ServicesInvoicePayload<ExtArgs>[]
+      communicationsLogged: Prisma.$CommunicationLogPayload<ExtArgs>[]
+      communicationsAsParty: Prisma.$CommunicationLogPayload<ExtArgs>[]
+      adminModuleGrants: Prisma.$AdminModuleGrantPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -13727,6 +14296,10 @@ export namespace Prisma {
     ownershipTransfersTo<T extends User$ownershipTransfersToArgs<ExtArgs> = {}>(args?: Subset<T, User$ownershipTransfersToArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     ownershipTransfersCreated<T extends User$ownershipTransfersCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$ownershipTransfersCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnershipTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     familyMembers<T extends User$familyMembersArgs<ExtArgs> = {}>(args?: Subset<T, User$familyMembersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkerFamilyMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    servicesInvoicesCreated<T extends User$servicesInvoicesCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$servicesInvoicesCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    communicationsLogged<T extends User$communicationsLoggedArgs<ExtArgs> = {}>(args?: Subset<T, User$communicationsLoggedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    communicationsAsParty<T extends User$communicationsAsPartyArgs<ExtArgs> = {}>(args?: Subset<T, User$communicationsAsPartyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    adminModuleGrants<T extends User$adminModuleGrantsArgs<ExtArgs> = {}>(args?: Subset<T, User$adminModuleGrantsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -15020,6 +15593,102 @@ export namespace Prisma {
   }
 
   /**
+   * User.servicesInvoicesCreated
+   */
+  export type User$servicesInvoicesCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    where?: ServicesInvoiceWhereInput
+    orderBy?: ServicesInvoiceOrderByWithRelationInput | ServicesInvoiceOrderByWithRelationInput[]
+    cursor?: ServicesInvoiceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServicesInvoiceScalarFieldEnum | ServicesInvoiceScalarFieldEnum[]
+  }
+
+  /**
+   * User.communicationsLogged
+   */
+  export type User$communicationsLoggedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    where?: CommunicationLogWhereInput
+    orderBy?: CommunicationLogOrderByWithRelationInput | CommunicationLogOrderByWithRelationInput[]
+    cursor?: CommunicationLogWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CommunicationLogScalarFieldEnum | CommunicationLogScalarFieldEnum[]
+  }
+
+  /**
+   * User.communicationsAsParty
+   */
+  export type User$communicationsAsPartyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    where?: CommunicationLogWhereInput
+    orderBy?: CommunicationLogOrderByWithRelationInput | CommunicationLogOrderByWithRelationInput[]
+    cursor?: CommunicationLogWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CommunicationLogScalarFieldEnum | CommunicationLogScalarFieldEnum[]
+  }
+
+  /**
+   * User.adminModuleGrants
+   */
+  export type User$adminModuleGrantsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    where?: AdminModuleGrantWhereInput
+    orderBy?: AdminModuleGrantOrderByWithRelationInput | AdminModuleGrantOrderByWithRelationInput[]
+    cursor?: AdminModuleGrantWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AdminModuleGrantScalarFieldEnum | AdminModuleGrantScalarFieldEnum[]
+  }
+
+  /**
    * User without action
    */
   export type UserDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -15035,6 +15704,1056 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: UserInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model AdminModuleGrant
+   */
+
+  export type AggregateAdminModuleGrant = {
+    _count: AdminModuleGrantCountAggregateOutputType | null
+    _min: AdminModuleGrantMinAggregateOutputType | null
+    _max: AdminModuleGrantMaxAggregateOutputType | null
+  }
+
+  export type AdminModuleGrantMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    module: $Enums.AdminModule | null
+    createdAt: Date | null
+  }
+
+  export type AdminModuleGrantMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    module: $Enums.AdminModule | null
+    createdAt: Date | null
+  }
+
+  export type AdminModuleGrantCountAggregateOutputType = {
+    id: number
+    userId: number
+    module: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type AdminModuleGrantMinAggregateInputType = {
+    id?: true
+    userId?: true
+    module?: true
+    createdAt?: true
+  }
+
+  export type AdminModuleGrantMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    module?: true
+    createdAt?: true
+  }
+
+  export type AdminModuleGrantCountAggregateInputType = {
+    id?: true
+    userId?: true
+    module?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type AdminModuleGrantAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AdminModuleGrant to aggregate.
+     */
+    where?: AdminModuleGrantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AdminModuleGrants to fetch.
+     */
+    orderBy?: AdminModuleGrantOrderByWithRelationInput | AdminModuleGrantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: AdminModuleGrantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AdminModuleGrants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AdminModuleGrants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned AdminModuleGrants
+    **/
+    _count?: true | AdminModuleGrantCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: AdminModuleGrantMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: AdminModuleGrantMaxAggregateInputType
+  }
+
+  export type GetAdminModuleGrantAggregateType<T extends AdminModuleGrantAggregateArgs> = {
+        [P in keyof T & keyof AggregateAdminModuleGrant]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateAdminModuleGrant[P]>
+      : GetScalarType<T[P], AggregateAdminModuleGrant[P]>
+  }
+
+
+
+
+  export type AdminModuleGrantGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AdminModuleGrantWhereInput
+    orderBy?: AdminModuleGrantOrderByWithAggregationInput | AdminModuleGrantOrderByWithAggregationInput[]
+    by: AdminModuleGrantScalarFieldEnum[] | AdminModuleGrantScalarFieldEnum
+    having?: AdminModuleGrantScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: AdminModuleGrantCountAggregateInputType | true
+    _min?: AdminModuleGrantMinAggregateInputType
+    _max?: AdminModuleGrantMaxAggregateInputType
+  }
+
+  export type AdminModuleGrantGroupByOutputType = {
+    id: string
+    userId: string
+    module: $Enums.AdminModule
+    createdAt: Date
+    _count: AdminModuleGrantCountAggregateOutputType | null
+    _min: AdminModuleGrantMinAggregateOutputType | null
+    _max: AdminModuleGrantMaxAggregateOutputType | null
+  }
+
+  type GetAdminModuleGrantGroupByPayload<T extends AdminModuleGrantGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<AdminModuleGrantGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof AdminModuleGrantGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AdminModuleGrantGroupByOutputType[P]>
+            : GetScalarType<T[P], AdminModuleGrantGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type AdminModuleGrantSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    module?: boolean
+    createdAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["adminModuleGrant"]>
+
+  export type AdminModuleGrantSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    module?: boolean
+    createdAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["adminModuleGrant"]>
+
+  export type AdminModuleGrantSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    module?: boolean
+    createdAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["adminModuleGrant"]>
+
+  export type AdminModuleGrantSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    module?: boolean
+    createdAt?: boolean
+  }
+
+  export type AdminModuleGrantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "module" | "createdAt", ExtArgs["result"]["adminModuleGrant"]>
+  export type AdminModuleGrantInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AdminModuleGrantIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AdminModuleGrantIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $AdminModuleGrantPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "AdminModuleGrant"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      module: $Enums.AdminModule
+      createdAt: Date
+    }, ExtArgs["result"]["adminModuleGrant"]>
+    composites: {}
+  }
+
+  type AdminModuleGrantGetPayload<S extends boolean | null | undefined | AdminModuleGrantDefaultArgs> = $Result.GetResult<Prisma.$AdminModuleGrantPayload, S>
+
+  type AdminModuleGrantCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<AdminModuleGrantFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: AdminModuleGrantCountAggregateInputType | true
+    }
+
+  export interface AdminModuleGrantDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['AdminModuleGrant'], meta: { name: 'AdminModuleGrant' } }
+    /**
+     * Find zero or one AdminModuleGrant that matches the filter.
+     * @param {AdminModuleGrantFindUniqueArgs} args - Arguments to find a AdminModuleGrant
+     * @example
+     * // Get one AdminModuleGrant
+     * const adminModuleGrant = await prisma.adminModuleGrant.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AdminModuleGrantFindUniqueArgs>(args: SelectSubset<T, AdminModuleGrantFindUniqueArgs<ExtArgs>>): Prisma__AdminModuleGrantClient<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one AdminModuleGrant that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AdminModuleGrantFindUniqueOrThrowArgs} args - Arguments to find a AdminModuleGrant
+     * @example
+     * // Get one AdminModuleGrant
+     * const adminModuleGrant = await prisma.adminModuleGrant.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AdminModuleGrantFindUniqueOrThrowArgs>(args: SelectSubset<T, AdminModuleGrantFindUniqueOrThrowArgs<ExtArgs>>): Prisma__AdminModuleGrantClient<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AdminModuleGrant that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdminModuleGrantFindFirstArgs} args - Arguments to find a AdminModuleGrant
+     * @example
+     * // Get one AdminModuleGrant
+     * const adminModuleGrant = await prisma.adminModuleGrant.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AdminModuleGrantFindFirstArgs>(args?: SelectSubset<T, AdminModuleGrantFindFirstArgs<ExtArgs>>): Prisma__AdminModuleGrantClient<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AdminModuleGrant that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdminModuleGrantFindFirstOrThrowArgs} args - Arguments to find a AdminModuleGrant
+     * @example
+     * // Get one AdminModuleGrant
+     * const adminModuleGrant = await prisma.adminModuleGrant.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AdminModuleGrantFindFirstOrThrowArgs>(args?: SelectSubset<T, AdminModuleGrantFindFirstOrThrowArgs<ExtArgs>>): Prisma__AdminModuleGrantClient<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more AdminModuleGrants that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdminModuleGrantFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all AdminModuleGrants
+     * const adminModuleGrants = await prisma.adminModuleGrant.findMany()
+     * 
+     * // Get first 10 AdminModuleGrants
+     * const adminModuleGrants = await prisma.adminModuleGrant.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const adminModuleGrantWithIdOnly = await prisma.adminModuleGrant.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends AdminModuleGrantFindManyArgs>(args?: SelectSubset<T, AdminModuleGrantFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a AdminModuleGrant.
+     * @param {AdminModuleGrantCreateArgs} args - Arguments to create a AdminModuleGrant.
+     * @example
+     * // Create one AdminModuleGrant
+     * const AdminModuleGrant = await prisma.adminModuleGrant.create({
+     *   data: {
+     *     // ... data to create a AdminModuleGrant
+     *   }
+     * })
+     * 
+     */
+    create<T extends AdminModuleGrantCreateArgs>(args: SelectSubset<T, AdminModuleGrantCreateArgs<ExtArgs>>): Prisma__AdminModuleGrantClient<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many AdminModuleGrants.
+     * @param {AdminModuleGrantCreateManyArgs} args - Arguments to create many AdminModuleGrants.
+     * @example
+     * // Create many AdminModuleGrants
+     * const adminModuleGrant = await prisma.adminModuleGrant.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends AdminModuleGrantCreateManyArgs>(args?: SelectSubset<T, AdminModuleGrantCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many AdminModuleGrants and returns the data saved in the database.
+     * @param {AdminModuleGrantCreateManyAndReturnArgs} args - Arguments to create many AdminModuleGrants.
+     * @example
+     * // Create many AdminModuleGrants
+     * const adminModuleGrant = await prisma.adminModuleGrant.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many AdminModuleGrants and only return the `id`
+     * const adminModuleGrantWithIdOnly = await prisma.adminModuleGrant.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends AdminModuleGrantCreateManyAndReturnArgs>(args?: SelectSubset<T, AdminModuleGrantCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a AdminModuleGrant.
+     * @param {AdminModuleGrantDeleteArgs} args - Arguments to delete one AdminModuleGrant.
+     * @example
+     * // Delete one AdminModuleGrant
+     * const AdminModuleGrant = await prisma.adminModuleGrant.delete({
+     *   where: {
+     *     // ... filter to delete one AdminModuleGrant
+     *   }
+     * })
+     * 
+     */
+    delete<T extends AdminModuleGrantDeleteArgs>(args: SelectSubset<T, AdminModuleGrantDeleteArgs<ExtArgs>>): Prisma__AdminModuleGrantClient<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one AdminModuleGrant.
+     * @param {AdminModuleGrantUpdateArgs} args - Arguments to update one AdminModuleGrant.
+     * @example
+     * // Update one AdminModuleGrant
+     * const adminModuleGrant = await prisma.adminModuleGrant.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends AdminModuleGrantUpdateArgs>(args: SelectSubset<T, AdminModuleGrantUpdateArgs<ExtArgs>>): Prisma__AdminModuleGrantClient<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more AdminModuleGrants.
+     * @param {AdminModuleGrantDeleteManyArgs} args - Arguments to filter AdminModuleGrants to delete.
+     * @example
+     * // Delete a few AdminModuleGrants
+     * const { count } = await prisma.adminModuleGrant.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends AdminModuleGrantDeleteManyArgs>(args?: SelectSubset<T, AdminModuleGrantDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AdminModuleGrants.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdminModuleGrantUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many AdminModuleGrants
+     * const adminModuleGrant = await prisma.adminModuleGrant.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends AdminModuleGrantUpdateManyArgs>(args: SelectSubset<T, AdminModuleGrantUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AdminModuleGrants and returns the data updated in the database.
+     * @param {AdminModuleGrantUpdateManyAndReturnArgs} args - Arguments to update many AdminModuleGrants.
+     * @example
+     * // Update many AdminModuleGrants
+     * const adminModuleGrant = await prisma.adminModuleGrant.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more AdminModuleGrants and only return the `id`
+     * const adminModuleGrantWithIdOnly = await prisma.adminModuleGrant.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends AdminModuleGrantUpdateManyAndReturnArgs>(args: SelectSubset<T, AdminModuleGrantUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one AdminModuleGrant.
+     * @param {AdminModuleGrantUpsertArgs} args - Arguments to update or create a AdminModuleGrant.
+     * @example
+     * // Update or create a AdminModuleGrant
+     * const adminModuleGrant = await prisma.adminModuleGrant.upsert({
+     *   create: {
+     *     // ... data to create a AdminModuleGrant
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the AdminModuleGrant we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AdminModuleGrantUpsertArgs>(args: SelectSubset<T, AdminModuleGrantUpsertArgs<ExtArgs>>): Prisma__AdminModuleGrantClient<$Result.GetResult<Prisma.$AdminModuleGrantPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of AdminModuleGrants.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdminModuleGrantCountArgs} args - Arguments to filter AdminModuleGrants to count.
+     * @example
+     * // Count the number of AdminModuleGrants
+     * const count = await prisma.adminModuleGrant.count({
+     *   where: {
+     *     // ... the filter for the AdminModuleGrants we want to count
+     *   }
+     * })
+    **/
+    count<T extends AdminModuleGrantCountArgs>(
+      args?: Subset<T, AdminModuleGrantCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], AdminModuleGrantCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a AdminModuleGrant.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdminModuleGrantAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AdminModuleGrantAggregateArgs>(args: Subset<T, AdminModuleGrantAggregateArgs>): Prisma.PrismaPromise<GetAdminModuleGrantAggregateType<T>>
+
+    /**
+     * Group by AdminModuleGrant.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdminModuleGrantGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends AdminModuleGrantGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: AdminModuleGrantGroupByArgs['orderBy'] }
+        : { orderBy?: AdminModuleGrantGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, AdminModuleGrantGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAdminModuleGrantGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the AdminModuleGrant model
+   */
+  readonly fields: AdminModuleGrantFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for AdminModuleGrant.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__AdminModuleGrantClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the AdminModuleGrant model
+   */
+  interface AdminModuleGrantFieldRefs {
+    readonly id: FieldRef<"AdminModuleGrant", 'String'>
+    readonly userId: FieldRef<"AdminModuleGrant", 'String'>
+    readonly module: FieldRef<"AdminModuleGrant", 'AdminModule'>
+    readonly createdAt: FieldRef<"AdminModuleGrant", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * AdminModuleGrant findUnique
+   */
+  export type AdminModuleGrantFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * Filter, which AdminModuleGrant to fetch.
+     */
+    where: AdminModuleGrantWhereUniqueInput
+  }
+
+  /**
+   * AdminModuleGrant findUniqueOrThrow
+   */
+  export type AdminModuleGrantFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * Filter, which AdminModuleGrant to fetch.
+     */
+    where: AdminModuleGrantWhereUniqueInput
+  }
+
+  /**
+   * AdminModuleGrant findFirst
+   */
+  export type AdminModuleGrantFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * Filter, which AdminModuleGrant to fetch.
+     */
+    where?: AdminModuleGrantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AdminModuleGrants to fetch.
+     */
+    orderBy?: AdminModuleGrantOrderByWithRelationInput | AdminModuleGrantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AdminModuleGrants.
+     */
+    cursor?: AdminModuleGrantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AdminModuleGrants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AdminModuleGrants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AdminModuleGrants.
+     */
+    distinct?: AdminModuleGrantScalarFieldEnum | AdminModuleGrantScalarFieldEnum[]
+  }
+
+  /**
+   * AdminModuleGrant findFirstOrThrow
+   */
+  export type AdminModuleGrantFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * Filter, which AdminModuleGrant to fetch.
+     */
+    where?: AdminModuleGrantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AdminModuleGrants to fetch.
+     */
+    orderBy?: AdminModuleGrantOrderByWithRelationInput | AdminModuleGrantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AdminModuleGrants.
+     */
+    cursor?: AdminModuleGrantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AdminModuleGrants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AdminModuleGrants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AdminModuleGrants.
+     */
+    distinct?: AdminModuleGrantScalarFieldEnum | AdminModuleGrantScalarFieldEnum[]
+  }
+
+  /**
+   * AdminModuleGrant findMany
+   */
+  export type AdminModuleGrantFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * Filter, which AdminModuleGrants to fetch.
+     */
+    where?: AdminModuleGrantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AdminModuleGrants to fetch.
+     */
+    orderBy?: AdminModuleGrantOrderByWithRelationInput | AdminModuleGrantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing AdminModuleGrants.
+     */
+    cursor?: AdminModuleGrantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AdminModuleGrants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AdminModuleGrants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AdminModuleGrants.
+     */
+    distinct?: AdminModuleGrantScalarFieldEnum | AdminModuleGrantScalarFieldEnum[]
+  }
+
+  /**
+   * AdminModuleGrant create
+   */
+  export type AdminModuleGrantCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * The data needed to create a AdminModuleGrant.
+     */
+    data: XOR<AdminModuleGrantCreateInput, AdminModuleGrantUncheckedCreateInput>
+  }
+
+  /**
+   * AdminModuleGrant createMany
+   */
+  export type AdminModuleGrantCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many AdminModuleGrants.
+     */
+    data: AdminModuleGrantCreateManyInput | AdminModuleGrantCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * AdminModuleGrant createManyAndReturn
+   */
+  export type AdminModuleGrantCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * The data used to create many AdminModuleGrants.
+     */
+    data: AdminModuleGrantCreateManyInput | AdminModuleGrantCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * AdminModuleGrant update
+   */
+  export type AdminModuleGrantUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * The data needed to update a AdminModuleGrant.
+     */
+    data: XOR<AdminModuleGrantUpdateInput, AdminModuleGrantUncheckedUpdateInput>
+    /**
+     * Choose, which AdminModuleGrant to update.
+     */
+    where: AdminModuleGrantWhereUniqueInput
+  }
+
+  /**
+   * AdminModuleGrant updateMany
+   */
+  export type AdminModuleGrantUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update AdminModuleGrants.
+     */
+    data: XOR<AdminModuleGrantUpdateManyMutationInput, AdminModuleGrantUncheckedUpdateManyInput>
+    /**
+     * Filter which AdminModuleGrants to update
+     */
+    where?: AdminModuleGrantWhereInput
+    /**
+     * Limit how many AdminModuleGrants to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * AdminModuleGrant updateManyAndReturn
+   */
+  export type AdminModuleGrantUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * The data used to update AdminModuleGrants.
+     */
+    data: XOR<AdminModuleGrantUpdateManyMutationInput, AdminModuleGrantUncheckedUpdateManyInput>
+    /**
+     * Filter which AdminModuleGrants to update
+     */
+    where?: AdminModuleGrantWhereInput
+    /**
+     * Limit how many AdminModuleGrants to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * AdminModuleGrant upsert
+   */
+  export type AdminModuleGrantUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * The filter to search for the AdminModuleGrant to update in case it exists.
+     */
+    where: AdminModuleGrantWhereUniqueInput
+    /**
+     * In case the AdminModuleGrant found by the `where` argument doesn't exist, create a new AdminModuleGrant with this data.
+     */
+    create: XOR<AdminModuleGrantCreateInput, AdminModuleGrantUncheckedCreateInput>
+    /**
+     * In case the AdminModuleGrant was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<AdminModuleGrantUpdateInput, AdminModuleGrantUncheckedUpdateInput>
+  }
+
+  /**
+   * AdminModuleGrant delete
+   */
+  export type AdminModuleGrantDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
+    /**
+     * Filter which AdminModuleGrant to delete.
+     */
+    where: AdminModuleGrantWhereUniqueInput
+  }
+
+  /**
+   * AdminModuleGrant deleteMany
+   */
+  export type AdminModuleGrantDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AdminModuleGrants to delete
+     */
+    where?: AdminModuleGrantWhereInput
+    /**
+     * Limit how many AdminModuleGrants to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * AdminModuleGrant without action
+   */
+  export type AdminModuleGrantDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AdminModuleGrant
+     */
+    select?: AdminModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AdminModuleGrant
+     */
+    omit?: AdminModuleGrantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdminModuleGrantInclude<ExtArgs> | null
   }
 
 
@@ -16580,6 +18299,7 @@ export namespace Prisma {
     tenant?: boolean | UserDefaultArgs<ExtArgs>
     charges?: boolean | Tenancy$chargesArgs<ExtArgs>
     documents?: boolean | Tenancy$documentsArgs<ExtArgs>
+    servicesInvoices?: boolean | Tenancy$servicesInvoicesArgs<ExtArgs>
     _count?: boolean | TenancyCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["tenancy"]>
 
@@ -16671,6 +18391,7 @@ export namespace Prisma {
     tenant?: boolean | UserDefaultArgs<ExtArgs>
     charges?: boolean | Tenancy$chargesArgs<ExtArgs>
     documents?: boolean | Tenancy$documentsArgs<ExtArgs>
+    servicesInvoices?: boolean | Tenancy$servicesInvoicesArgs<ExtArgs>
     _count?: boolean | TenancyCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type TenancyIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -16689,6 +18410,7 @@ export namespace Prisma {
       tenant: Prisma.$UserPayload<ExtArgs>
       charges: Prisma.$ChargePayload<ExtArgs>[]
       documents: Prisma.$EntityDocumentPayload<ExtArgs>[]
+      servicesInvoices: Prisma.$ServicesInvoicePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -17130,6 +18852,7 @@ export namespace Prisma {
     tenant<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     charges<T extends Tenancy$chargesArgs<ExtArgs> = {}>(args?: Subset<T, Tenancy$chargesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChargePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     documents<T extends Tenancy$documentsArgs<ExtArgs> = {}>(args?: Subset<T, Tenancy$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EntityDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    servicesInvoices<T extends Tenancy$servicesInvoicesArgs<ExtArgs> = {}>(args?: Subset<T, Tenancy$servicesInvoicesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -17628,6 +19351,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: EntityDocumentScalarFieldEnum | EntityDocumentScalarFieldEnum[]
+  }
+
+  /**
+   * Tenancy.servicesInvoices
+   */
+  export type Tenancy$servicesInvoicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    where?: ServicesInvoiceWhereInput
+    orderBy?: ServicesInvoiceOrderByWithRelationInput | ServicesInvoiceOrderByWithRelationInput[]
+    cursor?: ServicesInvoiceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServicesInvoiceScalarFieldEnum | ServicesInvoiceScalarFieldEnum[]
   }
 
   /**
@@ -27791,6 +29538,10 @@ export namespace Prisma {
     amountPayable: Decimal | null
     closingBalance: Decimal | null
     billedOwnerId: string | null
+    kind: string | null
+    status: string | null
+    notes: string | null
+    sentAt: Date | null
     createdById: string | null
     createdAt: Date | null
   }
@@ -27810,6 +29561,10 @@ export namespace Prisma {
     amountPayable: Decimal | null
     closingBalance: Decimal | null
     billedOwnerId: string | null
+    kind: string | null
+    status: string | null
+    notes: string | null
+    sentAt: Date | null
     createdById: string | null
     createdAt: Date | null
   }
@@ -27829,6 +29584,10 @@ export namespace Prisma {
     amountPayable: number
     closingBalance: number
     billedOwnerId: number
+    kind: number
+    status: number
+    notes: number
+    sentAt: number
     createdById: number
     createdAt: number
     _all: number
@@ -27866,6 +29625,10 @@ export namespace Prisma {
     amountPayable?: true
     closingBalance?: true
     billedOwnerId?: true
+    kind?: true
+    status?: true
+    notes?: true
+    sentAt?: true
     createdById?: true
     createdAt?: true
   }
@@ -27885,6 +29648,10 @@ export namespace Prisma {
     amountPayable?: true
     closingBalance?: true
     billedOwnerId?: true
+    kind?: true
+    status?: true
+    notes?: true
+    sentAt?: true
     createdById?: true
     createdAt?: true
   }
@@ -27904,6 +29671,10 @@ export namespace Prisma {
     amountPayable?: true
     closingBalance?: true
     billedOwnerId?: true
+    kind?: true
+    status?: true
+    notes?: true
+    sentAt?: true
     createdById?: true
     createdAt?: true
     _all?: true
@@ -28010,6 +29781,10 @@ export namespace Prisma {
     amountPayable: Decimal
     closingBalance: Decimal
     billedOwnerId: string | null
+    kind: string
+    status: string
+    notes: string | null
+    sentAt: Date | null
     createdById: string | null
     createdAt: Date
     _count: ServiceChargeInvoiceCountAggregateOutputType | null
@@ -28048,6 +29823,10 @@ export namespace Prisma {
     amountPayable?: boolean
     closingBalance?: boolean
     billedOwnerId?: boolean
+    kind?: boolean
+    status?: boolean
+    notes?: boolean
+    sentAt?: boolean
     createdById?: boolean
     createdAt?: boolean
     unit?: boolean | UnitDefaultArgs<ExtArgs>
@@ -28074,6 +29853,10 @@ export namespace Prisma {
     amountPayable?: boolean
     closingBalance?: boolean
     billedOwnerId?: boolean
+    kind?: boolean
+    status?: boolean
+    notes?: boolean
+    sentAt?: boolean
     createdById?: boolean
     createdAt?: boolean
     unit?: boolean | UnitDefaultArgs<ExtArgs>
@@ -28097,6 +29880,10 @@ export namespace Prisma {
     amountPayable?: boolean
     closingBalance?: boolean
     billedOwnerId?: boolean
+    kind?: boolean
+    status?: boolean
+    notes?: boolean
+    sentAt?: boolean
     createdById?: boolean
     createdAt?: boolean
     unit?: boolean | UnitDefaultArgs<ExtArgs>
@@ -28120,11 +29907,15 @@ export namespace Prisma {
     amountPayable?: boolean
     closingBalance?: boolean
     billedOwnerId?: boolean
+    kind?: boolean
+    status?: boolean
+    notes?: boolean
+    sentAt?: boolean
     createdById?: boolean
     createdAt?: boolean
   }
 
-  export type ServiceChargeInvoiceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "unitId" | "fundId" | "invoiceNumber" | "issueDate" | "dueDate" | "graceDays" | "periodStart" | "periodEnd" | "previousBalance" | "currentAmount" | "amountPayable" | "closingBalance" | "billedOwnerId" | "createdById" | "createdAt", ExtArgs["result"]["serviceChargeInvoice"]>
+  export type ServiceChargeInvoiceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "unitId" | "fundId" | "invoiceNumber" | "issueDate" | "dueDate" | "graceDays" | "periodStart" | "periodEnd" | "previousBalance" | "currentAmount" | "amountPayable" | "closingBalance" | "billedOwnerId" | "kind" | "status" | "notes" | "sentAt" | "createdById" | "createdAt", ExtArgs["result"]["serviceChargeInvoice"]>
   export type ServiceChargeInvoiceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     unit?: boolean | UnitDefaultArgs<ExtArgs>
     fund?: boolean | FundDefaultArgs<ExtArgs>
@@ -28187,6 +29978,16 @@ export namespace Prisma {
        * later changes hands, so the ledger and PDF stay historically accurate.
        */
       billedOwnerId: string | null
+      /**
+       * service_charge (recurring OA charge) | additional (one-off against a unit)
+       */
+      kind: string
+      /**
+       * draft | issued | void — drafts do not move the ledger until issued.
+       */
+      status: string
+      notes: string | null
+      sentAt: Date | null
       createdById: string | null
       createdAt: Date
     }, ExtArgs["result"]["serviceChargeInvoice"]>
@@ -28632,6 +30433,10 @@ export namespace Prisma {
     readonly amountPayable: FieldRef<"ServiceChargeInvoice", 'Decimal'>
     readonly closingBalance: FieldRef<"ServiceChargeInvoice", 'Decimal'>
     readonly billedOwnerId: FieldRef<"ServiceChargeInvoice", 'String'>
+    readonly kind: FieldRef<"ServiceChargeInvoice", 'String'>
+    readonly status: FieldRef<"ServiceChargeInvoice", 'String'>
+    readonly notes: FieldRef<"ServiceChargeInvoice", 'String'>
+    readonly sentAt: FieldRef<"ServiceChargeInvoice", 'DateTime'>
     readonly createdById: FieldRef<"ServiceChargeInvoice", 'String'>
     readonly createdAt: FieldRef<"ServiceChargeInvoice", 'DateTime'>
   }
@@ -39069,6 +40874,7 @@ export namespace Prisma {
     properties?: boolean | Supplier$propertiesArgs<ExtArgs>
     expenses?: boolean | Supplier$expensesArgs<ExtArgs>
     serviceContracts?: boolean | Supplier$serviceContractsArgs<ExtArgs>
+    communications?: boolean | Supplier$communicationsArgs<ExtArgs>
     _count?: boolean | SupplierCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["supplier"]>
 
@@ -39150,6 +40956,7 @@ export namespace Prisma {
     properties?: boolean | Supplier$propertiesArgs<ExtArgs>
     expenses?: boolean | Supplier$expensesArgs<ExtArgs>
     serviceContracts?: boolean | Supplier$serviceContractsArgs<ExtArgs>
+    communications?: boolean | Supplier$communicationsArgs<ExtArgs>
     _count?: boolean | SupplierCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type SupplierIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -39167,6 +40974,7 @@ export namespace Prisma {
       properties: Prisma.$SupplierPropertyPayload<ExtArgs>[]
       expenses: Prisma.$ExpensePayload<ExtArgs>[]
       serviceContracts: Prisma.$BuildingServiceContractPayload<ExtArgs>[]
+      communications: Prisma.$CommunicationLogPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -39597,6 +41405,7 @@ export namespace Prisma {
     properties<T extends Supplier$propertiesArgs<ExtArgs> = {}>(args?: Subset<T, Supplier$propertiesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupplierPropertyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     expenses<T extends Supplier$expensesArgs<ExtArgs> = {}>(args?: Subset<T, Supplier$expensesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExpensePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     serviceContracts<T extends Supplier$serviceContractsArgs<ExtArgs> = {}>(args?: Subset<T, Supplier$serviceContractsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BuildingServiceContractPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    communications<T extends Supplier$communicationsArgs<ExtArgs> = {}>(args?: Subset<T, Supplier$communicationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -40159,6 +41968,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: BuildingServiceContractScalarFieldEnum | BuildingServiceContractScalarFieldEnum[]
+  }
+
+  /**
+   * Supplier.communications
+   */
+  export type Supplier$communicationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    where?: CommunicationLogWhereInput
+    orderBy?: CommunicationLogOrderByWithRelationInput | CommunicationLogOrderByWithRelationInput[]
+    cursor?: CommunicationLogWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CommunicationLogScalarFieldEnum | CommunicationLogScalarFieldEnum[]
   }
 
   /**
@@ -53198,6 +55031,3672 @@ export namespace Prisma {
 
 
   /**
+   * Model ServicesInvoice
+   */
+
+  export type AggregateServicesInvoice = {
+    _count: ServicesInvoiceCountAggregateOutputType | null
+    _avg: ServicesInvoiceAvgAggregateOutputType | null
+    _sum: ServicesInvoiceSumAggregateOutputType | null
+    _min: ServicesInvoiceMinAggregateOutputType | null
+    _max: ServicesInvoiceMaxAggregateOutputType | null
+  }
+
+  export type ServicesInvoiceAvgAggregateOutputType = {
+    invoiceNumber: number | null
+    total: Decimal | null
+  }
+
+  export type ServicesInvoiceSumAggregateOutputType = {
+    invoiceNumber: number | null
+    total: Decimal | null
+  }
+
+  export type ServicesInvoiceMinAggregateOutputType = {
+    id: string | null
+    invoiceNumber: number | null
+    propertyId: string | null
+    unitId: string | null
+    tenancyId: string | null
+    issueDate: Date | null
+    periodStart: Date | null
+    periodEnd: Date | null
+    billedName: string | null
+    billedAddress: string | null
+    status: string | null
+    total: Decimal | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type ServicesInvoiceMaxAggregateOutputType = {
+    id: string | null
+    invoiceNumber: number | null
+    propertyId: string | null
+    unitId: string | null
+    tenancyId: string | null
+    issueDate: Date | null
+    periodStart: Date | null
+    periodEnd: Date | null
+    billedName: string | null
+    billedAddress: string | null
+    status: string | null
+    total: Decimal | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type ServicesInvoiceCountAggregateOutputType = {
+    id: number
+    invoiceNumber: number
+    propertyId: number
+    unitId: number
+    tenancyId: number
+    issueDate: number
+    periodStart: number
+    periodEnd: number
+    billedName: number
+    billedAddress: number
+    status: number
+    total: number
+    createdById: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type ServicesInvoiceAvgAggregateInputType = {
+    invoiceNumber?: true
+    total?: true
+  }
+
+  export type ServicesInvoiceSumAggregateInputType = {
+    invoiceNumber?: true
+    total?: true
+  }
+
+  export type ServicesInvoiceMinAggregateInputType = {
+    id?: true
+    invoiceNumber?: true
+    propertyId?: true
+    unitId?: true
+    tenancyId?: true
+    issueDate?: true
+    periodStart?: true
+    periodEnd?: true
+    billedName?: true
+    billedAddress?: true
+    status?: true
+    total?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type ServicesInvoiceMaxAggregateInputType = {
+    id?: true
+    invoiceNumber?: true
+    propertyId?: true
+    unitId?: true
+    tenancyId?: true
+    issueDate?: true
+    periodStart?: true
+    periodEnd?: true
+    billedName?: true
+    billedAddress?: true
+    status?: true
+    total?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type ServicesInvoiceCountAggregateInputType = {
+    id?: true
+    invoiceNumber?: true
+    propertyId?: true
+    unitId?: true
+    tenancyId?: true
+    issueDate?: true
+    periodStart?: true
+    periodEnd?: true
+    billedName?: true
+    billedAddress?: true
+    status?: true
+    total?: true
+    createdById?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type ServicesInvoiceAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServicesInvoice to aggregate.
+     */
+    where?: ServicesInvoiceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServicesInvoices to fetch.
+     */
+    orderBy?: ServicesInvoiceOrderByWithRelationInput | ServicesInvoiceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ServicesInvoiceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServicesInvoices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServicesInvoices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ServicesInvoices
+    **/
+    _count?: true | ServicesInvoiceCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ServicesInvoiceAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ServicesInvoiceSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ServicesInvoiceMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ServicesInvoiceMaxAggregateInputType
+  }
+
+  export type GetServicesInvoiceAggregateType<T extends ServicesInvoiceAggregateArgs> = {
+        [P in keyof T & keyof AggregateServicesInvoice]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateServicesInvoice[P]>
+      : GetScalarType<T[P], AggregateServicesInvoice[P]>
+  }
+
+
+
+
+  export type ServicesInvoiceGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServicesInvoiceWhereInput
+    orderBy?: ServicesInvoiceOrderByWithAggregationInput | ServicesInvoiceOrderByWithAggregationInput[]
+    by: ServicesInvoiceScalarFieldEnum[] | ServicesInvoiceScalarFieldEnum
+    having?: ServicesInvoiceScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ServicesInvoiceCountAggregateInputType | true
+    _avg?: ServicesInvoiceAvgAggregateInputType
+    _sum?: ServicesInvoiceSumAggregateInputType
+    _min?: ServicesInvoiceMinAggregateInputType
+    _max?: ServicesInvoiceMaxAggregateInputType
+  }
+
+  export type ServicesInvoiceGroupByOutputType = {
+    id: string
+    invoiceNumber: number
+    propertyId: string
+    unitId: string
+    tenancyId: string | null
+    issueDate: Date
+    periodStart: Date
+    periodEnd: Date
+    billedName: string
+    billedAddress: string
+    status: string
+    total: Decimal
+    createdById: string | null
+    createdAt: Date
+    _count: ServicesInvoiceCountAggregateOutputType | null
+    _avg: ServicesInvoiceAvgAggregateOutputType | null
+    _sum: ServicesInvoiceSumAggregateOutputType | null
+    _min: ServicesInvoiceMinAggregateOutputType | null
+    _max: ServicesInvoiceMaxAggregateOutputType | null
+  }
+
+  type GetServicesInvoiceGroupByPayload<T extends ServicesInvoiceGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ServicesInvoiceGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ServicesInvoiceGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ServicesInvoiceGroupByOutputType[P]>
+            : GetScalarType<T[P], ServicesInvoiceGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ServicesInvoiceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    invoiceNumber?: boolean
+    propertyId?: boolean
+    unitId?: boolean
+    tenancyId?: boolean
+    issueDate?: boolean
+    periodStart?: boolean
+    periodEnd?: boolean
+    billedName?: boolean
+    billedAddress?: boolean
+    status?: boolean
+    total?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    tenancy?: boolean | ServicesInvoice$tenancyArgs<ExtArgs>
+    createdBy?: boolean | ServicesInvoice$createdByArgs<ExtArgs>
+    lines?: boolean | ServicesInvoice$linesArgs<ExtArgs>
+    _count?: boolean | ServicesInvoiceCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["servicesInvoice"]>
+
+  export type ServicesInvoiceSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    invoiceNumber?: boolean
+    propertyId?: boolean
+    unitId?: boolean
+    tenancyId?: boolean
+    issueDate?: boolean
+    periodStart?: boolean
+    periodEnd?: boolean
+    billedName?: boolean
+    billedAddress?: boolean
+    status?: boolean
+    total?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    tenancy?: boolean | ServicesInvoice$tenancyArgs<ExtArgs>
+    createdBy?: boolean | ServicesInvoice$createdByArgs<ExtArgs>
+  }, ExtArgs["result"]["servicesInvoice"]>
+
+  export type ServicesInvoiceSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    invoiceNumber?: boolean
+    propertyId?: boolean
+    unitId?: boolean
+    tenancyId?: boolean
+    issueDate?: boolean
+    periodStart?: boolean
+    periodEnd?: boolean
+    billedName?: boolean
+    billedAddress?: boolean
+    status?: boolean
+    total?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    tenancy?: boolean | ServicesInvoice$tenancyArgs<ExtArgs>
+    createdBy?: boolean | ServicesInvoice$createdByArgs<ExtArgs>
+  }, ExtArgs["result"]["servicesInvoice"]>
+
+  export type ServicesInvoiceSelectScalar = {
+    id?: boolean
+    invoiceNumber?: boolean
+    propertyId?: boolean
+    unitId?: boolean
+    tenancyId?: boolean
+    issueDate?: boolean
+    periodStart?: boolean
+    periodEnd?: boolean
+    billedName?: boolean
+    billedAddress?: boolean
+    status?: boolean
+    total?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+  }
+
+  export type ServicesInvoiceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "invoiceNumber" | "propertyId" | "unitId" | "tenancyId" | "issueDate" | "periodStart" | "periodEnd" | "billedName" | "billedAddress" | "status" | "total" | "createdById" | "createdAt", ExtArgs["result"]["servicesInvoice"]>
+  export type ServicesInvoiceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    tenancy?: boolean | ServicesInvoice$tenancyArgs<ExtArgs>
+    createdBy?: boolean | ServicesInvoice$createdByArgs<ExtArgs>
+    lines?: boolean | ServicesInvoice$linesArgs<ExtArgs>
+    _count?: boolean | ServicesInvoiceCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type ServicesInvoiceIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    tenancy?: boolean | ServicesInvoice$tenancyArgs<ExtArgs>
+    createdBy?: boolean | ServicesInvoice$createdByArgs<ExtArgs>
+  }
+  export type ServicesInvoiceIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    unit?: boolean | UnitDefaultArgs<ExtArgs>
+    tenancy?: boolean | ServicesInvoice$tenancyArgs<ExtArgs>
+    createdBy?: boolean | ServicesInvoice$createdByArgs<ExtArgs>
+  }
+
+  export type $ServicesInvoicePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ServicesInvoice"
+    objects: {
+      property: Prisma.$PropertyPayload<ExtArgs>
+      unit: Prisma.$UnitPayload<ExtArgs>
+      tenancy: Prisma.$TenancyPayload<ExtArgs> | null
+      createdBy: Prisma.$UserPayload<ExtArgs> | null
+      lines: Prisma.$ServicesInvoiceLinePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      invoiceNumber: number
+      propertyId: string
+      unitId: string
+      tenancyId: string | null
+      issueDate: Date
+      periodStart: Date
+      periodEnd: Date
+      billedName: string
+      billedAddress: string
+      /**
+       * "issued" until an admin marks it paid, or auto-paid when the total
+       * is a credit (rent collected exceeds costs).
+       */
+      status: string
+      total: Prisma.Decimal
+      createdById: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["servicesInvoice"]>
+    composites: {}
+  }
+
+  type ServicesInvoiceGetPayload<S extends boolean | null | undefined | ServicesInvoiceDefaultArgs> = $Result.GetResult<Prisma.$ServicesInvoicePayload, S>
+
+  type ServicesInvoiceCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ServicesInvoiceFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ServicesInvoiceCountAggregateInputType | true
+    }
+
+  export interface ServicesInvoiceDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ServicesInvoice'], meta: { name: 'ServicesInvoice' } }
+    /**
+     * Find zero or one ServicesInvoice that matches the filter.
+     * @param {ServicesInvoiceFindUniqueArgs} args - Arguments to find a ServicesInvoice
+     * @example
+     * // Get one ServicesInvoice
+     * const servicesInvoice = await prisma.servicesInvoice.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ServicesInvoiceFindUniqueArgs>(args: SelectSubset<T, ServicesInvoiceFindUniqueArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ServicesInvoice that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ServicesInvoiceFindUniqueOrThrowArgs} args - Arguments to find a ServicesInvoice
+     * @example
+     * // Get one ServicesInvoice
+     * const servicesInvoice = await prisma.servicesInvoice.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ServicesInvoiceFindUniqueOrThrowArgs>(args: SelectSubset<T, ServicesInvoiceFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServicesInvoice that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceFindFirstArgs} args - Arguments to find a ServicesInvoice
+     * @example
+     * // Get one ServicesInvoice
+     * const servicesInvoice = await prisma.servicesInvoice.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ServicesInvoiceFindFirstArgs>(args?: SelectSubset<T, ServicesInvoiceFindFirstArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServicesInvoice that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceFindFirstOrThrowArgs} args - Arguments to find a ServicesInvoice
+     * @example
+     * // Get one ServicesInvoice
+     * const servicesInvoice = await prisma.servicesInvoice.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ServicesInvoiceFindFirstOrThrowArgs>(args?: SelectSubset<T, ServicesInvoiceFindFirstOrThrowArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ServicesInvoices that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ServicesInvoices
+     * const servicesInvoices = await prisma.servicesInvoice.findMany()
+     * 
+     * // Get first 10 ServicesInvoices
+     * const servicesInvoices = await prisma.servicesInvoice.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const servicesInvoiceWithIdOnly = await prisma.servicesInvoice.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ServicesInvoiceFindManyArgs>(args?: SelectSubset<T, ServicesInvoiceFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ServicesInvoice.
+     * @param {ServicesInvoiceCreateArgs} args - Arguments to create a ServicesInvoice.
+     * @example
+     * // Create one ServicesInvoice
+     * const ServicesInvoice = await prisma.servicesInvoice.create({
+     *   data: {
+     *     // ... data to create a ServicesInvoice
+     *   }
+     * })
+     * 
+     */
+    create<T extends ServicesInvoiceCreateArgs>(args: SelectSubset<T, ServicesInvoiceCreateArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ServicesInvoices.
+     * @param {ServicesInvoiceCreateManyArgs} args - Arguments to create many ServicesInvoices.
+     * @example
+     * // Create many ServicesInvoices
+     * const servicesInvoice = await prisma.servicesInvoice.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ServicesInvoiceCreateManyArgs>(args?: SelectSubset<T, ServicesInvoiceCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ServicesInvoices and returns the data saved in the database.
+     * @param {ServicesInvoiceCreateManyAndReturnArgs} args - Arguments to create many ServicesInvoices.
+     * @example
+     * // Create many ServicesInvoices
+     * const servicesInvoice = await prisma.servicesInvoice.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ServicesInvoices and only return the `id`
+     * const servicesInvoiceWithIdOnly = await prisma.servicesInvoice.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ServicesInvoiceCreateManyAndReturnArgs>(args?: SelectSubset<T, ServicesInvoiceCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ServicesInvoice.
+     * @param {ServicesInvoiceDeleteArgs} args - Arguments to delete one ServicesInvoice.
+     * @example
+     * // Delete one ServicesInvoice
+     * const ServicesInvoice = await prisma.servicesInvoice.delete({
+     *   where: {
+     *     // ... filter to delete one ServicesInvoice
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ServicesInvoiceDeleteArgs>(args: SelectSubset<T, ServicesInvoiceDeleteArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ServicesInvoice.
+     * @param {ServicesInvoiceUpdateArgs} args - Arguments to update one ServicesInvoice.
+     * @example
+     * // Update one ServicesInvoice
+     * const servicesInvoice = await prisma.servicesInvoice.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ServicesInvoiceUpdateArgs>(args: SelectSubset<T, ServicesInvoiceUpdateArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ServicesInvoices.
+     * @param {ServicesInvoiceDeleteManyArgs} args - Arguments to filter ServicesInvoices to delete.
+     * @example
+     * // Delete a few ServicesInvoices
+     * const { count } = await prisma.servicesInvoice.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ServicesInvoiceDeleteManyArgs>(args?: SelectSubset<T, ServicesInvoiceDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServicesInvoices.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ServicesInvoices
+     * const servicesInvoice = await prisma.servicesInvoice.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ServicesInvoiceUpdateManyArgs>(args: SelectSubset<T, ServicesInvoiceUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServicesInvoices and returns the data updated in the database.
+     * @param {ServicesInvoiceUpdateManyAndReturnArgs} args - Arguments to update many ServicesInvoices.
+     * @example
+     * // Update many ServicesInvoices
+     * const servicesInvoice = await prisma.servicesInvoice.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ServicesInvoices and only return the `id`
+     * const servicesInvoiceWithIdOnly = await prisma.servicesInvoice.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ServicesInvoiceUpdateManyAndReturnArgs>(args: SelectSubset<T, ServicesInvoiceUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ServicesInvoice.
+     * @param {ServicesInvoiceUpsertArgs} args - Arguments to update or create a ServicesInvoice.
+     * @example
+     * // Update or create a ServicesInvoice
+     * const servicesInvoice = await prisma.servicesInvoice.upsert({
+     *   create: {
+     *     // ... data to create a ServicesInvoice
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ServicesInvoice we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ServicesInvoiceUpsertArgs>(args: SelectSubset<T, ServicesInvoiceUpsertArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ServicesInvoices.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceCountArgs} args - Arguments to filter ServicesInvoices to count.
+     * @example
+     * // Count the number of ServicesInvoices
+     * const count = await prisma.servicesInvoice.count({
+     *   where: {
+     *     // ... the filter for the ServicesInvoices we want to count
+     *   }
+     * })
+    **/
+    count<T extends ServicesInvoiceCountArgs>(
+      args?: Subset<T, ServicesInvoiceCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ServicesInvoiceCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ServicesInvoice.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ServicesInvoiceAggregateArgs>(args: Subset<T, ServicesInvoiceAggregateArgs>): Prisma.PrismaPromise<GetServicesInvoiceAggregateType<T>>
+
+    /**
+     * Group by ServicesInvoice.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ServicesInvoiceGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ServicesInvoiceGroupByArgs['orderBy'] }
+        : { orderBy?: ServicesInvoiceGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ServicesInvoiceGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetServicesInvoiceGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ServicesInvoice model
+   */
+  readonly fields: ServicesInvoiceFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ServicesInvoice.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ServicesInvoiceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    property<T extends PropertyDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PropertyDefaultArgs<ExtArgs>>): Prisma__PropertyClient<$Result.GetResult<Prisma.$PropertyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    unit<T extends UnitDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UnitDefaultArgs<ExtArgs>>): Prisma__UnitClient<$Result.GetResult<Prisma.$UnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    tenancy<T extends ServicesInvoice$tenancyArgs<ExtArgs> = {}>(args?: Subset<T, ServicesInvoice$tenancyArgs<ExtArgs>>): Prisma__TenancyClient<$Result.GetResult<Prisma.$TenancyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    createdBy<T extends ServicesInvoice$createdByArgs<ExtArgs> = {}>(args?: Subset<T, ServicesInvoice$createdByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    lines<T extends ServicesInvoice$linesArgs<ExtArgs> = {}>(args?: Subset<T, ServicesInvoice$linesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ServicesInvoice model
+   */
+  interface ServicesInvoiceFieldRefs {
+    readonly id: FieldRef<"ServicesInvoice", 'String'>
+    readonly invoiceNumber: FieldRef<"ServicesInvoice", 'Int'>
+    readonly propertyId: FieldRef<"ServicesInvoice", 'String'>
+    readonly unitId: FieldRef<"ServicesInvoice", 'String'>
+    readonly tenancyId: FieldRef<"ServicesInvoice", 'String'>
+    readonly issueDate: FieldRef<"ServicesInvoice", 'DateTime'>
+    readonly periodStart: FieldRef<"ServicesInvoice", 'DateTime'>
+    readonly periodEnd: FieldRef<"ServicesInvoice", 'DateTime'>
+    readonly billedName: FieldRef<"ServicesInvoice", 'String'>
+    readonly billedAddress: FieldRef<"ServicesInvoice", 'String'>
+    readonly status: FieldRef<"ServicesInvoice", 'String'>
+    readonly total: FieldRef<"ServicesInvoice", 'Decimal'>
+    readonly createdById: FieldRef<"ServicesInvoice", 'String'>
+    readonly createdAt: FieldRef<"ServicesInvoice", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ServicesInvoice findUnique
+   */
+  export type ServicesInvoiceFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoice to fetch.
+     */
+    where: ServicesInvoiceWhereUniqueInput
+  }
+
+  /**
+   * ServicesInvoice findUniqueOrThrow
+   */
+  export type ServicesInvoiceFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoice to fetch.
+     */
+    where: ServicesInvoiceWhereUniqueInput
+  }
+
+  /**
+   * ServicesInvoice findFirst
+   */
+  export type ServicesInvoiceFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoice to fetch.
+     */
+    where?: ServicesInvoiceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServicesInvoices to fetch.
+     */
+    orderBy?: ServicesInvoiceOrderByWithRelationInput | ServicesInvoiceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServicesInvoices.
+     */
+    cursor?: ServicesInvoiceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServicesInvoices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServicesInvoices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServicesInvoices.
+     */
+    distinct?: ServicesInvoiceScalarFieldEnum | ServicesInvoiceScalarFieldEnum[]
+  }
+
+  /**
+   * ServicesInvoice findFirstOrThrow
+   */
+  export type ServicesInvoiceFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoice to fetch.
+     */
+    where?: ServicesInvoiceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServicesInvoices to fetch.
+     */
+    orderBy?: ServicesInvoiceOrderByWithRelationInput | ServicesInvoiceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServicesInvoices.
+     */
+    cursor?: ServicesInvoiceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServicesInvoices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServicesInvoices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServicesInvoices.
+     */
+    distinct?: ServicesInvoiceScalarFieldEnum | ServicesInvoiceScalarFieldEnum[]
+  }
+
+  /**
+   * ServicesInvoice findMany
+   */
+  export type ServicesInvoiceFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoices to fetch.
+     */
+    where?: ServicesInvoiceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServicesInvoices to fetch.
+     */
+    orderBy?: ServicesInvoiceOrderByWithRelationInput | ServicesInvoiceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ServicesInvoices.
+     */
+    cursor?: ServicesInvoiceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServicesInvoices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServicesInvoices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServicesInvoices.
+     */
+    distinct?: ServicesInvoiceScalarFieldEnum | ServicesInvoiceScalarFieldEnum[]
+  }
+
+  /**
+   * ServicesInvoice create
+   */
+  export type ServicesInvoiceCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ServicesInvoice.
+     */
+    data: XOR<ServicesInvoiceCreateInput, ServicesInvoiceUncheckedCreateInput>
+  }
+
+  /**
+   * ServicesInvoice createMany
+   */
+  export type ServicesInvoiceCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ServicesInvoices.
+     */
+    data: ServicesInvoiceCreateManyInput | ServicesInvoiceCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ServicesInvoice createManyAndReturn
+   */
+  export type ServicesInvoiceCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * The data used to create many ServicesInvoices.
+     */
+    data: ServicesInvoiceCreateManyInput | ServicesInvoiceCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServicesInvoice update
+   */
+  export type ServicesInvoiceUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ServicesInvoice.
+     */
+    data: XOR<ServicesInvoiceUpdateInput, ServicesInvoiceUncheckedUpdateInput>
+    /**
+     * Choose, which ServicesInvoice to update.
+     */
+    where: ServicesInvoiceWhereUniqueInput
+  }
+
+  /**
+   * ServicesInvoice updateMany
+   */
+  export type ServicesInvoiceUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ServicesInvoices.
+     */
+    data: XOR<ServicesInvoiceUpdateManyMutationInput, ServicesInvoiceUncheckedUpdateManyInput>
+    /**
+     * Filter which ServicesInvoices to update
+     */
+    where?: ServicesInvoiceWhereInput
+    /**
+     * Limit how many ServicesInvoices to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServicesInvoice updateManyAndReturn
+   */
+  export type ServicesInvoiceUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * The data used to update ServicesInvoices.
+     */
+    data: XOR<ServicesInvoiceUpdateManyMutationInput, ServicesInvoiceUncheckedUpdateManyInput>
+    /**
+     * Filter which ServicesInvoices to update
+     */
+    where?: ServicesInvoiceWhereInput
+    /**
+     * Limit how many ServicesInvoices to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServicesInvoice upsert
+   */
+  export type ServicesInvoiceUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ServicesInvoice to update in case it exists.
+     */
+    where: ServicesInvoiceWhereUniqueInput
+    /**
+     * In case the ServicesInvoice found by the `where` argument doesn't exist, create a new ServicesInvoice with this data.
+     */
+    create: XOR<ServicesInvoiceCreateInput, ServicesInvoiceUncheckedCreateInput>
+    /**
+     * In case the ServicesInvoice was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ServicesInvoiceUpdateInput, ServicesInvoiceUncheckedUpdateInput>
+  }
+
+  /**
+   * ServicesInvoice delete
+   */
+  export type ServicesInvoiceDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+    /**
+     * Filter which ServicesInvoice to delete.
+     */
+    where: ServicesInvoiceWhereUniqueInput
+  }
+
+  /**
+   * ServicesInvoice deleteMany
+   */
+  export type ServicesInvoiceDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServicesInvoices to delete
+     */
+    where?: ServicesInvoiceWhereInput
+    /**
+     * Limit how many ServicesInvoices to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServicesInvoice.tenancy
+   */
+  export type ServicesInvoice$tenancyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tenancy
+     */
+    select?: TenancySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Tenancy
+     */
+    omit?: TenancyOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TenancyInclude<ExtArgs> | null
+    where?: TenancyWhereInput
+  }
+
+  /**
+   * ServicesInvoice.createdBy
+   */
+  export type ServicesInvoice$createdByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * ServicesInvoice.lines
+   */
+  export type ServicesInvoice$linesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    where?: ServicesInvoiceLineWhereInput
+    orderBy?: ServicesInvoiceLineOrderByWithRelationInput | ServicesInvoiceLineOrderByWithRelationInput[]
+    cursor?: ServicesInvoiceLineWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServicesInvoiceLineScalarFieldEnum | ServicesInvoiceLineScalarFieldEnum[]
+  }
+
+  /**
+   * ServicesInvoice without action
+   */
+  export type ServicesInvoiceDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoice
+     */
+    select?: ServicesInvoiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoice
+     */
+    omit?: ServicesInvoiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ServicesInvoiceLine
+   */
+
+  export type AggregateServicesInvoiceLine = {
+    _count: ServicesInvoiceLineCountAggregateOutputType | null
+    _avg: ServicesInvoiceLineAvgAggregateOutputType | null
+    _sum: ServicesInvoiceLineSumAggregateOutputType | null
+    _min: ServicesInvoiceLineMinAggregateOutputType | null
+    _max: ServicesInvoiceLineMaxAggregateOutputType | null
+  }
+
+  export type ServicesInvoiceLineAvgAggregateOutputType = {
+    sequence: number | null
+    qty: Decimal | null
+    unitPrice: Decimal | null
+  }
+
+  export type ServicesInvoiceLineSumAggregateOutputType = {
+    sequence: number | null
+    qty: Decimal | null
+    unitPrice: Decimal | null
+  }
+
+  export type ServicesInvoiceLineMinAggregateOutputType = {
+    id: string | null
+    invoiceId: string | null
+    sequence: number | null
+    qty: Decimal | null
+    item: string | null
+    description: string | null
+    unitPrice: Decimal | null
+  }
+
+  export type ServicesInvoiceLineMaxAggregateOutputType = {
+    id: string | null
+    invoiceId: string | null
+    sequence: number | null
+    qty: Decimal | null
+    item: string | null
+    description: string | null
+    unitPrice: Decimal | null
+  }
+
+  export type ServicesInvoiceLineCountAggregateOutputType = {
+    id: number
+    invoiceId: number
+    sequence: number
+    qty: number
+    item: number
+    description: number
+    unitPrice: number
+    _all: number
+  }
+
+
+  export type ServicesInvoiceLineAvgAggregateInputType = {
+    sequence?: true
+    qty?: true
+    unitPrice?: true
+  }
+
+  export type ServicesInvoiceLineSumAggregateInputType = {
+    sequence?: true
+    qty?: true
+    unitPrice?: true
+  }
+
+  export type ServicesInvoiceLineMinAggregateInputType = {
+    id?: true
+    invoiceId?: true
+    sequence?: true
+    qty?: true
+    item?: true
+    description?: true
+    unitPrice?: true
+  }
+
+  export type ServicesInvoiceLineMaxAggregateInputType = {
+    id?: true
+    invoiceId?: true
+    sequence?: true
+    qty?: true
+    item?: true
+    description?: true
+    unitPrice?: true
+  }
+
+  export type ServicesInvoiceLineCountAggregateInputType = {
+    id?: true
+    invoiceId?: true
+    sequence?: true
+    qty?: true
+    item?: true
+    description?: true
+    unitPrice?: true
+    _all?: true
+  }
+
+  export type ServicesInvoiceLineAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServicesInvoiceLine to aggregate.
+     */
+    where?: ServicesInvoiceLineWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServicesInvoiceLines to fetch.
+     */
+    orderBy?: ServicesInvoiceLineOrderByWithRelationInput | ServicesInvoiceLineOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ServicesInvoiceLineWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServicesInvoiceLines from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServicesInvoiceLines.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ServicesInvoiceLines
+    **/
+    _count?: true | ServicesInvoiceLineCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ServicesInvoiceLineAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ServicesInvoiceLineSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ServicesInvoiceLineMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ServicesInvoiceLineMaxAggregateInputType
+  }
+
+  export type GetServicesInvoiceLineAggregateType<T extends ServicesInvoiceLineAggregateArgs> = {
+        [P in keyof T & keyof AggregateServicesInvoiceLine]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateServicesInvoiceLine[P]>
+      : GetScalarType<T[P], AggregateServicesInvoiceLine[P]>
+  }
+
+
+
+
+  export type ServicesInvoiceLineGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServicesInvoiceLineWhereInput
+    orderBy?: ServicesInvoiceLineOrderByWithAggregationInput | ServicesInvoiceLineOrderByWithAggregationInput[]
+    by: ServicesInvoiceLineScalarFieldEnum[] | ServicesInvoiceLineScalarFieldEnum
+    having?: ServicesInvoiceLineScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ServicesInvoiceLineCountAggregateInputType | true
+    _avg?: ServicesInvoiceLineAvgAggregateInputType
+    _sum?: ServicesInvoiceLineSumAggregateInputType
+    _min?: ServicesInvoiceLineMinAggregateInputType
+    _max?: ServicesInvoiceLineMaxAggregateInputType
+  }
+
+  export type ServicesInvoiceLineGroupByOutputType = {
+    id: string
+    invoiceId: string
+    sequence: number
+    qty: Decimal
+    item: string
+    description: string
+    unitPrice: Decimal
+    _count: ServicesInvoiceLineCountAggregateOutputType | null
+    _avg: ServicesInvoiceLineAvgAggregateOutputType | null
+    _sum: ServicesInvoiceLineSumAggregateOutputType | null
+    _min: ServicesInvoiceLineMinAggregateOutputType | null
+    _max: ServicesInvoiceLineMaxAggregateOutputType | null
+  }
+
+  type GetServicesInvoiceLineGroupByPayload<T extends ServicesInvoiceLineGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ServicesInvoiceLineGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ServicesInvoiceLineGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ServicesInvoiceLineGroupByOutputType[P]>
+            : GetScalarType<T[P], ServicesInvoiceLineGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ServicesInvoiceLineSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    invoiceId?: boolean
+    sequence?: boolean
+    qty?: boolean
+    item?: boolean
+    description?: boolean
+    unitPrice?: boolean
+    invoice?: boolean | ServicesInvoiceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["servicesInvoiceLine"]>
+
+  export type ServicesInvoiceLineSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    invoiceId?: boolean
+    sequence?: boolean
+    qty?: boolean
+    item?: boolean
+    description?: boolean
+    unitPrice?: boolean
+    invoice?: boolean | ServicesInvoiceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["servicesInvoiceLine"]>
+
+  export type ServicesInvoiceLineSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    invoiceId?: boolean
+    sequence?: boolean
+    qty?: boolean
+    item?: boolean
+    description?: boolean
+    unitPrice?: boolean
+    invoice?: boolean | ServicesInvoiceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["servicesInvoiceLine"]>
+
+  export type ServicesInvoiceLineSelectScalar = {
+    id?: boolean
+    invoiceId?: boolean
+    sequence?: boolean
+    qty?: boolean
+    item?: boolean
+    description?: boolean
+    unitPrice?: boolean
+  }
+
+  export type ServicesInvoiceLineOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "invoiceId" | "sequence" | "qty" | "item" | "description" | "unitPrice", ExtArgs["result"]["servicesInvoiceLine"]>
+  export type ServicesInvoiceLineInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    invoice?: boolean | ServicesInvoiceDefaultArgs<ExtArgs>
+  }
+  export type ServicesInvoiceLineIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    invoice?: boolean | ServicesInvoiceDefaultArgs<ExtArgs>
+  }
+  export type ServicesInvoiceLineIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    invoice?: boolean | ServicesInvoiceDefaultArgs<ExtArgs>
+  }
+
+  export type $ServicesInvoiceLinePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ServicesInvoiceLine"
+    objects: {
+      invoice: Prisma.$ServicesInvoicePayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      invoiceId: string
+      sequence: number
+      qty: Prisma.Decimal
+      item: string
+      description: string
+      unitPrice: Prisma.Decimal
+    }, ExtArgs["result"]["servicesInvoiceLine"]>
+    composites: {}
+  }
+
+  type ServicesInvoiceLineGetPayload<S extends boolean | null | undefined | ServicesInvoiceLineDefaultArgs> = $Result.GetResult<Prisma.$ServicesInvoiceLinePayload, S>
+
+  type ServicesInvoiceLineCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ServicesInvoiceLineFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ServicesInvoiceLineCountAggregateInputType | true
+    }
+
+  export interface ServicesInvoiceLineDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ServicesInvoiceLine'], meta: { name: 'ServicesInvoiceLine' } }
+    /**
+     * Find zero or one ServicesInvoiceLine that matches the filter.
+     * @param {ServicesInvoiceLineFindUniqueArgs} args - Arguments to find a ServicesInvoiceLine
+     * @example
+     * // Get one ServicesInvoiceLine
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ServicesInvoiceLineFindUniqueArgs>(args: SelectSubset<T, ServicesInvoiceLineFindUniqueArgs<ExtArgs>>): Prisma__ServicesInvoiceLineClient<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ServicesInvoiceLine that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ServicesInvoiceLineFindUniqueOrThrowArgs} args - Arguments to find a ServicesInvoiceLine
+     * @example
+     * // Get one ServicesInvoiceLine
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ServicesInvoiceLineFindUniqueOrThrowArgs>(args: SelectSubset<T, ServicesInvoiceLineFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ServicesInvoiceLineClient<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServicesInvoiceLine that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceLineFindFirstArgs} args - Arguments to find a ServicesInvoiceLine
+     * @example
+     * // Get one ServicesInvoiceLine
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ServicesInvoiceLineFindFirstArgs>(args?: SelectSubset<T, ServicesInvoiceLineFindFirstArgs<ExtArgs>>): Prisma__ServicesInvoiceLineClient<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServicesInvoiceLine that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceLineFindFirstOrThrowArgs} args - Arguments to find a ServicesInvoiceLine
+     * @example
+     * // Get one ServicesInvoiceLine
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ServicesInvoiceLineFindFirstOrThrowArgs>(args?: SelectSubset<T, ServicesInvoiceLineFindFirstOrThrowArgs<ExtArgs>>): Prisma__ServicesInvoiceLineClient<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ServicesInvoiceLines that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceLineFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ServicesInvoiceLines
+     * const servicesInvoiceLines = await prisma.servicesInvoiceLine.findMany()
+     * 
+     * // Get first 10 ServicesInvoiceLines
+     * const servicesInvoiceLines = await prisma.servicesInvoiceLine.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const servicesInvoiceLineWithIdOnly = await prisma.servicesInvoiceLine.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ServicesInvoiceLineFindManyArgs>(args?: SelectSubset<T, ServicesInvoiceLineFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ServicesInvoiceLine.
+     * @param {ServicesInvoiceLineCreateArgs} args - Arguments to create a ServicesInvoiceLine.
+     * @example
+     * // Create one ServicesInvoiceLine
+     * const ServicesInvoiceLine = await prisma.servicesInvoiceLine.create({
+     *   data: {
+     *     // ... data to create a ServicesInvoiceLine
+     *   }
+     * })
+     * 
+     */
+    create<T extends ServicesInvoiceLineCreateArgs>(args: SelectSubset<T, ServicesInvoiceLineCreateArgs<ExtArgs>>): Prisma__ServicesInvoiceLineClient<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ServicesInvoiceLines.
+     * @param {ServicesInvoiceLineCreateManyArgs} args - Arguments to create many ServicesInvoiceLines.
+     * @example
+     * // Create many ServicesInvoiceLines
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ServicesInvoiceLineCreateManyArgs>(args?: SelectSubset<T, ServicesInvoiceLineCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ServicesInvoiceLines and returns the data saved in the database.
+     * @param {ServicesInvoiceLineCreateManyAndReturnArgs} args - Arguments to create many ServicesInvoiceLines.
+     * @example
+     * // Create many ServicesInvoiceLines
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ServicesInvoiceLines and only return the `id`
+     * const servicesInvoiceLineWithIdOnly = await prisma.servicesInvoiceLine.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ServicesInvoiceLineCreateManyAndReturnArgs>(args?: SelectSubset<T, ServicesInvoiceLineCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ServicesInvoiceLine.
+     * @param {ServicesInvoiceLineDeleteArgs} args - Arguments to delete one ServicesInvoiceLine.
+     * @example
+     * // Delete one ServicesInvoiceLine
+     * const ServicesInvoiceLine = await prisma.servicesInvoiceLine.delete({
+     *   where: {
+     *     // ... filter to delete one ServicesInvoiceLine
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ServicesInvoiceLineDeleteArgs>(args: SelectSubset<T, ServicesInvoiceLineDeleteArgs<ExtArgs>>): Prisma__ServicesInvoiceLineClient<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ServicesInvoiceLine.
+     * @param {ServicesInvoiceLineUpdateArgs} args - Arguments to update one ServicesInvoiceLine.
+     * @example
+     * // Update one ServicesInvoiceLine
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ServicesInvoiceLineUpdateArgs>(args: SelectSubset<T, ServicesInvoiceLineUpdateArgs<ExtArgs>>): Prisma__ServicesInvoiceLineClient<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ServicesInvoiceLines.
+     * @param {ServicesInvoiceLineDeleteManyArgs} args - Arguments to filter ServicesInvoiceLines to delete.
+     * @example
+     * // Delete a few ServicesInvoiceLines
+     * const { count } = await prisma.servicesInvoiceLine.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ServicesInvoiceLineDeleteManyArgs>(args?: SelectSubset<T, ServicesInvoiceLineDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServicesInvoiceLines.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceLineUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ServicesInvoiceLines
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ServicesInvoiceLineUpdateManyArgs>(args: SelectSubset<T, ServicesInvoiceLineUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServicesInvoiceLines and returns the data updated in the database.
+     * @param {ServicesInvoiceLineUpdateManyAndReturnArgs} args - Arguments to update many ServicesInvoiceLines.
+     * @example
+     * // Update many ServicesInvoiceLines
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ServicesInvoiceLines and only return the `id`
+     * const servicesInvoiceLineWithIdOnly = await prisma.servicesInvoiceLine.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ServicesInvoiceLineUpdateManyAndReturnArgs>(args: SelectSubset<T, ServicesInvoiceLineUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ServicesInvoiceLine.
+     * @param {ServicesInvoiceLineUpsertArgs} args - Arguments to update or create a ServicesInvoiceLine.
+     * @example
+     * // Update or create a ServicesInvoiceLine
+     * const servicesInvoiceLine = await prisma.servicesInvoiceLine.upsert({
+     *   create: {
+     *     // ... data to create a ServicesInvoiceLine
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ServicesInvoiceLine we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ServicesInvoiceLineUpsertArgs>(args: SelectSubset<T, ServicesInvoiceLineUpsertArgs<ExtArgs>>): Prisma__ServicesInvoiceLineClient<$Result.GetResult<Prisma.$ServicesInvoiceLinePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ServicesInvoiceLines.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceLineCountArgs} args - Arguments to filter ServicesInvoiceLines to count.
+     * @example
+     * // Count the number of ServicesInvoiceLines
+     * const count = await prisma.servicesInvoiceLine.count({
+     *   where: {
+     *     // ... the filter for the ServicesInvoiceLines we want to count
+     *   }
+     * })
+    **/
+    count<T extends ServicesInvoiceLineCountArgs>(
+      args?: Subset<T, ServicesInvoiceLineCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ServicesInvoiceLineCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ServicesInvoiceLine.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceLineAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ServicesInvoiceLineAggregateArgs>(args: Subset<T, ServicesInvoiceLineAggregateArgs>): Prisma.PrismaPromise<GetServicesInvoiceLineAggregateType<T>>
+
+    /**
+     * Group by ServicesInvoiceLine.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServicesInvoiceLineGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ServicesInvoiceLineGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ServicesInvoiceLineGroupByArgs['orderBy'] }
+        : { orderBy?: ServicesInvoiceLineGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ServicesInvoiceLineGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetServicesInvoiceLineGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ServicesInvoiceLine model
+   */
+  readonly fields: ServicesInvoiceLineFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ServicesInvoiceLine.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ServicesInvoiceLineClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    invoice<T extends ServicesInvoiceDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ServicesInvoiceDefaultArgs<ExtArgs>>): Prisma__ServicesInvoiceClient<$Result.GetResult<Prisma.$ServicesInvoicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ServicesInvoiceLine model
+   */
+  interface ServicesInvoiceLineFieldRefs {
+    readonly id: FieldRef<"ServicesInvoiceLine", 'String'>
+    readonly invoiceId: FieldRef<"ServicesInvoiceLine", 'String'>
+    readonly sequence: FieldRef<"ServicesInvoiceLine", 'Int'>
+    readonly qty: FieldRef<"ServicesInvoiceLine", 'Decimal'>
+    readonly item: FieldRef<"ServicesInvoiceLine", 'String'>
+    readonly description: FieldRef<"ServicesInvoiceLine", 'String'>
+    readonly unitPrice: FieldRef<"ServicesInvoiceLine", 'Decimal'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ServicesInvoiceLine findUnique
+   */
+  export type ServicesInvoiceLineFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoiceLine to fetch.
+     */
+    where: ServicesInvoiceLineWhereUniqueInput
+  }
+
+  /**
+   * ServicesInvoiceLine findUniqueOrThrow
+   */
+  export type ServicesInvoiceLineFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoiceLine to fetch.
+     */
+    where: ServicesInvoiceLineWhereUniqueInput
+  }
+
+  /**
+   * ServicesInvoiceLine findFirst
+   */
+  export type ServicesInvoiceLineFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoiceLine to fetch.
+     */
+    where?: ServicesInvoiceLineWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServicesInvoiceLines to fetch.
+     */
+    orderBy?: ServicesInvoiceLineOrderByWithRelationInput | ServicesInvoiceLineOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServicesInvoiceLines.
+     */
+    cursor?: ServicesInvoiceLineWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServicesInvoiceLines from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServicesInvoiceLines.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServicesInvoiceLines.
+     */
+    distinct?: ServicesInvoiceLineScalarFieldEnum | ServicesInvoiceLineScalarFieldEnum[]
+  }
+
+  /**
+   * ServicesInvoiceLine findFirstOrThrow
+   */
+  export type ServicesInvoiceLineFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoiceLine to fetch.
+     */
+    where?: ServicesInvoiceLineWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServicesInvoiceLines to fetch.
+     */
+    orderBy?: ServicesInvoiceLineOrderByWithRelationInput | ServicesInvoiceLineOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServicesInvoiceLines.
+     */
+    cursor?: ServicesInvoiceLineWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServicesInvoiceLines from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServicesInvoiceLines.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServicesInvoiceLines.
+     */
+    distinct?: ServicesInvoiceLineScalarFieldEnum | ServicesInvoiceLineScalarFieldEnum[]
+  }
+
+  /**
+   * ServicesInvoiceLine findMany
+   */
+  export type ServicesInvoiceLineFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * Filter, which ServicesInvoiceLines to fetch.
+     */
+    where?: ServicesInvoiceLineWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServicesInvoiceLines to fetch.
+     */
+    orderBy?: ServicesInvoiceLineOrderByWithRelationInput | ServicesInvoiceLineOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ServicesInvoiceLines.
+     */
+    cursor?: ServicesInvoiceLineWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServicesInvoiceLines from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServicesInvoiceLines.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServicesInvoiceLines.
+     */
+    distinct?: ServicesInvoiceLineScalarFieldEnum | ServicesInvoiceLineScalarFieldEnum[]
+  }
+
+  /**
+   * ServicesInvoiceLine create
+   */
+  export type ServicesInvoiceLineCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ServicesInvoiceLine.
+     */
+    data: XOR<ServicesInvoiceLineCreateInput, ServicesInvoiceLineUncheckedCreateInput>
+  }
+
+  /**
+   * ServicesInvoiceLine createMany
+   */
+  export type ServicesInvoiceLineCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ServicesInvoiceLines.
+     */
+    data: ServicesInvoiceLineCreateManyInput | ServicesInvoiceLineCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ServicesInvoiceLine createManyAndReturn
+   */
+  export type ServicesInvoiceLineCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * The data used to create many ServicesInvoiceLines.
+     */
+    data: ServicesInvoiceLineCreateManyInput | ServicesInvoiceLineCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServicesInvoiceLine update
+   */
+  export type ServicesInvoiceLineUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ServicesInvoiceLine.
+     */
+    data: XOR<ServicesInvoiceLineUpdateInput, ServicesInvoiceLineUncheckedUpdateInput>
+    /**
+     * Choose, which ServicesInvoiceLine to update.
+     */
+    where: ServicesInvoiceLineWhereUniqueInput
+  }
+
+  /**
+   * ServicesInvoiceLine updateMany
+   */
+  export type ServicesInvoiceLineUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ServicesInvoiceLines.
+     */
+    data: XOR<ServicesInvoiceLineUpdateManyMutationInput, ServicesInvoiceLineUncheckedUpdateManyInput>
+    /**
+     * Filter which ServicesInvoiceLines to update
+     */
+    where?: ServicesInvoiceLineWhereInput
+    /**
+     * Limit how many ServicesInvoiceLines to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServicesInvoiceLine updateManyAndReturn
+   */
+  export type ServicesInvoiceLineUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * The data used to update ServicesInvoiceLines.
+     */
+    data: XOR<ServicesInvoiceLineUpdateManyMutationInput, ServicesInvoiceLineUncheckedUpdateManyInput>
+    /**
+     * Filter which ServicesInvoiceLines to update
+     */
+    where?: ServicesInvoiceLineWhereInput
+    /**
+     * Limit how many ServicesInvoiceLines to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServicesInvoiceLine upsert
+   */
+  export type ServicesInvoiceLineUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ServicesInvoiceLine to update in case it exists.
+     */
+    where: ServicesInvoiceLineWhereUniqueInput
+    /**
+     * In case the ServicesInvoiceLine found by the `where` argument doesn't exist, create a new ServicesInvoiceLine with this data.
+     */
+    create: XOR<ServicesInvoiceLineCreateInput, ServicesInvoiceLineUncheckedCreateInput>
+    /**
+     * In case the ServicesInvoiceLine was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ServicesInvoiceLineUpdateInput, ServicesInvoiceLineUncheckedUpdateInput>
+  }
+
+  /**
+   * ServicesInvoiceLine delete
+   */
+  export type ServicesInvoiceLineDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+    /**
+     * Filter which ServicesInvoiceLine to delete.
+     */
+    where: ServicesInvoiceLineWhereUniqueInput
+  }
+
+  /**
+   * ServicesInvoiceLine deleteMany
+   */
+  export type ServicesInvoiceLineDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServicesInvoiceLines to delete
+     */
+    where?: ServicesInvoiceLineWhereInput
+    /**
+     * Limit how many ServicesInvoiceLines to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServicesInvoiceLine without action
+   */
+  export type ServicesInvoiceLineDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServicesInvoiceLine
+     */
+    select?: ServicesInvoiceLineSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServicesInvoiceLine
+     */
+    omit?: ServicesInvoiceLineOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServicesInvoiceLineInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model CommunicationLog
+   */
+
+  export type AggregateCommunicationLog = {
+    _count: CommunicationLogCountAggregateOutputType | null
+    _min: CommunicationLogMinAggregateOutputType | null
+    _max: CommunicationLogMaxAggregateOutputType | null
+  }
+
+  export type CommunicationLogMinAggregateOutputType = {
+    id: string | null
+    channel: string | null
+    direction: string | null
+    aboutKind: string | null
+    partyUserId: string | null
+    supplierId: string | null
+    partyName: string | null
+    partyPhone: string | null
+    subject: string | null
+    body: string | null
+    occurredAt: Date | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type CommunicationLogMaxAggregateOutputType = {
+    id: string | null
+    channel: string | null
+    direction: string | null
+    aboutKind: string | null
+    partyUserId: string | null
+    supplierId: string | null
+    partyName: string | null
+    partyPhone: string | null
+    subject: string | null
+    body: string | null
+    occurredAt: Date | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type CommunicationLogCountAggregateOutputType = {
+    id: number
+    channel: number
+    direction: number
+    aboutKind: number
+    partyUserId: number
+    supplierId: number
+    partyName: number
+    partyPhone: number
+    subject: number
+    body: number
+    occurredAt: number
+    createdById: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type CommunicationLogMinAggregateInputType = {
+    id?: true
+    channel?: true
+    direction?: true
+    aboutKind?: true
+    partyUserId?: true
+    supplierId?: true
+    partyName?: true
+    partyPhone?: true
+    subject?: true
+    body?: true
+    occurredAt?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type CommunicationLogMaxAggregateInputType = {
+    id?: true
+    channel?: true
+    direction?: true
+    aboutKind?: true
+    partyUserId?: true
+    supplierId?: true
+    partyName?: true
+    partyPhone?: true
+    subject?: true
+    body?: true
+    occurredAt?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type CommunicationLogCountAggregateInputType = {
+    id?: true
+    channel?: true
+    direction?: true
+    aboutKind?: true
+    partyUserId?: true
+    supplierId?: true
+    partyName?: true
+    partyPhone?: true
+    subject?: true
+    body?: true
+    occurredAt?: true
+    createdById?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type CommunicationLogAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CommunicationLog to aggregate.
+     */
+    where?: CommunicationLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CommunicationLogs to fetch.
+     */
+    orderBy?: CommunicationLogOrderByWithRelationInput | CommunicationLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: CommunicationLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CommunicationLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CommunicationLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned CommunicationLogs
+    **/
+    _count?: true | CommunicationLogCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: CommunicationLogMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: CommunicationLogMaxAggregateInputType
+  }
+
+  export type GetCommunicationLogAggregateType<T extends CommunicationLogAggregateArgs> = {
+        [P in keyof T & keyof AggregateCommunicationLog]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCommunicationLog[P]>
+      : GetScalarType<T[P], AggregateCommunicationLog[P]>
+  }
+
+
+
+
+  export type CommunicationLogGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CommunicationLogWhereInput
+    orderBy?: CommunicationLogOrderByWithAggregationInput | CommunicationLogOrderByWithAggregationInput[]
+    by: CommunicationLogScalarFieldEnum[] | CommunicationLogScalarFieldEnum
+    having?: CommunicationLogScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: CommunicationLogCountAggregateInputType | true
+    _min?: CommunicationLogMinAggregateInputType
+    _max?: CommunicationLogMaxAggregateInputType
+  }
+
+  export type CommunicationLogGroupByOutputType = {
+    id: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyUserId: string | null
+    supplierId: string | null
+    partyName: string
+    partyPhone: string | null
+    subject: string
+    body: string
+    occurredAt: Date
+    createdById: string
+    createdAt: Date
+    _count: CommunicationLogCountAggregateOutputType | null
+    _min: CommunicationLogMinAggregateOutputType | null
+    _max: CommunicationLogMaxAggregateOutputType | null
+  }
+
+  type GetCommunicationLogGroupByPayload<T extends CommunicationLogGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<CommunicationLogGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof CommunicationLogGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CommunicationLogGroupByOutputType[P]>
+            : GetScalarType<T[P], CommunicationLogGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type CommunicationLogSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channel?: boolean
+    direction?: boolean
+    aboutKind?: boolean
+    partyUserId?: boolean
+    supplierId?: boolean
+    partyName?: boolean
+    partyPhone?: boolean
+    subject?: boolean
+    body?: boolean
+    occurredAt?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    partyUser?: boolean | CommunicationLog$partyUserArgs<ExtArgs>
+    supplier?: boolean | CommunicationLog$supplierArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["communicationLog"]>
+
+  export type CommunicationLogSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channel?: boolean
+    direction?: boolean
+    aboutKind?: boolean
+    partyUserId?: boolean
+    supplierId?: boolean
+    partyName?: boolean
+    partyPhone?: boolean
+    subject?: boolean
+    body?: boolean
+    occurredAt?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    partyUser?: boolean | CommunicationLog$partyUserArgs<ExtArgs>
+    supplier?: boolean | CommunicationLog$supplierArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["communicationLog"]>
+
+  export type CommunicationLogSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channel?: boolean
+    direction?: boolean
+    aboutKind?: boolean
+    partyUserId?: boolean
+    supplierId?: boolean
+    partyName?: boolean
+    partyPhone?: boolean
+    subject?: boolean
+    body?: boolean
+    occurredAt?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    partyUser?: boolean | CommunicationLog$partyUserArgs<ExtArgs>
+    supplier?: boolean | CommunicationLog$supplierArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["communicationLog"]>
+
+  export type CommunicationLogSelectScalar = {
+    id?: boolean
+    channel?: boolean
+    direction?: boolean
+    aboutKind?: boolean
+    partyUserId?: boolean
+    supplierId?: boolean
+    partyName?: boolean
+    partyPhone?: boolean
+    subject?: boolean
+    body?: boolean
+    occurredAt?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+  }
+
+  export type CommunicationLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "channel" | "direction" | "aboutKind" | "partyUserId" | "supplierId" | "partyName" | "partyPhone" | "subject" | "body" | "occurredAt" | "createdById" | "createdAt", ExtArgs["result"]["communicationLog"]>
+  export type CommunicationLogInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    partyUser?: boolean | CommunicationLog$partyUserArgs<ExtArgs>
+    supplier?: boolean | CommunicationLog$supplierArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type CommunicationLogIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    partyUser?: boolean | CommunicationLog$partyUserArgs<ExtArgs>
+    supplier?: boolean | CommunicationLog$supplierArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type CommunicationLogIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    partyUser?: boolean | CommunicationLog$partyUserArgs<ExtArgs>
+    supplier?: boolean | CommunicationLog$supplierArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $CommunicationLogPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "CommunicationLog"
+    objects: {
+      partyUser: Prisma.$UserPayload<ExtArgs> | null
+      supplier: Prisma.$SupplierPayload<ExtArgs> | null
+      createdBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      channel: string
+      direction: string
+      aboutKind: string
+      partyUserId: string | null
+      supplierId: string | null
+      partyName: string
+      partyPhone: string | null
+      subject: string
+      body: string
+      occurredAt: Date
+      createdById: string
+      createdAt: Date
+    }, ExtArgs["result"]["communicationLog"]>
+    composites: {}
+  }
+
+  type CommunicationLogGetPayload<S extends boolean | null | undefined | CommunicationLogDefaultArgs> = $Result.GetResult<Prisma.$CommunicationLogPayload, S>
+
+  type CommunicationLogCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<CommunicationLogFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: CommunicationLogCountAggregateInputType | true
+    }
+
+  export interface CommunicationLogDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['CommunicationLog'], meta: { name: 'CommunicationLog' } }
+    /**
+     * Find zero or one CommunicationLog that matches the filter.
+     * @param {CommunicationLogFindUniqueArgs} args - Arguments to find a CommunicationLog
+     * @example
+     * // Get one CommunicationLog
+     * const communicationLog = await prisma.communicationLog.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends CommunicationLogFindUniqueArgs>(args: SelectSubset<T, CommunicationLogFindUniqueArgs<ExtArgs>>): Prisma__CommunicationLogClient<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one CommunicationLog that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {CommunicationLogFindUniqueOrThrowArgs} args - Arguments to find a CommunicationLog
+     * @example
+     * // Get one CommunicationLog
+     * const communicationLog = await prisma.communicationLog.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends CommunicationLogFindUniqueOrThrowArgs>(args: SelectSubset<T, CommunicationLogFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CommunicationLogClient<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CommunicationLog that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunicationLogFindFirstArgs} args - Arguments to find a CommunicationLog
+     * @example
+     * // Get one CommunicationLog
+     * const communicationLog = await prisma.communicationLog.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends CommunicationLogFindFirstArgs>(args?: SelectSubset<T, CommunicationLogFindFirstArgs<ExtArgs>>): Prisma__CommunicationLogClient<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CommunicationLog that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunicationLogFindFirstOrThrowArgs} args - Arguments to find a CommunicationLog
+     * @example
+     * // Get one CommunicationLog
+     * const communicationLog = await prisma.communicationLog.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends CommunicationLogFindFirstOrThrowArgs>(args?: SelectSubset<T, CommunicationLogFindFirstOrThrowArgs<ExtArgs>>): Prisma__CommunicationLogClient<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more CommunicationLogs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunicationLogFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all CommunicationLogs
+     * const communicationLogs = await prisma.communicationLog.findMany()
+     * 
+     * // Get first 10 CommunicationLogs
+     * const communicationLogs = await prisma.communicationLog.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const communicationLogWithIdOnly = await prisma.communicationLog.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends CommunicationLogFindManyArgs>(args?: SelectSubset<T, CommunicationLogFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a CommunicationLog.
+     * @param {CommunicationLogCreateArgs} args - Arguments to create a CommunicationLog.
+     * @example
+     * // Create one CommunicationLog
+     * const CommunicationLog = await prisma.communicationLog.create({
+     *   data: {
+     *     // ... data to create a CommunicationLog
+     *   }
+     * })
+     * 
+     */
+    create<T extends CommunicationLogCreateArgs>(args: SelectSubset<T, CommunicationLogCreateArgs<ExtArgs>>): Prisma__CommunicationLogClient<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many CommunicationLogs.
+     * @param {CommunicationLogCreateManyArgs} args - Arguments to create many CommunicationLogs.
+     * @example
+     * // Create many CommunicationLogs
+     * const communicationLog = await prisma.communicationLog.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends CommunicationLogCreateManyArgs>(args?: SelectSubset<T, CommunicationLogCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many CommunicationLogs and returns the data saved in the database.
+     * @param {CommunicationLogCreateManyAndReturnArgs} args - Arguments to create many CommunicationLogs.
+     * @example
+     * // Create many CommunicationLogs
+     * const communicationLog = await prisma.communicationLog.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many CommunicationLogs and only return the `id`
+     * const communicationLogWithIdOnly = await prisma.communicationLog.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends CommunicationLogCreateManyAndReturnArgs>(args?: SelectSubset<T, CommunicationLogCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a CommunicationLog.
+     * @param {CommunicationLogDeleteArgs} args - Arguments to delete one CommunicationLog.
+     * @example
+     * // Delete one CommunicationLog
+     * const CommunicationLog = await prisma.communicationLog.delete({
+     *   where: {
+     *     // ... filter to delete one CommunicationLog
+     *   }
+     * })
+     * 
+     */
+    delete<T extends CommunicationLogDeleteArgs>(args: SelectSubset<T, CommunicationLogDeleteArgs<ExtArgs>>): Prisma__CommunicationLogClient<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one CommunicationLog.
+     * @param {CommunicationLogUpdateArgs} args - Arguments to update one CommunicationLog.
+     * @example
+     * // Update one CommunicationLog
+     * const communicationLog = await prisma.communicationLog.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends CommunicationLogUpdateArgs>(args: SelectSubset<T, CommunicationLogUpdateArgs<ExtArgs>>): Prisma__CommunicationLogClient<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more CommunicationLogs.
+     * @param {CommunicationLogDeleteManyArgs} args - Arguments to filter CommunicationLogs to delete.
+     * @example
+     * // Delete a few CommunicationLogs
+     * const { count } = await prisma.communicationLog.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends CommunicationLogDeleteManyArgs>(args?: SelectSubset<T, CommunicationLogDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CommunicationLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunicationLogUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many CommunicationLogs
+     * const communicationLog = await prisma.communicationLog.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends CommunicationLogUpdateManyArgs>(args: SelectSubset<T, CommunicationLogUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CommunicationLogs and returns the data updated in the database.
+     * @param {CommunicationLogUpdateManyAndReturnArgs} args - Arguments to update many CommunicationLogs.
+     * @example
+     * // Update many CommunicationLogs
+     * const communicationLog = await prisma.communicationLog.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more CommunicationLogs and only return the `id`
+     * const communicationLogWithIdOnly = await prisma.communicationLog.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends CommunicationLogUpdateManyAndReturnArgs>(args: SelectSubset<T, CommunicationLogUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one CommunicationLog.
+     * @param {CommunicationLogUpsertArgs} args - Arguments to update or create a CommunicationLog.
+     * @example
+     * // Update or create a CommunicationLog
+     * const communicationLog = await prisma.communicationLog.upsert({
+     *   create: {
+     *     // ... data to create a CommunicationLog
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the CommunicationLog we want to update
+     *   }
+     * })
+     */
+    upsert<T extends CommunicationLogUpsertArgs>(args: SelectSubset<T, CommunicationLogUpsertArgs<ExtArgs>>): Prisma__CommunicationLogClient<$Result.GetResult<Prisma.$CommunicationLogPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of CommunicationLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunicationLogCountArgs} args - Arguments to filter CommunicationLogs to count.
+     * @example
+     * // Count the number of CommunicationLogs
+     * const count = await prisma.communicationLog.count({
+     *   where: {
+     *     // ... the filter for the CommunicationLogs we want to count
+     *   }
+     * })
+    **/
+    count<T extends CommunicationLogCountArgs>(
+      args?: Subset<T, CommunicationLogCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], CommunicationLogCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a CommunicationLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunicationLogAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends CommunicationLogAggregateArgs>(args: Subset<T, CommunicationLogAggregateArgs>): Prisma.PrismaPromise<GetCommunicationLogAggregateType<T>>
+
+    /**
+     * Group by CommunicationLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunicationLogGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends CommunicationLogGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: CommunicationLogGroupByArgs['orderBy'] }
+        : { orderBy?: CommunicationLogGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, CommunicationLogGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCommunicationLogGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the CommunicationLog model
+   */
+  readonly fields: CommunicationLogFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for CommunicationLog.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__CommunicationLogClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    partyUser<T extends CommunicationLog$partyUserArgs<ExtArgs> = {}>(args?: Subset<T, CommunicationLog$partyUserArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    supplier<T extends CommunicationLog$supplierArgs<ExtArgs> = {}>(args?: Subset<T, CommunicationLog$supplierArgs<ExtArgs>>): Prisma__SupplierClient<$Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    createdBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the CommunicationLog model
+   */
+  interface CommunicationLogFieldRefs {
+    readonly id: FieldRef<"CommunicationLog", 'String'>
+    readonly channel: FieldRef<"CommunicationLog", 'String'>
+    readonly direction: FieldRef<"CommunicationLog", 'String'>
+    readonly aboutKind: FieldRef<"CommunicationLog", 'String'>
+    readonly partyUserId: FieldRef<"CommunicationLog", 'String'>
+    readonly supplierId: FieldRef<"CommunicationLog", 'String'>
+    readonly partyName: FieldRef<"CommunicationLog", 'String'>
+    readonly partyPhone: FieldRef<"CommunicationLog", 'String'>
+    readonly subject: FieldRef<"CommunicationLog", 'String'>
+    readonly body: FieldRef<"CommunicationLog", 'String'>
+    readonly occurredAt: FieldRef<"CommunicationLog", 'DateTime'>
+    readonly createdById: FieldRef<"CommunicationLog", 'String'>
+    readonly createdAt: FieldRef<"CommunicationLog", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * CommunicationLog findUnique
+   */
+  export type CommunicationLogFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunicationLog to fetch.
+     */
+    where: CommunicationLogWhereUniqueInput
+  }
+
+  /**
+   * CommunicationLog findUniqueOrThrow
+   */
+  export type CommunicationLogFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunicationLog to fetch.
+     */
+    where: CommunicationLogWhereUniqueInput
+  }
+
+  /**
+   * CommunicationLog findFirst
+   */
+  export type CommunicationLogFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunicationLog to fetch.
+     */
+    where?: CommunicationLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CommunicationLogs to fetch.
+     */
+    orderBy?: CommunicationLogOrderByWithRelationInput | CommunicationLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CommunicationLogs.
+     */
+    cursor?: CommunicationLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CommunicationLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CommunicationLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CommunicationLogs.
+     */
+    distinct?: CommunicationLogScalarFieldEnum | CommunicationLogScalarFieldEnum[]
+  }
+
+  /**
+   * CommunicationLog findFirstOrThrow
+   */
+  export type CommunicationLogFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunicationLog to fetch.
+     */
+    where?: CommunicationLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CommunicationLogs to fetch.
+     */
+    orderBy?: CommunicationLogOrderByWithRelationInput | CommunicationLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CommunicationLogs.
+     */
+    cursor?: CommunicationLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CommunicationLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CommunicationLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CommunicationLogs.
+     */
+    distinct?: CommunicationLogScalarFieldEnum | CommunicationLogScalarFieldEnum[]
+  }
+
+  /**
+   * CommunicationLog findMany
+   */
+  export type CommunicationLogFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunicationLogs to fetch.
+     */
+    where?: CommunicationLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CommunicationLogs to fetch.
+     */
+    orderBy?: CommunicationLogOrderByWithRelationInput | CommunicationLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing CommunicationLogs.
+     */
+    cursor?: CommunicationLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CommunicationLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CommunicationLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CommunicationLogs.
+     */
+    distinct?: CommunicationLogScalarFieldEnum | CommunicationLogScalarFieldEnum[]
+  }
+
+  /**
+   * CommunicationLog create
+   */
+  export type CommunicationLogCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * The data needed to create a CommunicationLog.
+     */
+    data: XOR<CommunicationLogCreateInput, CommunicationLogUncheckedCreateInput>
+  }
+
+  /**
+   * CommunicationLog createMany
+   */
+  export type CommunicationLogCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many CommunicationLogs.
+     */
+    data: CommunicationLogCreateManyInput | CommunicationLogCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * CommunicationLog createManyAndReturn
+   */
+  export type CommunicationLogCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * The data used to create many CommunicationLogs.
+     */
+    data: CommunicationLogCreateManyInput | CommunicationLogCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * CommunicationLog update
+   */
+  export type CommunicationLogUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * The data needed to update a CommunicationLog.
+     */
+    data: XOR<CommunicationLogUpdateInput, CommunicationLogUncheckedUpdateInput>
+    /**
+     * Choose, which CommunicationLog to update.
+     */
+    where: CommunicationLogWhereUniqueInput
+  }
+
+  /**
+   * CommunicationLog updateMany
+   */
+  export type CommunicationLogUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update CommunicationLogs.
+     */
+    data: XOR<CommunicationLogUpdateManyMutationInput, CommunicationLogUncheckedUpdateManyInput>
+    /**
+     * Filter which CommunicationLogs to update
+     */
+    where?: CommunicationLogWhereInput
+    /**
+     * Limit how many CommunicationLogs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * CommunicationLog updateManyAndReturn
+   */
+  export type CommunicationLogUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * The data used to update CommunicationLogs.
+     */
+    data: XOR<CommunicationLogUpdateManyMutationInput, CommunicationLogUncheckedUpdateManyInput>
+    /**
+     * Filter which CommunicationLogs to update
+     */
+    where?: CommunicationLogWhereInput
+    /**
+     * Limit how many CommunicationLogs to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * CommunicationLog upsert
+   */
+  export type CommunicationLogUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * The filter to search for the CommunicationLog to update in case it exists.
+     */
+    where: CommunicationLogWhereUniqueInput
+    /**
+     * In case the CommunicationLog found by the `where` argument doesn't exist, create a new CommunicationLog with this data.
+     */
+    create: XOR<CommunicationLogCreateInput, CommunicationLogUncheckedCreateInput>
+    /**
+     * In case the CommunicationLog was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<CommunicationLogUpdateInput, CommunicationLogUncheckedUpdateInput>
+  }
+
+  /**
+   * CommunicationLog delete
+   */
+  export type CommunicationLogDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+    /**
+     * Filter which CommunicationLog to delete.
+     */
+    where: CommunicationLogWhereUniqueInput
+  }
+
+  /**
+   * CommunicationLog deleteMany
+   */
+  export type CommunicationLogDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CommunicationLogs to delete
+     */
+    where?: CommunicationLogWhereInput
+    /**
+     * Limit how many CommunicationLogs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * CommunicationLog.partyUser
+   */
+  export type CommunicationLog$partyUserArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * CommunicationLog.supplier
+   */
+  export type CommunicationLog$supplierArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Supplier
+     */
+    select?: SupplierSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Supplier
+     */
+    omit?: SupplierOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SupplierInclude<ExtArgs> | null
+    where?: SupplierWhereInput
+  }
+
+  /**
+   * CommunicationLog without action
+   */
+  export type CommunicationLogDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunicationLog
+     */
+    select?: CommunicationLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunicationLog
+     */
+    omit?: CommunicationLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunicationLogInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -53364,6 +58863,16 @@ export namespace Prisma {
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+  export const AdminModuleGrantScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    module: 'module',
+    createdAt: 'createdAt'
+  };
+
+  export type AdminModuleGrantScalarFieldEnum = (typeof AdminModuleGrantScalarFieldEnum)[keyof typeof AdminModuleGrantScalarFieldEnum]
 
 
   export const WorkerFamilyMemberScalarFieldEnum: {
@@ -53566,6 +59075,10 @@ export namespace Prisma {
     amountPayable: 'amountPayable',
     closingBalance: 'closingBalance',
     billedOwnerId: 'billedOwnerId',
+    kind: 'kind',
+    status: 'status',
+    notes: 'notes',
+    sentAt: 'sentAt',
     createdById: 'createdById',
     createdAt: 'createdAt'
   };
@@ -53881,6 +59394,58 @@ export namespace Prisma {
   export type RejectionLogScalarFieldEnum = (typeof RejectionLogScalarFieldEnum)[keyof typeof RejectionLogScalarFieldEnum]
 
 
+  export const ServicesInvoiceScalarFieldEnum: {
+    id: 'id',
+    invoiceNumber: 'invoiceNumber',
+    propertyId: 'propertyId',
+    unitId: 'unitId',
+    tenancyId: 'tenancyId',
+    issueDate: 'issueDate',
+    periodStart: 'periodStart',
+    periodEnd: 'periodEnd',
+    billedName: 'billedName',
+    billedAddress: 'billedAddress',
+    status: 'status',
+    total: 'total',
+    createdById: 'createdById',
+    createdAt: 'createdAt'
+  };
+
+  export type ServicesInvoiceScalarFieldEnum = (typeof ServicesInvoiceScalarFieldEnum)[keyof typeof ServicesInvoiceScalarFieldEnum]
+
+
+  export const ServicesInvoiceLineScalarFieldEnum: {
+    id: 'id',
+    invoiceId: 'invoiceId',
+    sequence: 'sequence',
+    qty: 'qty',
+    item: 'item',
+    description: 'description',
+    unitPrice: 'unitPrice'
+  };
+
+  export type ServicesInvoiceLineScalarFieldEnum = (typeof ServicesInvoiceLineScalarFieldEnum)[keyof typeof ServicesInvoiceLineScalarFieldEnum]
+
+
+  export const CommunicationLogScalarFieldEnum: {
+    id: 'id',
+    channel: 'channel',
+    direction: 'direction',
+    aboutKind: 'aboutKind',
+    partyUserId: 'partyUserId',
+    supplierId: 'supplierId',
+    partyName: 'partyName',
+    partyPhone: 'partyPhone',
+    subject: 'subject',
+    body: 'body',
+    occurredAt: 'occurredAt',
+    createdById: 'createdById',
+    createdAt: 'createdAt'
+  };
+
+  export type CommunicationLogScalarFieldEnum = (typeof CommunicationLogScalarFieldEnum)[keyof typeof CommunicationLogScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -54029,6 +59594,20 @@ export namespace Prisma {
    * Reference to a field of type 'QueryMode'
    */
   export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+  /**
+   * Reference to a field of type 'AdminModule'
+   */
+  export type EnumAdminModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AdminModule'>
+    
+
+
+  /**
+   * Reference to a field of type 'AdminModule[]'
+   */
+  export type ListEnumAdminModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AdminModule[]'>
     
 
 
@@ -54398,6 +59977,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyListRelationFilter
     budgets?: AnnualBudgetListRelationFilter
     serviceContracts?: BuildingServiceContractListRelationFilter
+    servicesInvoices?: ServicesInvoiceListRelationFilter
   }
 
   export type PropertyOrderByWithRelationInput = {
@@ -54440,6 +60020,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyOrderByRelationAggregateInput
     budgets?: AnnualBudgetOrderByRelationAggregateInput
     serviceContracts?: BuildingServiceContractOrderByRelationAggregateInput
+    servicesInvoices?: ServicesInvoiceOrderByRelationAggregateInput
   }
 
   export type PropertyWhereUniqueInput = Prisma.AtLeast<{
@@ -54485,6 +60066,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyListRelationFilter
     budgets?: AnnualBudgetListRelationFilter
     serviceContracts?: BuildingServiceContractListRelationFilter
+    servicesInvoices?: ServicesInvoiceListRelationFilter
   }, "id">
 
   export type PropertyOrderByWithAggregationInput = {
@@ -54600,6 +60182,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanListRelationFilter
     fundBalances?: UnitFundBalanceListRelationFilter
     ownershipTransfers?: OwnershipTransferListRelationFilter
+    servicesInvoices?: ServicesInvoiceListRelationFilter
   }
 
   export type UnitOrderByWithRelationInput = {
@@ -54636,6 +60219,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanOrderByRelationAggregateInput
     fundBalances?: UnitFundBalanceOrderByRelationAggregateInput
     ownershipTransfers?: OwnershipTransferOrderByRelationAggregateInput
+    servicesInvoices?: ServicesInvoiceOrderByRelationAggregateInput
   }
 
   export type UnitWhereUniqueInput = Prisma.AtLeast<{
@@ -54676,6 +60260,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanListRelationFilter
     fundBalances?: UnitFundBalanceListRelationFilter
     ownershipTransfers?: OwnershipTransferListRelationFilter
+    servicesInvoices?: ServicesInvoiceListRelationFilter
   }, "id" | "tenantId" | "propertyId_label">
 
   export type UnitOrderByWithAggregationInput = {
@@ -54962,6 +60547,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferListRelationFilter
     ownershipTransfersCreated?: OwnershipTransferListRelationFilter
     familyMembers?: WorkerFamilyMemberListRelationFilter
+    servicesInvoicesCreated?: ServicesInvoiceListRelationFilter
+    communicationsLogged?: CommunicationLogListRelationFilter
+    communicationsAsParty?: CommunicationLogListRelationFilter
+    adminModuleGrants?: AdminModuleGrantListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -55036,6 +60625,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferOrderByRelationAggregateInput
     ownershipTransfersCreated?: OwnershipTransferOrderByRelationAggregateInput
     familyMembers?: WorkerFamilyMemberOrderByRelationAggregateInput
+    servicesInvoicesCreated?: ServicesInvoiceOrderByRelationAggregateInput
+    communicationsLogged?: CommunicationLogOrderByRelationAggregateInput
+    communicationsAsParty?: CommunicationLogOrderByRelationAggregateInput
+    adminModuleGrants?: AdminModuleGrantOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -55114,6 +60707,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferListRelationFilter
     ownershipTransfersCreated?: OwnershipTransferListRelationFilter
     familyMembers?: WorkerFamilyMemberListRelationFilter
+    servicesInvoicesCreated?: ServicesInvoiceListRelationFilter
+    communicationsLogged?: CommunicationLogListRelationFilter
+    communicationsAsParty?: CommunicationLogListRelationFilter
+    adminModuleGrants?: AdminModuleGrantListRelationFilter
   }, "id" | "phone" | "civilId" | "email_userType">
 
   export type UserOrderByWithAggregationInput = {
@@ -55198,6 +60795,57 @@ export namespace Prisma {
     hrReminderStages?: JsonNullableWithAggregatesFilter<"User">
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
+  }
+
+  export type AdminModuleGrantWhereInput = {
+    AND?: AdminModuleGrantWhereInput | AdminModuleGrantWhereInput[]
+    OR?: AdminModuleGrantWhereInput[]
+    NOT?: AdminModuleGrantWhereInput | AdminModuleGrantWhereInput[]
+    id?: UuidFilter<"AdminModuleGrant"> | string
+    userId?: UuidFilter<"AdminModuleGrant"> | string
+    module?: EnumAdminModuleFilter<"AdminModuleGrant"> | $Enums.AdminModule
+    createdAt?: DateTimeFilter<"AdminModuleGrant"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type AdminModuleGrantOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type AdminModuleGrantWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    userId_module?: AdminModuleGrantUserIdModuleCompoundUniqueInput
+    AND?: AdminModuleGrantWhereInput | AdminModuleGrantWhereInput[]
+    OR?: AdminModuleGrantWhereInput[]
+    NOT?: AdminModuleGrantWhereInput | AdminModuleGrantWhereInput[]
+    userId?: UuidFilter<"AdminModuleGrant"> | string
+    module?: EnumAdminModuleFilter<"AdminModuleGrant"> | $Enums.AdminModule
+    createdAt?: DateTimeFilter<"AdminModuleGrant"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "userId_module">
+
+  export type AdminModuleGrantOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+    _count?: AdminModuleGrantCountOrderByAggregateInput
+    _max?: AdminModuleGrantMaxOrderByAggregateInput
+    _min?: AdminModuleGrantMinOrderByAggregateInput
+  }
+
+  export type AdminModuleGrantScalarWhereWithAggregatesInput = {
+    AND?: AdminModuleGrantScalarWhereWithAggregatesInput | AdminModuleGrantScalarWhereWithAggregatesInput[]
+    OR?: AdminModuleGrantScalarWhereWithAggregatesInput[]
+    NOT?: AdminModuleGrantScalarWhereWithAggregatesInput | AdminModuleGrantScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"AdminModuleGrant"> | string
+    userId?: UuidWithAggregatesFilter<"AdminModuleGrant"> | string
+    module?: EnumAdminModuleWithAggregatesFilter<"AdminModuleGrant"> | $Enums.AdminModule
+    createdAt?: DateTimeWithAggregatesFilter<"AdminModuleGrant"> | Date | string
   }
 
   export type WorkerFamilyMemberWhereInput = {
@@ -55323,6 +60971,7 @@ export namespace Prisma {
     tenant?: XOR<UserScalarRelationFilter, UserWhereInput>
     charges?: ChargeListRelationFilter
     documents?: EntityDocumentListRelationFilter
+    servicesInvoices?: ServicesInvoiceListRelationFilter
   }
 
   export type TenancyOrderByWithRelationInput = {
@@ -55353,6 +61002,7 @@ export namespace Prisma {
     tenant?: UserOrderByWithRelationInput
     charges?: ChargeOrderByRelationAggregateInput
     documents?: EntityDocumentOrderByRelationAggregateInput
+    servicesInvoices?: ServicesInvoiceOrderByRelationAggregateInput
   }
 
   export type TenancyWhereUniqueInput = Prisma.AtLeast<{
@@ -55386,6 +61036,7 @@ export namespace Prisma {
     tenant?: XOR<UserScalarRelationFilter, UserWhereInput>
     charges?: ChargeListRelationFilter
     documents?: EntityDocumentListRelationFilter
+    servicesInvoices?: ServicesInvoiceListRelationFilter
   }, "id">
 
   export type TenancyOrderByWithAggregationInput = {
@@ -56248,6 +61899,10 @@ export namespace Prisma {
     amountPayable?: DecimalFilter<"ServiceChargeInvoice"> | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFilter<"ServiceChargeInvoice"> | Decimal | DecimalJsLike | number | string
     billedOwnerId?: UuidNullableFilter<"ServiceChargeInvoice"> | string | null
+    kind?: StringFilter<"ServiceChargeInvoice"> | string
+    status?: StringFilter<"ServiceChargeInvoice"> | string
+    notes?: StringNullableFilter<"ServiceChargeInvoice"> | string | null
+    sentAt?: DateTimeNullableFilter<"ServiceChargeInvoice"> | Date | string | null
     createdById?: UuidNullableFilter<"ServiceChargeInvoice"> | string | null
     createdAt?: DateTimeFilter<"ServiceChargeInvoice"> | Date | string
     unit?: XOR<UnitScalarRelationFilter, UnitWhereInput>
@@ -56273,6 +61928,10 @@ export namespace Prisma {
     amountPayable?: SortOrder
     closingBalance?: SortOrder
     billedOwnerId?: SortOrderInput | SortOrder
+    kind?: SortOrder
+    status?: SortOrder
+    notes?: SortOrderInput | SortOrder
+    sentAt?: SortOrderInput | SortOrder
     createdById?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     unit?: UnitOrderByWithRelationInput
@@ -56301,6 +61960,10 @@ export namespace Prisma {
     amountPayable?: DecimalFilter<"ServiceChargeInvoice"> | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFilter<"ServiceChargeInvoice"> | Decimal | DecimalJsLike | number | string
     billedOwnerId?: UuidNullableFilter<"ServiceChargeInvoice"> | string | null
+    kind?: StringFilter<"ServiceChargeInvoice"> | string
+    status?: StringFilter<"ServiceChargeInvoice"> | string
+    notes?: StringNullableFilter<"ServiceChargeInvoice"> | string | null
+    sentAt?: DateTimeNullableFilter<"ServiceChargeInvoice"> | Date | string | null
     createdById?: UuidNullableFilter<"ServiceChargeInvoice"> | string | null
     createdAt?: DateTimeFilter<"ServiceChargeInvoice"> | Date | string
     unit?: XOR<UnitScalarRelationFilter, UnitWhereInput>
@@ -56326,6 +61989,10 @@ export namespace Prisma {
     amountPayable?: SortOrder
     closingBalance?: SortOrder
     billedOwnerId?: SortOrderInput | SortOrder
+    kind?: SortOrder
+    status?: SortOrder
+    notes?: SortOrderInput | SortOrder
+    sentAt?: SortOrderInput | SortOrder
     createdById?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     _count?: ServiceChargeInvoiceCountOrderByAggregateInput
@@ -56353,6 +62020,10 @@ export namespace Prisma {
     amountPayable?: DecimalWithAggregatesFilter<"ServiceChargeInvoice"> | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalWithAggregatesFilter<"ServiceChargeInvoice"> | Decimal | DecimalJsLike | number | string
     billedOwnerId?: UuidNullableWithAggregatesFilter<"ServiceChargeInvoice"> | string | null
+    kind?: StringWithAggregatesFilter<"ServiceChargeInvoice"> | string
+    status?: StringWithAggregatesFilter<"ServiceChargeInvoice"> | string
+    notes?: StringNullableWithAggregatesFilter<"ServiceChargeInvoice"> | string | null
+    sentAt?: DateTimeNullableWithAggregatesFilter<"ServiceChargeInvoice"> | Date | string | null
     createdById?: UuidNullableWithAggregatesFilter<"ServiceChargeInvoice"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"ServiceChargeInvoice"> | Date | string
   }
@@ -57025,6 +62696,7 @@ export namespace Prisma {
     properties?: SupplierPropertyListRelationFilter
     expenses?: ExpenseListRelationFilter
     serviceContracts?: BuildingServiceContractListRelationFilter
+    communications?: CommunicationLogListRelationFilter
   }
 
   export type SupplierOrderByWithRelationInput = {
@@ -57053,6 +62725,7 @@ export namespace Prisma {
     properties?: SupplierPropertyOrderByRelationAggregateInput
     expenses?: ExpenseOrderByRelationAggregateInput
     serviceContracts?: BuildingServiceContractOrderByRelationAggregateInput
+    communications?: CommunicationLogOrderByRelationAggregateInput
   }
 
   export type SupplierWhereUniqueInput = Prisma.AtLeast<{
@@ -57084,6 +62757,7 @@ export namespace Prisma {
     properties?: SupplierPropertyListRelationFilter
     expenses?: ExpenseListRelationFilter
     serviceContracts?: BuildingServiceContractListRelationFilter
+    communications?: CommunicationLogListRelationFilter
   }, "id">
 
   export type SupplierOrderByWithAggregationInput = {
@@ -58043,6 +63717,288 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"RejectionLog"> | Date | string
   }
 
+  export type ServicesInvoiceWhereInput = {
+    AND?: ServicesInvoiceWhereInput | ServicesInvoiceWhereInput[]
+    OR?: ServicesInvoiceWhereInput[]
+    NOT?: ServicesInvoiceWhereInput | ServicesInvoiceWhereInput[]
+    id?: UuidFilter<"ServicesInvoice"> | string
+    invoiceNumber?: IntFilter<"ServicesInvoice"> | number
+    propertyId?: UuidFilter<"ServicesInvoice"> | string
+    unitId?: UuidFilter<"ServicesInvoice"> | string
+    tenancyId?: UuidNullableFilter<"ServicesInvoice"> | string | null
+    issueDate?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    periodStart?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    periodEnd?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    billedName?: StringFilter<"ServicesInvoice"> | string
+    billedAddress?: StringFilter<"ServicesInvoice"> | string
+    status?: StringFilter<"ServicesInvoice"> | string
+    total?: DecimalFilter<"ServicesInvoice"> | Decimal | DecimalJsLike | number | string
+    createdById?: UuidNullableFilter<"ServicesInvoice"> | string | null
+    createdAt?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    property?: XOR<PropertyScalarRelationFilter, PropertyWhereInput>
+    unit?: XOR<UnitScalarRelationFilter, UnitWhereInput>
+    tenancy?: XOR<TenancyNullableScalarRelationFilter, TenancyWhereInput> | null
+    createdBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    lines?: ServicesInvoiceLineListRelationFilter
+  }
+
+  export type ServicesInvoiceOrderByWithRelationInput = {
+    id?: SortOrder
+    invoiceNumber?: SortOrder
+    propertyId?: SortOrder
+    unitId?: SortOrder
+    tenancyId?: SortOrderInput | SortOrder
+    issueDate?: SortOrder
+    periodStart?: SortOrder
+    periodEnd?: SortOrder
+    billedName?: SortOrder
+    billedAddress?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    createdById?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    property?: PropertyOrderByWithRelationInput
+    unit?: UnitOrderByWithRelationInput
+    tenancy?: TenancyOrderByWithRelationInput
+    createdBy?: UserOrderByWithRelationInput
+    lines?: ServicesInvoiceLineOrderByRelationAggregateInput
+  }
+
+  export type ServicesInvoiceWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    invoiceNumber?: number
+    AND?: ServicesInvoiceWhereInput | ServicesInvoiceWhereInput[]
+    OR?: ServicesInvoiceWhereInput[]
+    NOT?: ServicesInvoiceWhereInput | ServicesInvoiceWhereInput[]
+    propertyId?: UuidFilter<"ServicesInvoice"> | string
+    unitId?: UuidFilter<"ServicesInvoice"> | string
+    tenancyId?: UuidNullableFilter<"ServicesInvoice"> | string | null
+    issueDate?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    periodStart?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    periodEnd?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    billedName?: StringFilter<"ServicesInvoice"> | string
+    billedAddress?: StringFilter<"ServicesInvoice"> | string
+    status?: StringFilter<"ServicesInvoice"> | string
+    total?: DecimalFilter<"ServicesInvoice"> | Decimal | DecimalJsLike | number | string
+    createdById?: UuidNullableFilter<"ServicesInvoice"> | string | null
+    createdAt?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    property?: XOR<PropertyScalarRelationFilter, PropertyWhereInput>
+    unit?: XOR<UnitScalarRelationFilter, UnitWhereInput>
+    tenancy?: XOR<TenancyNullableScalarRelationFilter, TenancyWhereInput> | null
+    createdBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    lines?: ServicesInvoiceLineListRelationFilter
+  }, "id" | "invoiceNumber">
+
+  export type ServicesInvoiceOrderByWithAggregationInput = {
+    id?: SortOrder
+    invoiceNumber?: SortOrder
+    propertyId?: SortOrder
+    unitId?: SortOrder
+    tenancyId?: SortOrderInput | SortOrder
+    issueDate?: SortOrder
+    periodStart?: SortOrder
+    periodEnd?: SortOrder
+    billedName?: SortOrder
+    billedAddress?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    createdById?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: ServicesInvoiceCountOrderByAggregateInput
+    _avg?: ServicesInvoiceAvgOrderByAggregateInput
+    _max?: ServicesInvoiceMaxOrderByAggregateInput
+    _min?: ServicesInvoiceMinOrderByAggregateInput
+    _sum?: ServicesInvoiceSumOrderByAggregateInput
+  }
+
+  export type ServicesInvoiceScalarWhereWithAggregatesInput = {
+    AND?: ServicesInvoiceScalarWhereWithAggregatesInput | ServicesInvoiceScalarWhereWithAggregatesInput[]
+    OR?: ServicesInvoiceScalarWhereWithAggregatesInput[]
+    NOT?: ServicesInvoiceScalarWhereWithAggregatesInput | ServicesInvoiceScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"ServicesInvoice"> | string
+    invoiceNumber?: IntWithAggregatesFilter<"ServicesInvoice"> | number
+    propertyId?: UuidWithAggregatesFilter<"ServicesInvoice"> | string
+    unitId?: UuidWithAggregatesFilter<"ServicesInvoice"> | string
+    tenancyId?: UuidNullableWithAggregatesFilter<"ServicesInvoice"> | string | null
+    issueDate?: DateTimeWithAggregatesFilter<"ServicesInvoice"> | Date | string
+    periodStart?: DateTimeWithAggregatesFilter<"ServicesInvoice"> | Date | string
+    periodEnd?: DateTimeWithAggregatesFilter<"ServicesInvoice"> | Date | string
+    billedName?: StringWithAggregatesFilter<"ServicesInvoice"> | string
+    billedAddress?: StringWithAggregatesFilter<"ServicesInvoice"> | string
+    status?: StringWithAggregatesFilter<"ServicesInvoice"> | string
+    total?: DecimalWithAggregatesFilter<"ServicesInvoice"> | Decimal | DecimalJsLike | number | string
+    createdById?: UuidNullableWithAggregatesFilter<"ServicesInvoice"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"ServicesInvoice"> | Date | string
+  }
+
+  export type ServicesInvoiceLineWhereInput = {
+    AND?: ServicesInvoiceLineWhereInput | ServicesInvoiceLineWhereInput[]
+    OR?: ServicesInvoiceLineWhereInput[]
+    NOT?: ServicesInvoiceLineWhereInput | ServicesInvoiceLineWhereInput[]
+    id?: UuidFilter<"ServicesInvoiceLine"> | string
+    invoiceId?: UuidFilter<"ServicesInvoiceLine"> | string
+    sequence?: IntFilter<"ServicesInvoiceLine"> | number
+    qty?: DecimalFilter<"ServicesInvoiceLine"> | Decimal | DecimalJsLike | number | string
+    item?: StringFilter<"ServicesInvoiceLine"> | string
+    description?: StringFilter<"ServicesInvoiceLine"> | string
+    unitPrice?: DecimalFilter<"ServicesInvoiceLine"> | Decimal | DecimalJsLike | number | string
+    invoice?: XOR<ServicesInvoiceScalarRelationFilter, ServicesInvoiceWhereInput>
+  }
+
+  export type ServicesInvoiceLineOrderByWithRelationInput = {
+    id?: SortOrder
+    invoiceId?: SortOrder
+    sequence?: SortOrder
+    qty?: SortOrder
+    item?: SortOrder
+    description?: SortOrder
+    unitPrice?: SortOrder
+    invoice?: ServicesInvoiceOrderByWithRelationInput
+  }
+
+  export type ServicesInvoiceLineWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: ServicesInvoiceLineWhereInput | ServicesInvoiceLineWhereInput[]
+    OR?: ServicesInvoiceLineWhereInput[]
+    NOT?: ServicesInvoiceLineWhereInput | ServicesInvoiceLineWhereInput[]
+    invoiceId?: UuidFilter<"ServicesInvoiceLine"> | string
+    sequence?: IntFilter<"ServicesInvoiceLine"> | number
+    qty?: DecimalFilter<"ServicesInvoiceLine"> | Decimal | DecimalJsLike | number | string
+    item?: StringFilter<"ServicesInvoiceLine"> | string
+    description?: StringFilter<"ServicesInvoiceLine"> | string
+    unitPrice?: DecimalFilter<"ServicesInvoiceLine"> | Decimal | DecimalJsLike | number | string
+    invoice?: XOR<ServicesInvoiceScalarRelationFilter, ServicesInvoiceWhereInput>
+  }, "id">
+
+  export type ServicesInvoiceLineOrderByWithAggregationInput = {
+    id?: SortOrder
+    invoiceId?: SortOrder
+    sequence?: SortOrder
+    qty?: SortOrder
+    item?: SortOrder
+    description?: SortOrder
+    unitPrice?: SortOrder
+    _count?: ServicesInvoiceLineCountOrderByAggregateInput
+    _avg?: ServicesInvoiceLineAvgOrderByAggregateInput
+    _max?: ServicesInvoiceLineMaxOrderByAggregateInput
+    _min?: ServicesInvoiceLineMinOrderByAggregateInput
+    _sum?: ServicesInvoiceLineSumOrderByAggregateInput
+  }
+
+  export type ServicesInvoiceLineScalarWhereWithAggregatesInput = {
+    AND?: ServicesInvoiceLineScalarWhereWithAggregatesInput | ServicesInvoiceLineScalarWhereWithAggregatesInput[]
+    OR?: ServicesInvoiceLineScalarWhereWithAggregatesInput[]
+    NOT?: ServicesInvoiceLineScalarWhereWithAggregatesInput | ServicesInvoiceLineScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"ServicesInvoiceLine"> | string
+    invoiceId?: UuidWithAggregatesFilter<"ServicesInvoiceLine"> | string
+    sequence?: IntWithAggregatesFilter<"ServicesInvoiceLine"> | number
+    qty?: DecimalWithAggregatesFilter<"ServicesInvoiceLine"> | Decimal | DecimalJsLike | number | string
+    item?: StringWithAggregatesFilter<"ServicesInvoiceLine"> | string
+    description?: StringWithAggregatesFilter<"ServicesInvoiceLine"> | string
+    unitPrice?: DecimalWithAggregatesFilter<"ServicesInvoiceLine"> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type CommunicationLogWhereInput = {
+    AND?: CommunicationLogWhereInput | CommunicationLogWhereInput[]
+    OR?: CommunicationLogWhereInput[]
+    NOT?: CommunicationLogWhereInput | CommunicationLogWhereInput[]
+    id?: UuidFilter<"CommunicationLog"> | string
+    channel?: StringFilter<"CommunicationLog"> | string
+    direction?: StringFilter<"CommunicationLog"> | string
+    aboutKind?: StringFilter<"CommunicationLog"> | string
+    partyUserId?: UuidNullableFilter<"CommunicationLog"> | string | null
+    supplierId?: UuidNullableFilter<"CommunicationLog"> | string | null
+    partyName?: StringFilter<"CommunicationLog"> | string
+    partyPhone?: StringNullableFilter<"CommunicationLog"> | string | null
+    subject?: StringFilter<"CommunicationLog"> | string
+    body?: StringFilter<"CommunicationLog"> | string
+    occurredAt?: DateTimeFilter<"CommunicationLog"> | Date | string
+    createdById?: UuidFilter<"CommunicationLog"> | string
+    createdAt?: DateTimeFilter<"CommunicationLog"> | Date | string
+    partyUser?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    supplier?: XOR<SupplierNullableScalarRelationFilter, SupplierWhereInput> | null
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type CommunicationLogOrderByWithRelationInput = {
+    id?: SortOrder
+    channel?: SortOrder
+    direction?: SortOrder
+    aboutKind?: SortOrder
+    partyUserId?: SortOrderInput | SortOrder
+    supplierId?: SortOrderInput | SortOrder
+    partyName?: SortOrder
+    partyPhone?: SortOrderInput | SortOrder
+    subject?: SortOrder
+    body?: SortOrder
+    occurredAt?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    partyUser?: UserOrderByWithRelationInput
+    supplier?: SupplierOrderByWithRelationInput
+    createdBy?: UserOrderByWithRelationInput
+  }
+
+  export type CommunicationLogWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: CommunicationLogWhereInput | CommunicationLogWhereInput[]
+    OR?: CommunicationLogWhereInput[]
+    NOT?: CommunicationLogWhereInput | CommunicationLogWhereInput[]
+    channel?: StringFilter<"CommunicationLog"> | string
+    direction?: StringFilter<"CommunicationLog"> | string
+    aboutKind?: StringFilter<"CommunicationLog"> | string
+    partyUserId?: UuidNullableFilter<"CommunicationLog"> | string | null
+    supplierId?: UuidNullableFilter<"CommunicationLog"> | string | null
+    partyName?: StringFilter<"CommunicationLog"> | string
+    partyPhone?: StringNullableFilter<"CommunicationLog"> | string | null
+    subject?: StringFilter<"CommunicationLog"> | string
+    body?: StringFilter<"CommunicationLog"> | string
+    occurredAt?: DateTimeFilter<"CommunicationLog"> | Date | string
+    createdById?: UuidFilter<"CommunicationLog"> | string
+    createdAt?: DateTimeFilter<"CommunicationLog"> | Date | string
+    partyUser?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    supplier?: XOR<SupplierNullableScalarRelationFilter, SupplierWhereInput> | null
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type CommunicationLogOrderByWithAggregationInput = {
+    id?: SortOrder
+    channel?: SortOrder
+    direction?: SortOrder
+    aboutKind?: SortOrder
+    partyUserId?: SortOrderInput | SortOrder
+    supplierId?: SortOrderInput | SortOrder
+    partyName?: SortOrder
+    partyPhone?: SortOrderInput | SortOrder
+    subject?: SortOrder
+    body?: SortOrder
+    occurredAt?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    _count?: CommunicationLogCountOrderByAggregateInput
+    _max?: CommunicationLogMaxOrderByAggregateInput
+    _min?: CommunicationLogMinOrderByAggregateInput
+  }
+
+  export type CommunicationLogScalarWhereWithAggregatesInput = {
+    AND?: CommunicationLogScalarWhereWithAggregatesInput | CommunicationLogScalarWhereWithAggregatesInput[]
+    OR?: CommunicationLogScalarWhereWithAggregatesInput[]
+    NOT?: CommunicationLogScalarWhereWithAggregatesInput | CommunicationLogScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"CommunicationLog"> | string
+    channel?: StringWithAggregatesFilter<"CommunicationLog"> | string
+    direction?: StringWithAggregatesFilter<"CommunicationLog"> | string
+    aboutKind?: StringWithAggregatesFilter<"CommunicationLog"> | string
+    partyUserId?: UuidNullableWithAggregatesFilter<"CommunicationLog"> | string | null
+    supplierId?: UuidNullableWithAggregatesFilter<"CommunicationLog"> | string | null
+    partyName?: StringWithAggregatesFilter<"CommunicationLog"> | string
+    partyPhone?: StringNullableWithAggregatesFilter<"CommunicationLog"> | string | null
+    subject?: StringWithAggregatesFilter<"CommunicationLog"> | string
+    body?: StringWithAggregatesFilter<"CommunicationLog"> | string
+    occurredAt?: DateTimeWithAggregatesFilter<"CommunicationLog"> | Date | string
+    createdById?: UuidWithAggregatesFilter<"CommunicationLog"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"CommunicationLog"> | Date | string
+  }
+
   export type PropertyTypeCreateInput = {
     id?: string
     name: string
@@ -58219,6 +64175,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateInput = {
@@ -58260,6 +64217,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUpdateInput = {
@@ -58301,6 +64259,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateInput = {
@@ -58342,6 +64301,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyCreateManyInput = {
@@ -58476,6 +64436,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateInput = {
@@ -58509,6 +64470,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUpdateInput = {
@@ -58542,6 +64504,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateInput = {
@@ -58575,6 +64538,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitCreateManyInput = {
@@ -58867,6 +64831,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -58941,6 +64909,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -59015,6 +64987,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -59089,6 +65065,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -59206,6 +65186,54 @@ export namespace Prisma {
     hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdminModuleGrantCreateInput = {
+    id?: string
+    module: $Enums.AdminModule
+    createdAt?: Date | string
+    user: UserCreateNestedOneWithoutAdminModuleGrantsInput
+  }
+
+  export type AdminModuleGrantUncheckedCreateInput = {
+    id?: string
+    userId: string
+    module: $Enums.AdminModule
+    createdAt?: Date | string
+  }
+
+  export type AdminModuleGrantUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumAdminModuleFieldUpdateOperationsInput | $Enums.AdminModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutAdminModuleGrantsNestedInput
+  }
+
+  export type AdminModuleGrantUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    module?: EnumAdminModuleFieldUpdateOperationsInput | $Enums.AdminModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdminModuleGrantCreateManyInput = {
+    id?: string
+    userId: string
+    module: $Enums.AdminModule
+    createdAt?: Date | string
+  }
+
+  export type AdminModuleGrantUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumAdminModuleFieldUpdateOperationsInput | $Enums.AdminModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdminModuleGrantUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    module?: EnumAdminModuleFieldUpdateOperationsInput | $Enums.AdminModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type WorkerFamilyMemberCreateInput = {
@@ -59338,6 +65366,7 @@ export namespace Prisma {
     tenant: UserCreateNestedOneWithoutTenanciesInput
     charges?: ChargeCreateNestedManyWithoutTenancyInput
     documents?: EntityDocumentCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyUncheckedCreateInput = {
@@ -59366,6 +65395,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     charges?: ChargeUncheckedCreateNestedManyWithoutTenancyInput
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyUpdateInput = {
@@ -59394,6 +65424,7 @@ export namespace Prisma {
     tenant?: UserUpdateOneRequiredWithoutTenanciesNestedInput
     charges?: ChargeUpdateManyWithoutTenancyNestedInput
     documents?: EntityDocumentUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutTenancyNestedInput
   }
 
   export type TenancyUncheckedUpdateInput = {
@@ -59422,6 +65453,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     charges?: ChargeUncheckedUpdateManyWithoutTenancyNestedInput
     documents?: EntityDocumentUncheckedUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutTenancyNestedInput
   }
 
   export type TenancyCreateManyInput = {
@@ -60327,6 +66359,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
     unit: UnitCreateNestedOneWithoutServiceChargeInvoicesInput
     fund: FundCreateNestedOneWithoutServiceChargeInvoicesInput
@@ -60351,6 +66387,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
     lines?: ServiceChargeInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
@@ -60369,6 +66409,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
     fund?: FundUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
@@ -60393,6 +66437,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: ServiceChargeInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
@@ -60414,6 +66462,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
   }
@@ -60430,6 +66482,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -60448,6 +66504,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -61125,6 +67185,7 @@ export namespace Prisma {
     properties?: SupplierPropertyCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierUncheckedCreateInput = {
@@ -61152,6 +67213,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUncheckedCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogUncheckedCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierUpdateInput = {
@@ -61179,6 +67241,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUpdateManyWithoutSupplierNestedInput
   }
 
   export type SupplierUncheckedUpdateInput = {
@@ -61206,6 +67269,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUncheckedUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUncheckedUpdateManyWithoutSupplierNestedInput
   }
 
   export type SupplierCreateManyInput = {
@@ -62211,6 +68275,303 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ServicesInvoiceCreateInput = {
+    id?: string
+    invoiceNumber: number
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    property: PropertyCreateNestedOneWithoutServicesInvoicesInput
+    unit: UnitCreateNestedOneWithoutServicesInvoicesInput
+    tenancy?: TenancyCreateNestedOneWithoutServicesInvoicesInput
+    createdBy?: UserCreateNestedOneWithoutServicesInvoicesCreatedInput
+    lines?: ServicesInvoiceLineCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceUncheckedCreateInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    unitId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdById?: string | null
+    createdAt?: Date | string
+    lines?: ServicesInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    unit?: UnitUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    tenancy?: TenancyUpdateOneWithoutServicesInvoicesNestedInput
+    createdBy?: UserUpdateOneWithoutServicesInvoicesCreatedNestedInput
+    lines?: ServicesInvoiceLineUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lines?: ServicesInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceCreateManyInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    unitId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ServicesInvoiceUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServicesInvoiceUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServicesInvoiceLineCreateInput = {
+    id?: string
+    sequence: number
+    qty?: Decimal | DecimalJsLike | number | string
+    item: string
+    description: string
+    unitPrice: Decimal | DecimalJsLike | number | string
+    invoice: ServicesInvoiceCreateNestedOneWithoutLinesInput
+  }
+
+  export type ServicesInvoiceLineUncheckedCreateInput = {
+    id?: string
+    invoiceId: string
+    sequence: number
+    qty?: Decimal | DecimalJsLike | number | string
+    item: string
+    description: string
+    unitPrice: Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    sequence?: IntFieldUpdateOperationsInput | number
+    qty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    item?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    unitPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    invoice?: ServicesInvoiceUpdateOneRequiredWithoutLinesNestedInput
+  }
+
+  export type ServicesInvoiceLineUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceId?: StringFieldUpdateOperationsInput | string
+    sequence?: IntFieldUpdateOperationsInput | number
+    qty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    item?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    unitPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineCreateManyInput = {
+    id?: string
+    invoiceId: string
+    sequence: number
+    qty?: Decimal | DecimalJsLike | number | string
+    item: string
+    description: string
+    unitPrice: Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    sequence?: IntFieldUpdateOperationsInput | number
+    qty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    item?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    unitPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceId?: StringFieldUpdateOperationsInput | string
+    sequence?: IntFieldUpdateOperationsInput | number
+    qty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    item?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    unitPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type CommunicationLogCreateInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdAt?: Date | string
+    partyUser?: UserCreateNestedOneWithoutCommunicationsAsPartyInput
+    supplier?: SupplierCreateNestedOneWithoutCommunicationsInput
+    createdBy: UserCreateNestedOneWithoutCommunicationsLoggedInput
+  }
+
+  export type CommunicationLogUncheckedCreateInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyUserId?: string | null
+    supplierId?: string | null
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type CommunicationLogUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    partyUser?: UserUpdateOneWithoutCommunicationsAsPartyNestedInput
+    supplier?: SupplierUpdateOneWithoutCommunicationsNestedInput
+    createdBy?: UserUpdateOneRequiredWithoutCommunicationsLoggedNestedInput
+  }
+
+  export type CommunicationLogUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierId?: NullableStringFieldUpdateOperationsInput | string | null
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunicationLogCreateManyInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyUserId?: string | null
+    supplierId?: string | null
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type CommunicationLogUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunicationLogUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierId?: NullableStringFieldUpdateOperationsInput | string | null
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type UuidFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -62489,6 +68850,12 @@ export namespace Prisma {
     none?: BuildingServiceContractWhereInput
   }
 
+  export type ServicesInvoiceListRelationFilter = {
+    every?: ServicesInvoiceWhereInput
+    some?: ServicesInvoiceWhereInput
+    none?: ServicesInvoiceWhereInput
+  }
+
   export type UnitOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -62514,6 +68881,10 @@ export namespace Prisma {
   }
 
   export type BuildingServiceContractOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ServicesInvoiceOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -63110,6 +69481,18 @@ export namespace Prisma {
     none?: WorkerFamilyMemberWhereInput
   }
 
+  export type CommunicationLogListRelationFilter = {
+    every?: CommunicationLogWhereInput
+    some?: CommunicationLogWhereInput
+    none?: CommunicationLogWhereInput
+  }
+
+  export type AdminModuleGrantListRelationFilter = {
+    every?: AdminModuleGrantWhereInput
+    some?: AdminModuleGrantWhereInput
+    none?: AdminModuleGrantWhereInput
+  }
+
   export type MaintenanceAttachmentOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -63147,6 +69530,14 @@ export namespace Prisma {
   }
 
   export type WorkerFamilyMemberOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type CommunicationLogOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type AdminModuleGrantOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -63314,6 +69705,49 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedJsonNullableFilter<$PrismaModel>
     _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
+  export type EnumAdminModuleFilter<$PrismaModel = never> = {
+    equals?: $Enums.AdminModule | EnumAdminModuleFieldRefInput<$PrismaModel>
+    in?: $Enums.AdminModule[] | ListEnumAdminModuleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AdminModule[] | ListEnumAdminModuleFieldRefInput<$PrismaModel>
+    not?: NestedEnumAdminModuleFilter<$PrismaModel> | $Enums.AdminModule
+  }
+
+  export type AdminModuleGrantUserIdModuleCompoundUniqueInput = {
+    userId: string
+    module: $Enums.AdminModule
+  }
+
+  export type AdminModuleGrantCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type AdminModuleGrantMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type AdminModuleGrantMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumAdminModuleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AdminModule | EnumAdminModuleFieldRefInput<$PrismaModel>
+    in?: $Enums.AdminModule[] | ListEnumAdminModuleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AdminModule[] | ListEnumAdminModuleFieldRefInput<$PrismaModel>
+    not?: NestedEnumAdminModuleWithAggregatesFilter<$PrismaModel> | $Enums.AdminModule
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAdminModuleFilter<$PrismaModel>
+    _max?: NestedEnumAdminModuleFilter<$PrismaModel>
   }
 
   export type EnumFamilyRelationshipFilter<$PrismaModel = never> = {
@@ -64128,6 +70562,10 @@ export namespace Prisma {
     amountPayable?: SortOrder
     closingBalance?: SortOrder
     billedOwnerId?: SortOrder
+    kind?: SortOrder
+    status?: SortOrder
+    notes?: SortOrder
+    sentAt?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
   }
@@ -64155,6 +70593,10 @@ export namespace Prisma {
     amountPayable?: SortOrder
     closingBalance?: SortOrder
     billedOwnerId?: SortOrder
+    kind?: SortOrder
+    status?: SortOrder
+    notes?: SortOrder
+    sentAt?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
   }
@@ -64174,6 +70616,10 @@ export namespace Prisma {
     amountPayable?: SortOrder
     closingBalance?: SortOrder
     billedOwnerId?: SortOrder
+    kind?: SortOrder
+    status?: SortOrder
+    notes?: SortOrder
+    sentAt?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
   }
@@ -65280,6 +71726,172 @@ export namespace Prisma {
     _max?: NestedEnumRejectionKindFilter<$PrismaModel>
   }
 
+  export type ServicesInvoiceLineListRelationFilter = {
+    every?: ServicesInvoiceLineWhereInput
+    some?: ServicesInvoiceLineWhereInput
+    none?: ServicesInvoiceLineWhereInput
+  }
+
+  export type ServicesInvoiceLineOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ServicesInvoiceCountOrderByAggregateInput = {
+    id?: SortOrder
+    invoiceNumber?: SortOrder
+    propertyId?: SortOrder
+    unitId?: SortOrder
+    tenancyId?: SortOrder
+    issueDate?: SortOrder
+    periodStart?: SortOrder
+    periodEnd?: SortOrder
+    billedName?: SortOrder
+    billedAddress?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ServicesInvoiceAvgOrderByAggregateInput = {
+    invoiceNumber?: SortOrder
+    total?: SortOrder
+  }
+
+  export type ServicesInvoiceMaxOrderByAggregateInput = {
+    id?: SortOrder
+    invoiceNumber?: SortOrder
+    propertyId?: SortOrder
+    unitId?: SortOrder
+    tenancyId?: SortOrder
+    issueDate?: SortOrder
+    periodStart?: SortOrder
+    periodEnd?: SortOrder
+    billedName?: SortOrder
+    billedAddress?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ServicesInvoiceMinOrderByAggregateInput = {
+    id?: SortOrder
+    invoiceNumber?: SortOrder
+    propertyId?: SortOrder
+    unitId?: SortOrder
+    tenancyId?: SortOrder
+    issueDate?: SortOrder
+    periodStart?: SortOrder
+    periodEnd?: SortOrder
+    billedName?: SortOrder
+    billedAddress?: SortOrder
+    status?: SortOrder
+    total?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ServicesInvoiceSumOrderByAggregateInput = {
+    invoiceNumber?: SortOrder
+    total?: SortOrder
+  }
+
+  export type ServicesInvoiceScalarRelationFilter = {
+    is?: ServicesInvoiceWhereInput
+    isNot?: ServicesInvoiceWhereInput
+  }
+
+  export type ServicesInvoiceLineCountOrderByAggregateInput = {
+    id?: SortOrder
+    invoiceId?: SortOrder
+    sequence?: SortOrder
+    qty?: SortOrder
+    item?: SortOrder
+    description?: SortOrder
+    unitPrice?: SortOrder
+  }
+
+  export type ServicesInvoiceLineAvgOrderByAggregateInput = {
+    sequence?: SortOrder
+    qty?: SortOrder
+    unitPrice?: SortOrder
+  }
+
+  export type ServicesInvoiceLineMaxOrderByAggregateInput = {
+    id?: SortOrder
+    invoiceId?: SortOrder
+    sequence?: SortOrder
+    qty?: SortOrder
+    item?: SortOrder
+    description?: SortOrder
+    unitPrice?: SortOrder
+  }
+
+  export type ServicesInvoiceLineMinOrderByAggregateInput = {
+    id?: SortOrder
+    invoiceId?: SortOrder
+    sequence?: SortOrder
+    qty?: SortOrder
+    item?: SortOrder
+    description?: SortOrder
+    unitPrice?: SortOrder
+  }
+
+  export type ServicesInvoiceLineSumOrderByAggregateInput = {
+    sequence?: SortOrder
+    qty?: SortOrder
+    unitPrice?: SortOrder
+  }
+
+  export type CommunicationLogCountOrderByAggregateInput = {
+    id?: SortOrder
+    channel?: SortOrder
+    direction?: SortOrder
+    aboutKind?: SortOrder
+    partyUserId?: SortOrder
+    supplierId?: SortOrder
+    partyName?: SortOrder
+    partyPhone?: SortOrder
+    subject?: SortOrder
+    body?: SortOrder
+    occurredAt?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type CommunicationLogMaxOrderByAggregateInput = {
+    id?: SortOrder
+    channel?: SortOrder
+    direction?: SortOrder
+    aboutKind?: SortOrder
+    partyUserId?: SortOrder
+    supplierId?: SortOrder
+    partyName?: SortOrder
+    partyPhone?: SortOrder
+    subject?: SortOrder
+    body?: SortOrder
+    occurredAt?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type CommunicationLogMinOrderByAggregateInput = {
+    id?: SortOrder
+    channel?: SortOrder
+    direction?: SortOrder
+    aboutKind?: SortOrder
+    partyUserId?: SortOrder
+    supplierId?: SortOrder
+    partyName?: SortOrder
+    partyPhone?: SortOrder
+    subject?: SortOrder
+    body?: SortOrder
+    occurredAt?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
   export type PropertyTypeCreatelocationOptionsInput = {
     set: string[]
   }
@@ -65402,6 +72014,13 @@ export namespace Prisma {
     connect?: BuildingServiceContractWhereUniqueInput | BuildingServiceContractWhereUniqueInput[]
   }
 
+  export type ServicesInvoiceCreateNestedManyWithoutPropertyInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutPropertyInput, ServicesInvoiceUncheckedCreateWithoutPropertyInput> | ServicesInvoiceCreateWithoutPropertyInput[] | ServicesInvoiceUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutPropertyInput | ServicesInvoiceCreateOrConnectWithoutPropertyInput[]
+    createMany?: ServicesInvoiceCreateManyPropertyInputEnvelope
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+  }
+
   export type UnitUncheckedCreateNestedManyWithoutPropertyInput = {
     create?: XOR<UnitCreateWithoutPropertyInput, UnitUncheckedCreateWithoutPropertyInput> | UnitCreateWithoutPropertyInput[] | UnitUncheckedCreateWithoutPropertyInput[]
     connectOrCreate?: UnitCreateOrConnectWithoutPropertyInput | UnitCreateOrConnectWithoutPropertyInput[]
@@ -65449,6 +72068,13 @@ export namespace Prisma {
     connectOrCreate?: BuildingServiceContractCreateOrConnectWithoutPropertyInput | BuildingServiceContractCreateOrConnectWithoutPropertyInput[]
     createMany?: BuildingServiceContractCreateManyPropertyInputEnvelope
     connect?: BuildingServiceContractWhereUniqueInput | BuildingServiceContractWhereUniqueInput[]
+  }
+
+  export type ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutPropertyInput, ServicesInvoiceUncheckedCreateWithoutPropertyInput> | ServicesInvoiceCreateWithoutPropertyInput[] | ServicesInvoiceUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutPropertyInput | ServicesInvoiceCreateOrConnectWithoutPropertyInput[]
+    createMany?: ServicesInvoiceCreateManyPropertyInputEnvelope
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
   }
 
   export type NullableDecimalFieldUpdateOperationsInput = {
@@ -65569,6 +72195,20 @@ export namespace Prisma {
     deleteMany?: BuildingServiceContractScalarWhereInput | BuildingServiceContractScalarWhereInput[]
   }
 
+  export type ServicesInvoiceUpdateManyWithoutPropertyNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutPropertyInput, ServicesInvoiceUncheckedCreateWithoutPropertyInput> | ServicesInvoiceCreateWithoutPropertyInput[] | ServicesInvoiceUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutPropertyInput | ServicesInvoiceCreateOrConnectWithoutPropertyInput[]
+    upsert?: ServicesInvoiceUpsertWithWhereUniqueWithoutPropertyInput | ServicesInvoiceUpsertWithWhereUniqueWithoutPropertyInput[]
+    createMany?: ServicesInvoiceCreateManyPropertyInputEnvelope
+    set?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    disconnect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    delete?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    update?: ServicesInvoiceUpdateWithWhereUniqueWithoutPropertyInput | ServicesInvoiceUpdateWithWhereUniqueWithoutPropertyInput[]
+    updateMany?: ServicesInvoiceUpdateManyWithWhereWithoutPropertyInput | ServicesInvoiceUpdateManyWithWhereWithoutPropertyInput[]
+    deleteMany?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
+  }
+
   export type UnitUncheckedUpdateManyWithoutPropertyNestedInput = {
     create?: XOR<UnitCreateWithoutPropertyInput, UnitUncheckedCreateWithoutPropertyInput> | UnitCreateWithoutPropertyInput[] | UnitUncheckedCreateWithoutPropertyInput[]
     connectOrCreate?: UnitCreateOrConnectWithoutPropertyInput | UnitCreateOrConnectWithoutPropertyInput[]
@@ -65667,6 +72307,20 @@ export namespace Prisma {
     deleteMany?: BuildingServiceContractScalarWhereInput | BuildingServiceContractScalarWhereInput[]
   }
 
+  export type ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutPropertyInput, ServicesInvoiceUncheckedCreateWithoutPropertyInput> | ServicesInvoiceCreateWithoutPropertyInput[] | ServicesInvoiceUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutPropertyInput | ServicesInvoiceCreateOrConnectWithoutPropertyInput[]
+    upsert?: ServicesInvoiceUpsertWithWhereUniqueWithoutPropertyInput | ServicesInvoiceUpsertWithWhereUniqueWithoutPropertyInput[]
+    createMany?: ServicesInvoiceCreateManyPropertyInputEnvelope
+    set?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    disconnect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    delete?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    update?: ServicesInvoiceUpdateWithWhereUniqueWithoutPropertyInput | ServicesInvoiceUpdateWithWhereUniqueWithoutPropertyInput[]
+    updateMany?: ServicesInvoiceUpdateManyWithWhereWithoutPropertyInput | ServicesInvoiceUpdateManyWithWhereWithoutPropertyInput[]
+    deleteMany?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
+  }
+
   export type PropertyCreateNestedOneWithoutUnitsInput = {
     create?: XOR<PropertyCreateWithoutUnitsInput, PropertyUncheckedCreateWithoutUnitsInput>
     connectOrCreate?: PropertyCreateOrConnectWithoutUnitsInput
@@ -65762,6 +72416,13 @@ export namespace Prisma {
     connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
   }
 
+  export type ServicesInvoiceCreateNestedManyWithoutUnitInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutUnitInput, ServicesInvoiceUncheckedCreateWithoutUnitInput> | ServicesInvoiceCreateWithoutUnitInput[] | ServicesInvoiceUncheckedCreateWithoutUnitInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutUnitInput | ServicesInvoiceCreateOrConnectWithoutUnitInput[]
+    createMany?: ServicesInvoiceCreateManyUnitInputEnvelope
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+  }
+
   export type MaintenanceRequestUncheckedCreateNestedManyWithoutUnitInput = {
     create?: XOR<MaintenanceRequestCreateWithoutUnitInput, MaintenanceRequestUncheckedCreateWithoutUnitInput> | MaintenanceRequestCreateWithoutUnitInput[] | MaintenanceRequestUncheckedCreateWithoutUnitInput[]
     connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutUnitInput | MaintenanceRequestCreateOrConnectWithoutUnitInput[]
@@ -65837,6 +72498,13 @@ export namespace Prisma {
     connectOrCreate?: OwnershipTransferCreateOrConnectWithoutUnitInput | OwnershipTransferCreateOrConnectWithoutUnitInput[]
     createMany?: OwnershipTransferCreateManyUnitInputEnvelope
     connect?: OwnershipTransferWhereUniqueInput | OwnershipTransferWhereUniqueInput[]
+  }
+
+  export type ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutUnitInput, ServicesInvoiceUncheckedCreateWithoutUnitInput> | ServicesInvoiceCreateWithoutUnitInput[] | ServicesInvoiceUncheckedCreateWithoutUnitInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutUnitInput | ServicesInvoiceCreateOrConnectWithoutUnitInput[]
+    createMany?: ServicesInvoiceCreateManyUnitInputEnvelope
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
   }
 
   export type NullableIntFieldUpdateOperationsInput = {
@@ -66037,6 +72705,20 @@ export namespace Prisma {
     deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
   }
 
+  export type ServicesInvoiceUpdateManyWithoutUnitNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutUnitInput, ServicesInvoiceUncheckedCreateWithoutUnitInput> | ServicesInvoiceCreateWithoutUnitInput[] | ServicesInvoiceUncheckedCreateWithoutUnitInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutUnitInput | ServicesInvoiceCreateOrConnectWithoutUnitInput[]
+    upsert?: ServicesInvoiceUpsertWithWhereUniqueWithoutUnitInput | ServicesInvoiceUpsertWithWhereUniqueWithoutUnitInput[]
+    createMany?: ServicesInvoiceCreateManyUnitInputEnvelope
+    set?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    disconnect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    delete?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    update?: ServicesInvoiceUpdateWithWhereUniqueWithoutUnitInput | ServicesInvoiceUpdateWithWhereUniqueWithoutUnitInput[]
+    updateMany?: ServicesInvoiceUpdateManyWithWhereWithoutUnitInput | ServicesInvoiceUpdateManyWithWhereWithoutUnitInput[]
+    deleteMany?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
+  }
+
   export type MaintenanceRequestUncheckedUpdateManyWithoutUnitNestedInput = {
     create?: XOR<MaintenanceRequestCreateWithoutUnitInput, MaintenanceRequestUncheckedCreateWithoutUnitInput> | MaintenanceRequestCreateWithoutUnitInput[] | MaintenanceRequestUncheckedCreateWithoutUnitInput[]
     connectOrCreate?: MaintenanceRequestCreateOrConnectWithoutUnitInput | MaintenanceRequestCreateOrConnectWithoutUnitInput[]
@@ -66189,6 +72871,20 @@ export namespace Prisma {
     update?: OwnershipTransferUpdateWithWhereUniqueWithoutUnitInput | OwnershipTransferUpdateWithWhereUniqueWithoutUnitInput[]
     updateMany?: OwnershipTransferUpdateManyWithWhereWithoutUnitInput | OwnershipTransferUpdateManyWithWhereWithoutUnitInput[]
     deleteMany?: OwnershipTransferScalarWhereInput | OwnershipTransferScalarWhereInput[]
+  }
+
+  export type ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutUnitInput, ServicesInvoiceUncheckedCreateWithoutUnitInput> | ServicesInvoiceCreateWithoutUnitInput[] | ServicesInvoiceUncheckedCreateWithoutUnitInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutUnitInput | ServicesInvoiceCreateOrConnectWithoutUnitInput[]
+    upsert?: ServicesInvoiceUpsertWithWhereUniqueWithoutUnitInput | ServicesInvoiceUpsertWithWhereUniqueWithoutUnitInput[]
+    createMany?: ServicesInvoiceCreateManyUnitInputEnvelope
+    set?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    disconnect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    delete?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    update?: ServicesInvoiceUpdateWithWhereUniqueWithoutUnitInput | ServicesInvoiceUpdateWithWhereUniqueWithoutUnitInput[]
+    updateMany?: ServicesInvoiceUpdateManyWithWhereWithoutUnitInput | ServicesInvoiceUpdateManyWithWhereWithoutUnitInput[]
+    deleteMany?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
   }
 
   export type UnitCreateNestedOneWithoutPermissionChangesInput = {
@@ -66525,6 +73221,34 @@ export namespace Prisma {
     connect?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
   }
 
+  export type ServicesInvoiceCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutCreatedByInput, ServicesInvoiceUncheckedCreateWithoutCreatedByInput> | ServicesInvoiceCreateWithoutCreatedByInput[] | ServicesInvoiceUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutCreatedByInput | ServicesInvoiceCreateOrConnectWithoutCreatedByInput[]
+    createMany?: ServicesInvoiceCreateManyCreatedByInputEnvelope
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+  }
+
+  export type CommunicationLogCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<CommunicationLogCreateWithoutCreatedByInput, CommunicationLogUncheckedCreateWithoutCreatedByInput> | CommunicationLogCreateWithoutCreatedByInput[] | CommunicationLogUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutCreatedByInput | CommunicationLogCreateOrConnectWithoutCreatedByInput[]
+    createMany?: CommunicationLogCreateManyCreatedByInputEnvelope
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+  }
+
+  export type CommunicationLogCreateNestedManyWithoutPartyUserInput = {
+    create?: XOR<CommunicationLogCreateWithoutPartyUserInput, CommunicationLogUncheckedCreateWithoutPartyUserInput> | CommunicationLogCreateWithoutPartyUserInput[] | CommunicationLogUncheckedCreateWithoutPartyUserInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutPartyUserInput | CommunicationLogCreateOrConnectWithoutPartyUserInput[]
+    createMany?: CommunicationLogCreateManyPartyUserInputEnvelope
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+  }
+
+  export type AdminModuleGrantCreateNestedManyWithoutUserInput = {
+    create?: XOR<AdminModuleGrantCreateWithoutUserInput, AdminModuleGrantUncheckedCreateWithoutUserInput> | AdminModuleGrantCreateWithoutUserInput[] | AdminModuleGrantUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AdminModuleGrantCreateOrConnectWithoutUserInput | AdminModuleGrantCreateOrConnectWithoutUserInput[]
+    createMany?: AdminModuleGrantCreateManyUserInputEnvelope
+    connect?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+  }
+
   export type UnitUncheckedCreateNestedOneWithoutTenantInput = {
     create?: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenantInput
@@ -66767,6 +73491,34 @@ export namespace Prisma {
     connectOrCreate?: WorkerFamilyMemberCreateOrConnectWithoutWorkerInput | WorkerFamilyMemberCreateOrConnectWithoutWorkerInput[]
     createMany?: WorkerFamilyMemberCreateManyWorkerInputEnvelope
     connect?: WorkerFamilyMemberWhereUniqueInput | WorkerFamilyMemberWhereUniqueInput[]
+  }
+
+  export type ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutCreatedByInput, ServicesInvoiceUncheckedCreateWithoutCreatedByInput> | ServicesInvoiceCreateWithoutCreatedByInput[] | ServicesInvoiceUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutCreatedByInput | ServicesInvoiceCreateOrConnectWithoutCreatedByInput[]
+    createMany?: ServicesInvoiceCreateManyCreatedByInputEnvelope
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+  }
+
+  export type CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<CommunicationLogCreateWithoutCreatedByInput, CommunicationLogUncheckedCreateWithoutCreatedByInput> | CommunicationLogCreateWithoutCreatedByInput[] | CommunicationLogUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutCreatedByInput | CommunicationLogCreateOrConnectWithoutCreatedByInput[]
+    createMany?: CommunicationLogCreateManyCreatedByInputEnvelope
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+  }
+
+  export type CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput = {
+    create?: XOR<CommunicationLogCreateWithoutPartyUserInput, CommunicationLogUncheckedCreateWithoutPartyUserInput> | CommunicationLogCreateWithoutPartyUserInput[] | CommunicationLogUncheckedCreateWithoutPartyUserInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutPartyUserInput | CommunicationLogCreateOrConnectWithoutPartyUserInput[]
+    createMany?: CommunicationLogCreateManyPartyUserInputEnvelope
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+  }
+
+  export type AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<AdminModuleGrantCreateWithoutUserInput, AdminModuleGrantUncheckedCreateWithoutUserInput> | AdminModuleGrantCreateWithoutUserInput[] | AdminModuleGrantUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AdminModuleGrantCreateOrConnectWithoutUserInput | AdminModuleGrantCreateOrConnectWithoutUserInput[]
+    createMany?: AdminModuleGrantCreateManyUserInputEnvelope
+    connect?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
   }
 
   export type EnumUserTypeFieldUpdateOperationsInput = {
@@ -67263,6 +74015,62 @@ export namespace Prisma {
     deleteMany?: WorkerFamilyMemberScalarWhereInput | WorkerFamilyMemberScalarWhereInput[]
   }
 
+  export type ServicesInvoiceUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutCreatedByInput, ServicesInvoiceUncheckedCreateWithoutCreatedByInput> | ServicesInvoiceCreateWithoutCreatedByInput[] | ServicesInvoiceUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutCreatedByInput | ServicesInvoiceCreateOrConnectWithoutCreatedByInput[]
+    upsert?: ServicesInvoiceUpsertWithWhereUniqueWithoutCreatedByInput | ServicesInvoiceUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: ServicesInvoiceCreateManyCreatedByInputEnvelope
+    set?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    disconnect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    delete?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    update?: ServicesInvoiceUpdateWithWhereUniqueWithoutCreatedByInput | ServicesInvoiceUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: ServicesInvoiceUpdateManyWithWhereWithoutCreatedByInput | ServicesInvoiceUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
+  }
+
+  export type CommunicationLogUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<CommunicationLogCreateWithoutCreatedByInput, CommunicationLogUncheckedCreateWithoutCreatedByInput> | CommunicationLogCreateWithoutCreatedByInput[] | CommunicationLogUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutCreatedByInput | CommunicationLogCreateOrConnectWithoutCreatedByInput[]
+    upsert?: CommunicationLogUpsertWithWhereUniqueWithoutCreatedByInput | CommunicationLogUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: CommunicationLogCreateManyCreatedByInputEnvelope
+    set?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    disconnect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    delete?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    update?: CommunicationLogUpdateWithWhereUniqueWithoutCreatedByInput | CommunicationLogUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: CommunicationLogUpdateManyWithWhereWithoutCreatedByInput | CommunicationLogUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: CommunicationLogScalarWhereInput | CommunicationLogScalarWhereInput[]
+  }
+
+  export type CommunicationLogUpdateManyWithoutPartyUserNestedInput = {
+    create?: XOR<CommunicationLogCreateWithoutPartyUserInput, CommunicationLogUncheckedCreateWithoutPartyUserInput> | CommunicationLogCreateWithoutPartyUserInput[] | CommunicationLogUncheckedCreateWithoutPartyUserInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutPartyUserInput | CommunicationLogCreateOrConnectWithoutPartyUserInput[]
+    upsert?: CommunicationLogUpsertWithWhereUniqueWithoutPartyUserInput | CommunicationLogUpsertWithWhereUniqueWithoutPartyUserInput[]
+    createMany?: CommunicationLogCreateManyPartyUserInputEnvelope
+    set?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    disconnect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    delete?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    update?: CommunicationLogUpdateWithWhereUniqueWithoutPartyUserInput | CommunicationLogUpdateWithWhereUniqueWithoutPartyUserInput[]
+    updateMany?: CommunicationLogUpdateManyWithWhereWithoutPartyUserInput | CommunicationLogUpdateManyWithWhereWithoutPartyUserInput[]
+    deleteMany?: CommunicationLogScalarWhereInput | CommunicationLogScalarWhereInput[]
+  }
+
+  export type AdminModuleGrantUpdateManyWithoutUserNestedInput = {
+    create?: XOR<AdminModuleGrantCreateWithoutUserInput, AdminModuleGrantUncheckedCreateWithoutUserInput> | AdminModuleGrantCreateWithoutUserInput[] | AdminModuleGrantUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AdminModuleGrantCreateOrConnectWithoutUserInput | AdminModuleGrantCreateOrConnectWithoutUserInput[]
+    upsert?: AdminModuleGrantUpsertWithWhereUniqueWithoutUserInput | AdminModuleGrantUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: AdminModuleGrantCreateManyUserInputEnvelope
+    set?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+    disconnect?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+    delete?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+    connect?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+    update?: AdminModuleGrantUpdateWithWhereUniqueWithoutUserInput | AdminModuleGrantUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: AdminModuleGrantUpdateManyWithWhereWithoutUserInput | AdminModuleGrantUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: AdminModuleGrantScalarWhereInput | AdminModuleGrantScalarWhereInput[]
+  }
+
   export type UnitUncheckedUpdateOneWithoutTenantNestedInput = {
     create?: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
     connectOrCreate?: UnitCreateOrConnectWithoutTenantInput
@@ -67749,6 +74557,80 @@ export namespace Prisma {
     deleteMany?: WorkerFamilyMemberScalarWhereInput | WorkerFamilyMemberScalarWhereInput[]
   }
 
+  export type ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutCreatedByInput, ServicesInvoiceUncheckedCreateWithoutCreatedByInput> | ServicesInvoiceCreateWithoutCreatedByInput[] | ServicesInvoiceUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutCreatedByInput | ServicesInvoiceCreateOrConnectWithoutCreatedByInput[]
+    upsert?: ServicesInvoiceUpsertWithWhereUniqueWithoutCreatedByInput | ServicesInvoiceUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: ServicesInvoiceCreateManyCreatedByInputEnvelope
+    set?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    disconnect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    delete?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    update?: ServicesInvoiceUpdateWithWhereUniqueWithoutCreatedByInput | ServicesInvoiceUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: ServicesInvoiceUpdateManyWithWhereWithoutCreatedByInput | ServicesInvoiceUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
+  }
+
+  export type CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<CommunicationLogCreateWithoutCreatedByInput, CommunicationLogUncheckedCreateWithoutCreatedByInput> | CommunicationLogCreateWithoutCreatedByInput[] | CommunicationLogUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutCreatedByInput | CommunicationLogCreateOrConnectWithoutCreatedByInput[]
+    upsert?: CommunicationLogUpsertWithWhereUniqueWithoutCreatedByInput | CommunicationLogUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: CommunicationLogCreateManyCreatedByInputEnvelope
+    set?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    disconnect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    delete?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    update?: CommunicationLogUpdateWithWhereUniqueWithoutCreatedByInput | CommunicationLogUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: CommunicationLogUpdateManyWithWhereWithoutCreatedByInput | CommunicationLogUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: CommunicationLogScalarWhereInput | CommunicationLogScalarWhereInput[]
+  }
+
+  export type CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput = {
+    create?: XOR<CommunicationLogCreateWithoutPartyUserInput, CommunicationLogUncheckedCreateWithoutPartyUserInput> | CommunicationLogCreateWithoutPartyUserInput[] | CommunicationLogUncheckedCreateWithoutPartyUserInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutPartyUserInput | CommunicationLogCreateOrConnectWithoutPartyUserInput[]
+    upsert?: CommunicationLogUpsertWithWhereUniqueWithoutPartyUserInput | CommunicationLogUpsertWithWhereUniqueWithoutPartyUserInput[]
+    createMany?: CommunicationLogCreateManyPartyUserInputEnvelope
+    set?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    disconnect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    delete?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    update?: CommunicationLogUpdateWithWhereUniqueWithoutPartyUserInput | CommunicationLogUpdateWithWhereUniqueWithoutPartyUserInput[]
+    updateMany?: CommunicationLogUpdateManyWithWhereWithoutPartyUserInput | CommunicationLogUpdateManyWithWhereWithoutPartyUserInput[]
+    deleteMany?: CommunicationLogScalarWhereInput | CommunicationLogScalarWhereInput[]
+  }
+
+  export type AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<AdminModuleGrantCreateWithoutUserInput, AdminModuleGrantUncheckedCreateWithoutUserInput> | AdminModuleGrantCreateWithoutUserInput[] | AdminModuleGrantUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AdminModuleGrantCreateOrConnectWithoutUserInput | AdminModuleGrantCreateOrConnectWithoutUserInput[]
+    upsert?: AdminModuleGrantUpsertWithWhereUniqueWithoutUserInput | AdminModuleGrantUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: AdminModuleGrantCreateManyUserInputEnvelope
+    set?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+    disconnect?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+    delete?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+    connect?: AdminModuleGrantWhereUniqueInput | AdminModuleGrantWhereUniqueInput[]
+    update?: AdminModuleGrantUpdateWithWhereUniqueWithoutUserInput | AdminModuleGrantUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: AdminModuleGrantUpdateManyWithWhereWithoutUserInput | AdminModuleGrantUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: AdminModuleGrantScalarWhereInput | AdminModuleGrantScalarWhereInput[]
+  }
+
+  export type UserCreateNestedOneWithoutAdminModuleGrantsInput = {
+    create?: XOR<UserCreateWithoutAdminModuleGrantsInput, UserUncheckedCreateWithoutAdminModuleGrantsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAdminModuleGrantsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumAdminModuleFieldUpdateOperationsInput = {
+    set?: $Enums.AdminModule
+  }
+
+  export type UserUpdateOneRequiredWithoutAdminModuleGrantsNestedInput = {
+    create?: XOR<UserCreateWithoutAdminModuleGrantsInput, UserUncheckedCreateWithoutAdminModuleGrantsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAdminModuleGrantsInput
+    upsert?: UserUpsertWithoutAdminModuleGrantsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAdminModuleGrantsInput, UserUpdateWithoutAdminModuleGrantsInput>, UserUncheckedUpdateWithoutAdminModuleGrantsInput>
+  }
+
   export type UserCreateNestedOneWithoutFamilyMembersInput = {
     create?: XOR<UserCreateWithoutFamilyMembersInput, UserUncheckedCreateWithoutFamilyMembersInput>
     connectOrCreate?: UserCreateOrConnectWithoutFamilyMembersInput
@@ -67793,6 +74675,13 @@ export namespace Prisma {
     connect?: EntityDocumentWhereUniqueInput | EntityDocumentWhereUniqueInput[]
   }
 
+  export type ServicesInvoiceCreateNestedManyWithoutTenancyInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutTenancyInput, ServicesInvoiceUncheckedCreateWithoutTenancyInput> | ServicesInvoiceCreateWithoutTenancyInput[] | ServicesInvoiceUncheckedCreateWithoutTenancyInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutTenancyInput | ServicesInvoiceCreateOrConnectWithoutTenancyInput[]
+    createMany?: ServicesInvoiceCreateManyTenancyInputEnvelope
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+  }
+
   export type ChargeUncheckedCreateNestedManyWithoutTenancyInput = {
     create?: XOR<ChargeCreateWithoutTenancyInput, ChargeUncheckedCreateWithoutTenancyInput> | ChargeCreateWithoutTenancyInput[] | ChargeUncheckedCreateWithoutTenancyInput[]
     connectOrCreate?: ChargeCreateOrConnectWithoutTenancyInput | ChargeCreateOrConnectWithoutTenancyInput[]
@@ -67805,6 +74694,13 @@ export namespace Prisma {
     connectOrCreate?: EntityDocumentCreateOrConnectWithoutTenancyInput | EntityDocumentCreateOrConnectWithoutTenancyInput[]
     createMany?: EntityDocumentCreateManyTenancyInputEnvelope
     connect?: EntityDocumentWhereUniqueInput | EntityDocumentWhereUniqueInput[]
+  }
+
+  export type ServicesInvoiceUncheckedCreateNestedManyWithoutTenancyInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutTenancyInput, ServicesInvoiceUncheckedCreateWithoutTenancyInput> | ServicesInvoiceCreateWithoutTenancyInput[] | ServicesInvoiceUncheckedCreateWithoutTenancyInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutTenancyInput | ServicesInvoiceCreateOrConnectWithoutTenancyInput[]
+    createMany?: ServicesInvoiceCreateManyTenancyInputEnvelope
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
   }
 
   export type IntFieldUpdateOperationsInput = {
@@ -67863,6 +74759,20 @@ export namespace Prisma {
     deleteMany?: EntityDocumentScalarWhereInput | EntityDocumentScalarWhereInput[]
   }
 
+  export type ServicesInvoiceUpdateManyWithoutTenancyNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutTenancyInput, ServicesInvoiceUncheckedCreateWithoutTenancyInput> | ServicesInvoiceCreateWithoutTenancyInput[] | ServicesInvoiceUncheckedCreateWithoutTenancyInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutTenancyInput | ServicesInvoiceCreateOrConnectWithoutTenancyInput[]
+    upsert?: ServicesInvoiceUpsertWithWhereUniqueWithoutTenancyInput | ServicesInvoiceUpsertWithWhereUniqueWithoutTenancyInput[]
+    createMany?: ServicesInvoiceCreateManyTenancyInputEnvelope
+    set?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    disconnect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    delete?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    update?: ServicesInvoiceUpdateWithWhereUniqueWithoutTenancyInput | ServicesInvoiceUpdateWithWhereUniqueWithoutTenancyInput[]
+    updateMany?: ServicesInvoiceUpdateManyWithWhereWithoutTenancyInput | ServicesInvoiceUpdateManyWithWhereWithoutTenancyInput[]
+    deleteMany?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
+  }
+
   export type ChargeUncheckedUpdateManyWithoutTenancyNestedInput = {
     create?: XOR<ChargeCreateWithoutTenancyInput, ChargeUncheckedCreateWithoutTenancyInput> | ChargeCreateWithoutTenancyInput[] | ChargeUncheckedCreateWithoutTenancyInput[]
     connectOrCreate?: ChargeCreateOrConnectWithoutTenancyInput | ChargeCreateOrConnectWithoutTenancyInput[]
@@ -67889,6 +74799,20 @@ export namespace Prisma {
     update?: EntityDocumentUpdateWithWhereUniqueWithoutTenancyInput | EntityDocumentUpdateWithWhereUniqueWithoutTenancyInput[]
     updateMany?: EntityDocumentUpdateManyWithWhereWithoutTenancyInput | EntityDocumentUpdateManyWithWhereWithoutTenancyInput[]
     deleteMany?: EntityDocumentScalarWhereInput | EntityDocumentScalarWhereInput[]
+  }
+
+  export type ServicesInvoiceUncheckedUpdateManyWithoutTenancyNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutTenancyInput, ServicesInvoiceUncheckedCreateWithoutTenancyInput> | ServicesInvoiceCreateWithoutTenancyInput[] | ServicesInvoiceUncheckedCreateWithoutTenancyInput[]
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutTenancyInput | ServicesInvoiceCreateOrConnectWithoutTenancyInput[]
+    upsert?: ServicesInvoiceUpsertWithWhereUniqueWithoutTenancyInput | ServicesInvoiceUpsertWithWhereUniqueWithoutTenancyInput[]
+    createMany?: ServicesInvoiceCreateManyTenancyInputEnvelope
+    set?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    disconnect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    delete?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    connect?: ServicesInvoiceWhereUniqueInput | ServicesInvoiceWhereUniqueInput[]
+    update?: ServicesInvoiceUpdateWithWhereUniqueWithoutTenancyInput | ServicesInvoiceUpdateWithWhereUniqueWithoutTenancyInput[]
+    updateMany?: ServicesInvoiceUpdateManyWithWhereWithoutTenancyInput | ServicesInvoiceUpdateManyWithWhereWithoutTenancyInput[]
+    deleteMany?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
   }
 
   export type PropertyCreateNestedOneWithoutDocumentsInput = {
@@ -69423,6 +76347,13 @@ export namespace Prisma {
     connect?: BuildingServiceContractWhereUniqueInput | BuildingServiceContractWhereUniqueInput[]
   }
 
+  export type CommunicationLogCreateNestedManyWithoutSupplierInput = {
+    create?: XOR<CommunicationLogCreateWithoutSupplierInput, CommunicationLogUncheckedCreateWithoutSupplierInput> | CommunicationLogCreateWithoutSupplierInput[] | CommunicationLogUncheckedCreateWithoutSupplierInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutSupplierInput | CommunicationLogCreateOrConnectWithoutSupplierInput[]
+    createMany?: CommunicationLogCreateManySupplierInputEnvelope
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+  }
+
   export type SupplierCategoryUncheckedCreateNestedManyWithoutSupplierInput = {
     create?: XOR<SupplierCategoryCreateWithoutSupplierInput, SupplierCategoryUncheckedCreateWithoutSupplierInput> | SupplierCategoryCreateWithoutSupplierInput[] | SupplierCategoryUncheckedCreateWithoutSupplierInput[]
     connectOrCreate?: SupplierCategoryCreateOrConnectWithoutSupplierInput | SupplierCategoryCreateOrConnectWithoutSupplierInput[]
@@ -69449,6 +76380,13 @@ export namespace Prisma {
     connectOrCreate?: BuildingServiceContractCreateOrConnectWithoutSupplierInput | BuildingServiceContractCreateOrConnectWithoutSupplierInput[]
     createMany?: BuildingServiceContractCreateManySupplierInputEnvelope
     connect?: BuildingServiceContractWhereUniqueInput | BuildingServiceContractWhereUniqueInput[]
+  }
+
+  export type CommunicationLogUncheckedCreateNestedManyWithoutSupplierInput = {
+    create?: XOR<CommunicationLogCreateWithoutSupplierInput, CommunicationLogUncheckedCreateWithoutSupplierInput> | CommunicationLogCreateWithoutSupplierInput[] | CommunicationLogUncheckedCreateWithoutSupplierInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutSupplierInput | CommunicationLogCreateOrConnectWithoutSupplierInput[]
+    createMany?: CommunicationLogCreateManySupplierInputEnvelope
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
   }
 
   export type UserUpdateOneWithoutSuppliersCreatedNestedInput = {
@@ -69517,6 +76455,20 @@ export namespace Prisma {
     deleteMany?: BuildingServiceContractScalarWhereInput | BuildingServiceContractScalarWhereInput[]
   }
 
+  export type CommunicationLogUpdateManyWithoutSupplierNestedInput = {
+    create?: XOR<CommunicationLogCreateWithoutSupplierInput, CommunicationLogUncheckedCreateWithoutSupplierInput> | CommunicationLogCreateWithoutSupplierInput[] | CommunicationLogUncheckedCreateWithoutSupplierInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutSupplierInput | CommunicationLogCreateOrConnectWithoutSupplierInput[]
+    upsert?: CommunicationLogUpsertWithWhereUniqueWithoutSupplierInput | CommunicationLogUpsertWithWhereUniqueWithoutSupplierInput[]
+    createMany?: CommunicationLogCreateManySupplierInputEnvelope
+    set?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    disconnect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    delete?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    update?: CommunicationLogUpdateWithWhereUniqueWithoutSupplierInput | CommunicationLogUpdateWithWhereUniqueWithoutSupplierInput[]
+    updateMany?: CommunicationLogUpdateManyWithWhereWithoutSupplierInput | CommunicationLogUpdateManyWithWhereWithoutSupplierInput[]
+    deleteMany?: CommunicationLogScalarWhereInput | CommunicationLogScalarWhereInput[]
+  }
+
   export type SupplierCategoryUncheckedUpdateManyWithoutSupplierNestedInput = {
     create?: XOR<SupplierCategoryCreateWithoutSupplierInput, SupplierCategoryUncheckedCreateWithoutSupplierInput> | SupplierCategoryCreateWithoutSupplierInput[] | SupplierCategoryUncheckedCreateWithoutSupplierInput[]
     connectOrCreate?: SupplierCategoryCreateOrConnectWithoutSupplierInput | SupplierCategoryCreateOrConnectWithoutSupplierInput[]
@@ -69571,6 +76523,20 @@ export namespace Prisma {
     update?: BuildingServiceContractUpdateWithWhereUniqueWithoutSupplierInput | BuildingServiceContractUpdateWithWhereUniqueWithoutSupplierInput[]
     updateMany?: BuildingServiceContractUpdateManyWithWhereWithoutSupplierInput | BuildingServiceContractUpdateManyWithWhereWithoutSupplierInput[]
     deleteMany?: BuildingServiceContractScalarWhereInput | BuildingServiceContractScalarWhereInput[]
+  }
+
+  export type CommunicationLogUncheckedUpdateManyWithoutSupplierNestedInput = {
+    create?: XOR<CommunicationLogCreateWithoutSupplierInput, CommunicationLogUncheckedCreateWithoutSupplierInput> | CommunicationLogCreateWithoutSupplierInput[] | CommunicationLogUncheckedCreateWithoutSupplierInput[]
+    connectOrCreate?: CommunicationLogCreateOrConnectWithoutSupplierInput | CommunicationLogCreateOrConnectWithoutSupplierInput[]
+    upsert?: CommunicationLogUpsertWithWhereUniqueWithoutSupplierInput | CommunicationLogUpsertWithWhereUniqueWithoutSupplierInput[]
+    createMany?: CommunicationLogCreateManySupplierInputEnvelope
+    set?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    disconnect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    delete?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    connect?: CommunicationLogWhereUniqueInput | CommunicationLogWhereUniqueInput[]
+    update?: CommunicationLogUpdateWithWhereUniqueWithoutSupplierInput | CommunicationLogUpdateWithWhereUniqueWithoutSupplierInput[]
+    updateMany?: CommunicationLogUpdateManyWithWhereWithoutSupplierInput | CommunicationLogUpdateManyWithWhereWithoutSupplierInput[]
+    deleteMany?: CommunicationLogScalarWhereInput | CommunicationLogScalarWhereInput[]
   }
 
   export type PropertyCreateNestedOneWithoutServiceContractsInput = {
@@ -70181,6 +77147,168 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutRejectionLogsInput, UserUpdateWithoutRejectionLogsInput>, UserUncheckedUpdateWithoutRejectionLogsInput>
   }
 
+  export type PropertyCreateNestedOneWithoutServicesInvoicesInput = {
+    create?: XOR<PropertyCreateWithoutServicesInvoicesInput, PropertyUncheckedCreateWithoutServicesInvoicesInput>
+    connectOrCreate?: PropertyCreateOrConnectWithoutServicesInvoicesInput
+    connect?: PropertyWhereUniqueInput
+  }
+
+  export type UnitCreateNestedOneWithoutServicesInvoicesInput = {
+    create?: XOR<UnitCreateWithoutServicesInvoicesInput, UnitUncheckedCreateWithoutServicesInvoicesInput>
+    connectOrCreate?: UnitCreateOrConnectWithoutServicesInvoicesInput
+    connect?: UnitWhereUniqueInput
+  }
+
+  export type TenancyCreateNestedOneWithoutServicesInvoicesInput = {
+    create?: XOR<TenancyCreateWithoutServicesInvoicesInput, TenancyUncheckedCreateWithoutServicesInvoicesInput>
+    connectOrCreate?: TenancyCreateOrConnectWithoutServicesInvoicesInput
+    connect?: TenancyWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutServicesInvoicesCreatedInput = {
+    create?: XOR<UserCreateWithoutServicesInvoicesCreatedInput, UserUncheckedCreateWithoutServicesInvoicesCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutServicesInvoicesCreatedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type ServicesInvoiceLineCreateNestedManyWithoutInvoiceInput = {
+    create?: XOR<ServicesInvoiceLineCreateWithoutInvoiceInput, ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput> | ServicesInvoiceLineCreateWithoutInvoiceInput[] | ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput[]
+    connectOrCreate?: ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput | ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput[]
+    createMany?: ServicesInvoiceLineCreateManyInvoiceInputEnvelope
+    connect?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+  }
+
+  export type ServicesInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput = {
+    create?: XOR<ServicesInvoiceLineCreateWithoutInvoiceInput, ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput> | ServicesInvoiceLineCreateWithoutInvoiceInput[] | ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput[]
+    connectOrCreate?: ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput | ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput[]
+    createMany?: ServicesInvoiceLineCreateManyInvoiceInputEnvelope
+    connect?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+  }
+
+  export type PropertyUpdateOneRequiredWithoutServicesInvoicesNestedInput = {
+    create?: XOR<PropertyCreateWithoutServicesInvoicesInput, PropertyUncheckedCreateWithoutServicesInvoicesInput>
+    connectOrCreate?: PropertyCreateOrConnectWithoutServicesInvoicesInput
+    upsert?: PropertyUpsertWithoutServicesInvoicesInput
+    connect?: PropertyWhereUniqueInput
+    update?: XOR<XOR<PropertyUpdateToOneWithWhereWithoutServicesInvoicesInput, PropertyUpdateWithoutServicesInvoicesInput>, PropertyUncheckedUpdateWithoutServicesInvoicesInput>
+  }
+
+  export type UnitUpdateOneRequiredWithoutServicesInvoicesNestedInput = {
+    create?: XOR<UnitCreateWithoutServicesInvoicesInput, UnitUncheckedCreateWithoutServicesInvoicesInput>
+    connectOrCreate?: UnitCreateOrConnectWithoutServicesInvoicesInput
+    upsert?: UnitUpsertWithoutServicesInvoicesInput
+    connect?: UnitWhereUniqueInput
+    update?: XOR<XOR<UnitUpdateToOneWithWhereWithoutServicesInvoicesInput, UnitUpdateWithoutServicesInvoicesInput>, UnitUncheckedUpdateWithoutServicesInvoicesInput>
+  }
+
+  export type TenancyUpdateOneWithoutServicesInvoicesNestedInput = {
+    create?: XOR<TenancyCreateWithoutServicesInvoicesInput, TenancyUncheckedCreateWithoutServicesInvoicesInput>
+    connectOrCreate?: TenancyCreateOrConnectWithoutServicesInvoicesInput
+    upsert?: TenancyUpsertWithoutServicesInvoicesInput
+    disconnect?: TenancyWhereInput | boolean
+    delete?: TenancyWhereInput | boolean
+    connect?: TenancyWhereUniqueInput
+    update?: XOR<XOR<TenancyUpdateToOneWithWhereWithoutServicesInvoicesInput, TenancyUpdateWithoutServicesInvoicesInput>, TenancyUncheckedUpdateWithoutServicesInvoicesInput>
+  }
+
+  export type UserUpdateOneWithoutServicesInvoicesCreatedNestedInput = {
+    create?: XOR<UserCreateWithoutServicesInvoicesCreatedInput, UserUncheckedCreateWithoutServicesInvoicesCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutServicesInvoicesCreatedInput
+    upsert?: UserUpsertWithoutServicesInvoicesCreatedInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutServicesInvoicesCreatedInput, UserUpdateWithoutServicesInvoicesCreatedInput>, UserUncheckedUpdateWithoutServicesInvoicesCreatedInput>
+  }
+
+  export type ServicesInvoiceLineUpdateManyWithoutInvoiceNestedInput = {
+    create?: XOR<ServicesInvoiceLineCreateWithoutInvoiceInput, ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput> | ServicesInvoiceLineCreateWithoutInvoiceInput[] | ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput[]
+    connectOrCreate?: ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput | ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput[]
+    upsert?: ServicesInvoiceLineUpsertWithWhereUniqueWithoutInvoiceInput | ServicesInvoiceLineUpsertWithWhereUniqueWithoutInvoiceInput[]
+    createMany?: ServicesInvoiceLineCreateManyInvoiceInputEnvelope
+    set?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+    disconnect?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+    delete?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+    connect?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+    update?: ServicesInvoiceLineUpdateWithWhereUniqueWithoutInvoiceInput | ServicesInvoiceLineUpdateWithWhereUniqueWithoutInvoiceInput[]
+    updateMany?: ServicesInvoiceLineUpdateManyWithWhereWithoutInvoiceInput | ServicesInvoiceLineUpdateManyWithWhereWithoutInvoiceInput[]
+    deleteMany?: ServicesInvoiceLineScalarWhereInput | ServicesInvoiceLineScalarWhereInput[]
+  }
+
+  export type ServicesInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput = {
+    create?: XOR<ServicesInvoiceLineCreateWithoutInvoiceInput, ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput> | ServicesInvoiceLineCreateWithoutInvoiceInput[] | ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput[]
+    connectOrCreate?: ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput | ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput[]
+    upsert?: ServicesInvoiceLineUpsertWithWhereUniqueWithoutInvoiceInput | ServicesInvoiceLineUpsertWithWhereUniqueWithoutInvoiceInput[]
+    createMany?: ServicesInvoiceLineCreateManyInvoiceInputEnvelope
+    set?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+    disconnect?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+    delete?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+    connect?: ServicesInvoiceLineWhereUniqueInput | ServicesInvoiceLineWhereUniqueInput[]
+    update?: ServicesInvoiceLineUpdateWithWhereUniqueWithoutInvoiceInput | ServicesInvoiceLineUpdateWithWhereUniqueWithoutInvoiceInput[]
+    updateMany?: ServicesInvoiceLineUpdateManyWithWhereWithoutInvoiceInput | ServicesInvoiceLineUpdateManyWithWhereWithoutInvoiceInput[]
+    deleteMany?: ServicesInvoiceLineScalarWhereInput | ServicesInvoiceLineScalarWhereInput[]
+  }
+
+  export type ServicesInvoiceCreateNestedOneWithoutLinesInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutLinesInput, ServicesInvoiceUncheckedCreateWithoutLinesInput>
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutLinesInput
+    connect?: ServicesInvoiceWhereUniqueInput
+  }
+
+  export type ServicesInvoiceUpdateOneRequiredWithoutLinesNestedInput = {
+    create?: XOR<ServicesInvoiceCreateWithoutLinesInput, ServicesInvoiceUncheckedCreateWithoutLinesInput>
+    connectOrCreate?: ServicesInvoiceCreateOrConnectWithoutLinesInput
+    upsert?: ServicesInvoiceUpsertWithoutLinesInput
+    connect?: ServicesInvoiceWhereUniqueInput
+    update?: XOR<XOR<ServicesInvoiceUpdateToOneWithWhereWithoutLinesInput, ServicesInvoiceUpdateWithoutLinesInput>, ServicesInvoiceUncheckedUpdateWithoutLinesInput>
+  }
+
+  export type UserCreateNestedOneWithoutCommunicationsAsPartyInput = {
+    create?: XOR<UserCreateWithoutCommunicationsAsPartyInput, UserUncheckedCreateWithoutCommunicationsAsPartyInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCommunicationsAsPartyInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type SupplierCreateNestedOneWithoutCommunicationsInput = {
+    create?: XOR<SupplierCreateWithoutCommunicationsInput, SupplierUncheckedCreateWithoutCommunicationsInput>
+    connectOrCreate?: SupplierCreateOrConnectWithoutCommunicationsInput
+    connect?: SupplierWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutCommunicationsLoggedInput = {
+    create?: XOR<UserCreateWithoutCommunicationsLoggedInput, UserUncheckedCreateWithoutCommunicationsLoggedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCommunicationsLoggedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneWithoutCommunicationsAsPartyNestedInput = {
+    create?: XOR<UserCreateWithoutCommunicationsAsPartyInput, UserUncheckedCreateWithoutCommunicationsAsPartyInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCommunicationsAsPartyInput
+    upsert?: UserUpsertWithoutCommunicationsAsPartyInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCommunicationsAsPartyInput, UserUpdateWithoutCommunicationsAsPartyInput>, UserUncheckedUpdateWithoutCommunicationsAsPartyInput>
+  }
+
+  export type SupplierUpdateOneWithoutCommunicationsNestedInput = {
+    create?: XOR<SupplierCreateWithoutCommunicationsInput, SupplierUncheckedCreateWithoutCommunicationsInput>
+    connectOrCreate?: SupplierCreateOrConnectWithoutCommunicationsInput
+    upsert?: SupplierUpsertWithoutCommunicationsInput
+    disconnect?: SupplierWhereInput | boolean
+    delete?: SupplierWhereInput | boolean
+    connect?: SupplierWhereUniqueInput
+    update?: XOR<XOR<SupplierUpdateToOneWithWhereWithoutCommunicationsInput, SupplierUpdateWithoutCommunicationsInput>, SupplierUncheckedUpdateWithoutCommunicationsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutCommunicationsLoggedNestedInput = {
+    create?: XOR<UserCreateWithoutCommunicationsLoggedInput, UserUncheckedCreateWithoutCommunicationsLoggedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCommunicationsLoggedInput
+    upsert?: UserUpsertWithoutCommunicationsLoggedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCommunicationsLoggedInput, UserUpdateWithoutCommunicationsLoggedInput>, UserUncheckedUpdateWithoutCommunicationsLoggedInput>
+  }
+
   export type NestedUuidFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -70514,6 +77642,23 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedEnumAdminModuleFilter<$PrismaModel = never> = {
+    equals?: $Enums.AdminModule | EnumAdminModuleFieldRefInput<$PrismaModel>
+    in?: $Enums.AdminModule[] | ListEnumAdminModuleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AdminModule[] | ListEnumAdminModuleFieldRefInput<$PrismaModel>
+    not?: NestedEnumAdminModuleFilter<$PrismaModel> | $Enums.AdminModule
+  }
+
+  export type NestedEnumAdminModuleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AdminModule | EnumAdminModuleFieldRefInput<$PrismaModel>
+    in?: $Enums.AdminModule[] | ListEnumAdminModuleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AdminModule[] | ListEnumAdminModuleFieldRefInput<$PrismaModel>
+    not?: NestedEnumAdminModuleWithAggregatesFilter<$PrismaModel> | $Enums.AdminModule
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAdminModuleFilter<$PrismaModel>
+    _max?: NestedEnumAdminModuleFilter<$PrismaModel>
   }
 
   export type NestedEnumFamilyRelationshipFilter<$PrismaModel = never> = {
@@ -70853,6 +77998,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutPropertyTypeInput = {
@@ -70893,6 +78039,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutPropertyTypeInput = {
@@ -71031,6 +78178,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutPropertyInput = {
@@ -71063,6 +78211,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutPropertyInput = {
@@ -71334,6 +78483,50 @@ export namespace Prisma {
 
   export type BuildingServiceContractCreateManyPropertyInputEnvelope = {
     data: BuildingServiceContractCreateManyPropertyInput | BuildingServiceContractCreateManyPropertyInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ServicesInvoiceCreateWithoutPropertyInput = {
+    id?: string
+    invoiceNumber: number
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    unit: UnitCreateNestedOneWithoutServicesInvoicesInput
+    tenancy?: TenancyCreateNestedOneWithoutServicesInvoicesInput
+    createdBy?: UserCreateNestedOneWithoutServicesInvoicesCreatedInput
+    lines?: ServicesInvoiceLineCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceUncheckedCreateWithoutPropertyInput = {
+    id?: string
+    invoiceNumber: number
+    unitId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdById?: string | null
+    createdAt?: Date | string
+    lines?: ServicesInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceCreateOrConnectWithoutPropertyInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    create: XOR<ServicesInvoiceCreateWithoutPropertyInput, ServicesInvoiceUncheckedCreateWithoutPropertyInput>
+  }
+
+  export type ServicesInvoiceCreateManyPropertyInputEnvelope = {
+    data: ServicesInvoiceCreateManyPropertyInput | ServicesInvoiceCreateManyPropertyInput[]
     skipDuplicates?: boolean
   }
 
@@ -71640,6 +78833,42 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"BuildingServiceContract"> | Date | string
   }
 
+  export type ServicesInvoiceUpsertWithWhereUniqueWithoutPropertyInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    update: XOR<ServicesInvoiceUpdateWithoutPropertyInput, ServicesInvoiceUncheckedUpdateWithoutPropertyInput>
+    create: XOR<ServicesInvoiceCreateWithoutPropertyInput, ServicesInvoiceUncheckedCreateWithoutPropertyInput>
+  }
+
+  export type ServicesInvoiceUpdateWithWhereUniqueWithoutPropertyInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    data: XOR<ServicesInvoiceUpdateWithoutPropertyInput, ServicesInvoiceUncheckedUpdateWithoutPropertyInput>
+  }
+
+  export type ServicesInvoiceUpdateManyWithWhereWithoutPropertyInput = {
+    where: ServicesInvoiceScalarWhereInput
+    data: XOR<ServicesInvoiceUpdateManyMutationInput, ServicesInvoiceUncheckedUpdateManyWithoutPropertyInput>
+  }
+
+  export type ServicesInvoiceScalarWhereInput = {
+    AND?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
+    OR?: ServicesInvoiceScalarWhereInput[]
+    NOT?: ServicesInvoiceScalarWhereInput | ServicesInvoiceScalarWhereInput[]
+    id?: UuidFilter<"ServicesInvoice"> | string
+    invoiceNumber?: IntFilter<"ServicesInvoice"> | number
+    propertyId?: UuidFilter<"ServicesInvoice"> | string
+    unitId?: UuidFilter<"ServicesInvoice"> | string
+    tenancyId?: UuidNullableFilter<"ServicesInvoice"> | string | null
+    issueDate?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    periodStart?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    periodEnd?: DateTimeFilter<"ServicesInvoice"> | Date | string
+    billedName?: StringFilter<"ServicesInvoice"> | string
+    billedAddress?: StringFilter<"ServicesInvoice"> | string
+    status?: StringFilter<"ServicesInvoice"> | string
+    total?: DecimalFilter<"ServicesInvoice"> | Decimal | DecimalJsLike | number | string
+    createdById?: UuidNullableFilter<"ServicesInvoice"> | string | null
+    createdAt?: DateTimeFilter<"ServicesInvoice"> | Date | string
+  }
+
   export type PropertyCreateWithoutUnitsInput = {
     id?: string
     name: string
@@ -71678,6 +78907,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutUnitsInput = {
@@ -71718,6 +78948,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutUnitsInput = {
@@ -71796,6 +79027,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutOwnedUnitsInput = {
@@ -71869,6 +79104,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutOwnedUnitsInput = {
@@ -71947,6 +79186,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutUnitInput = {
@@ -72020,6 +79263,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutUnitInput = {
@@ -72122,6 +79369,7 @@ export namespace Prisma {
     tenant: UserCreateNestedOneWithoutTenanciesInput
     charges?: ChargeCreateNestedManyWithoutTenancyInput
     documents?: EntityDocumentCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyUncheckedCreateWithoutUnitInput = {
@@ -72149,6 +79397,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     charges?: ChargeUncheckedCreateNestedManyWithoutTenancyInput
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyCreateOrConnectWithoutUnitInput = {
@@ -72309,6 +79558,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
     fund: FundCreateNestedOneWithoutServiceChargeInvoicesInput
     billedOwner?: UserCreateNestedOneWithoutServiceChargeInvoicesBilledInput
@@ -72331,6 +79584,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
     lines?: ServiceChargeInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
@@ -72491,6 +79748,50 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type ServicesInvoiceCreateWithoutUnitInput = {
+    id?: string
+    invoiceNumber: number
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    property: PropertyCreateNestedOneWithoutServicesInvoicesInput
+    tenancy?: TenancyCreateNestedOneWithoutServicesInvoicesInput
+    createdBy?: UserCreateNestedOneWithoutServicesInvoicesCreatedInput
+    lines?: ServicesInvoiceLineCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceUncheckedCreateWithoutUnitInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdById?: string | null
+    createdAt?: Date | string
+    lines?: ServicesInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceCreateOrConnectWithoutUnitInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    create: XOR<ServicesInvoiceCreateWithoutUnitInput, ServicesInvoiceUncheckedCreateWithoutUnitInput>
+  }
+
+  export type ServicesInvoiceCreateManyUnitInputEnvelope = {
+    data: ServicesInvoiceCreateManyUnitInput | ServicesInvoiceCreateManyUnitInput[]
+    skipDuplicates?: boolean
+  }
+
   export type PropertyUpsertWithoutUnitsInput = {
     update: XOR<PropertyUpdateWithoutUnitsInput, PropertyUncheckedUpdateWithoutUnitsInput>
     create: XOR<PropertyCreateWithoutUnitsInput, PropertyUncheckedCreateWithoutUnitsInput>
@@ -72540,6 +79841,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutUnitsInput = {
@@ -72580,6 +79882,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type UserUpsertWithoutOwnedUnitsInput = {
@@ -72664,6 +79967,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOwnedUnitsInput = {
@@ -72737,6 +80044,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutUnitInput = {
@@ -72821,6 +80132,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutUnitInput = {
@@ -72894,6 +80209,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestUpsertWithWhereUniqueWithoutUnitInput = {
@@ -73097,6 +80416,10 @@ export namespace Prisma {
     amountPayable?: DecimalFilter<"ServiceChargeInvoice"> | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFilter<"ServiceChargeInvoice"> | Decimal | DecimalJsLike | number | string
     billedOwnerId?: UuidNullableFilter<"ServiceChargeInvoice"> | string | null
+    kind?: StringFilter<"ServiceChargeInvoice"> | string
+    status?: StringFilter<"ServiceChargeInvoice"> | string
+    notes?: StringNullableFilter<"ServiceChargeInvoice"> | string | null
+    sentAt?: DateTimeNullableFilter<"ServiceChargeInvoice"> | Date | string | null
     createdById?: UuidNullableFilter<"ServiceChargeInvoice"> | string | null
     createdAt?: DateTimeFilter<"ServiceChargeInvoice"> | Date | string
   }
@@ -73231,6 +80554,22 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"OwnershipTransfer"> | Date | string
   }
 
+  export type ServicesInvoiceUpsertWithWhereUniqueWithoutUnitInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    update: XOR<ServicesInvoiceUpdateWithoutUnitInput, ServicesInvoiceUncheckedUpdateWithoutUnitInput>
+    create: XOR<ServicesInvoiceCreateWithoutUnitInput, ServicesInvoiceUncheckedCreateWithoutUnitInput>
+  }
+
+  export type ServicesInvoiceUpdateWithWhereUniqueWithoutUnitInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    data: XOR<ServicesInvoiceUpdateWithoutUnitInput, ServicesInvoiceUncheckedUpdateWithoutUnitInput>
+  }
+
+  export type ServicesInvoiceUpdateManyWithWhereWithoutUnitInput = {
+    where: ServicesInvoiceScalarWhereInput
+    data: XOR<ServicesInvoiceUpdateManyMutationInput, ServicesInvoiceUncheckedUpdateManyWithoutUnitInput>
+  }
+
   export type UnitCreateWithoutPermissionChangesInput = {
     id?: string
     label: string
@@ -73261,6 +80600,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutPermissionChangesInput = {
@@ -73293,6 +80633,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutPermissionChangesInput = {
@@ -73371,6 +80712,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutUnitPermissionChangesInput = {
@@ -73444,6 +80789,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutUnitPermissionChangesInput = {
@@ -73492,6 +80841,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutPermissionChangesInput = {
@@ -73524,6 +80874,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UserUpsertWithoutUnitPermissionChangesInput = {
@@ -73608,6 +80959,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutUnitPermissionChangesInput = {
@@ -73681,6 +81036,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UnitCreateWithoutOwnershipTransfersInput = {
@@ -73713,6 +81072,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutOwnershipTransfersInput = {
@@ -73745,6 +81105,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutOwnershipTransfersInput = {
@@ -73823,6 +81184,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutOwnershipTransfersFromInput = {
@@ -73896,6 +81261,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutOwnershipTransfersFromInput = {
@@ -73974,6 +81343,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutOwnershipTransfersToInput = {
@@ -74047,6 +81420,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutOwnershipTransfersToInput = {
@@ -74125,6 +81502,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutOwnershipTransfersCreatedInput = {
@@ -74198,6 +81579,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutOwnershipTransfersCreatedInput = {
@@ -74246,6 +81631,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutOwnershipTransfersInput = {
@@ -74278,6 +81664,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UserUpsertWithoutOwnershipTransfersFromInput = {
@@ -74362,6 +81749,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOwnershipTransfersFromInput = {
@@ -74435,6 +81826,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutOwnershipTransfersToInput = {
@@ -74519,6 +81914,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOwnershipTransfersToInput = {
@@ -74592,6 +81991,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutOwnershipTransfersCreatedInput = {
@@ -74676,6 +82079,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOwnershipTransfersCreatedInput = {
@@ -74749,6 +82156,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UnitCreateWithoutTenantInput = {
@@ -74781,6 +82192,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutTenantInput = {
@@ -74813,6 +82225,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutTenantInput = {
@@ -75141,6 +82554,7 @@ export namespace Prisma {
     unit: UnitCreateNestedOneWithoutTenanciesInput
     charges?: ChargeCreateNestedManyWithoutTenancyInput
     documents?: EntityDocumentCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyUncheckedCreateWithoutTenantInput = {
@@ -75168,6 +82582,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     charges?: ChargeUncheckedCreateNestedManyWithoutTenancyInput
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyCreateOrConnectWithoutTenantInput = {
@@ -75672,6 +83087,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
     unit: UnitCreateNestedOneWithoutServiceChargeInvoicesInput
     fund: FundCreateNestedOneWithoutServiceChargeInvoicesInput
@@ -75695,6 +83114,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
     lines?: ServiceChargeInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutSourceInvoiceInput
@@ -75722,6 +83145,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
     unit: UnitCreateNestedOneWithoutServiceChargeInvoicesInput
     fund: FundCreateNestedOneWithoutServiceChargeInvoicesInput
@@ -75744,6 +83171,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
     lines?: ServiceChargeInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
@@ -75982,6 +83413,7 @@ export namespace Prisma {
     properties?: SupplierPropertyCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierUncheckedCreateWithoutCreatedByInput = {
@@ -76008,6 +83440,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUncheckedCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogUncheckedCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierCreateOrConnectWithoutCreatedByInput = {
@@ -76124,6 +83557,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutOwnerInput = {
@@ -76156,6 +83590,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutOwnerInput = {
@@ -76398,6 +83833,152 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type ServicesInvoiceCreateWithoutCreatedByInput = {
+    id?: string
+    invoiceNumber: number
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    property: PropertyCreateNestedOneWithoutServicesInvoicesInput
+    unit: UnitCreateNestedOneWithoutServicesInvoicesInput
+    tenancy?: TenancyCreateNestedOneWithoutServicesInvoicesInput
+    lines?: ServicesInvoiceLineCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    unitId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    lines?: ServicesInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceCreateOrConnectWithoutCreatedByInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    create: XOR<ServicesInvoiceCreateWithoutCreatedByInput, ServicesInvoiceUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type ServicesInvoiceCreateManyCreatedByInputEnvelope = {
+    data: ServicesInvoiceCreateManyCreatedByInput | ServicesInvoiceCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type CommunicationLogCreateWithoutCreatedByInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdAt?: Date | string
+    partyUser?: UserCreateNestedOneWithoutCommunicationsAsPartyInput
+    supplier?: SupplierCreateNestedOneWithoutCommunicationsInput
+  }
+
+  export type CommunicationLogUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyUserId?: string | null
+    supplierId?: string | null
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdAt?: Date | string
+  }
+
+  export type CommunicationLogCreateOrConnectWithoutCreatedByInput = {
+    where: CommunicationLogWhereUniqueInput
+    create: XOR<CommunicationLogCreateWithoutCreatedByInput, CommunicationLogUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type CommunicationLogCreateManyCreatedByInputEnvelope = {
+    data: CommunicationLogCreateManyCreatedByInput | CommunicationLogCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type CommunicationLogCreateWithoutPartyUserInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdAt?: Date | string
+    supplier?: SupplierCreateNestedOneWithoutCommunicationsInput
+    createdBy: UserCreateNestedOneWithoutCommunicationsLoggedInput
+  }
+
+  export type CommunicationLogUncheckedCreateWithoutPartyUserInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    supplierId?: string | null
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type CommunicationLogCreateOrConnectWithoutPartyUserInput = {
+    where: CommunicationLogWhereUniqueInput
+    create: XOR<CommunicationLogCreateWithoutPartyUserInput, CommunicationLogUncheckedCreateWithoutPartyUserInput>
+  }
+
+  export type CommunicationLogCreateManyPartyUserInputEnvelope = {
+    data: CommunicationLogCreateManyPartyUserInput | CommunicationLogCreateManyPartyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AdminModuleGrantCreateWithoutUserInput = {
+    id?: string
+    module: $Enums.AdminModule
+    createdAt?: Date | string
+  }
+
+  export type AdminModuleGrantUncheckedCreateWithoutUserInput = {
+    id?: string
+    module: $Enums.AdminModule
+    createdAt?: Date | string
+  }
+
+  export type AdminModuleGrantCreateOrConnectWithoutUserInput = {
+    where: AdminModuleGrantWhereUniqueInput
+    create: XOR<AdminModuleGrantCreateWithoutUserInput, AdminModuleGrantUncheckedCreateWithoutUserInput>
+  }
+
+  export type AdminModuleGrantCreateManyUserInputEnvelope = {
+    data: AdminModuleGrantCreateManyUserInput | AdminModuleGrantCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UnitUpsertWithoutTenantInput = {
     update: XOR<UnitUpdateWithoutTenantInput, UnitUncheckedUpdateWithoutTenantInput>
     create: XOR<UnitCreateWithoutTenantInput, UnitUncheckedCreateWithoutTenantInput>
@@ -76439,6 +84020,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutTenantInput = {
@@ -76471,6 +84053,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type MaintenanceRequestUpsertWithWhereUniqueWithoutUserInput = {
@@ -77195,6 +84778,423 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"WorkerFamilyMember"> | Date | string
   }
 
+  export type ServicesInvoiceUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    update: XOR<ServicesInvoiceUpdateWithoutCreatedByInput, ServicesInvoiceUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<ServicesInvoiceCreateWithoutCreatedByInput, ServicesInvoiceUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type ServicesInvoiceUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    data: XOR<ServicesInvoiceUpdateWithoutCreatedByInput, ServicesInvoiceUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type ServicesInvoiceUpdateManyWithWhereWithoutCreatedByInput = {
+    where: ServicesInvoiceScalarWhereInput
+    data: XOR<ServicesInvoiceUpdateManyMutationInput, ServicesInvoiceUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
+  export type CommunicationLogUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: CommunicationLogWhereUniqueInput
+    update: XOR<CommunicationLogUpdateWithoutCreatedByInput, CommunicationLogUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<CommunicationLogCreateWithoutCreatedByInput, CommunicationLogUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type CommunicationLogUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: CommunicationLogWhereUniqueInput
+    data: XOR<CommunicationLogUpdateWithoutCreatedByInput, CommunicationLogUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type CommunicationLogUpdateManyWithWhereWithoutCreatedByInput = {
+    where: CommunicationLogScalarWhereInput
+    data: XOR<CommunicationLogUpdateManyMutationInput, CommunicationLogUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
+  export type CommunicationLogScalarWhereInput = {
+    AND?: CommunicationLogScalarWhereInput | CommunicationLogScalarWhereInput[]
+    OR?: CommunicationLogScalarWhereInput[]
+    NOT?: CommunicationLogScalarWhereInput | CommunicationLogScalarWhereInput[]
+    id?: UuidFilter<"CommunicationLog"> | string
+    channel?: StringFilter<"CommunicationLog"> | string
+    direction?: StringFilter<"CommunicationLog"> | string
+    aboutKind?: StringFilter<"CommunicationLog"> | string
+    partyUserId?: UuidNullableFilter<"CommunicationLog"> | string | null
+    supplierId?: UuidNullableFilter<"CommunicationLog"> | string | null
+    partyName?: StringFilter<"CommunicationLog"> | string
+    partyPhone?: StringNullableFilter<"CommunicationLog"> | string | null
+    subject?: StringFilter<"CommunicationLog"> | string
+    body?: StringFilter<"CommunicationLog"> | string
+    occurredAt?: DateTimeFilter<"CommunicationLog"> | Date | string
+    createdById?: UuidFilter<"CommunicationLog"> | string
+    createdAt?: DateTimeFilter<"CommunicationLog"> | Date | string
+  }
+
+  export type CommunicationLogUpsertWithWhereUniqueWithoutPartyUserInput = {
+    where: CommunicationLogWhereUniqueInput
+    update: XOR<CommunicationLogUpdateWithoutPartyUserInput, CommunicationLogUncheckedUpdateWithoutPartyUserInput>
+    create: XOR<CommunicationLogCreateWithoutPartyUserInput, CommunicationLogUncheckedCreateWithoutPartyUserInput>
+  }
+
+  export type CommunicationLogUpdateWithWhereUniqueWithoutPartyUserInput = {
+    where: CommunicationLogWhereUniqueInput
+    data: XOR<CommunicationLogUpdateWithoutPartyUserInput, CommunicationLogUncheckedUpdateWithoutPartyUserInput>
+  }
+
+  export type CommunicationLogUpdateManyWithWhereWithoutPartyUserInput = {
+    where: CommunicationLogScalarWhereInput
+    data: XOR<CommunicationLogUpdateManyMutationInput, CommunicationLogUncheckedUpdateManyWithoutPartyUserInput>
+  }
+
+  export type AdminModuleGrantUpsertWithWhereUniqueWithoutUserInput = {
+    where: AdminModuleGrantWhereUniqueInput
+    update: XOR<AdminModuleGrantUpdateWithoutUserInput, AdminModuleGrantUncheckedUpdateWithoutUserInput>
+    create: XOR<AdminModuleGrantCreateWithoutUserInput, AdminModuleGrantUncheckedCreateWithoutUserInput>
+  }
+
+  export type AdminModuleGrantUpdateWithWhereUniqueWithoutUserInput = {
+    where: AdminModuleGrantWhereUniqueInput
+    data: XOR<AdminModuleGrantUpdateWithoutUserInput, AdminModuleGrantUncheckedUpdateWithoutUserInput>
+  }
+
+  export type AdminModuleGrantUpdateManyWithWhereWithoutUserInput = {
+    where: AdminModuleGrantScalarWhereInput
+    data: XOR<AdminModuleGrantUpdateManyMutationInput, AdminModuleGrantUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type AdminModuleGrantScalarWhereInput = {
+    AND?: AdminModuleGrantScalarWhereInput | AdminModuleGrantScalarWhereInput[]
+    OR?: AdminModuleGrantScalarWhereInput[]
+    NOT?: AdminModuleGrantScalarWhereInput | AdminModuleGrantScalarWhereInput[]
+    id?: UuidFilter<"AdminModuleGrant"> | string
+    userId?: UuidFilter<"AdminModuleGrant"> | string
+    module?: EnumAdminModuleFilter<"AdminModuleGrant"> | $Enums.AdminModule
+    createdAt?: DateTimeFilter<"AdminModuleGrant"> | Date | string
+  }
+
+  export type UserCreateWithoutAdminModuleGrantsInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentCreateNestedManyWithoutCorrectedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+  }
+
+  export type UserUncheckedCreateWithoutAdminModuleGrantsInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUncheckedCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCorrectedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierUncheckedCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+  }
+
+  export type UserCreateOrConnectWithoutAdminModuleGrantsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutAdminModuleGrantsInput, UserUncheckedCreateWithoutAdminModuleGrantsInput>
+  }
+
+  export type UserUpsertWithoutAdminModuleGrantsInput = {
+    update: XOR<UserUpdateWithoutAdminModuleGrantsInput, UserUncheckedUpdateWithoutAdminModuleGrantsInput>
+    create: XOR<UserCreateWithoutAdminModuleGrantsInput, UserUncheckedCreateWithoutAdminModuleGrantsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutAdminModuleGrantsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutAdminModuleGrantsInput, UserUncheckedUpdateWithoutAdminModuleGrantsInput>
+  }
+
+  export type UserUpdateWithoutAdminModuleGrantsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUpdateManyWithoutCorrectedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutAdminModuleGrantsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUncheckedUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUncheckedUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUncheckedUpdateManyWithoutCorrectedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUncheckedUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+  }
+
   export type UserCreateWithoutFamilyMembersInput = {
     id: string
     email: string
@@ -77266,6 +85266,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutFamilyMembersInput = {
@@ -77339,6 +85343,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutFamilyMembersInput = {
@@ -77428,6 +85436,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFamilyMembersInput = {
@@ -77501,6 +85513,10 @@ export namespace Prisma {
     ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UnitCreateWithoutTenanciesInput = {
@@ -77533,6 +85549,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutTenanciesInput = {
@@ -77565,6 +85582,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutTenanciesInput = {
@@ -77643,6 +85661,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTenanciesInput = {
@@ -77716,6 +85738,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTenanciesInput = {
@@ -77813,6 +85839,50 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type ServicesInvoiceCreateWithoutTenancyInput = {
+    id?: string
+    invoiceNumber: number
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    property: PropertyCreateNestedOneWithoutServicesInvoicesInput
+    unit: UnitCreateNestedOneWithoutServicesInvoicesInput
+    createdBy?: UserCreateNestedOneWithoutServicesInvoicesCreatedInput
+    lines?: ServicesInvoiceLineCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceUncheckedCreateWithoutTenancyInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    unitId: string
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdById?: string | null
+    createdAt?: Date | string
+    lines?: ServicesInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
+  }
+
+  export type ServicesInvoiceCreateOrConnectWithoutTenancyInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    create: XOR<ServicesInvoiceCreateWithoutTenancyInput, ServicesInvoiceUncheckedCreateWithoutTenancyInput>
+  }
+
+  export type ServicesInvoiceCreateManyTenancyInputEnvelope = {
+    data: ServicesInvoiceCreateManyTenancyInput | ServicesInvoiceCreateManyTenancyInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UnitUpsertWithoutTenanciesInput = {
     update: XOR<UnitUpdateWithoutTenanciesInput, UnitUncheckedUpdateWithoutTenanciesInput>
     create: XOR<UnitCreateWithoutTenanciesInput, UnitUncheckedCreateWithoutTenanciesInput>
@@ -77854,6 +85924,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutTenanciesInput = {
@@ -77886,6 +85957,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UserUpsertWithoutTenanciesInput = {
@@ -77970,6 +86042,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTenanciesInput = {
@@ -78043,6 +86119,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ChargeUpsertWithWhereUniqueWithoutTenancyInput = {
@@ -78075,6 +86155,22 @@ export namespace Prisma {
   export type EntityDocumentUpdateManyWithWhereWithoutTenancyInput = {
     where: EntityDocumentScalarWhereInput
     data: XOR<EntityDocumentUpdateManyMutationInput, EntityDocumentUncheckedUpdateManyWithoutTenancyInput>
+  }
+
+  export type ServicesInvoiceUpsertWithWhereUniqueWithoutTenancyInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    update: XOR<ServicesInvoiceUpdateWithoutTenancyInput, ServicesInvoiceUncheckedUpdateWithoutTenancyInput>
+    create: XOR<ServicesInvoiceCreateWithoutTenancyInput, ServicesInvoiceUncheckedCreateWithoutTenancyInput>
+  }
+
+  export type ServicesInvoiceUpdateWithWhereUniqueWithoutTenancyInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    data: XOR<ServicesInvoiceUpdateWithoutTenancyInput, ServicesInvoiceUncheckedUpdateWithoutTenancyInput>
+  }
+
+  export type ServicesInvoiceUpdateManyWithWhereWithoutTenancyInput = {
+    where: ServicesInvoiceScalarWhereInput
+    data: XOR<ServicesInvoiceUpdateManyMutationInput, ServicesInvoiceUncheckedUpdateManyWithoutTenancyInput>
   }
 
   export type PropertyCreateWithoutDocumentsInput = {
@@ -78115,6 +86211,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutDocumentsInput = {
@@ -78155,6 +86252,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutDocumentsInput = {
@@ -78192,6 +86290,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutDocumentsInput = {
@@ -78224,6 +86323,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutDocumentsInput = {
@@ -78256,6 +86356,7 @@ export namespace Prisma {
     unit: UnitCreateNestedOneWithoutTenanciesInput
     tenant: UserCreateNestedOneWithoutTenanciesInput
     charges?: ChargeCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyUncheckedCreateWithoutDocumentsInput = {
@@ -78283,6 +86384,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     charges?: ChargeUncheckedCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyCreateOrConnectWithoutDocumentsInput = {
@@ -78361,6 +86463,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutDocumentsInput = {
@@ -78434,6 +86540,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutDocumentsInput = {
@@ -78512,6 +86622,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutDocumentUploadsInput = {
@@ -78585,6 +86699,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutDocumentUploadsInput = {
@@ -78641,6 +86759,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutDocumentsInput = {
@@ -78681,6 +86800,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type UnitUpsertWithoutDocumentsInput = {
@@ -78724,6 +86844,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutDocumentsInput = {
@@ -78756,6 +86877,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type TenancyUpsertWithoutDocumentsInput = {
@@ -78794,6 +86916,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneRequiredWithoutTenanciesNestedInput
     tenant?: UserUpdateOneRequiredWithoutTenanciesNestedInput
     charges?: ChargeUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutTenancyNestedInput
   }
 
   export type TenancyUncheckedUpdateWithoutDocumentsInput = {
@@ -78821,6 +86944,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     charges?: ChargeUncheckedUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutTenancyNestedInput
   }
 
   export type UserUpsertWithoutDocumentsInput = {
@@ -78905,6 +87029,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDocumentsInput = {
@@ -78978,6 +87106,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutDocumentUploadsInput = {
@@ -79062,6 +87194,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDocumentUploadsInput = {
@@ -79135,6 +87271,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type TenancyCreateWithoutChargesInput = {
@@ -79162,6 +87302,7 @@ export namespace Prisma {
     unit: UnitCreateNestedOneWithoutTenanciesInput
     tenant: UserCreateNestedOneWithoutTenanciesInput
     documents?: EntityDocumentCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyUncheckedCreateWithoutChargesInput = {
@@ -79189,6 +87330,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     documents?: EntityDocumentUncheckedCreateNestedManyWithoutTenancyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutTenancyInput
   }
 
   export type TenancyCreateOrConnectWithoutChargesInput = {
@@ -79226,6 +87368,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutChargesInput = {
@@ -79258,6 +87401,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutChargesInput = {
@@ -79336,6 +87480,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutChargesInput = {
@@ -79409,6 +87557,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutChargesInput = {
@@ -79487,6 +87639,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutCreatedChargesInput = {
@@ -79560,6 +87716,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutCreatedChargesInput = {
@@ -79695,6 +87855,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneRequiredWithoutTenanciesNestedInput
     tenant?: UserUpdateOneRequiredWithoutTenanciesNestedInput
     documents?: EntityDocumentUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutTenancyNestedInput
   }
 
   export type TenancyUncheckedUpdateWithoutChargesInput = {
@@ -79722,6 +87883,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     documents?: EntityDocumentUncheckedUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutTenancyNestedInput
   }
 
   export type UnitUpsertWithoutChargesInput = {
@@ -79765,6 +87927,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutChargesInput = {
@@ -79797,6 +87960,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UserUpsertWithoutChargesInput = {
@@ -79881,6 +88045,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutChargesInput = {
@@ -79954,6 +88122,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutCreatedChargesInput = {
@@ -80038,6 +88210,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedChargesInput = {
@@ -80111,6 +88287,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PaymentUpsertWithWhereUniqueWithoutChargeInput = {
@@ -80259,6 +88439,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSubmittedPaymentsInput = {
@@ -80332,6 +88516,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSubmittedPaymentsInput = {
@@ -80410,6 +88598,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutReviewedPaymentsInput = {
@@ -80483,6 +88675,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutReviewedPaymentsInput = {
@@ -80655,6 +88851,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSubmittedPaymentsInput = {
@@ -80728,6 +88928,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutReviewedPaymentsInput = {
@@ -80812,6 +89016,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReviewedPaymentsInput = {
@@ -80885,6 +89093,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type FinancialAttachmentUpsertWithWhereUniqueWithoutPaymentInput = {
@@ -81070,6 +89282,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutFinancialUploadsInput = {
@@ -81143,6 +89359,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutFinancialUploadsInput = {
@@ -81340,6 +89560,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinancialUploadsInput = {
@@ -81413,6 +89637,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PropertyCreateWithoutExpensesInput = {
@@ -81453,6 +89681,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutExpensesInput = {
@@ -81493,6 +89722,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutExpensesInput = {
@@ -81549,6 +89779,7 @@ export namespace Prisma {
     categories?: SupplierCategoryCreateNestedManyWithoutSupplierInput
     properties?: SupplierPropertyCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierUncheckedCreateWithoutExpensesInput = {
@@ -81575,6 +89806,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUncheckedCreateNestedManyWithoutSupplierInput
     properties?: SupplierPropertyUncheckedCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogUncheckedCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierCreateOrConnectWithoutExpensesInput = {
@@ -81682,6 +89914,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutExpensesCreatedInput = {
@@ -81755,6 +89991,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutExpensesCreatedInput = {
@@ -81829,6 +90069,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutExpensesInput = {
@@ -81869,6 +90110,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type ExpenseCategoryTypeUpsertWithoutExpensesInput = {
@@ -81937,6 +90179,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUpdateManyWithoutSupplierNestedInput
     properties?: SupplierPropertyUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUpdateManyWithoutSupplierNestedInput
   }
 
   export type SupplierUncheckedUpdateWithoutExpensesInput = {
@@ -81963,6 +90206,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUncheckedUpdateManyWithoutSupplierNestedInput
     properties?: SupplierPropertyUncheckedUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUncheckedUpdateManyWithoutSupplierNestedInput
   }
 
   export type FundUpsertWithoutExpensesInput = {
@@ -82082,6 +90326,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExpensesCreatedInput = {
@@ -82155,6 +90403,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ExpenseUnitUpsertWithWhereUniqueWithoutExpenseInput = {
@@ -82256,6 +90508,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutExpenseLinksInput = {
@@ -82288,6 +90541,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutExpenseLinksInput = {
@@ -82395,6 +90649,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutExpenseLinksInput = {
@@ -82427,6 +90682,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type ServiceChargeInvoiceLineCreateWithoutFundInput = {
@@ -82569,6 +90825,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
     unit: UnitCreateNestedOneWithoutServiceChargeInvoicesInput
     billedOwner?: UserCreateNestedOneWithoutServiceChargeInvoicesBilledInput
@@ -82591,6 +90851,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
     lines?: ServiceChargeInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
@@ -82816,6 +91080,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutFundBalancesInput = {
@@ -82848,6 +91113,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutFundBalancesInput = {
@@ -82925,6 +91191,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutFundBalancesInput = {
@@ -82957,6 +91224,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type FundUpsertWithoutBalancesInput = {
@@ -83024,6 +91292,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutServiceChargeInvoicesInput = {
@@ -83056,6 +91325,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutServiceChargeInvoicesInput = {
@@ -83163,6 +91433,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutServiceChargeInvoicesBilledInput = {
@@ -83236,6 +91510,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutServiceChargeInvoicesBilledInput = {
@@ -83314,6 +91592,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutServiceChargeInvoicesCreatedInput = {
@@ -83387,6 +91669,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutServiceChargeInvoicesCreatedInput = {
@@ -83499,6 +91785,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutServiceChargeInvoicesInput = {
@@ -83531,6 +91818,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type FundUpsertWithoutServiceChargeInvoicesInput = {
@@ -83650,6 +91938,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutServiceChargeInvoicesBilledInput = {
@@ -83723,6 +92015,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutServiceChargeInvoicesCreatedInput = {
@@ -83807,6 +92103,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutServiceChargeInvoicesCreatedInput = {
@@ -83880,6 +92180,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ServiceChargeInvoiceLineUpsertWithWhereUniqueWithoutInvoiceInput = {
@@ -83926,6 +92230,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
     unit: UnitCreateNestedOneWithoutServiceChargeInvoicesInput
     fund: FundCreateNestedOneWithoutServiceChargeInvoicesInput
@@ -83949,6 +92257,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutSourceInvoiceInput
@@ -84011,6 +92323,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
     fund?: FundUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
@@ -84034,6 +92350,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutSourceInvoiceNestedInput
@@ -84104,6 +92424,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutServiceChargePaymentsInput = {
@@ -84136,6 +92457,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutServiceChargePaymentsInput = {
@@ -84243,6 +92565,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutServiceChargePaymentsBilledInput = {
@@ -84316,6 +92642,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutServiceChargePaymentsBilledInput = {
@@ -84394,6 +92724,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutServiceChargePaymentsCreatedInput = {
@@ -84467,6 +92801,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutServiceChargePaymentsCreatedInput = {
@@ -84545,6 +92883,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutServiceChargePaymentsCorrectedInput = {
@@ -84618,6 +92960,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutServiceChargePaymentsCorrectedInput = {
@@ -84691,6 +93037,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutServiceChargePaymentsInput = {
@@ -84723,6 +93070,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type FundUpsertWithoutPaymentsInput = {
@@ -84842,6 +93190,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutServiceChargePaymentsBilledInput = {
@@ -84915,6 +93267,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutServiceChargePaymentsCreatedInput = {
@@ -84999,6 +93355,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutServiceChargePaymentsCreatedInput = {
@@ -85072,6 +93432,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutServiceChargePaymentsCorrectedInput = {
@@ -85156,6 +93520,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutServiceChargePaymentsCorrectedInput = {
@@ -85229,6 +93597,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ServiceChargeInstallmentUpsertWithoutPaymentInput = {
@@ -85292,6 +93664,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutInstallmentPlansInput = {
@@ -85324,6 +93697,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutInstallmentPlansInput = {
@@ -85343,6 +93717,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
     unit: UnitCreateNestedOneWithoutServiceChargeInvoicesInput
     fund: FundCreateNestedOneWithoutServiceChargeInvoicesInput
@@ -85366,6 +93744,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
     lines?: ServiceChargeInvoiceLineUncheckedCreateNestedManyWithoutInvoiceInput
@@ -85447,6 +93829,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutServiceChargePlansCreatedInput = {
@@ -85520,6 +93906,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutServiceChargePlansCreatedInput = {
@@ -85598,6 +93988,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutInstallmentPlansInput = {
@@ -85630,6 +94021,7 @@ export namespace Prisma {
     serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type ServiceChargeInvoiceUpsertWithoutInstallmentPlansInput = {
@@ -85655,6 +94047,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
     fund?: FundUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
@@ -85678,6 +94074,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: ServiceChargeInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
@@ -85765,6 +94165,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutServiceChargePlansCreatedInput = {
@@ -85838,6 +94242,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ServiceChargeInstallmentUpsertWithWhereUniqueWithoutPlanInput = {
@@ -86080,6 +94488,7 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutPropertyInput
     supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutBudgetsInput = {
@@ -86120,6 +94529,7 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutPropertyInput
     supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutBudgetsInput = {
@@ -86198,6 +94608,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAnnualBudgetsCreatedInput = {
@@ -86271,6 +94685,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAnnualBudgetsCreatedInput = {
@@ -86379,6 +94797,7 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutPropertyNestedInput
     supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutBudgetsInput = {
@@ -86419,6 +94838,7 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutPropertyNestedInput
     supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type UserUpsertWithoutAnnualBudgetsCreatedInput = {
@@ -86503,6 +94923,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAnnualBudgetsCreatedInput = {
@@ -86576,6 +95000,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type BudgetIncomeLineUpsertWithWhereUniqueWithoutBudgetInput = {
@@ -87033,6 +95461,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSuppliersCreatedInput = {
@@ -87106,6 +95538,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSuppliersCreatedInput = {
@@ -87251,6 +95687,46 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type CommunicationLogCreateWithoutSupplierInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdAt?: Date | string
+    partyUser?: UserCreateNestedOneWithoutCommunicationsAsPartyInput
+    createdBy: UserCreateNestedOneWithoutCommunicationsLoggedInput
+  }
+
+  export type CommunicationLogUncheckedCreateWithoutSupplierInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyUserId?: string | null
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type CommunicationLogCreateOrConnectWithoutSupplierInput = {
+    where: CommunicationLogWhereUniqueInput
+    create: XOR<CommunicationLogCreateWithoutSupplierInput, CommunicationLogUncheckedCreateWithoutSupplierInput>
+  }
+
+  export type CommunicationLogCreateManySupplierInputEnvelope = {
+    data: CommunicationLogCreateManySupplierInput | CommunicationLogCreateManySupplierInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserUpsertWithoutSuppliersCreatedInput = {
     update: XOR<UserUpdateWithoutSuppliersCreatedInput, UserUncheckedUpdateWithoutSuppliersCreatedInput>
     create: XOR<UserCreateWithoutSuppliersCreatedInput, UserUncheckedCreateWithoutSuppliersCreatedInput>
@@ -87333,6 +95809,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSuppliersCreatedInput = {
@@ -87406,6 +95886,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type SupplierCategoryUpsertWithWhereUniqueWithoutSupplierInput = {
@@ -87472,6 +95956,22 @@ export namespace Prisma {
     data: XOR<BuildingServiceContractUpdateManyMutationInput, BuildingServiceContractUncheckedUpdateManyWithoutSupplierInput>
   }
 
+  export type CommunicationLogUpsertWithWhereUniqueWithoutSupplierInput = {
+    where: CommunicationLogWhereUniqueInput
+    update: XOR<CommunicationLogUpdateWithoutSupplierInput, CommunicationLogUncheckedUpdateWithoutSupplierInput>
+    create: XOR<CommunicationLogCreateWithoutSupplierInput, CommunicationLogUncheckedCreateWithoutSupplierInput>
+  }
+
+  export type CommunicationLogUpdateWithWhereUniqueWithoutSupplierInput = {
+    where: CommunicationLogWhereUniqueInput
+    data: XOR<CommunicationLogUpdateWithoutSupplierInput, CommunicationLogUncheckedUpdateWithoutSupplierInput>
+  }
+
+  export type CommunicationLogUpdateManyWithWhereWithoutSupplierInput = {
+    where: CommunicationLogScalarWhereInput
+    data: XOR<CommunicationLogUpdateManyMutationInput, CommunicationLogUncheckedUpdateManyWithoutSupplierInput>
+  }
+
   export type PropertyCreateWithoutServiceContractsInput = {
     id?: string
     name: string
@@ -87510,6 +96010,7 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutPropertyInput
     supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutServiceContractsInput = {
@@ -87550,6 +96051,7 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutPropertyInput
     supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutServiceContractsInput = {
@@ -87581,6 +96083,7 @@ export namespace Prisma {
     categories?: SupplierCategoryCreateNestedManyWithoutSupplierInput
     properties?: SupplierPropertyCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierUncheckedCreateWithoutServiceContractsInput = {
@@ -87607,6 +96110,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUncheckedCreateNestedManyWithoutSupplierInput
     properties?: SupplierPropertyUncheckedCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogUncheckedCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierCreateOrConnectWithoutServiceContractsInput = {
@@ -87685,6 +96189,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutBuildingServiceContractsCreatedInput = {
@@ -87758,6 +96266,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutBuildingServiceContractsCreatedInput = {
@@ -87814,6 +96326,7 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutPropertyNestedInput
     supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutServiceContractsInput = {
@@ -87854,6 +96367,7 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutPropertyNestedInput
     supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type SupplierUpsertWithoutServiceContractsInput = {
@@ -87891,6 +96405,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUpdateManyWithoutSupplierNestedInput
     properties?: SupplierPropertyUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUpdateManyWithoutSupplierNestedInput
   }
 
   export type SupplierUncheckedUpdateWithoutServiceContractsInput = {
@@ -87917,6 +96432,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUncheckedUpdateManyWithoutSupplierNestedInput
     properties?: SupplierPropertyUncheckedUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUncheckedUpdateManyWithoutSupplierNestedInput
   }
 
   export type UserUpsertWithoutBuildingServiceContractsCreatedInput = {
@@ -88001,6 +96517,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutBuildingServiceContractsCreatedInput = {
@@ -88074,6 +96594,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type SupplierCreateWithoutCategoriesInput = {
@@ -88100,6 +96624,7 @@ export namespace Prisma {
     properties?: SupplierPropertyCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierUncheckedCreateWithoutCategoriesInput = {
@@ -88126,6 +96651,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUncheckedCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogUncheckedCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierCreateOrConnectWithoutCategoriesInput = {
@@ -88193,6 +96719,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUpdateManyWithoutSupplierNestedInput
   }
 
   export type SupplierUncheckedUpdateWithoutCategoriesInput = {
@@ -88219,6 +96746,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUncheckedUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUncheckedUpdateManyWithoutSupplierNestedInput
   }
 
   export type ExpenseCategoryTypeUpsertWithoutSuppliersInput = {
@@ -88276,6 +96804,7 @@ export namespace Prisma {
     categories?: SupplierCategoryCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierUncheckedCreateWithoutPropertiesInput = {
@@ -88302,6 +96831,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUncheckedCreateNestedManyWithoutSupplierInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutSupplierInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutSupplierInput
+    communications?: CommunicationLogUncheckedCreateNestedManyWithoutSupplierInput
   }
 
   export type SupplierCreateOrConnectWithoutPropertiesInput = {
@@ -88347,6 +96877,7 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutSupplierLinksInput = {
@@ -88387,6 +96918,7 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutSupplierLinksInput = {
@@ -88429,6 +96961,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUpdateManyWithoutSupplierNestedInput
   }
 
   export type SupplierUncheckedUpdateWithoutPropertiesInput = {
@@ -88455,6 +96988,7 @@ export namespace Prisma {
     categories?: SupplierCategoryUncheckedUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUncheckedUpdateManyWithoutSupplierNestedInput
   }
 
   export type PropertyUpsertWithoutSupplierLinksInput = {
@@ -88506,6 +97040,7 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutSupplierLinksInput = {
@@ -88546,6 +97081,7 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type ExpenseCategoryTypeCreateWithoutSubcategoriesInput = {
@@ -88675,6 +97211,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutRequestsInput = {
@@ -88748,6 +97288,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutRequestsInput = {
@@ -88785,6 +97329,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutUnitInput
   }
 
   export type UnitUncheckedCreateWithoutRequestsInput = {
@@ -88817,6 +97362,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
     fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
     ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutUnitInput
   }
 
   export type UnitCreateOrConnectWithoutRequestsInput = {
@@ -88862,6 +97408,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutCommonAreaRequestsInput = {
@@ -88902,6 +97449,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
     budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
     serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+    servicesInvoices?: ServicesInvoiceUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutCommonAreaRequestsInput = {
@@ -88980,6 +97528,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAssignedRequestsInput = {
@@ -89053,6 +97605,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAssignedRequestsInput = {
@@ -89131,6 +97687,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutCreatedRequestsInput = {
@@ -89204,6 +97764,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutCreatedRequestsInput = {
@@ -89457,6 +98021,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRequestsInput = {
@@ -89530,6 +98098,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UnitUpsertWithoutRequestsInput = {
@@ -89573,6 +98145,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutRequestsInput = {
@@ -89605,6 +98178,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type PropertyUpsertWithoutCommonAreaRequestsInput = {
@@ -89656,6 +98230,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutCommonAreaRequestsInput = {
@@ -89696,6 +98271,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type UserUpsertWithoutAssignedRequestsInput = {
@@ -89780,6 +98356,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedRequestsInput = {
@@ -89853,6 +98433,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutCreatedRequestsInput = {
@@ -89937,6 +98521,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedRequestsInput = {
@@ -90010,6 +98598,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceAttachmentUpsertWithWhereUniqueWithoutRequestInput = {
@@ -90228,6 +98820,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSupplyRequestsMadeInput = {
@@ -90301,6 +98897,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSupplyRequestsMadeInput = {
@@ -90379,6 +98979,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSupplyRequestsDecidedInput = {
@@ -90452,6 +99056,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSupplyRequestsDecidedInput = {
@@ -90612,6 +99220,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSupplyRequestsMadeInput = {
@@ -90685,6 +99297,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutSupplyRequestsDecidedInput = {
@@ -90769,6 +99385,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSupplyRequestsDecidedInput = {
@@ -90842,6 +99462,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestCreateWithoutAttachmentsInput = {
@@ -90980,6 +99604,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAttachmentsInput = {
@@ -91053,6 +99681,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAttachmentsInput = {
@@ -91213,6 +99845,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAttachmentsInput = {
@@ -91286,6 +99922,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestCreateWithoutTaskLogsInput = {
@@ -91424,6 +100064,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTaskLogsInput = {
@@ -91497,6 +100141,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTaskLogsInput = {
@@ -91657,6 +100305,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTaskLogsInput = {
@@ -91730,6 +100382,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutNotificationsInput = {
@@ -91803,6 +100459,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -91876,6 +100536,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -92030,6 +100694,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -92103,6 +100771,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestUpsertWithoutNotificationsInput = {
@@ -92247,6 +100919,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutWhatsappSessionsInput = {
@@ -92320,6 +100996,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutWhatsappSessionsInput = {
@@ -92474,6 +101154,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWhatsappSessionsInput = {
@@ -92547,6 +101231,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MaintenanceRequestUpsertWithoutWhatsappSessionsInput = {
@@ -92691,6 +101379,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutRejectionLogsInput = {
@@ -92764,6 +101456,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
     familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutRejectionLogsInput = {
@@ -92853,6 +101549,10 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRejectionLogsInput = {
@@ -92926,6 +101626,1703 @@ export namespace Prisma {
     ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
     ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
     familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type PropertyCreateWithoutServicesInvoicesInput = {
+    id?: string
+    name: string
+    address: string
+    governorate?: string | null
+    wilayat?: string | null
+    area?: string | null
+    wayNumber?: string | null
+    buildingName?: string | null
+    buildingNumber?: string | null
+    postalCode?: string | null
+    titleDeedNumber?: string | null
+    plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
+    notes?: string | null
+    associationRegistrationNumber?: string | null
+    associationPhone?: string | null
+    bankName?: string | null
+    bankSwiftCode?: string | null
+    bankAccountNumber?: string | null
+    paymentReference?: string | null
+    chequePayableTo?: string | null
+    poBox?: string | null
+    approved?: boolean
+    submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    propertyType: PropertyTypeCreateNestedOneWithoutPropertiesInput
+    units?: UnitCreateNestedManyWithoutPropertyInput
+    documents?: EntityDocumentCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestCreateNestedManyWithoutPropertyInput
+    expenses?: ExpenseCreateNestedManyWithoutPropertyInput
+    supplierLinks?: SupplierPropertyCreateNestedManyWithoutPropertyInput
+    budgets?: AnnualBudgetCreateNestedManyWithoutPropertyInput
+    serviceContracts?: BuildingServiceContractCreateNestedManyWithoutPropertyInput
+  }
+
+  export type PropertyUncheckedCreateWithoutServicesInvoicesInput = {
+    id?: string
+    name: string
+    propertyTypeId: string
+    address: string
+    governorate?: string | null
+    wilayat?: string | null
+    area?: string | null
+    wayNumber?: string | null
+    buildingName?: string | null
+    buildingNumber?: string | null
+    postalCode?: string | null
+    titleDeedNumber?: string | null
+    plotNumber?: string | null
+    latitude?: Decimal | DecimalJsLike | number | string | null
+    longitude?: Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: string | null
+    notes?: string | null
+    associationRegistrationNumber?: string | null
+    associationPhone?: string | null
+    bankName?: string | null
+    bankSwiftCode?: string | null
+    bankAccountNumber?: string | null
+    paymentReference?: string | null
+    chequePayableTo?: string | null
+    poBox?: string | null
+    approved?: boolean
+    submittedAt?: Date | string | null
+    rejectedAt?: Date | string | null
+    rejectionReason?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    units?: UnitUncheckedCreateNestedManyWithoutPropertyInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutPropertyInput
+    commonAreaRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutPropertyInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutPropertyInput
+    supplierLinks?: SupplierPropertyUncheckedCreateNestedManyWithoutPropertyInput
+    budgets?: AnnualBudgetUncheckedCreateNestedManyWithoutPropertyInput
+    serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutPropertyInput
+  }
+
+  export type PropertyCreateOrConnectWithoutServicesInvoicesInput = {
+    where: PropertyWhereUniqueInput
+    create: XOR<PropertyCreateWithoutServicesInvoicesInput, PropertyUncheckedCreateWithoutServicesInvoicesInput>
+  }
+
+  export type UnitCreateWithoutServicesInvoicesInput = {
+    id?: string
+    label: string
+    floor?: number | null
+    bedrooms?: number | null
+    rentBillsEnabled?: boolean
+    maintenanceEnabled?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
+    serviceChargeLastReminderAt?: Date | string | null
+    entitlements?: number | null
+    serviceChargeBalance?: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    property: PropertyCreateNestedOneWithoutUnitsInput
+    owner?: UserCreateNestedOneWithoutOwnedUnitsInput
+    tenant?: UserCreateNestedOneWithoutUnitInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUnitInput
+    tenancies?: TenancyCreateNestedManyWithoutUnitInput
+    charges?: ChargeCreateNestedManyWithoutUnitInput
+    permissionChanges?: UnitPermissionChangeCreateNestedManyWithoutUnitInput
+    documents?: EntityDocumentCreateNestedManyWithoutUnitInput
+    expenseLinks?: ExpenseUnitCreateNestedManyWithoutUnitInput
+    serviceChargeInvoices?: ServiceChargeInvoiceCreateNestedManyWithoutUnitInput
+    serviceChargePayments?: ServiceChargePaymentCreateNestedManyWithoutUnitInput
+    installmentPlans?: ServiceChargeInstallmentPlanCreateNestedManyWithoutUnitInput
+    fundBalances?: UnitFundBalanceCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferCreateNestedManyWithoutUnitInput
+  }
+
+  export type UnitUncheckedCreateWithoutServicesInvoicesInput = {
+    id?: string
+    propertyId: string
+    label: string
+    floor?: number | null
+    bedrooms?: number | null
+    ownerId?: string | null
+    tenantId?: string | null
+    rentBillsEnabled?: boolean
+    maintenanceEnabled?: boolean
+    serviceChargeAmount?: Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: number | null
+    serviceChargeDueDate?: Date | string | null
+    serviceChargeLastStage?: string | null
+    serviceChargeLastReceivedAt?: Date | string | null
+    serviceChargeLastReminderAt?: Date | string | null
+    entitlements?: number | null
+    serviceChargeBalance?: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUnitInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutUnitInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutUnitInput
+    permissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutUnitInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUnitInput
+    expenseLinks?: ExpenseUnitUncheckedCreateNestedManyWithoutUnitInput
+    serviceChargeInvoices?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutUnitInput
+    serviceChargePayments?: ServiceChargePaymentUncheckedCreateNestedManyWithoutUnitInput
+    installmentPlans?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutUnitInput
+    fundBalances?: UnitFundBalanceUncheckedCreateNestedManyWithoutUnitInput
+    ownershipTransfers?: OwnershipTransferUncheckedCreateNestedManyWithoutUnitInput
+  }
+
+  export type UnitCreateOrConnectWithoutServicesInvoicesInput = {
+    where: UnitWhereUniqueInput
+    create: XOR<UnitCreateWithoutServicesInvoicesInput, UnitUncheckedCreateWithoutServicesInvoicesInput>
+  }
+
+  export type TenancyCreateWithoutServicesInvoicesInput = {
+    id?: string
+    startDate: Date | string
+    endDate?: Date | string | null
+    leaseEndDate?: Date | string | null
+    agreementStartDate?: Date | string | null
+    monthlyRent?: Decimal | DecimalJsLike | number | string
+    rentDueDay?: number
+    securityDeposit?: Decimal | DecimalJsLike | number | string
+    purpose?: $Enums.TenancyPurpose
+    agreementRef?: string | null
+    paidBy?: string | null
+    municipalityContractNumber?: string | null
+    contractRegisteredAt?: Date | string | null
+    electricityAccountNumber?: string | null
+    waterAccountNumber?: string | null
+    parkingSlotNumber?: string | null
+    vehiclePlateNumber?: string | null
+    vehicleDetails?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit: UnitCreateNestedOneWithoutTenanciesInput
+    tenant: UserCreateNestedOneWithoutTenanciesInput
+    charges?: ChargeCreateNestedManyWithoutTenancyInput
+    documents?: EntityDocumentCreateNestedManyWithoutTenancyInput
+  }
+
+  export type TenancyUncheckedCreateWithoutServicesInvoicesInput = {
+    id?: string
+    unitId: string
+    tenantId: string
+    startDate: Date | string
+    endDate?: Date | string | null
+    leaseEndDate?: Date | string | null
+    agreementStartDate?: Date | string | null
+    monthlyRent?: Decimal | DecimalJsLike | number | string
+    rentDueDay?: number
+    securityDeposit?: Decimal | DecimalJsLike | number | string
+    purpose?: $Enums.TenancyPurpose
+    agreementRef?: string | null
+    paidBy?: string | null
+    municipalityContractNumber?: string | null
+    contractRegisteredAt?: Date | string | null
+    electricityAccountNumber?: string | null
+    waterAccountNumber?: string | null
+    parkingSlotNumber?: string | null
+    vehiclePlateNumber?: string | null
+    vehicleDetails?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenancyInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutTenancyInput
+  }
+
+  export type TenancyCreateOrConnectWithoutServicesInvoicesInput = {
+    where: TenancyWhereUniqueInput
+    create: XOR<TenancyCreateWithoutServicesInvoicesInput, TenancyUncheckedCreateWithoutServicesInvoicesInput>
+  }
+
+  export type UserCreateWithoutServicesInvoicesCreatedInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentCreateNestedManyWithoutCorrectedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutServicesInvoicesCreatedInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUncheckedCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCorrectedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierUncheckedCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutServicesInvoicesCreatedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutServicesInvoicesCreatedInput, UserUncheckedCreateWithoutServicesInvoicesCreatedInput>
+  }
+
+  export type ServicesInvoiceLineCreateWithoutInvoiceInput = {
+    id?: string
+    sequence: number
+    qty?: Decimal | DecimalJsLike | number | string
+    item: string
+    description: string
+    unitPrice: Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput = {
+    id?: string
+    sequence: number
+    qty?: Decimal | DecimalJsLike | number | string
+    item: string
+    description: string
+    unitPrice: Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineCreateOrConnectWithoutInvoiceInput = {
+    where: ServicesInvoiceLineWhereUniqueInput
+    create: XOR<ServicesInvoiceLineCreateWithoutInvoiceInput, ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput>
+  }
+
+  export type ServicesInvoiceLineCreateManyInvoiceInputEnvelope = {
+    data: ServicesInvoiceLineCreateManyInvoiceInput | ServicesInvoiceLineCreateManyInvoiceInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PropertyUpsertWithoutServicesInvoicesInput = {
+    update: XOR<PropertyUpdateWithoutServicesInvoicesInput, PropertyUncheckedUpdateWithoutServicesInvoicesInput>
+    create: XOR<PropertyCreateWithoutServicesInvoicesInput, PropertyUncheckedCreateWithoutServicesInvoicesInput>
+    where?: PropertyWhereInput
+  }
+
+  export type PropertyUpdateToOneWithWhereWithoutServicesInvoicesInput = {
+    where?: PropertyWhereInput
+    data: XOR<PropertyUpdateWithoutServicesInvoicesInput, PropertyUncheckedUpdateWithoutServicesInvoicesInput>
+  }
+
+  export type PropertyUpdateWithoutServicesInvoicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    governorate?: NullableStringFieldUpdateOperationsInput | string | null
+    wilayat?: NullableStringFieldUpdateOperationsInput | string | null
+    area?: NullableStringFieldUpdateOperationsInput | string | null
+    wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    bankName?: NullableStringFieldUpdateOperationsInput | string | null
+    bankSwiftCode?: NullableStringFieldUpdateOperationsInput | string | null
+    bankAccountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    chequePayableTo?: NullableStringFieldUpdateOperationsInput | string | null
+    poBox?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    propertyType?: PropertyTypeUpdateOneRequiredWithoutPropertiesNestedInput
+    units?: UnitUpdateManyWithoutPropertyNestedInput
+    documents?: EntityDocumentUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUpdateManyWithoutPropertyNestedInput
+    expenses?: ExpenseUpdateManyWithoutPropertyNestedInput
+    supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
+    budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
+    serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+  }
+
+  export type PropertyUncheckedUpdateWithoutServicesInvoicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    propertyTypeId?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    governorate?: NullableStringFieldUpdateOperationsInput | string | null
+    wilayat?: NullableStringFieldUpdateOperationsInput | string | null
+    area?: NullableStringFieldUpdateOperationsInput | string | null
+    wayNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingName?: NullableStringFieldUpdateOperationsInput | string | null
+    buildingNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    titleDeedNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    plotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    longitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    locationMapPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    associationRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    associationPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    bankName?: NullableStringFieldUpdateOperationsInput | string | null
+    bankSwiftCode?: NullableStringFieldUpdateOperationsInput | string | null
+    bankAccountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    paymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    chequePayableTo?: NullableStringFieldUpdateOperationsInput | string | null
+    poBox?: NullableStringFieldUpdateOperationsInput | string | null
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    units?: UnitUncheckedUpdateManyWithoutPropertyNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutPropertyNestedInput
+    commonAreaRequests?: MaintenanceRequestUncheckedUpdateManyWithoutPropertyNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutPropertyNestedInput
+    supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
+    budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
+    serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+  }
+
+  export type UnitUpsertWithoutServicesInvoicesInput = {
+    update: XOR<UnitUpdateWithoutServicesInvoicesInput, UnitUncheckedUpdateWithoutServicesInvoicesInput>
+    create: XOR<UnitCreateWithoutServicesInvoicesInput, UnitUncheckedCreateWithoutServicesInvoicesInput>
+    where?: UnitWhereInput
+  }
+
+  export type UnitUpdateToOneWithWhereWithoutServicesInvoicesInput = {
+    where?: UnitWhereInput
+    data: XOR<UnitUpdateWithoutServicesInvoicesInput, UnitUncheckedUpdateWithoutServicesInvoicesInput>
+  }
+
+  export type UnitUpdateWithoutServicesInvoicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+    floor?: NullableIntFieldUpdateOperationsInput | number | null
+    bedrooms?: NullableIntFieldUpdateOperationsInput | number | null
+    rentBillsEnabled?: BoolFieldUpdateOperationsInput | boolean
+    maintenanceEnabled?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastReminderAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    entitlements?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutUnitsNestedInput
+    owner?: UserUpdateOneWithoutOwnedUnitsNestedInput
+    tenant?: UserUpdateOneWithoutUnitNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUnitNestedInput
+    tenancies?: TenancyUpdateManyWithoutUnitNestedInput
+    charges?: ChargeUpdateManyWithoutUnitNestedInput
+    permissionChanges?: UnitPermissionChangeUpdateManyWithoutUnitNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUnitNestedInput
+    expenseLinks?: ExpenseUnitUpdateManyWithoutUnitNestedInput
+    serviceChargeInvoices?: ServiceChargeInvoiceUpdateManyWithoutUnitNestedInput
+    serviceChargePayments?: ServiceChargePaymentUpdateManyWithoutUnitNestedInput
+    installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
+    fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+  }
+
+  export type UnitUncheckedUpdateWithoutServicesInvoicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    propertyId?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+    floor?: NullableIntFieldUpdateOperationsInput | number | null
+    bedrooms?: NullableIntFieldUpdateOperationsInput | number | null
+    ownerId?: NullableStringFieldUpdateOperationsInput | string | null
+    tenantId?: NullableStringFieldUpdateOperationsInput | string | null
+    rentBillsEnabled?: BoolFieldUpdateOperationsInput | boolean
+    maintenanceEnabled?: BoolFieldUpdateOperationsInput | boolean
+    serviceChargeAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    serviceChargeCycleMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastStage?: NullableStringFieldUpdateOperationsInput | string | null
+    serviceChargeLastReceivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    serviceChargeLastReminderAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    entitlements?: NullableIntFieldUpdateOperationsInput | number | null
+    serviceChargeBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUnitNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutUnitNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutUnitNestedInput
+    permissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutUnitNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUnitNestedInput
+    expenseLinks?: ExpenseUnitUncheckedUpdateManyWithoutUnitNestedInput
+    serviceChargeInvoices?: ServiceChargeInvoiceUncheckedUpdateManyWithoutUnitNestedInput
+    serviceChargePayments?: ServiceChargePaymentUncheckedUpdateManyWithoutUnitNestedInput
+    installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
+    fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
+    ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+  }
+
+  export type TenancyUpsertWithoutServicesInvoicesInput = {
+    update: XOR<TenancyUpdateWithoutServicesInvoicesInput, TenancyUncheckedUpdateWithoutServicesInvoicesInput>
+    create: XOR<TenancyCreateWithoutServicesInvoicesInput, TenancyUncheckedCreateWithoutServicesInvoicesInput>
+    where?: TenancyWhereInput
+  }
+
+  export type TenancyUpdateToOneWithWhereWithoutServicesInvoicesInput = {
+    where?: TenancyWhereInput
+    data: XOR<TenancyUpdateWithoutServicesInvoicesInput, TenancyUncheckedUpdateWithoutServicesInvoicesInput>
+  }
+
+  export type TenancyUpdateWithoutServicesInvoicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    startDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    leaseEndDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agreementStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    monthlyRent?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    rentDueDay?: IntFieldUpdateOperationsInput | number
+    securityDeposit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    purpose?: EnumTenancyPurposeFieldUpdateOperationsInput | $Enums.TenancyPurpose
+    agreementRef?: NullableStringFieldUpdateOperationsInput | string | null
+    paidBy?: NullableStringFieldUpdateOperationsInput | string | null
+    municipalityContractNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    contractRegisteredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    electricityAccountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    waterAccountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    parkingSlotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehiclePlateNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleDetails?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneRequiredWithoutTenanciesNestedInput
+    tenant?: UserUpdateOneRequiredWithoutTenanciesNestedInput
+    charges?: ChargeUpdateManyWithoutTenancyNestedInput
+    documents?: EntityDocumentUpdateManyWithoutTenancyNestedInput
+  }
+
+  export type TenancyUncheckedUpdateWithoutServicesInvoicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    tenantId?: StringFieldUpdateOperationsInput | string
+    startDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    leaseEndDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agreementStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    monthlyRent?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    rentDueDay?: IntFieldUpdateOperationsInput | number
+    securityDeposit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    purpose?: EnumTenancyPurposeFieldUpdateOperationsInput | $Enums.TenancyPurpose
+    agreementRef?: NullableStringFieldUpdateOperationsInput | string | null
+    paidBy?: NullableStringFieldUpdateOperationsInput | string | null
+    municipalityContractNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    contractRegisteredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    electricityAccountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    waterAccountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    parkingSlotNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehiclePlateNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleDetails?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    charges?: ChargeUncheckedUpdateManyWithoutTenancyNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutTenancyNestedInput
+  }
+
+  export type UserUpsertWithoutServicesInvoicesCreatedInput = {
+    update: XOR<UserUpdateWithoutServicesInvoicesCreatedInput, UserUncheckedUpdateWithoutServicesInvoicesCreatedInput>
+    create: XOR<UserCreateWithoutServicesInvoicesCreatedInput, UserUncheckedCreateWithoutServicesInvoicesCreatedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutServicesInvoicesCreatedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutServicesInvoicesCreatedInput, UserUncheckedUpdateWithoutServicesInvoicesCreatedInput>
+  }
+
+  export type UserUpdateWithoutServicesInvoicesCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUpdateManyWithoutCorrectedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutServicesInvoicesCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUncheckedUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUncheckedUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUncheckedUpdateManyWithoutCorrectedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUncheckedUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type ServicesInvoiceLineUpsertWithWhereUniqueWithoutInvoiceInput = {
+    where: ServicesInvoiceLineWhereUniqueInput
+    update: XOR<ServicesInvoiceLineUpdateWithoutInvoiceInput, ServicesInvoiceLineUncheckedUpdateWithoutInvoiceInput>
+    create: XOR<ServicesInvoiceLineCreateWithoutInvoiceInput, ServicesInvoiceLineUncheckedCreateWithoutInvoiceInput>
+  }
+
+  export type ServicesInvoiceLineUpdateWithWhereUniqueWithoutInvoiceInput = {
+    where: ServicesInvoiceLineWhereUniqueInput
+    data: XOR<ServicesInvoiceLineUpdateWithoutInvoiceInput, ServicesInvoiceLineUncheckedUpdateWithoutInvoiceInput>
+  }
+
+  export type ServicesInvoiceLineUpdateManyWithWhereWithoutInvoiceInput = {
+    where: ServicesInvoiceLineScalarWhereInput
+    data: XOR<ServicesInvoiceLineUpdateManyMutationInput, ServicesInvoiceLineUncheckedUpdateManyWithoutInvoiceInput>
+  }
+
+  export type ServicesInvoiceLineScalarWhereInput = {
+    AND?: ServicesInvoiceLineScalarWhereInput | ServicesInvoiceLineScalarWhereInput[]
+    OR?: ServicesInvoiceLineScalarWhereInput[]
+    NOT?: ServicesInvoiceLineScalarWhereInput | ServicesInvoiceLineScalarWhereInput[]
+    id?: UuidFilter<"ServicesInvoiceLine"> | string
+    invoiceId?: UuidFilter<"ServicesInvoiceLine"> | string
+    sequence?: IntFilter<"ServicesInvoiceLine"> | number
+    qty?: DecimalFilter<"ServicesInvoiceLine"> | Decimal | DecimalJsLike | number | string
+    item?: StringFilter<"ServicesInvoiceLine"> | string
+    description?: StringFilter<"ServicesInvoiceLine"> | string
+    unitPrice?: DecimalFilter<"ServicesInvoiceLine"> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceCreateWithoutLinesInput = {
+    id?: string
+    invoiceNumber: number
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    property: PropertyCreateNestedOneWithoutServicesInvoicesInput
+    unit: UnitCreateNestedOneWithoutServicesInvoicesInput
+    tenancy?: TenancyCreateNestedOneWithoutServicesInvoicesInput
+    createdBy?: UserCreateNestedOneWithoutServicesInvoicesCreatedInput
+  }
+
+  export type ServicesInvoiceUncheckedCreateWithoutLinesInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    unitId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ServicesInvoiceCreateOrConnectWithoutLinesInput = {
+    where: ServicesInvoiceWhereUniqueInput
+    create: XOR<ServicesInvoiceCreateWithoutLinesInput, ServicesInvoiceUncheckedCreateWithoutLinesInput>
+  }
+
+  export type ServicesInvoiceUpsertWithoutLinesInput = {
+    update: XOR<ServicesInvoiceUpdateWithoutLinesInput, ServicesInvoiceUncheckedUpdateWithoutLinesInput>
+    create: XOR<ServicesInvoiceCreateWithoutLinesInput, ServicesInvoiceUncheckedCreateWithoutLinesInput>
+    where?: ServicesInvoiceWhereInput
+  }
+
+  export type ServicesInvoiceUpdateToOneWithWhereWithoutLinesInput = {
+    where?: ServicesInvoiceWhereInput
+    data: XOR<ServicesInvoiceUpdateWithoutLinesInput, ServicesInvoiceUncheckedUpdateWithoutLinesInput>
+  }
+
+  export type ServicesInvoiceUpdateWithoutLinesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    unit?: UnitUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    tenancy?: TenancyUpdateOneWithoutServicesInvoicesNestedInput
+    createdBy?: UserUpdateOneWithoutServicesInvoicesCreatedNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateWithoutLinesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserCreateWithoutCommunicationsAsPartyInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentCreateNestedManyWithoutCorrectedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogCreateNestedManyWithoutCreatedByInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutCommunicationsAsPartyInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUncheckedCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCorrectedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierUncheckedCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsLogged?: CommunicationLogUncheckedCreateNestedManyWithoutCreatedByInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutCommunicationsAsPartyInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutCommunicationsAsPartyInput, UserUncheckedCreateWithoutCommunicationsAsPartyInput>
+  }
+
+  export type SupplierCreateWithoutCommunicationsInput = {
+    id?: string
+    companyName: string
+    companyNameAr?: string | null
+    externalReference?: string | null
+    active?: boolean
+    contactPerson?: string | null
+    phone?: string | null
+    whatsapp?: string | null
+    email?: string | null
+    address?: string | null
+    availableForEmergencies?: boolean
+    availableForAllProperties?: boolean
+    calloutCharge?: Decimal | DecimalJsLike | number | string | null
+    contractStart?: Date | string | null
+    contractEnd?: Date | string | null
+    contractInfo?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    createdBy?: UserCreateNestedOneWithoutSuppliersCreatedInput
+    categories?: SupplierCategoryCreateNestedManyWithoutSupplierInput
+    properties?: SupplierPropertyCreateNestedManyWithoutSupplierInput
+    expenses?: ExpenseCreateNestedManyWithoutSupplierInput
+    serviceContracts?: BuildingServiceContractCreateNestedManyWithoutSupplierInput
+  }
+
+  export type SupplierUncheckedCreateWithoutCommunicationsInput = {
+    id?: string
+    companyName: string
+    companyNameAr?: string | null
+    externalReference?: string | null
+    active?: boolean
+    contactPerson?: string | null
+    phone?: string | null
+    whatsapp?: string | null
+    email?: string | null
+    address?: string | null
+    availableForEmergencies?: boolean
+    availableForAllProperties?: boolean
+    calloutCharge?: Decimal | DecimalJsLike | number | string | null
+    contractStart?: Date | string | null
+    contractEnd?: Date | string | null
+    contractInfo?: string | null
+    notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    categories?: SupplierCategoryUncheckedCreateNestedManyWithoutSupplierInput
+    properties?: SupplierPropertyUncheckedCreateNestedManyWithoutSupplierInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutSupplierInput
+    serviceContracts?: BuildingServiceContractUncheckedCreateNestedManyWithoutSupplierInput
+  }
+
+  export type SupplierCreateOrConnectWithoutCommunicationsInput = {
+    where: SupplierWhereUniqueInput
+    create: XOR<SupplierCreateWithoutCommunicationsInput, SupplierUncheckedCreateWithoutCommunicationsInput>
+  }
+
+  export type UserCreateWithoutCommunicationsLoggedInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    tenancies?: TenancyCreateNestedManyWithoutTenantInput
+    charges?: ChargeCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentCreateNestedManyWithoutCorrectedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutCommunicationsLoggedInput = {
+    id: string
+    email: string
+    userType?: $Enums.UserType
+    workerCategory?: $Enums.WorkerCategory | null
+    companyName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    phone?: string | null
+    civilId?: string | null
+    nationality?: string | null
+    employer?: string | null
+    mailingAddress?: string | null
+    emergencyContactName?: string | null
+    emergencyContactPhone?: string | null
+    passportNumber?: string | null
+    passportIssuance?: Date | string | null
+    passportExpiry?: Date | string | null
+    visaNumber?: string | null
+    visaIssuance?: Date | string | null
+    visaExpiry?: Date | string | null
+    civilIdIssuance?: Date | string | null
+    civilIdExpiry?: Date | string | null
+    drivingLicenseNumber?: string | null
+    drivingLicenseIssuance?: Date | string | null
+    drivingLicenseExpiry?: Date | string | null
+    employeeType?: string
+    hasVehicle?: boolean
+    vehicleRegistrationNumber?: string | null
+    vehicleRegistrationIssuance?: Date | string | null
+    vehicleRegistrationExpiry?: Date | string | null
+    carInsuranceNumber?: string | null
+    carInsuranceIssuance?: Date | string | null
+    carInsuranceExpiry?: Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unit?: UnitUncheckedCreateNestedOneWithoutTenantInput
+    requests?: MaintenanceRequestUncheckedCreateNestedManyWithoutUserInput
+    assignedRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutAssignedToInput
+    createdRequests?: MaintenanceRequestUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: MaintenanceAttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    taskLogs?: TaskLogUncheckedCreateNestedManyWithoutChangedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    tenancies?: TenancyUncheckedCreateNestedManyWithoutTenantInput
+    charges?: ChargeUncheckedCreateNestedManyWithoutTenantInput
+    createdCharges?: ChargeUncheckedCreateNestedManyWithoutCreatedByInput
+    submittedPayments?: PaymentUncheckedCreateNestedManyWithoutSubmittedByInput
+    reviewedPayments?: PaymentUncheckedCreateNestedManyWithoutReviewedByInput
+    financialUploads?: FinancialAttachmentUncheckedCreateNestedManyWithoutUploadedByInput
+    documents?: EntityDocumentUncheckedCreateNestedManyWithoutUserInput
+    documentUploads?: EntityDocumentUncheckedCreateNestedManyWithoutUploadedByInput
+    supplyRequestsMade?: SupplyRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    supplyRequestsDecided?: SupplyRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUncheckedCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCreatedByInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUncheckedCreateNestedManyWithoutBilledOwnerInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUncheckedCreateNestedManyWithoutCorrectedByInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedCreateNestedManyWithoutCreatedByInput
+    suppliersCreated?: SupplierUncheckedCreateNestedManyWithoutCreatedByInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedCreateNestedManyWithoutCreatedByInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedCreateNestedManyWithoutCreatedByInput
+    ownedUnits?: UnitUncheckedCreateNestedManyWithoutOwnerInput
+    whatsappSessions?: WhatsappSessionUncheckedCreateNestedManyWithoutUserInput
+    rejectionLogs?: RejectionLogUncheckedCreateNestedManyWithoutRejectedByInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedCreateNestedManyWithoutChangedByInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedCreateNestedManyWithoutFromOwnerInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedCreateNestedManyWithoutToOwnerInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedCreateNestedManyWithoutCreatedByInput
+    familyMembers?: WorkerFamilyMemberUncheckedCreateNestedManyWithoutWorkerInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedCreateNestedManyWithoutCreatedByInput
+    communicationsAsParty?: CommunicationLogUncheckedCreateNestedManyWithoutPartyUserInput
+    adminModuleGrants?: AdminModuleGrantUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutCommunicationsLoggedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutCommunicationsLoggedInput, UserUncheckedCreateWithoutCommunicationsLoggedInput>
+  }
+
+  export type UserUpsertWithoutCommunicationsAsPartyInput = {
+    update: XOR<UserUpdateWithoutCommunicationsAsPartyInput, UserUncheckedUpdateWithoutCommunicationsAsPartyInput>
+    create: XOR<UserCreateWithoutCommunicationsAsPartyInput, UserUncheckedCreateWithoutCommunicationsAsPartyInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutCommunicationsAsPartyInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutCommunicationsAsPartyInput, UserUncheckedUpdateWithoutCommunicationsAsPartyInput>
+  }
+
+  export type UserUpdateWithoutCommunicationsAsPartyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUpdateManyWithoutCorrectedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUpdateManyWithoutCreatedByNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutCommunicationsAsPartyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUncheckedUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUncheckedUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUncheckedUpdateManyWithoutCorrectedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUncheckedUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsLogged?: CommunicationLogUncheckedUpdateManyWithoutCreatedByNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type SupplierUpsertWithoutCommunicationsInput = {
+    update: XOR<SupplierUpdateWithoutCommunicationsInput, SupplierUncheckedUpdateWithoutCommunicationsInput>
+    create: XOR<SupplierCreateWithoutCommunicationsInput, SupplierUncheckedCreateWithoutCommunicationsInput>
+    where?: SupplierWhereInput
+  }
+
+  export type SupplierUpdateToOneWithWhereWithoutCommunicationsInput = {
+    where?: SupplierWhereInput
+    data: XOR<SupplierUpdateWithoutCommunicationsInput, SupplierUncheckedUpdateWithoutCommunicationsInput>
+  }
+
+  export type SupplierUpdateWithoutCommunicationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyName?: StringFieldUpdateOperationsInput | string
+    companyNameAr?: NullableStringFieldUpdateOperationsInput | string | null
+    externalReference?: NullableStringFieldUpdateOperationsInput | string | null
+    active?: BoolFieldUpdateOperationsInput | boolean
+    contactPerson?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    whatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
+    availableForEmergencies?: BoolFieldUpdateOperationsInput | boolean
+    availableForAllProperties?: BoolFieldUpdateOperationsInput | boolean
+    calloutCharge?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    contractStart?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    contractEnd?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    contractInfo?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: UserUpdateOneWithoutSuppliersCreatedNestedInput
+    categories?: SupplierCategoryUpdateManyWithoutSupplierNestedInput
+    properties?: SupplierPropertyUpdateManyWithoutSupplierNestedInput
+    expenses?: ExpenseUpdateManyWithoutSupplierNestedInput
+    serviceContracts?: BuildingServiceContractUpdateManyWithoutSupplierNestedInput
+  }
+
+  export type SupplierUncheckedUpdateWithoutCommunicationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyName?: StringFieldUpdateOperationsInput | string
+    companyNameAr?: NullableStringFieldUpdateOperationsInput | string | null
+    externalReference?: NullableStringFieldUpdateOperationsInput | string | null
+    active?: BoolFieldUpdateOperationsInput | boolean
+    contactPerson?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    whatsapp?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
+    availableForEmergencies?: BoolFieldUpdateOperationsInput | boolean
+    availableForAllProperties?: BoolFieldUpdateOperationsInput | boolean
+    calloutCharge?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    contractStart?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    contractEnd?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    contractInfo?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    categories?: SupplierCategoryUncheckedUpdateManyWithoutSupplierNestedInput
+    properties?: SupplierPropertyUncheckedUpdateManyWithoutSupplierNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutSupplierNestedInput
+    serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutSupplierNestedInput
+  }
+
+  export type UserUpsertWithoutCommunicationsLoggedInput = {
+    update: XOR<UserUpdateWithoutCommunicationsLoggedInput, UserUncheckedUpdateWithoutCommunicationsLoggedInput>
+    create: XOR<UserCreateWithoutCommunicationsLoggedInput, UserUncheckedCreateWithoutCommunicationsLoggedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutCommunicationsLoggedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutCommunicationsLoggedInput, UserUncheckedUpdateWithoutCommunicationsLoggedInput>
+  }
+
+  export type UserUpdateWithoutCommunicationsLoggedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUpdateManyWithoutCorrectedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutCommunicationsLoggedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    userType?: EnumUserTypeFieldUpdateOperationsInput | $Enums.UserType
+    workerCategory?: NullableEnumWorkerCategoryFieldUpdateOperationsInput | $Enums.WorkerCategory | null
+    companyName?: NullableStringFieldUpdateOperationsInput | string | null
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    civilId?: NullableStringFieldUpdateOperationsInput | string | null
+    nationality?: NullableStringFieldUpdateOperationsInput | string | null
+    employer?: NullableStringFieldUpdateOperationsInput | string | null
+    mailingAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactName?: NullableStringFieldUpdateOperationsInput | string | null
+    emergencyContactPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    passportNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    passportIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passportExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    visaIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    visaExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    civilIdExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    drivingLicenseIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    drivingLicenseExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    employeeType?: StringFieldUpdateOperationsInput | string
+    hasVehicle?: BoolFieldUpdateOperationsInput | boolean
+    vehicleRegistrationNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    vehicleRegistrationIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    vehicleRegistrationExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    carInsuranceIssuance?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    carInsuranceExpiry?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    hrReminderStages?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUncheckedUpdateOneWithoutTenantNestedInput
+    requests?: MaintenanceRequestUncheckedUpdateManyWithoutUserNestedInput
+    assignedRequests?: MaintenanceRequestUncheckedUpdateManyWithoutAssignedToNestedInput
+    createdRequests?: MaintenanceRequestUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: MaintenanceAttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    taskLogs?: TaskLogUncheckedUpdateManyWithoutChangedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    tenancies?: TenancyUncheckedUpdateManyWithoutTenantNestedInput
+    charges?: ChargeUncheckedUpdateManyWithoutTenantNestedInput
+    createdCharges?: ChargeUncheckedUpdateManyWithoutCreatedByNestedInput
+    submittedPayments?: PaymentUncheckedUpdateManyWithoutSubmittedByNestedInput
+    reviewedPayments?: PaymentUncheckedUpdateManyWithoutReviewedByNestedInput
+    financialUploads?: FinancialAttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
+    documents?: EntityDocumentUncheckedUpdateManyWithoutUserNestedInput
+    documentUploads?: EntityDocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+    supplyRequestsMade?: SupplyRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    supplyRequestsDecided?: SupplyRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesCreated?: ServiceChargeInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargeInvoicesBilled?: ServiceChargeInvoiceUncheckedUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCreated?: ServiceChargePaymentUncheckedUpdateManyWithoutCreatedByNestedInput
+    serviceChargePaymentsBilled?: ServiceChargePaymentUncheckedUpdateManyWithoutBilledOwnerNestedInput
+    serviceChargePaymentsCorrected?: ServiceChargePaymentUncheckedUpdateManyWithoutCorrectedByNestedInput
+    serviceChargePlansCreated?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutCreatedByNestedInput
+    suppliersCreated?: SupplierUncheckedUpdateManyWithoutCreatedByNestedInput
+    buildingServiceContractsCreated?: BuildingServiceContractUncheckedUpdateManyWithoutCreatedByNestedInput
+    annualBudgetsCreated?: AnnualBudgetUncheckedUpdateManyWithoutCreatedByNestedInput
+    ownedUnits?: UnitUncheckedUpdateManyWithoutOwnerNestedInput
+    whatsappSessions?: WhatsappSessionUncheckedUpdateManyWithoutUserNestedInput
+    rejectionLogs?: RejectionLogUncheckedUpdateManyWithoutRejectedByNestedInput
+    unitPermissionChanges?: UnitPermissionChangeUncheckedUpdateManyWithoutChangedByNestedInput
+    ownershipTransfersFrom?: OwnershipTransferUncheckedUpdateManyWithoutFromOwnerNestedInput
+    ownershipTransfersTo?: OwnershipTransferUncheckedUpdateManyWithoutToOwnerNestedInput
+    ownershipTransfersCreated?: OwnershipTransferUncheckedUpdateManyWithoutCreatedByNestedInput
+    familyMembers?: WorkerFamilyMemberUncheckedUpdateManyWithoutWorkerNestedInput
+    servicesInvoicesCreated?: ServicesInvoiceUncheckedUpdateManyWithoutCreatedByNestedInput
+    communicationsAsParty?: CommunicationLogUncheckedUpdateManyWithoutPartyUserNestedInput
+    adminModuleGrants?: AdminModuleGrantUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PropertyCreateManyPropertyTypeInput = {
@@ -92999,6 +103396,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutPropertyTypeInput = {
@@ -93039,6 +103437,7 @@ export namespace Prisma {
     supplierLinks?: SupplierPropertyUncheckedUpdateManyWithoutPropertyNestedInput
     budgets?: AnnualBudgetUncheckedUpdateManyWithoutPropertyNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutPropertyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateManyWithoutPropertyTypeInput = {
@@ -93188,6 +103587,22 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type ServicesInvoiceCreateManyPropertyInput = {
+    id?: string
+    invoiceNumber: number
+    unitId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
   export type UnitUpdateWithoutPropertyInput = {
     id?: StringFieldUpdateOperationsInput | string
     label?: StringFieldUpdateOperationsInput | string
@@ -93218,6 +103633,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutPropertyInput = {
@@ -93250,6 +103666,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateManyWithoutPropertyInput = {
@@ -93568,6 +103985,56 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ServicesInvoiceUpdateWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unit?: UnitUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    tenancy?: TenancyUpdateOneWithoutServicesInvoicesNestedInput
+    createdBy?: UserUpdateOneWithoutServicesInvoicesCreatedNestedInput
+    lines?: ServicesInvoiceLineUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    unitId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lines?: ServicesInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateManyWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    unitId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type MaintenanceRequestCreateManyUnitInput = {
     id?: string
     userId: string
@@ -93678,6 +104145,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
   }
@@ -93728,6 +104199,22 @@ export namespace Prisma {
     keptServiceCharge?: boolean
     keptInstallmentPlan?: boolean
     notes?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ServicesInvoiceCreateManyUnitInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
     createdById?: string | null
     createdAt?: Date | string
   }
@@ -93842,6 +104329,7 @@ export namespace Prisma {
     tenant?: UserUpdateOneRequiredWithoutTenanciesNestedInput
     charges?: ChargeUpdateManyWithoutTenancyNestedInput
     documents?: EntityDocumentUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutTenancyNestedInput
   }
 
   export type TenancyUncheckedUpdateWithoutUnitInput = {
@@ -93869,6 +104357,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     charges?: ChargeUncheckedUpdateManyWithoutTenancyNestedInput
     documents?: EntityDocumentUncheckedUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutTenancyNestedInput
   }
 
   export type TenancyUncheckedUpdateManyWithoutUnitInput = {
@@ -94050,6 +104539,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     fund?: FundUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
     billedOwner?: UserUpdateOneWithoutServiceChargeInvoicesBilledNestedInput
@@ -94072,6 +104565,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: ServiceChargeInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
@@ -94092,6 +104589,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -94246,6 +104747,56 @@ export namespace Prisma {
     keptServiceCharge?: BoolFieldUpdateOperationsInput | boolean
     keptInstallmentPlan?: BoolFieldUpdateOperationsInput | boolean
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServicesInvoiceUpdateWithoutUnitInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    tenancy?: TenancyUpdateOneWithoutServicesInvoicesNestedInput
+    createdBy?: UserUpdateOneWithoutServicesInvoicesCreatedNestedInput
+    lines?: ServicesInvoiceLineUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateWithoutUnitInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lines?: ServicesInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateManyWithoutUnitInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -94576,6 +105127,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdAt?: Date | string
   }
 
@@ -94593,6 +105148,10 @@ export namespace Prisma {
     currentAmount: Decimal | DecimalJsLike | number | string
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
   }
@@ -94818,6 +105377,58 @@ export namespace Prisma {
     documentFileSize?: number | null
     createdAt?: Date | string
     updatedAt?: Date | string
+  }
+
+  export type ServicesInvoiceCreateManyCreatedByInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    unitId: string
+    tenancyId?: string | null
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+  }
+
+  export type CommunicationLogCreateManyCreatedByInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyUserId?: string | null
+    supplierId?: string | null
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdAt?: Date | string
+  }
+
+  export type CommunicationLogCreateManyPartyUserInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    supplierId?: string | null
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type AdminModuleGrantCreateManyUserInput = {
+    id?: string
+    module: $Enums.AdminModule
+    createdAt?: Date | string
   }
 
   export type MaintenanceRequestUpdateWithoutUserInput = {
@@ -95184,6 +105795,7 @@ export namespace Prisma {
     unit?: UnitUpdateOneRequiredWithoutTenanciesNestedInput
     charges?: ChargeUpdateManyWithoutTenancyNestedInput
     documents?: EntityDocumentUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutTenancyNestedInput
   }
 
   export type TenancyUncheckedUpdateWithoutTenantInput = {
@@ -95211,6 +105823,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     charges?: ChargeUncheckedUpdateManyWithoutTenancyNestedInput
     documents?: EntityDocumentUncheckedUpdateManyWithoutTenancyNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutTenancyNestedInput
   }
 
   export type TenancyUncheckedUpdateManyWithoutTenantInput = {
@@ -95813,6 +106426,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
     fund?: FundUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
@@ -95836,6 +106453,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: ServiceChargeInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutSourceInvoiceNestedInput
@@ -95856,6 +106477,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -95871,6 +106496,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
     fund?: FundUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
@@ -95893,6 +106522,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: ServiceChargeInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
@@ -95913,6 +106546,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -96174,6 +106811,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUpdateManyWithoutSupplierNestedInput
   }
 
   export type SupplierUncheckedUpdateWithoutCreatedByInput = {
@@ -96200,6 +106838,7 @@ export namespace Prisma {
     properties?: SupplierPropertyUncheckedUpdateManyWithoutSupplierNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutSupplierNestedInput
     serviceContracts?: BuildingServiceContractUncheckedUpdateManyWithoutSupplierNestedInput
+    communications?: CommunicationLogUncheckedUpdateManyWithoutSupplierNestedInput
   }
 
   export type SupplierUncheckedUpdateManyWithoutCreatedByInput = {
@@ -96333,6 +106972,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateWithoutOwnerInput = {
@@ -96365,6 +107005,7 @@ export namespace Prisma {
     installmentPlans?: ServiceChargeInstallmentPlanUncheckedUpdateManyWithoutUnitNestedInput
     fundBalances?: UnitFundBalanceUncheckedUpdateManyWithoutUnitNestedInput
     ownershipTransfers?: OwnershipTransferUncheckedUpdateManyWithoutUnitNestedInput
+    servicesInvoices?: ServicesInvoiceUncheckedUpdateManyWithoutUnitNestedInput
   }
 
   export type UnitUncheckedUpdateManyWithoutOwnerInput = {
@@ -96628,6 +107269,164 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ServicesInvoiceUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    unit?: UnitUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    tenancy?: TenancyUpdateOneWithoutServicesInvoicesNestedInput
+    lines?: ServicesInvoiceLineUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lines?: ServicesInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    tenancyId?: NullableStringFieldUpdateOperationsInput | string | null
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunicationLogUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    partyUser?: UserUpdateOneWithoutCommunicationsAsPartyNestedInput
+    supplier?: SupplierUpdateOneWithoutCommunicationsNestedInput
+  }
+
+  export type CommunicationLogUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierId?: NullableStringFieldUpdateOperationsInput | string | null
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunicationLogUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierId?: NullableStringFieldUpdateOperationsInput | string | null
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunicationLogUpdateWithoutPartyUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    supplier?: SupplierUpdateOneWithoutCommunicationsNestedInput
+    createdBy?: UserUpdateOneRequiredWithoutCommunicationsLoggedNestedInput
+  }
+
+  export type CommunicationLogUncheckedUpdateWithoutPartyUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    supplierId?: NullableStringFieldUpdateOperationsInput | string | null
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunicationLogUncheckedUpdateManyWithoutPartyUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    supplierId?: NullableStringFieldUpdateOperationsInput | string | null
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdminModuleGrantUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumAdminModuleFieldUpdateOperationsInput | $Enums.AdminModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdminModuleGrantUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumAdminModuleFieldUpdateOperationsInput | $Enums.AdminModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdminModuleGrantUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumAdminModuleFieldUpdateOperationsInput | $Enums.AdminModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ChargeCreateManyTenancyInput = {
     id?: string
     unitId: string
@@ -96658,6 +107457,22 @@ export namespace Prisma {
     fileSize: number
     expiresAt?: Date | string | null
     uploadedById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ServicesInvoiceCreateManyTenancyInput = {
+    id?: string
+    invoiceNumber: number
+    propertyId: string
+    unitId: string
+    issueDate: Date | string
+    periodStart: Date | string
+    periodEnd: Date | string
+    billedName: string
+    billedAddress: string
+    status?: string
+    total: Decimal | DecimalJsLike | number | string
+    createdById?: string | null
     createdAt?: Date | string
   }
 
@@ -96761,6 +107576,56 @@ export namespace Prisma {
     fileSize?: IntFieldUpdateOperationsInput | number
     expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     uploadedById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServicesInvoiceUpdateWithoutTenancyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    unit?: UnitUpdateOneRequiredWithoutServicesInvoicesNestedInput
+    createdBy?: UserUpdateOneWithoutServicesInvoicesCreatedNestedInput
+    lines?: ServicesInvoiceLineUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateWithoutTenancyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lines?: ServicesInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
+  }
+
+  export type ServicesInvoiceUncheckedUpdateManyWithoutTenancyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    invoiceNumber?: IntFieldUpdateOperationsInput | number
+    propertyId?: StringFieldUpdateOperationsInput | string
+    unitId?: StringFieldUpdateOperationsInput | string
+    issueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    periodEnd?: DateTimeFieldUpdateOperationsInput | Date | string
+    billedName?: StringFieldUpdateOperationsInput | string
+    billedAddress?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    total?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -97027,6 +107892,10 @@ export namespace Prisma {
     amountPayable: Decimal | DecimalJsLike | number | string
     closingBalance: Decimal | DecimalJsLike | number | string
     billedOwnerId?: string | null
+    kind?: string
+    status?: string
+    notes?: string | null
+    sentAt?: Date | string | null
     createdById?: string | null
     createdAt?: Date | string
   }
@@ -97197,6 +108066,10 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     unit?: UnitUpdateOneRequiredWithoutServiceChargeInvoicesNestedInput
     billedOwner?: UserUpdateOneWithoutServiceChargeInvoicesBilledNestedInput
@@ -97219,6 +108092,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: ServiceChargeInvoiceLineUncheckedUpdateManyWithoutInvoiceNestedInput
@@ -97239,6 +108116,10 @@ export namespace Prisma {
     amountPayable?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     closingBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     billedOwnerId?: NullableStringFieldUpdateOperationsInput | string | null
+    kind?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -97686,6 +108567,21 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type CommunicationLogCreateManySupplierInput = {
+    id?: string
+    channel: string
+    direction: string
+    aboutKind: string
+    partyUserId?: string | null
+    partyName: string
+    partyPhone?: string | null
+    subject: string
+    body: string
+    occurredAt: Date | string
+    createdById: string
+    createdAt?: Date | string
+  }
+
   export type SupplierCategoryUpdateWithoutSupplierInput = {
     category?: ExpenseCategoryTypeUpdateOneRequiredWithoutSuppliersNestedInput
   }
@@ -97830,6 +108726,51 @@ export namespace Prisma {
     createdById?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunicationLogUpdateWithoutSupplierInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    partyUser?: UserUpdateOneWithoutCommunicationsAsPartyNestedInput
+    createdBy?: UserUpdateOneRequiredWithoutCommunicationsLoggedNestedInput
+  }
+
+  export type CommunicationLogUncheckedUpdateWithoutSupplierInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunicationLogUncheckedUpdateManyWithoutSupplierInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    direction?: StringFieldUpdateOperationsInput | string
+    aboutKind?: StringFieldUpdateOperationsInput | string
+    partyUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    partyName?: StringFieldUpdateOperationsInput | string
+    partyPhone?: NullableStringFieldUpdateOperationsInput | string | null
+    subject?: StringFieldUpdateOperationsInput | string
+    body?: StringFieldUpdateOperationsInput | string
+    occurredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type MaintenanceAttachmentCreateManyRequestInput = {
@@ -98058,6 +108999,42 @@ export namespace Prisma {
     data?: NullableJsonNullValueInput | InputJsonValue
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServicesInvoiceLineCreateManyInvoiceInput = {
+    id?: string
+    sequence: number
+    qty?: Decimal | DecimalJsLike | number | string
+    item: string
+    description: string
+    unitPrice: Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineUpdateWithoutInvoiceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    sequence?: IntFieldUpdateOperationsInput | number
+    qty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    item?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    unitPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineUncheckedUpdateWithoutInvoiceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    sequence?: IntFieldUpdateOperationsInput | number
+    qty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    item?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    unitPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type ServicesInvoiceLineUncheckedUpdateManyWithoutInvoiceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    sequence?: IntFieldUpdateOperationsInput | number
+    qty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    item?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    unitPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
   }
 
 

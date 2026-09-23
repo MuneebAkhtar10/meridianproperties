@@ -28,6 +28,7 @@ import {
   type CollectionPositionBucketFilter,
   type CollectionPositionRow,
 } from "@/lib/collection-position";
+import { prismaCollectsServiceChargeTypeWhere } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
@@ -85,6 +86,9 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
     await Promise.all([
       getCollectionPositionData(propertyFilter),
       prisma.property.findMany({
+        where: {
+          propertyType: prismaCollectsServiceChargeTypeWhere(),
+        },
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),

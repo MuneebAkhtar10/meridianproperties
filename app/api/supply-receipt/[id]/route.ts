@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { downloadAttachment } from "@/lib/storage";
 import { UserType } from "@/lib/generated/prisma/client";
 
@@ -32,7 +32,7 @@ export async function GET(
   }
 
   const canRead =
-    user.userType === UserType.admin ||
+    isStaffAdmin(user.userType) ||
     supplyRequest.requestedById === user.id ||
     supplyRequest.request.assignedToId === user.id;
 

@@ -87,7 +87,7 @@ export const PROPERTY_MANAGEMENT_CATEGORY_DESCRIPTION: Record<
   oa: "The owner owns the whole property; we only manage it. Units never bill rent and never take maintenance requests — common areas stay on.",
   bm: "We don't own the property, only several units within it. Rent and maintenance requests stay on — there are no common areas of our own to manage.",
   callout: "One-off maintenance work only — no rent, no bills, no common areas to manage.",
-  independent: "A standalone rental (villa, apartment, office, ...) with its own landlord — rent and maintenance stay on, with no shared common areas to manage. Gets its own Landlord Statement report.",
+  independent: "A standalone rental (villa, apartment, or office) with its own landlord — exactly one unit. Rent and maintenance stay on, with no shared common areas to manage. Gets a Landlord Statement for that tenancy.",
 };
 
 /** A plain-English "what we manage here" note for the property page's own
@@ -99,7 +99,7 @@ export const PROPERTY_MANAGEMENT_SCOPE_NOTE: Record<PropertyManagementCategory, 
   oa: "Rawazen manages this entire property on behalf of its owners' association — common areas, service charges and building-wide maintenance. Individual units are not billed rent through this system.",
   bm: "Rawazen manages a number of units within this property on the landlord's behalf — rent collection, tenant maintenance requests and building expenses. There are no common areas of our own to manage here.",
   callout: "Rawazen handles one-off maintenance work for this property only — no rent, bills or common areas are managed here.",
-  independent: "This is a standalone rental with its own landlord. Rawazen manages rent collection and maintenance on their behalf, with no shared common areas, and produces a dedicated Landlord Statement for this property.",
+  independent: "This is a standalone rental with its own landlord — a single unit (apartment, villa, or office). Rawazen manages rent collection and maintenance for that unit, and produces a Landlord Statement for the tenancy.",
 };
 
 export type PropertyManagementFlags = {
@@ -180,5 +180,28 @@ export function propertyManagementCategory(
  * way isBuildingType/isBuildingManagementType do. */
 export function isIndependentType(propertyType: PropertyManagementFlags): boolean {
   return propertyManagementCategory(propertyType) === "independent";
+}
+
+/** Service charge is an OA (and similar) product — independent rentals
+ * never take it. Use this to hide SC UI and keep bulk SC runs off those
+ * properties. */
+export function collectsServiceCharge(
+  propertyType: PropertyManagementFlags,
+): boolean {
+  return !isIndependentType(propertyType);
+}
+
+/** Prisma `select` for the five flags `isIndependentType` / `collectsServiceCharge` need. */
+export const PROPERTY_MANAGEMENT_FLAGS_SELECT = {
+  isOwnerAssociation: true,
+  isBuildingManagement: true,
+  showRentBills: true,
+  showMaintenance: true,
+  hasCommonAreas: true,
+} as const;
+
+/** Prisma `propertyType` filter: every type except Independent. */
+export function prismaCollectsServiceChargeTypeWhere() {
+  return { NOT: PROPERTY_MANAGEMENT_CATEGORY_FLAGS.independent };
 }
 

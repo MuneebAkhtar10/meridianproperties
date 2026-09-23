@@ -95,7 +95,7 @@ export default async function ReportsPage() {
     {
       href: "/protected/expenses?cashflow=1",
       title: "Cash Flow Statement",
-      description: "Actual revenue and expenditure for one property, one fund.",
+      description: "Actual revenue and expenditure for one property over a date range.",
       icon: <TrendingUp className="h-5 w-5" />,
       iconBg: "bg-cyan-50 text-cyan-600",
     },

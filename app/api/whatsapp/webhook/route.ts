@@ -68,6 +68,12 @@ type WhatsappWebhookPayload = {
             list_reply?: { id?: string; title?: string };
           };
         }[];
+        statuses?: {
+          id?: string;
+          status?: string;
+          recipient_id?: string;
+          errors?: { code?: number; title?: string; message?: string }[];
+        }[];
       };
     }[];
   }[];
@@ -156,7 +162,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const message = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+  const value = payload.entry?.[0]?.changes?.[0]?.value;
+  const statuses = value?.statuses;
+  if (statuses?.length) {
+    for (const status of statuses) {
+      if (status.status === "failed" || status.errors?.length) {
+        console.error(
+          "[whatsapp webhook] Delivery failed",
+          JSON.stringify({
+            to: status.recipient_id,
+            id: status.id,
+            status: status.status,
+            errors: status.errors,
+          }),
+        );
+      }
+    }
+  }
+
+  const message = value?.messages?.[0];
 
   // Meta also posts status updates (sent/delivered/read) and other event
   // types to this same webhook with no `messages` array — nothing to do.

@@ -10,10 +10,35 @@ datasource db {
 enum UserType {
   user
   admin
+  /// Full company access plus the Permissions tab. Regular admins only see
+  /// the modules a super admin has granted them.
+  super_admin
   worker
   /// A landlord who can list their own properties (unapproved until an admin
   /// approves them) and see everything scoped to properties they own.
   owner
+}
+
+/// Sidebar / toolbar sections a regular admin can be granted. Super admins
+/// ignore this list and always have every module.
+enum AdminModule {
+  dashboard
+  onboarding
+  properties
+  tenancies
+  maintenance
+  finances
+  service_charges
+  invoices
+  expenses
+  communications
+  reports
+  suppliers
+  people
+  rejections
+  qr_code
+  dynamics
+  settings
 }
 
 /// Only meaningful when userType = worker. Distinguishes staff employed by
@@ -261,6 +286,7 @@ model Property {
   supplierLinks      SupplierProperty[]
   budgets            AnnualBudget[]
   serviceContracts   BuildingServiceContract[]
+  servicesInvoices   ServicesInvoice[]
 
   @@index([propertyTypeId])
   @@map("properties")
@@ -340,6 +366,7 @@ model Unit {
   installmentPlans      ServiceChargeInstallmentPlan[]
   fundBalances          UnitFundBalance[]
   ownershipTransfers    OwnershipTransfer[]
+  servicesInvoices      ServicesInvoice[]
 
   @@unique([propertyId, label])
   @@index([propertyId])
@@ -514,9 +541,28 @@ model User {
   /// Only populated when employeeType = "family" — the worker's tracked
   /// dependents (see WorkerFamilyMember).
   familyMembers                WorkerFamilyMember[]
+  servicesInvoicesCreated      ServicesInvoice[]              @relation("ServicesInvoiceCreator")
+  communicationsLogged         CommunicationLog[]             @relation("CommunicationLogger")
+  communicationsAsParty        CommunicationLog[]             @relation("CommunicationParty")
+  adminModuleGrants            AdminModuleGrant[]
 
   @@unique([email, userType])
   @@map("users")
+}
+
+/// One granted sidebar module for a regular admin. Absence of a row means
+/// that module is hidden. Super admins do not need rows here.
+model AdminModuleGrant {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @map("user_id") @db.Uuid
+  module    AdminModule
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, module])
+  @@index([userId])
+  @@map("admin_module_grants")
 }
 
 enum FamilyRelationship {
@@ -593,6 +639,7 @@ model Tenancy {
   tenant    User             @relation("TenancyTenant", fields: [tenantId], references: [id], onDelete: Cascade)
   charges   Charge[]
   documents EntityDocument[]
+  servicesInvoices ServicesInvoice[]
 
   @@index([unitId, endDate])
   @@index([tenantId, endDate])
@@ -884,6 +931,12 @@ model ServiceChargeInvoice {
   /// Owner billed when this invoice was generated — kept even if the unit
   /// later changes hands, so the ledger and PDF stay historically accurate.
   billedOwnerId   String?  @map("billed_owner_id") @db.Uuid
+  /// service_charge (recurring OA charge) | additional (one-off against a unit)
+  kind            String   @default("service_charge")
+  /// draft | issued | void — drafts do not move the ledger until issued.
+  status          String   @default("issued")
+  notes           String?
+  sentAt          DateTime? @map("sent_at")
   createdById     String?  @map("created_by") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -1134,6 +1187,7 @@ model Supplier {
   properties SupplierProperty[]
   expenses   Expense[]
   serviceContracts BuildingServiceContract[]
+  communications CommunicationLog[]
 
   @@map("suppliers")
 }
@@ -1459,4 +1513,80 @@ model RejectionLog {
   @@index([kind])
   @@index([createdAt])
   @@map("rejection_logs")
+}
+
+/// A Rawazen Services invoice for an Independent or Building Management
+/// unit — maintenance/expenses billed to the landlord, rent Rawazen
+/// collected credited as negative lines. Matches the client's Brisk
+/// "Invoice 75" layout (see lib/pdf/services-invoice.tsx).
+model ServicesInvoice {
+  id             String   @id @default(uuid()) @db.Uuid
+  invoiceNumber  Int      @unique @map("invoice_number")
+  propertyId     String   @map("property_id") @db.Uuid
+  unitId         String   @map("unit_id") @db.Uuid
+  tenancyId      String?  @map("tenancy_id") @db.Uuid
+  issueDate      DateTime @map("issue_date") @db.Date
+  periodStart    DateTime @map("period_start") @db.Date
+  periodEnd      DateTime @map("period_end") @db.Date
+  billedName     String   @map("billed_name")
+  billedAddress  String   @map("billed_address")
+  /// "issued" until an admin marks it paid, or auto-paid when the total
+  /// is a credit (rent collected exceeds costs).
+  status         String   @default("issued")
+  total          Decimal  @db.Decimal(14, 3)
+  createdById    String?  @map("created_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  property  Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit      Unit                   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  tenancy   Tenancy?               @relation(fields: [tenancyId], references: [id], onDelete: SetNull)
+  createdBy User?                  @relation("ServicesInvoiceCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  lines     ServicesInvoiceLine[]
+
+  @@index([propertyId, issueDate])
+  @@index([unitId, issueDate])
+  @@map("services_invoices")
+}
+
+model ServicesInvoiceLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  invoiceId   String  @map("invoice_id") @db.Uuid
+  sequence    Int
+  qty         Decimal @default(1) @db.Decimal(10, 2)
+  item        String
+  description String
+  unitPrice   Decimal @map("unit_price") @db.Decimal(14, 3)
+
+  invoice ServicesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("services_invoice_lines")
+}
+
+/// A conversation Rawazen had with someone — phone, visit, WhatsApp, SMS
+/// or email — logged by staff so the history is complete even when it
+/// didn't go through the in-app channels.
+model CommunicationLog {
+  id           String    @id @default(uuid()) @db.Uuid
+  channel      String
+  direction    String
+  aboutKind    String    @map("about_kind")
+  partyUserId  String?   @map("party_user_id") @db.Uuid
+  supplierId   String?   @map("supplier_id") @db.Uuid
+  partyName    String    @map("party_name")
+  partyPhone   String?   @map("party_phone")
+  subject      String
+  body         String
+  occurredAt   DateTime  @map("occurred_at")
+  createdById  String    @map("created_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  partyUser User?     @relation("CommunicationParty", fields: [partyUserId], references: [id], onDelete: SetNull)
+  supplier  Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  createdBy User      @relation("CommunicationLogger", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([occurredAt])
+  @@index([channel])
+  @@index([createdById])
+  @@map("communication_logs")
 }

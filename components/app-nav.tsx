@@ -12,7 +12,9 @@ import {
   Landmark,
   LayoutDashboard,
   ListChecks,
+  MessageSquare,
   Receipt,
+  Shield,
   Tags,
   Users,
   Wallet,
@@ -30,6 +32,7 @@ const ICONS = {
   onboarding: ListChecks,
   requests: Wrench,
   rentAndBills: Receipt,
+  invoices: FileText,
   tenancies: KeyRound,
   properties: Building2,
   people: Users,
@@ -37,9 +40,11 @@ const ICONS = {
   documents: FileText,
   report: AlertTriangle,
   expenses: Wallet,
+  communications: MessageSquare,
   suppliers: Tags,
   serviceCharges: Landmark,
   reports: BarChart3,
+  permissions: Shield,
 } as const;
 
 export type NavIconKey = keyof typeof ICONS;
@@ -75,7 +80,7 @@ export function AppNav({
     <nav
       className={cn(
         "flex",
-        isVertical ? "flex-col gap-1" : "items-center gap-1",
+        isVertical ? "flex-col gap-0.5" : "items-center gap-1",
       )}
     >
       {items.map((item) => {
@@ -95,15 +100,15 @@ export function AppNav({
             className={cn(
               "inline-flex items-center whitespace-nowrap font-medium transition-colors",
               isVertical
-                ? "gap-3 rounded-lg px-3 py-2.5 text-sm"
+                ? "gap-2.5 rounded-md px-2.5 py-1.5 text-[13px]"
                 : "gap-1.5 rounded-lg px-3 py-2 text-sm",
-              collapsed && "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0 lg:py-0",
+              collapsed && "lg:mx-auto lg:h-9 lg:w-9 lg:justify-center lg:gap-0 lg:px-0 lg:py-0",
               isActive
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            {Icon && <Icon className="h-[18px] w-[18px] shrink-0" />}
+            {Icon && <Icon className="h-4 w-4 shrink-0" />}
             <span className={cn(collapsed && "lg:hidden")}>{item.label}</span>
             {/* Always takes up layout space (just invisible until pending) —
              * hidden outright when collapsed instead, since a couple of

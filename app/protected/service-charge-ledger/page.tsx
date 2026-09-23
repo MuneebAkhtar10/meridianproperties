@@ -19,7 +19,10 @@ import { Label } from "@/components/ui/label";
 import { PendingLink } from "@/components/ui/pending-link";
 import { Select } from "@/components/ui/select";
 import { formatMoney, formatMoneyCompact, moneyValue } from "@/lib/finance";
-import { formatUnitLabel } from "@/lib/property-types";
+import {
+  formatUnitLabel,
+  prismaCollectsServiceChargeTypeWhere,
+} from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { serviceChargeTone } from "@/lib/service-charge-status";
@@ -45,6 +48,9 @@ export default async function ServiceChargesPage({ searchParams }: PageProps) {
   const [units, properties, owners, availableTenants, funds] = await Promise.all([
     prisma.unit.findMany({
       where: {
+        property: {
+          propertyType: prismaCollectsServiceChargeTypeWhere(),
+        },
         ...(propertyFilter !== "all" ? { propertyId: propertyFilter } : {}),
         ...(ownerFilter !== "all" ? { ownerId: ownerFilter } : {}),
       },
@@ -124,6 +130,9 @@ export default async function ServiceChargesPage({ searchParams }: PageProps) {
       },
     }),
     prisma.property.findMany({
+      where: {
+        propertyType: prismaCollectsServiceChargeTypeWhere(),
+      },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
@@ -243,7 +252,7 @@ export default async function ServiceChargesPage({ searchParams }: PageProps) {
     <div className="w-full space-y-5 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Service Charge Ledger"
-        description="Every unit's service charge across every property and owner, in one place — filter it down, or select owners to email in bulk."
+        description="Every unit's service charge on properties that take it — independent properties are excluded. Filter it down, or select owners to email in bulk."
       >
         <BulkGenerateServiceChargeModal
           properties={properties}

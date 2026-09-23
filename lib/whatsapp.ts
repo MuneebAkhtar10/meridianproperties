@@ -26,15 +26,13 @@ import "server-only";
  *   3. See app/api/whatsapp/webhook/route.ts for the inbound side — that's
  *      where WHATSAPP_VERIFY_TOKEN and WHATSAPP_APP_SECRET get used.
  *   4. Outside the 24-hour customer service window (i.e. the recipient
- *      hasn't messaged you in the last 24h), Meta only allows pre-approved
- *      Message Templates, not free-form text like this. sendWhatsApp below
- *      already handles this automatically: it tries free-form text first
- *      (works whenever the recipient has messaged recently), and only if
- *      Meta rejects it specifically for being outside that window does it
- *      fall back to WHATSAPP_TEMPLATE_GENERIC — one approved template whose
- *      entire body is a single {{1}} variable, filled with this same
- *      message text. That one template covers every notification type in
- *      the app; you never need to create a new template per situation.
+ *      hasn't messaged you in the last 24h), Meta only delivers pre-approved
+ *      Message Templates. Free-form text often returns HTTP 200 and then
+ *      fails silently on delivery — so account notices (bills, rent,
+ *      service charges) always go out through WHATSAPP_TEMPLATE_GENERIC,
+ *      one approved template whose body is a single {{1}} variable filled
+ *      with the notice text. Bot replies in app/api/whatsapp/webhook still
+ *      use free-form text, because those are inside an open session.
  *      (notifyTenantAssigned in lib/notifications.ts additionally uses its
  *      own richer WHATSAPP_TEMPLATE_TENANT_WELCOME template directly, since
  *      that's almost always a first contact and benefits from real
@@ -99,6 +97,10 @@ export async function sendWhatsApp(input: {
    * in this app — see lib/phone.ts). */
   to: string;
   body: string;
+  /** True for bills/rent/alerts. Uses the approved generic template so the
+   * message still arrives when the recipient has not messaged us in 24h.
+   * Leave unset for in-session bot replies. */
+  preferTemplate?: boolean;
 }): Promise<void> {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -108,6 +110,16 @@ export async function sendWhatsApp(input: {
       "[whatsapp] WhatsApp Cloud API env vars not set — skipping WhatsApp message to",
       input.to,
     );
+    return;
+  }
+
+  const genericTemplate = process.env.WHATSAPP_TEMPLATE_GENERIC;
+  if (input.preferTemplate && genericTemplate) {
+    await sendWhatsAppTemplate({
+      to: input.to,
+      templateName: genericTemplate,
+      bodyParams: [input.body],
+    });
     return;
   }
 
@@ -132,7 +144,6 @@ export async function sendWhatsApp(input: {
     if (!response.ok) {
       const errorBody = await response.text().catch(() => "");
 
-      const genericTemplate = process.env.WHATSAPP_TEMPLATE_GENERIC;
       if (genericTemplate && isOutsideServiceWindowError(errorBody)) {
         console.warn(
           `[whatsapp] ${input.to} is outside the 24h window — falling back to the generic template.`,
@@ -161,7 +172,39 @@ export async function sendWhatsApp(input: {
  * `bodyParams` fill the template's {{1}}, {{2}}, ... placeholders in order,
  * exactly as defined when the template was created in Meta Business
  * Manager (WhatsApp Manager → Message Templates).
+ * Default language is `en_US` (what Meta actually publishes for English
+ * templates). `en` is retried only if that translation is missing.
  */
+function sanitizeTemplateParam(text: string): string {
+  const cleaned = text
+    .replace(/[\u00A0\u202F\u2007\uFEFF]/g, " ")
+    .replace(/[\t\r\n]+/g, " ")
+    .replace(/[—–−]/g, "-")
+    .replace(/[•·]/g, "-")
+    .replace(/[*_~`]/g, "")
+    .replace(/ {2,}/g, " ")
+    .trim()
+    .slice(0, 1024);
+  return cleaned.length > 0 ? cleaned : "Account update";
+}
+
+function isMissingTemplateLanguage(rawBody: string): boolean {
+  try {
+    const parsed = JSON.parse(rawBody) as MetaErrorBody & {
+      error?: { error_data?: { details?: string } };
+    };
+    const details = parsed.error?.error_data?.details?.toLowerCase() ?? "";
+    return parsed.error?.code === 132001 || details.includes("does not exist in");
+  } catch {
+    return false;
+  }
+}
+
+function templateLanguages(preferred?: string): string[] {
+  const configured = process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim();
+  return [...new Set([preferred, configured, "en_US", "en"].filter(Boolean) as string[])];
+}
+
 export async function sendWhatsAppTemplate(input: {
   to: string;
   templateName: string;
@@ -179,44 +222,57 @@ export async function sendWhatsAppTemplate(input: {
     return;
   }
 
+  const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`;
+  const bodyParams = (input.bodyParams ?? []).map(sanitizeTemplateParam);
+  const languages = templateLanguages(input.languageCode);
+
   try {
-    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: input.to.replace(/^\+/, ""),
-        type: "template",
-        template: {
-          name: input.templateName,
-          language: { code: input.languageCode ?? "en" },
-          ...(input.bodyParams?.length
-            ? {
-                components: [
-                  {
-                    type: "body",
-                    parameters: input.bodyParams.map((text) => ({
-                      type: "text",
-                      text,
-                    })),
-                  },
-                ],
-              }
-            : {}),
+    for (let i = 0; i < languages.length; i++) {
+      const languageCode = languages[i];
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
-      }),
-    });
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: input.to.replace(/^\+/, ""),
+          type: "template",
+          template: {
+            name: input.templateName,
+            language: { code: languageCode },
+            ...(bodyParams.length
+              ? {
+                  components: [
+                    {
+                      type: "body",
+                      parameters: bodyParams.map((text) => ({
+                        type: "text",
+                        text,
+                      })),
+                    },
+                  ],
+                }
+              : {}),
+          },
+        }),
+      });
 
-    if (!response.ok) {
+      if (response.ok) return;
+
       const body = await response.text().catch(() => "");
+      if (isMissingTemplateLanguage(body) && i < languages.length - 1) {
+        console.warn(
+          `[whatsapp] template "${input.templateName}" is not published in ${languageCode} — retrying ${languages[i + 1]}.`,
+        );
+        continue;
+      }
+
       console.error(
         `[whatsapp] Meta Cloud API template request failed (${response.status}) for ${input.to}: ${body}`,
       );
+      return;
     }
   } catch (error) {
     console.error(`[whatsapp] Failed to send template to ${input.to}:`, error);

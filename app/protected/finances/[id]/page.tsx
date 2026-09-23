@@ -38,7 +38,7 @@ import {
 } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
 import { formatUnitLabel } from "@/lib/property-types";
-import { requireUser } from "@/lib/session";
+import { requireUser, isStaffAdmin } from "@/lib/session";
 import {
   ChargeStatus,
   PaymentStatus,
@@ -72,7 +72,14 @@ export default async function FinanceDetailPage({
   if (user.userType === UserType.worker) notFound();
 
   const { id } = await params;
-  const message = (await searchParams) as unknown as Message;
+  const rawParams = await searchParams;
+  const message = rawParams as unknown as Message;
+  const listBack =
+    typeof rawParams.back === "string" &&
+    rawParams.back.startsWith("/protected/finances") &&
+    !rawParams.back.startsWith("//")
+      ? rawParams.back
+      : "/protected/finances";
   const charge = await prisma.charge.findUnique({
     where: { id },
     include: {
@@ -105,7 +112,7 @@ export default async function FinanceDetailPage({
 
   // Property owners have read-only access to everything except creating a
   // new property — all charge management is admin-only.
-  const canManagePayments = user.userType === UserType.admin;
+  const canManagePayments = isStaffAdmin(user.userType);
 
   const balance = chargeBalance(charge);
   const approved = approvedTotal(charge.payments);
@@ -123,7 +130,7 @@ export default async function FinanceDetailPage({
           charge.unit.property.propertyType,
           charge.unit.label,
         )}`}
-        back={{ href: "/protected/finances", label: "Rent & bills" }}
+        back={{ href: listBack, label: "Rent & bills" }}
       >
         <ChargeStatusBadge charge={charge} />
       </PageHeader>
@@ -350,6 +357,7 @@ export default async function FinanceDetailPage({
                                 name="paymentId"
                                 value={payment.id}
                               />
+                              <input type="hidden" name="back" value={listBack} />
                               <div className="space-y-1.5">
                                 <Label htmlFor={`review-${payment.id}`}>
                                   Review note (optional)
@@ -414,6 +422,7 @@ export default async function FinanceDetailPage({
                   pending={pending}
                   canManagePayments={canManagePayments}
                   receiptRequired={user.userType === UserType.user}
+                  back={listBack}
                 />
               </CardContent>
             </Card>
@@ -429,6 +438,7 @@ export default async function FinanceDetailPage({
                 </p>
                 <form>
                   <input type="hidden" name="chargeId" value={charge.id} />
+                  <input type="hidden" name="back" value={listBack} />
                   <SubmitButton
                     formAction={resendChargeInvoiceEmailAction}
                     variant="outline"
@@ -457,6 +467,7 @@ export default async function FinanceDetailPage({
                   </p>
                   <form>
                     <input type="hidden" name="chargeId" value={charge.id} />
+                    <input type="hidden" name="back" value={listBack} />
                     <SubmitButton
                       formAction={waiveChargeAction}
                       variant="outline"

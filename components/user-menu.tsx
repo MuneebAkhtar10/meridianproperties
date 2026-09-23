@@ -18,6 +18,7 @@ import { UserType } from "@/lib/generated/prisma/client";
 
 const ROLE_LABEL: Record<UserType, string> = {
   admin: "Admin",
+  super_admin: "Super admin",
   worker: "Maintenance worker",
   user: "Tenant",
   owner: "Property owner",

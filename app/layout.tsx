@@ -11,7 +11,9 @@ import { AppTopbar, TOOLBAR_BY_ROLE } from "@/components/app-topbar";
 import { RealtimeProvider } from "@/components/realtime-provider";
 import { UserMenu } from "@/components/user-menu";
 import { ButtonLink } from "@/components/ui/button-link";
+import { staffAdminNavItems, staffAdminToolbarItems } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
+import { isStaffAdmin } from "@/lib/user-roles";
 import type { UserType } from "@/lib/generated/prisma/client";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -22,24 +24,7 @@ export const metadata: Metadata = {
     "Manage Oman tenancies, OMR rent, bills and maintenance across your properties.",
 };
 
-const NAV_BY_ROLE: Record<UserType, NavItem[]> = {
-  admin: [
-    { href: "/protected", label: "Dashboard", icon: "dashboard" },
-    { href: "/protected/onboarding", label: "Onboarding", icon: "onboarding" },
-    { href: "/protected/properties", label: "Properties", icon: "properties" },
-    { href: "/protected/tenancies", label: "Tenancies", icon: "tenancies" },
-    { href: "/protected/maintenance", label: "Requests", icon: "requests" },
-    { href: "/protected/finances", label: "Rent & Bills", icon: "rentAndBills" },
-    {
-      href: "/protected/service-charge-ledger",
-      label: "Service Charge Ledger",
-      icon: "serviceCharges",
-    },
-    { href: "/protected/expenses", label: "Expenses", icon: "expenses" },
-    { href: "/protected/reports", label: "Reports", icon: "reports" },
-    { href: "/protected/admin/suppliers", label: "Suppliers", icon: "suppliers" },
-    { href: "/protected/users", label: "People", icon: "people" },
-  ],
+const NAV_BY_ROLE: Partial<Record<UserType, NavItem[]>> = {
   worker: [
     { href: "/protected", label: "Dashboard", icon: "dashboard" },
     { href: "/protected/tasks", label: "My Tasks", icon: "requests" },
@@ -68,9 +53,20 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const defaultCollapsed = cookieStore.get("sidebar_collapsed")?.value === "1";
 
+  const navItems = user
+    ? isStaffAdmin(user.userType)
+      ? await staffAdminNavItems(user)
+      : (NAV_BY_ROLE[user.userType] ?? [])
+    : [];
+  const toolbarItems = user
+    ? isStaffAdmin(user.userType)
+      ? await staffAdminToolbarItems(user)
+      : (TOOLBAR_BY_ROLE[user.userType] ?? [])
+    : [];
+
   const shell = user ? (
     <AppSidebar
-      items={NAV_BY_ROLE[user.userType]}
+      items={navItems}
       homeHref="/protected"
       defaultCollapsed={defaultCollapsed}
       footer={
@@ -81,13 +77,13 @@ export default async function RootLayout({
           lastName={user.lastName}
         />
       }
-      topbar={<AppTopbar items={TOOLBAR_BY_ROLE[user.userType]} />}
+      topbar={<AppTopbar items={toolbarItems} />}
     >
       {/* Mirrors the mobile bar rendered inside AppSidebar — desktop has no
           top bar of its own otherwise, so quick links + notifications need
           a home here instead. */}
       <div className="hidden h-14 items-center justify-end border-b border-border/60 px-4 lg:flex sm:px-6 lg:px-8">
-        <AppTopbar items={TOOLBAR_BY_ROLE[user.userType]} />
+        <AppTopbar items={toolbarItems} />
       </div>
 
       <main className="min-w-0 flex-1">{children}</main>

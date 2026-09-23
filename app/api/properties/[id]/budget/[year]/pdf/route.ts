@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { formatMoney, moneyValue } from "@/lib/finance";
 import { AnnualBudgetDocument } from "@/lib/pdf/annual-budget";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 /** Admin, or an owner of a unit in this property — same access rule as the
@@ -27,26 +27,31 @@ export async function GET(
 
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
-    select: { id: true, name: true, units: { select: { ownerId: true } } },
+    select: {
+      id: true,
+      name: true,
+      units: { select: { ownerId: true } },
+      propertyType: { select: { isOwnerAssociation: true } },
+    },
   });
   if (!property) {
     return NextResponse.json({ error: "Property not found." }, { status: 404 });
   }
   if (
-    user.userType !== UserType.admin &&
+    !isStaffAdmin(user.userType) &&
     !property.units.some((u) => u.ownerId === user.id)
   ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!property.propertyType.isOwnerAssociation) {
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   const budget = await prisma.annualBudget.findUnique({
     where: { propertyId_year: { propertyId, year } },
     include: {
       incomeLines: { orderBy: { description: "asc" } },
-      expenseLines: {
-        orderBy: { description: "asc" },
-        include: { fund: { select: { label: true } } },
-      },
+      expenseLines: { orderBy: { description: "asc" } },
     },
   });
 
@@ -57,16 +62,23 @@ export async function GET(
     (sum, line) => sum + moneyValue(line.totalYearly),
     0,
   );
-  const totalExpense = expenseLines.reduce(
+  const totalExpenseYearly = expenseLines.reduce(
     (sum, line) => sum + moneyValue(line.ratePerYear),
     0,
   );
-  const net = totalIncome - totalExpense;
+  const totalExpenseMonthly = expenseLines.reduce(
+    (sum, line) => sum + moneyValue(line.ratePerMonth),
+    0,
+  );
+  const net = totalIncome - totalExpenseYearly;
+
+  const title = property.propertyType.isOwnerAssociation
+    ? `Owner Association — ${property.name} Annual Budget ${year}`
+    : `${property.name} Annual Budget ${year}`;
 
   const pdfBuffer = await renderToBuffer(
     AnnualBudgetDocument({
-      propertyName: property.name,
-      year,
+      title,
       incomeLines: incomeLines.map((line) => ({
         description: line.description,
         units: line.units,
@@ -75,12 +87,12 @@ export async function GET(
       })),
       expenseLines: expenseLines.map((line) => ({
         description: line.description,
-        fundLabel: line.fund?.label ?? "—",
         ratePerMonth: formatMoney(line.ratePerMonth),
         ratePerYear: formatMoney(line.ratePerYear),
       })),
       totalIncome: formatMoney(totalIncome),
-      totalExpense: formatMoney(totalExpense),
+      totalExpense: formatMoney(totalExpenseYearly),
+      totalExpenseMonth: formatMoney(totalExpenseMonthly),
       net: formatMoney(net),
       netNegative: net < 0,
       generatedAt: format(new Date(), "dd/MM/yyyy HH:mm"),

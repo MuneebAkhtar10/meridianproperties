@@ -16,7 +16,7 @@ import { X } from "lucide-react";
 /** Lets anything nested inside an open Modal ask it to close — see
  * `CloseModalOnSubmit` below, which is how a form inside the modal closes it
  * once its own submission actually finishes. */
-const ModalCloseContext = createContext<(() => void) | null>(null);
+export const ModalCloseContext = createContext<(() => void) | null>(null);
 const ModalStayOpenOnSubmitContext = createContext(false);
 
 let bodyLockCount = 0;

@@ -37,13 +37,15 @@ import { HrOverview } from "@/components/hr-overview";
 import type { PickableUnit } from "@/components/unit-picker";
 import { formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/session";
+import { requireRole, isStaffAdmin } from "@/lib/session";
+import { canManagePermissions } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
 const ROLE_PILL: Record<UserType, string> = {
   admin: "bg-violet-50 text-violet-700 ring-violet-600/20",
+  super_admin: "bg-fuchsia-50 text-fuchsia-800 ring-fuchsia-600/20",
   worker: "bg-[#0886be]/10 text-[#0886be] ring-[#0886be]/20",
   user: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
   owner: "bg-amber-50 text-amber-700 ring-amber-600/20",
@@ -51,6 +53,7 @@ const ROLE_PILL: Record<UserType, string> = {
 
 const ROLE_LABEL: Record<UserType, string> = {
   admin: "Admin",
+  super_admin: "Super admin",
   worker: "Worker",
   user: "Tenant",
   owner: "Property owner",
@@ -62,6 +65,7 @@ const ROLE_FILTERS = [
   { value: "worker_in_house", label: "In House Workers" },
   { value: "worker_third_party", label: "3rd Party Vendors" },
   { value: "admin", label: "Admins" },
+  { value: "super_admin", label: "Super admins" },
   { value: "owner", label: "Owners" },
 ] as const;
 
@@ -69,6 +73,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const message = params as unknown as Message;
   const admin = await requireRole(UserType.admin);
+  const allowSuperAdmin = await canManagePermissions(admin);
 
   const query = params.query as string | undefined;
   const role = params.role as string | undefined;
@@ -172,7 +177,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         />
         <StatTile
           icon={<Shield className="h-5 w-5" />}
-          value={countByType(UserType.admin)}
+          value={countByType(UserType.admin) + countByType(UserType.super_admin)}
           label="Admins"
           accent="bg-violet-500"
           iconBg="bg-violet-50 text-violet-600"
@@ -556,7 +561,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                           </div>
                         </div>
 
-                        {user.userType !== UserType.admin && (
+                        {!isStaffAdmin(user.userType) && (
                           <div className="space-y-2">
                             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                               <KeyRound className="h-3.5 w-3.5" />
@@ -619,6 +624,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                                   user.workerCategory ?? "in_house"
                                 }
                                 defaultCompanyName={user.companyName ?? ""}
+                                allowSuperAdmin={allowSuperAdmin}
                               />
                               <SubmitButton
                                 formAction={updateUserTypeAction}
@@ -694,7 +700,11 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                 />
               </div>
 
-              <NewPersonFields units={pickableUnits} initialRole={newPersonRole} />
+              <NewPersonFields
+                units={pickableUnits}
+                initialRole={newPersonRole}
+                allowSuperAdmin={allowSuperAdmin}
+              />
 
               <SubmitButton
                 formAction={createUserAction}

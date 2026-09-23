@@ -23,6 +23,7 @@ export type CollectionMonth = {
   label: string;
   rent: number;
   serviceCharge: number;
+  expenses: number;
 };
 
 export type AdminDashboardMetrics = {
@@ -45,6 +46,8 @@ export type AdminDashboardMetrics = {
   scCollectedThisMonth: number;
   scActivePlans: number;
   expensesThisMonth: number;
+  invoicesIssuedThisMonth: number;
+  communicationsThisWeek: number;
   pendingApprovals: number;
   awaitingCheques: number;
   pendingSupplyRequests: number;
@@ -80,6 +83,28 @@ function monthKey(date: Date): string {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+async function countInvoicesThisMonth(monthStart: Date): Promise<number> {
+  try {
+    return await prisma.serviceChargeInvoice.count({
+      where: { issueDate: { gte: monthStart } },
+    });
+  } catch {
+    return 0;
+  }
+}
+
+async function countCommunicationsThisWeek(): Promise<number> {
+  const weekAgo = new Date();
+  weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
+  try {
+    return await prisma.communicationLog.count({
+      where: { occurredAt: { gte: weekAgo } },
+    });
+  } catch {
+    return 0;
+  }
+}
+
 export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics> {
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -108,6 +133,8 @@ export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>
     activeTenancies,
     rentTrend,
     scTrend,
+    expenseTrend,
+    invoicesIssuedThisMonth,
   ] = await Promise.all([
     prisma.maintenanceRequest.groupBy({
       by: ["status"],
@@ -223,6 +250,11 @@ export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>
       where: { paidAt: { gte: trendStart } },
       select: { amount: true, paidAt: true },
     }),
+    prisma.expense.findMany({
+      where: { date: { gte: trendStart } },
+      select: { amount: true, date: true },
+    }),
+    countInvoicesThisMonth(monthStart),
   ]);
 
   const requestCounts = emptyRequestCounts();
@@ -260,6 +292,7 @@ export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>
       label: format(date, "MMM"),
       rent: 0,
       serviceCharge: 0,
+      expenses: 0,
     });
   }
   const monthIndex = new Map(collectionMonths.map((month, index) => [month.key, index]));
@@ -272,6 +305,11 @@ export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>
     const index = monthIndex.get(monthKey(payment.paidAt));
     if (index == null) continue;
     collectionMonths[index].serviceCharge += moneyValue(payment.amount);
+  }
+  for (const expense of expenseTrend) {
+    const index = monthIndex.get(monthKey(expense.date));
+    if (index == null) continue;
+    collectionMonths[index].expenses += moneyValue(expense.amount);
   }
 
   return {
@@ -297,6 +335,8 @@ export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>
     scCollectedThisMonth: moneyValue(scCollectedThisMonth._sum.amount ?? 0),
     scActivePlans,
     expensesThisMonth: moneyValue(expensesThisMonth._sum.amount ?? 0),
+    invoicesIssuedThisMonth,
+    communicationsThisWeek: await countCommunicationsThisWeek(),
     pendingApprovals,
     awaitingCheques: awaitingRentCheques + awaitingServiceCharges,
     pendingSupplyRequests,

@@ -22,12 +22,17 @@ import { formatMoney, parseServiceCharge } from "@/lib/finance";
 import {
   defaultUnitPermissions,
   formatUnitLabel,
+  collectsServiceCharge,
+  isBuildingType,
+  isIndependentType,
   PROPERTY_MANAGEMENT_CATEGORY_FLAGS,
   type PropertyManagementCategory,
   type PropertyManagementFlags,
 } from "@/lib/property-types";
 import { publish } from "@/lib/realtime";
-import { requireAnyRole, requireRole } from "@/lib/session";
+import { requireAnyRole, requireRole, isStaffAdmin } from "@/lib/session";
+import { canManagePermissions } from "@/lib/permissions";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { OMAN_GOVERNORATES } from "@/lib/oman";
 import { isValidPhone } from "@/lib/phone";
@@ -56,7 +61,7 @@ function parseCoordinate(value: FormDataEntryValue | null): number | null {
 function publishDirectoryChange(userIds: (string | null | undefined)[] = []) {
   return publish({
     kind: "directory",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: userIds.filter((id): id is string => Boolean(id)),
   });
 }
@@ -106,6 +111,53 @@ export const createPropertyAction = async (formData: FormData) => {
     );
   }
 
+  const independent = isIndependentType(propertyType);
+  const oa = isBuildingType(propertyType);
+  const unitLabel = formData.get("unitLabel")?.toString().trim();
+  const unitFloor = formData.get("unitFloor")?.toString().trim();
+  const unitBedrooms = formData.get("unitBedrooms")?.toString().trim();
+  const unitEntitlements = formData.get("unitEntitlements")?.toString().trim();
+
+  if (oa && !associationRegistrationNumber) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Enter the OA number for an owners’ association property.",
+    );
+  }
+
+  if (independent && !unitLabel) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Enter the unit number — independent properties have exactly one unit.",
+    );
+  }
+
+  const floorValue = unitFloor ? Number(unitFloor) : null;
+  const bedroomsValue = unitBedrooms ? Number(unitBedrooms) : null;
+  const entitlementsValue = unitEntitlements ? Number(unitEntitlements) : null;
+  if (unitFloor && !Number.isInteger(floorValue)) {
+    return encodedRedirect("error", "/protected/properties", "Floor must be a whole number.");
+  }
+  if (unitBedrooms && (!Number.isInteger(bedroomsValue) || (bedroomsValue ?? 0) < 0)) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Beds must be a non-negative whole number.",
+    );
+  }
+  if (
+    unitEntitlements &&
+    (!Number.isInteger(entitlementsValue) || (entitlementsValue ?? 0) < 0)
+  ) {
+    return encodedRedirect(
+      "error",
+      "/protected/properties",
+      "Entitlement must be a non-negative whole number.",
+    );
+  }
+
   if (
     governorate &&
     !OMAN_GOVERNORATES.includes(
@@ -119,28 +171,46 @@ export const createPropertyAction = async (formData: FormData) => {
     );
   }
 
-  const property = await prisma.property.create({
-    data: {
-      name,
-      propertyTypeId: propertyType.id,
-      address,
-      governorate,
-      wilayat,
-      area,
-      wayNumber,
-      buildingName,
-      buildingNumber,
-      postalCode,
-      associationRegistrationNumber,
-      latitude,
-      longitude,
-      locationMapPosition,
-      notes,
-      // Admin-created properties are live immediately; an owner's submission
-      // waits for an admin to approve it — see the "Pending properties"
-      // section on the properties page.
-      approved: !isOwner,
-    },
+  const permissions = defaultUnitPermissions(propertyType);
+
+  const property = await prisma.$transaction(async (tx) => {
+    const created = await tx.property.create({
+      data: {
+        name,
+        propertyTypeId: propertyType.id,
+        address,
+        governorate,
+        wilayat,
+        area,
+        wayNumber,
+        buildingName,
+        buildingNumber,
+        postalCode,
+        associationRegistrationNumber: oa ? associationRegistrationNumber : null,
+        latitude,
+        longitude,
+        locationMapPosition,
+        notes,
+        approved: !isOwner,
+      },
+    });
+
+    if (independent && unitLabel) {
+      await tx.unit.create({
+        data: {
+          propertyId: created.id,
+          label: unitLabel,
+          floor: propertyType.hasFloors ? floorValue : null,
+          bedrooms: propertyType.hasBedrooms ? bedroomsValue : null,
+          entitlements: entitlementsValue,
+          ownerId: isOwner ? actor.id : null,
+          rentBillsEnabled: permissions.rentBillsEnabled,
+          maintenanceEnabled: permissions.maintenanceEnabled,
+        },
+      });
+    }
+
+    return created;
   });
 
   try {
@@ -162,7 +232,11 @@ export const createPropertyAction = async (formData: FormData) => {
   return encodedRedirect(
     "success",
     `/protected/properties/${property.id}`,
-    `"${name}" created. Now add its units — agreements and other documents are managed against each one.`,
+    independent
+      ? `"${name}" created with its ${propertyType.unitNounSingular.toLowerCase()}.`
+      : oa
+        ? `"${name}" created. OA number saved — now add its units.`
+        : `"${name}" created. Now add its units — agreements and other documents are managed against each one.`,
   );
 };
 
@@ -595,10 +669,32 @@ export const updateUnitServiceChargeAction = async (formData: FormData) => {
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
-    select: { propertyId: true },
+    select: {
+      propertyId: true,
+      property: {
+        select: {
+          propertyType: {
+            select: {
+              isOwnerAssociation: true,
+              isBuildingManagement: true,
+              showRentBills: true,
+              showMaintenance: true,
+              hasCommonAreas: true,
+            },
+          },
+        },
+      },
+    },
   });
   if (!unit) {
     return encodedRedirect("error", "/protected/properties", "Unit not found.");
+  }
+  if (!collectsServiceCharge(unit.property.propertyType)) {
+    return encodedRedirect(
+      "error",
+      `/protected/properties/${unit.propertyId}`,
+      "Independent properties do not take a service charge.",
+    );
   }
 
   const serviceCharge = parseServiceCharge(formData);
@@ -698,6 +794,28 @@ export const bulkSetUnitServiceChargeAction = async (formData: FormData) => {
 
   if (unitIds.length === 0) {
     return encodedRedirect("error", back, "Select at least one unit.");
+  }
+
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: {
+      propertyType: {
+        select: {
+          isOwnerAssociation: true,
+          isBuildingManagement: true,
+          showRentBills: true,
+          showMaintenance: true,
+          hasCommonAreas: true,
+        },
+      },
+    },
+  });
+  if (property && !collectsServiceCharge(property.propertyType)) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Independent properties do not take a service charge.",
+    );
   }
 
   const serviceCharge = parseServiceCharge(formData);
@@ -963,6 +1081,9 @@ export const generateUnitsAction = async (formData: FormData) => {
           unitNounPlural: true,
           showRentBills: true,
           showMaintenance: true,
+          isOwnerAssociation: true,
+          isBuildingManagement: true,
+          hasCommonAreas: true,
         },
       },
     },
@@ -973,6 +1094,14 @@ export const generateUnitsAction = async (formData: FormData) => {
       "error",
       "/protected/properties",
       "You can only manage units on your own properties.",
+    );
+  }
+
+  if (property && isIndependentType(property.propertyType)) {
+    return encodedRedirect(
+      "error",
+      `/protected/properties/${propertyId}`,
+      "Independent properties have exactly one unit. It is created with the property.",
     );
   }
 
@@ -1096,9 +1225,27 @@ export const createUnitAction = async (formData: FormData) => {
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
     select: {
-      propertyType: { select: { showRentBills: true, showMaintenance: true } },
+      propertyType: {
+        select: {
+          showRentBills: true,
+          showMaintenance: true,
+          isOwnerAssociation: true,
+          isBuildingManagement: true,
+          hasCommonAreas: true,
+        },
+      },
     },
   });
+  if (property && isIndependentType(property.propertyType)) {
+    const existing = await prisma.unit.count({ where: { propertyId } });
+    if (existing >= 1) {
+      return encodedRedirect(
+        "error",
+        back,
+        "Independent properties have exactly one unit. Edit the existing unit instead of adding another.",
+      );
+    }
+  }
   if (property && !property.propertyType.showRentBills) {
     rentBillsEnabled = false;
   }
@@ -1107,11 +1254,14 @@ export const createUnitAction = async (formData: FormData) => {
   }
 
   // A blank charge is fine (no service charge tracked); a partial one isn't.
-  const chargeFieldsFilled = [
-    "serviceChargeAmount",
-    "serviceChargeCycleMonths",
-    "serviceChargeDueDate",
-  ].some((field) => formData.get(field)?.toString().trim());
+  // Independent properties never take SC — ignore any charge fields posted.
+  const chargeFieldsFilled =
+    !(property && isIndependentType(property.propertyType)) &&
+    [
+      "serviceChargeAmount",
+      "serviceChargeCycleMonths",
+      "serviceChargeDueDate",
+    ].some((field) => formData.get(field)?.toString().trim());
 
   let serviceCharge: ReturnType<typeof parseServiceCharge> | null = null;
   if (chargeFieldsFilled) {
@@ -1163,7 +1313,7 @@ export const createUnitAction = async (formData: FormData) => {
  * unit and reassign its owner. */
 export const updateUnitAction = async (formData: FormData) => {
   const actor = await requireAnyRole(UserType.admin, UserType.owner);
-  const isAdmin = actor.userType === UserType.admin;
+  const isAdmin = isStaffAdmin(actor.userType);
 
   const unitId = formData.get("unitId")?.toString();
   const label = formData.get("label")?.toString().trim();
@@ -1331,12 +1481,9 @@ export const updateUnitAction = async (formData: FormData) => {
   return encodedRedirect("success", back, `Unit ${label} updated.`);
 };
 
-/** The professional alternative to updateUnitAction's plain owner select —
- * ends the current ownership and starts the new one on the same
+/** Ends the current ownership and starts the new one on the same
  * transferDate, with a recorded OwnershipTransfer row instead of silently
- * overwriting Unit.ownerId. Optionally cascades to every other unit the
- * same outgoing owner currently holds, for a whole-portfolio handover in
- * one action. */
+ * overwriting Unit.ownerId. */
 export const transferUnitOwnershipAction = async (formData: FormData) => {
   const actor = await requireRole(UserType.admin);
 
@@ -1346,7 +1493,6 @@ export const transferUnitOwnershipAction = async (formData: FormData) => {
   const keepServiceCharge = formData.get("keepServiceCharge") === "on";
   const installmentPlanAction = formData.get("installmentPlanAction")?.toString();
   const keepInstallmentPlan = installmentPlanAction !== "cancel";
-  const alsoTransferOtherUnits = formData.get("alsoTransferOtherUnits") === "on";
   const notes = formData.get("notes")?.toString().trim() || null;
 
   const unit = await prisma.unit.findUnique({
@@ -1380,12 +1526,7 @@ export const transferUnitOwnershipAction = async (formData: FormData) => {
     );
   }
 
-  const targetUnits = alsoTransferOtherUnits && unit.ownerId
-    ? await prisma.unit.findMany({
-        where: { ownerId: unit.ownerId },
-        select: { id: true, label: true },
-      })
-    : [unit];
+  const targetUnits = [unit];
 
   await prisma.$transaction(async (tx) => {
     for (const target of targetUnits) {
@@ -1443,10 +1584,7 @@ export const transferUnitOwnershipAction = async (formData: FormData) => {
     await notifyPropertyAssigned({
       ownerId: newOwnerId,
       propertyId: unit.propertyId,
-      propertyName:
-        targetUnits.length > 1
-          ? `${targetUnits.length} units`
-          : `Unit ${unit.label}`,
+      propertyName: `Unit ${unit.label}`,
     });
   } catch (error) {
     console.error("Ownership transfer notification failed:", error);
@@ -1459,13 +1597,11 @@ export const transferUnitOwnershipAction = async (formData: FormData) => {
   return encodedRedirect(
     "success",
     back,
-    targetUnits.length > 1
-      ? `Ownership of ${targetUnits.length} units transferred.`
-      : keepServiceCharge
-        ? keepInstallmentPlan
-          ? `Ownership of unit ${unit.label} transferred. The current invoice and payment plan now sit with the new owner.`
-          : `Ownership of unit ${unit.label} transferred. The current invoice is payable by the new owner — set up a new payment plan if needed.`
-        : `Ownership of unit ${unit.label} transferred.`,
+    keepServiceCharge
+      ? keepInstallmentPlan
+        ? `Ownership of unit ${unit.label} transferred. The current invoice and payment plan now sit with the new owner.`
+        : `Ownership of unit ${unit.label} transferred. The current invoice is payable by the new owner — set up a new payment plan if needed.`
+      : `Ownership of unit ${unit.label} transferred.`,
   );
 };
 
@@ -1664,7 +1800,7 @@ export const assignTenantAction = async (formData: FormData) => {
 /* ── People ────────────────────────────────────────────────────────────────── */
 
 export const createUserAction = async (formData: FormData) => {
-  await requireRole(UserType.admin);
+  const actor = await requireRole(UserType.admin);
 
   const email = formData.get("email")?.toString().trim().toLowerCase();
   const password = formData.get("password")?.toString();
@@ -1734,6 +1870,17 @@ export const createUserAction = async (formData: FormData) => {
 
   if (!USER_TYPES.includes(userType)) {
     return encodedRedirect("error", "/protected/users", "Invalid role");
+  }
+
+  if (
+    userType === UserType.super_admin &&
+    !(await canManagePermissions(actor))
+  ) {
+    return encodedRedirect(
+      "error",
+      "/protected/users",
+      "Only a super admin can create another super admin.",
+    );
   }
 
   // Email only has to be unique per role — a tenant and a worker (etc.) can
@@ -1891,7 +2038,7 @@ export const resetUserPasswordAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/users", "Person not found.");
   }
 
-  if (user.userType === UserType.admin) {
+  if (isStaffAdmin(user.userType) || user.userType === UserType.super_admin) {
     return encodedRedirect(
       "error",
       "/protected/users",
@@ -1949,6 +2096,41 @@ export const updateUserTypeAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/users", "Invalid role");
   }
 
+  if (
+    userType === UserType.super_admin &&
+    !(await canManagePermissions(admin))
+  ) {
+    return encodedRedirect(
+      "error",
+      "/protected/users",
+      "Only a super admin can assign the super admin role.",
+    );
+  }
+
+  const existing = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { userType: true },
+  });
+  if (!existing) {
+    return encodedRedirect("error", "/protected/users", "Person not found.");
+  }
+
+  if (
+    existing.userType === UserType.super_admin &&
+    userType !== UserType.super_admin
+  ) {
+    const others = await prisma.user.count({
+      where: { userType: UserType.super_admin, id: { not: userId } },
+    });
+    if (others === 0) {
+      return encodedRedirect(
+        "error",
+        "/protected/users",
+        "Promote someone else to super admin before changing this role.",
+      );
+    }
+  }
+
   const workerCategory =
     userType === UserType.worker
       ? workerCategoryRaw === "third_party"
@@ -1968,6 +2150,10 @@ export const updateUserTypeAction = async (formData: FormData) => {
       companyName,
     },
   });
+
+  if (existing.userType === UserType.admin && userType !== UserType.admin) {
+    await prisma.adminModuleGrant.deleteMany({ where: { userId } });
+  }
 
   // Someone who is no longer a tenant should not still hold an apartment.
   if (userType !== UserType.user) {
@@ -2464,6 +2650,30 @@ export const deleteUserAction = async (formData: FormData) => {
       "/protected/users",
       "You cannot delete your own account",
     );
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { userType: true },
+  });
+  if (target?.userType === UserType.super_admin) {
+    if (admin.userType !== UserType.super_admin) {
+      return encodedRedirect(
+        "error",
+        "/protected/users",
+        "Only a super admin can delete another super admin.",
+      );
+    }
+    const others = await prisma.user.count({
+      where: { userType: UserType.super_admin, id: { not: userId } },
+    });
+    if (others === 0) {
+      return encodedRedirect(
+        "error",
+        "/protected/users",
+        "Promote someone else to super admin before deleting this account.",
+      );
+    }
   }
 
   const [financialHistory, submittedPayments] = await Promise.all([

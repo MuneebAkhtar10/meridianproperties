@@ -6,6 +6,7 @@ import { HR_DOCUMENTS, type WorkerHrRecord } from "@/lib/hr";
 import { notifyHrDocumentExpiring } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { UserType } from "@/lib/generated/prisma/client";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 
 /**
  * Runs daily (see app/api/cron/hr-reminders/route.ts). For every in-house
@@ -60,7 +61,7 @@ export async function runHrReminders(): Promise<{
   }
 
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin },
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
     select: { id: true },
   });
   const adminIds = admins.map((admin) => admin.id);

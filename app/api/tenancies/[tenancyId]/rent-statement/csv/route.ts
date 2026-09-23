@@ -7,7 +7,7 @@ import {
   type SpreadsheetRow,
 } from "@/lib/spreadsheet-ml";
 import { getUnitRentStatement } from "@/lib/unit-rent-statement";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 function slashDate(value: Date): string {
@@ -87,7 +87,7 @@ export async function GET(
   { params }: { params: Promise<{ tenancyId: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user || !isStaffAdmin(user.userType)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

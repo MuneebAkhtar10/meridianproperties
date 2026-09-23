@@ -25,7 +25,7 @@ import { type PickableUnit } from "@/components/unit-picker";
 import { chargeBalance, dateInputValue, formatMoney } from "@/lib/finance";
 import { formatUnitLabel, isIndependentType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
-import { requireAnyRole } from "@/lib/session";
+import { requireAnyRole, isStaffAdmin } from "@/lib/session";
 import {
   ChargeStatus,
   TenancyPurpose,
@@ -37,7 +37,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
   const message = (await searchParams) as unknown as Message;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = user.userType === UserType.owner;
-  const isAdmin = user.userType === UserType.admin;
+  const isAdmin = isStaffAdmin(user.userType);
 
   const params = (await searchParams) as unknown as {
     property?: string;

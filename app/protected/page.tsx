@@ -9,9 +9,11 @@ import {
   WalletCards,
   Wrench,
 } from "lucide-react";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { AdminDashboard } from "@/components/admin-dashboard";
+import { DonutChart } from "@/components/dashboard-charts";
 import { StatTile, TileMoney } from "@/components/dashboard-ui";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -25,7 +27,8 @@ import {
 } from "@/lib/finance";
 import { formatOmanAddress } from "@/lib/oman";
 import { formatUnitLabel } from "@/lib/property-types";
-import { requireUser, type SessionUser } from "@/lib/session";
+import { requireUser, type SessionUser, isStaffAdmin } from "@/lib/session";
+import { firstAllowedAdminHref, hasAdminModule } from "@/lib/permissions";
 import { StatusBadge } from "@/lib/status";
 import {
   ChargeStatus,
@@ -36,9 +39,25 @@ import {
 export default async function DashboardPage() {
   const user = await requireUser();
 
+  if (isStaffAdmin(user.userType) && !(await hasAdminModule(user, "dashboard"))) {
+    const href = await firstAllowedAdminHref(user);
+    if (href !== "/protected") {
+      redirect(href);
+    }
+  }
+
+  const showAdminDashboard =
+    isStaffAdmin(user.userType) && (await hasAdminModule(user, "dashboard"));
+
   return (
     <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
-      {user.userType === UserType.admin && <AdminDashboard />}
+      {showAdminDashboard && <AdminDashboard />}
+      {isStaffAdmin(user.userType) && !showAdminDashboard && (
+        <PageHeader
+          title="No modules assigned"
+          description="A super admin has not granted you any sections yet. Ask them to open Permissions and enable the modules you need."
+        />
+      )}
       {user.userType === UserType.worker && <WorkerDashboard user={user} />}
       {user.userType === UserType.user && <TenantDashboard user={user} />}
       {user.userType === UserType.owner && <OwnerDashboard user={user} />}
@@ -91,6 +110,9 @@ async function OwnerDashboard({ user }: { user: SessionUser }) {
     0,
   );
 
+  const occupancyPct =
+    unitCount > 0 ? Math.round((occupiedCount / unitCount) * 100) : 0;
+
   return (
     <>
       <PageHeader
@@ -101,9 +123,9 @@ async function OwnerDashboard({ user }: { user: SessionUser }) {
           <Building2 className="h-4 w-4" />
           Properties
         </ButtonLink>
-        <ButtonLink href="/protected/maintenance">
-          <ClipboardList className="h-4 w-4" />
-          Requests
+        <ButtonLink href="/protected/finances">
+          <WalletCards className="h-4 w-4" />
+          Rent & bills
         </ButtonLink>
       </PageHeader>
 
@@ -118,6 +140,7 @@ async function OwnerDashboard({ user }: { user: SessionUser }) {
         <StatTile
           label="Units occupied"
           value={`${occupiedCount} / ${unitCount}`}
+          hint={`${occupancyPct}% occupied`}
           icon={<DoorOpen className="h-4 w-4" />}
           color="sky"
           href="/protected/properties"
@@ -145,6 +168,34 @@ async function OwnerDashboard({ user }: { user: SessionUser }) {
           href="/protected/properties"
         />
       </div>
+
+      {unitCount > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Occupancy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DonutChart
+              centerLabel="occupied"
+              centerValue={`${occupancyPct}%`}
+              slices={[
+                {
+                  label: "Occupied",
+                  value: occupiedCount,
+                  color: "#6366f1",
+                  href: "/protected/tenancies",
+                },
+                {
+                  label: "Vacant",
+                  value: Math.max(0, unitCount - occupiedCount),
+                  color: "#cbd5e1",
+                  href: "/protected/properties",
+                },
+              ]}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {properties === 0 && (
         <EmptyState

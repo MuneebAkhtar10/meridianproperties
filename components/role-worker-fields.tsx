@@ -20,6 +20,7 @@ export function RoleWorkerFields({
   defaultWorkerCategory = "in_house",
   defaultCompanyName = "",
   roleLabel = "Role",
+  allowSuperAdmin = false,
   children,
 }: {
   idPrefix: string;
@@ -28,6 +29,7 @@ export function RoleWorkerFields({
   defaultWorkerCategory?: string;
   defaultCompanyName?: string;
   roleLabel?: string;
+  allowSuperAdmin?: boolean;
   children?: ReactNode;
 }) {
   const [role, setRole] = useState(defaultRole);
@@ -52,6 +54,7 @@ export function RoleWorkerFields({
           <option value="user">Tenant</option>
           <option value="worker">Worker</option>
           <option value="admin">Admin</option>
+          {allowSuperAdmin && <option value="super_admin">Super admin</option>}
           <option value="owner">Property owner</option>
         </Select>
       </div>

@@ -10,7 +10,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { formatMoney, moneyValue } from "@/lib/finance";
 import { formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
-import { requireAnyRole } from "@/lib/session";
+import { requireAnyRole, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { ownerAtDate, personName } from "@/lib/unit-owner-at";
 import { cn } from "@/lib/utils";
@@ -61,7 +61,7 @@ export default async function UnitLedgerPage({
   const { id: propertyId, unitId } = await params;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = user.userType === UserType.owner;
-  const isAdmin = user.userType === UserType.admin;
+  const isAdmin = isStaffAdmin(user.userType);
 
   const unit = await prisma.unit.findUnique({
     where: { id: unitId, propertyId },

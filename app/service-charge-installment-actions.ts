@@ -3,7 +3,7 @@
 import { addMonths, format } from "date-fns";
 import { revalidatePath } from "next/cache";
 
-import { parseDate, parsePositiveMoney } from "@/lib/finance";
+import { parseDate, parsePositiveMoney, dateInputValue } from "@/lib/finance";
 import { notifyInstallmentDue } from "@/lib/notifications";
 import {
   pdfAttachmentFromResult,
@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { encodedRedirect } from "@/utils/utils";
 import { UserType } from "@/lib/generated/prisma/client";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 
 const MIN_INSTALLMENTS = 2;
 const MAX_INSTALLMENTS = 24;
@@ -93,6 +94,14 @@ export const createServiceChargeInstallmentPlanAction = async (
   }
   if (!startDate) {
     return encodedRedirect("error", back, "Enter a valid start date.");
+  }
+  const todayStart = parseDate(dateInputValue());
+  if (todayStart && startDate < todayStart) {
+    return encodedRedirect(
+      "error",
+      back,
+      "The payment plan start date can't be before today.",
+    );
   }
 
   const totalAmount = Number(unit.serviceChargeBalance);
@@ -257,7 +266,7 @@ export const sendInstallmentInvoiceAction = async (formData: FormData) => {
   const back = `/protected/properties/${unit.propertyId}`;
 
   const admins = await prisma.user.findMany({
-    where: { userType: UserType.admin, id: { not: actor.id } },
+    where: { userType: { in: STAFF_ADMIN_TYPES }, id: { not: actor.id } },
     select: { id: true },
   });
   const recipientIds = Array.from(

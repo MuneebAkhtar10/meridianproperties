@@ -9,7 +9,7 @@ import {
   type UnitLedgerRow,
 } from "@/lib/pdf/unit-ledger-statement";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { ownerAtDate, personName } from "@/lib/unit-owner-at";
 
@@ -76,7 +76,7 @@ export async function GET(
   if (!unit) {
     return NextResponse.json({ error: "Unit not found." }, { status: 404 });
   }
-  if (user.userType !== UserType.admin && unit.ownerId !== user.id) {
+  if (!isStaffAdmin(user.userType) && unit.ownerId !== user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

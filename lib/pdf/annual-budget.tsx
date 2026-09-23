@@ -32,8 +32,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     marginBottom: 14,
   },
-  titleText: { fontSize: 15, fontFamily: "Helvetica-Bold", color: COLORS.primary },
-  subtitleText: { fontSize: 9, color: COLORS.mutedForeground, marginTop: 2 },
+  titleText: { fontSize: 14, fontFamily: "Helvetica-Bold", color: COLORS.primary },
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -68,9 +67,21 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   cell: { padding: 5, fontSize: 8.5 },
-  colDescription: { width: "46%" },
-  colFund: { width: "22%" },
-  colNum: { width: "16%", textAlign: "right" },
+  colIncomeDesc: { width: "46%" },
+  colIncomeNum: { width: "18%", textAlign: "right" },
+  colExpenseDesc: { width: "56%" },
+  colExpenseNum: { width: "22%", textAlign: "right" },
+  totalRow: {
+    flexDirection: "row",
+    backgroundColor: COLORS.accentBg,
+    borderBottomWidth: 0,
+  },
+  totalCell: {
+    padding: 6,
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: COLORS.primaryDark,
+  },
   netRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -94,38 +105,36 @@ export type BudgetIncomeRow = {
 
 export type BudgetExpenseRow = {
   description: string;
-  fundLabel: string;
   ratePerMonth: string;
   ratePerYear: string;
 };
 
 export function AnnualBudgetDocument({
-  propertyName,
-  year,
+  title,
   incomeLines,
   expenseLines,
   totalIncome,
   totalExpense,
+  totalExpenseMonth,
   net,
   netNegative,
   generatedAt,
 }: {
-  propertyName: string;
-  year: number;
+  title: string;
   incomeLines: BudgetIncomeRow[];
   expenseLines: BudgetExpenseRow[];
   totalIncome: string;
   totalExpense: string;
+  totalExpenseMonth: string;
   net: string;
   netNegative: boolean;
   generatedAt: string;
 }) {
   return (
-    <Document title={`Annual Budget ${year} — ${propertyName}`}>
+    <Document title={title}>
       <Page size="A4" style={styles.page}>
         <View style={styles.headerBar}>
-          <Text style={styles.titleText}>Annual Budget {year}</Text>
-          <Text style={styles.subtitleText}>{propertyName}</Text>
+          <Text style={styles.titleText}>{title}</Text>
         </View>
 
         <View style={styles.sectionHeaderRow}>
@@ -136,21 +145,21 @@ export function AnnualBudgetDocument({
         </View>
         <View style={styles.table}>
           <View style={styles.tableHeaderRow}>
-            <Text style={[styles.cellHeader, styles.colDescription]}>
+            <Text style={[styles.cellHeader, styles.colIncomeDesc]}>
               Description
             </Text>
-            <Text style={[styles.cellHeader, styles.colNum]}>No of Units</Text>
-            <Text style={[styles.cellHeader, styles.colNum]}>Amount</Text>
-            <Text style={[styles.cellHeader, styles.colNum]}>Total Yearly</Text>
+            <Text style={[styles.cellHeader, styles.colIncomeNum]}>No of Units</Text>
+            <Text style={[styles.cellHeader, styles.colIncomeNum]}>Amount</Text>
+            <Text style={[styles.cellHeader, styles.colIncomeNum]}>Total Yearly</Text>
           </View>
           {incomeLines.map((line, idx) => (
             <View style={styles.tableRow} key={idx}>
-              <Text style={[styles.cell, styles.colDescription]}>
+              <Text style={[styles.cell, styles.colIncomeDesc]}>
                 {line.description}
               </Text>
-              <Text style={[styles.cell, styles.colNum]}>{line.units}</Text>
-              <Text style={[styles.cell, styles.colNum]}>{line.amount}</Text>
-              <Text style={[styles.cell, styles.colNum, { fontFamily: "Helvetica-Bold" }]}>
+              <Text style={[styles.cell, styles.colIncomeNum]}>{line.units}</Text>
+              <Text style={[styles.cell, styles.colIncomeNum]}>{line.amount}</Text>
+              <Text style={[styles.cell, styles.colIncomeNum, { fontFamily: "Helvetica-Bold" }]}>
                 {line.totalYearly}
               </Text>
             </View>
@@ -165,25 +174,32 @@ export function AnnualBudgetDocument({
         </View>
         <View style={styles.table}>
           <View style={styles.tableHeaderRow}>
-            <Text style={[styles.cellHeader, styles.colDescription]}>
+            <Text style={[styles.cellHeader, styles.colExpenseDesc]}>
               Description
             </Text>
-            <Text style={[styles.cellHeader, styles.colFund]}>Fund</Text>
-            <Text style={[styles.cellHeader, styles.colNum]}>Rate/Month</Text>
-            <Text style={[styles.cellHeader, styles.colNum]}>Rate/Year</Text>
+            <Text style={[styles.cellHeader, styles.colExpenseNum]}>Rate/Month</Text>
+            <Text style={[styles.cellHeader, styles.colExpenseNum]}>Rate/Year</Text>
           </View>
           {expenseLines.map((line, idx) => (
             <View style={styles.tableRow} key={idx}>
-              <Text style={[styles.cell, styles.colDescription]}>
+              <Text style={[styles.cell, styles.colExpenseDesc]}>
                 {line.description}
               </Text>
-              <Text style={[styles.cell, styles.colFund]}>{line.fundLabel}</Text>
-              <Text style={[styles.cell, styles.colNum]}>{line.ratePerMonth}</Text>
-              <Text style={[styles.cell, styles.colNum, { fontFamily: "Helvetica-Bold" }]}>
+              <Text style={[styles.cell, styles.colExpenseNum]}>{line.ratePerMonth}</Text>
+              <Text style={[styles.cell, styles.colExpenseNum, { fontFamily: "Helvetica-Bold" }]}>
                 {line.ratePerYear}
               </Text>
             </View>
           ))}
+          <View style={styles.totalRow}>
+            <Text style={[styles.totalCell, styles.colExpenseDesc]}>
+              Total Expenditure
+            </Text>
+            <Text style={[styles.totalCell, styles.colExpenseNum]}>{totalExpenseMonth}</Text>
+            <Text style={[styles.totalCell, styles.colExpenseNum, { color: COLORS.rose }]}>
+              {totalExpense}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.netRow}>

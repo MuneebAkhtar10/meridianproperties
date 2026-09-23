@@ -46,7 +46,7 @@ import {
 } from "@/lib/finance";
 import { formatUnitLabel, isBuildingType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/session";
+import { requireUser, isStaffAdmin } from "@/lib/session";
 import {
   ChargeStatus,
   ChargeType,
@@ -144,7 +144,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
   }
 
   const isOwner = user.userType === UserType.owner;
-  const isAdmin = user.userType === UserType.admin;
+  const isAdmin = isStaffAdmin(user.userType);
   // Owners get the same read-only ledger layout as admins, scoped to their
   // own properties; only true admins get the write tools (AdminTools).
   const isAdminView = isAdmin || isOwner;
@@ -323,6 +323,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
       sort: column,
       dir: sortColumn === column && sortDir === "desc" ? "asc" : "desc",
     })}#ledger`;
+  const listHref = filterHref(params);
 
   const outstanding = charges.reduce(
     (total, charge) => total + chargeBalance(charge),
@@ -447,8 +448,18 @@ export default async function FinancesPage({ searchParams }: PageProps) {
               ))}
             </div>
 
-            <form className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <form
+              method="get"
+              action="/protected/finances"
+              className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4"
+            >
               <input type="hidden" name="status" value={statusFilter} />
+              {sortColumn !== "due" ? (
+                <input type="hidden" name="sort" value={sortColumn} />
+              ) : null}
+              {sortDir !== "desc" ? (
+                <input type="hidden" name="dir" value={sortDir} />
+              ) : null}
               <Select name="type" defaultValue={typeFilter}>
                 <option value="all">All charge types</option>
                 {NON_UTILITY_CHARGE_TYPES.map((type) => (
@@ -564,7 +575,11 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                       return (
                         <FinanceChargeRow
                           key={charge.id}
-                          href={`/protected/finances/${charge.id}`}
+                          href={
+                            listHref === "/protected/finances"
+                              ? `/protected/finances/${charge.id}`
+                              : `/protected/finances/${charge.id}?back=${encodeURIComponent(listHref)}`
+                          }
                           label={`View details for ${charge.title}`}
                         >
                           <td className="px-4 py-3.5 align-middle">
@@ -615,7 +630,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
 
         {isAdmin && (
           <div className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:h-fit">
-            <AdminTools tenancies={activeTenancies} />
+            <AdminTools tenancies={activeTenancies} listHref={listHref} />
           </div>
         )}
       </div>
@@ -625,6 +640,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
 
 function AdminTools({
   tenancies,
+  listHref,
 }: {
   tenancies: Array<{
     id: string;
@@ -635,6 +651,7 @@ function AdminTools({
     };
     unit: { label: string; property: { name: string } };
   }>;
+  listHref: string;
 }) {
   return (
     <>
@@ -649,6 +666,7 @@ function AdminTools({
         </div>
         <CardContent className="pt-5">
           <form className="space-y-3">
+            <input type="hidden" name="back" value={listHref} />
             <Field label="Rent month">
               <Input
                 name="month"
@@ -688,6 +706,7 @@ function AdminTools({
             </p>
           ) : (
             <form className="space-y-4" encType="multipart/form-data">
+              <input type="hidden" name="back" value={listHref} />
               <Field label="Tenant / unit">
                 <Select name="tenancyId" defaultValue="" required>
                   <option value="" disabled>
@@ -850,12 +869,20 @@ function Field({
 
 function filterHref(
   params: Record<string, string | string[] | undefined>,
-  update: Record<string, string>,
+  update: Record<string, string> = {},
 ): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (typeof value === "string") search.set(key, value);
+    if (key === "error" || key === "success" || key === "message") continue;
+    if (typeof value === "string" && value) search.set(key, value);
   }
-  for (const [key, value] of Object.entries(update)) search.set(key, value);
-  return `/protected/finances?${search.toString()}`;
+  for (const [key, value] of Object.entries(update)) {
+    if (value === "all" && (key === "type" || key === "property" || key === "tenant" || key === "status")) {
+      search.delete(key);
+      continue;
+    }
+    search.set(key, value);
+  }
+  const qs = search.toString();
+  return qs ? `/protected/finances?${qs}` : "/protected/finances";
 }

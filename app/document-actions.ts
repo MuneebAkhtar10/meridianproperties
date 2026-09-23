@@ -16,7 +16,7 @@ import {
 } from "@/lib/entity-documents";
 import { prisma } from "@/lib/prisma";
 import { deleteAttachment } from "@/lib/storage";
-import { requireUser } from "@/lib/session";
+import { requireUser, isStaffAdmin } from "@/lib/session";
 import { encodedRedirect } from "@/utils/utils";
 import {
   EntityDocumentCategory,
@@ -34,7 +34,7 @@ async function canManageTarget(
 ): Promise<boolean> {
   if (target.type === "property") {
     return (
-      user.userType === UserType.admin &&
+      isStaffAdmin(user.userType) &&
       Boolean(
         await prisma.property.findUnique({
           where: { id: target.id },
@@ -51,7 +51,7 @@ async function canManageTarget(
     });
     return Boolean(
       unit &&
-        (user.userType === UserType.admin || unit.ownerId === user.id),
+        (isStaffAdmin(user.userType) || unit.ownerId === user.id),
     );
   }
 
@@ -62,12 +62,12 @@ async function canManageTarget(
     });
     return Boolean(
       tenancy &&
-        (user.userType === UserType.admin || tenancy.tenantId === user.id),
+        (isStaffAdmin(user.userType) || tenancy.tenantId === user.id),
     );
   }
 
   return (
-    (user.userType === UserType.admin || target.id === user.id) &&
+    (isStaffAdmin(user.userType) || target.id === user.id) &&
     Boolean(
       await prisma.user.findUnique({
         where: { id: target.id },
@@ -143,13 +143,14 @@ async function performDocumentUpload(
     };
   }
 
-  // A tenancy document (agreement, municipality registration, ...) and an
-  // ownership contract both always have a real-world term, so unlike other
-  // document types their expiry isn't optional — must agree with
-  // EntityDocumentManager's matching client-side `expiryRequired`.
+  // A tenancy document, an ownership contract, and miscellaneous "other"
+  // files all have a real-world term — unlike leftover optional types,
+  // their expiry isn't optional. Must agree with EntityDocumentManager's
+  // matching client-side `expiryRequired`.
   const expiryRequired =
     target.type === "tenancy" ||
-    category === EntityDocumentCategory.ownership_contract;
+    category === EntityDocumentCategory.ownership_contract ||
+    category === EntityDocumentCategory.other;
   if (expiryRequired && !expiresAt) {
     return {
       back,
@@ -253,7 +254,7 @@ export const deleteEntityDocumentAction = async (formData: FormData) => {
   }
 
   if (
-    user.userType !== UserType.admin &&
+    !isStaffAdmin(user.userType) &&
     target.type === "tenancy" &&
     document.uploadedById !== user.id
   ) {

@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
 import { isValidPhone, sanitizePhoneInput } from "@/lib/phone";
 import { Priority, RequestStatus, UserType } from "@/lib/generated/prisma/client";
+import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 
 const PRIORITIES = Object.values(Priority) as string[];
 
@@ -173,7 +174,7 @@ export async function reportIssuePublicAction(
 
   await publish({
     kind: "request",
-    roles: [UserType.admin],
+    roles: [...STAFF_ADMIN_TYPES],
     userIds: [tenant.id],
   });
 

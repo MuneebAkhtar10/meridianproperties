@@ -5,7 +5,8 @@ import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import type { UserType } from "@/lib/generated/prisma/client";
+import { UserType } from "@/lib/generated/prisma/client";
+import { isStaffAdmin, isSuperAdmin } from "@/lib/user-roles";
 
 export type SessionUser = {
   id: string;
@@ -57,7 +58,11 @@ export async function requireUser(): Promise<SessionUser> {
 export async function requireRole(role: UserType): Promise<SessionUser> {
   const user = await requireUser();
 
-  if (user.userType !== role) {
+  const allowed =
+    user.userType === role ||
+    (role === UserType.admin && isStaffAdmin(user.userType));
+
+  if (!allowed) {
     redirect("/protected");
   }
 
@@ -71,9 +76,15 @@ export async function requireAnyRole(
 ): Promise<SessionUser> {
   const user = await requireUser();
 
-  if (!types.includes(user.userType)) {
+  const allowed =
+    types.includes(user.userType) ||
+    (types.includes(UserType.admin) && isStaffAdmin(user.userType));
+
+  if (!allowed) {
     redirect("/protected");
   }
 
   return user;
 }
+
+export { isStaffAdmin, isSuperAdmin };

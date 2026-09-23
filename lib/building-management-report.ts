@@ -1,59 +1,33 @@
 import "server-only";
 
-import { subMonths } from "date-fns";
+import { format } from "date-fns";
 
 import { moneyValue } from "@/lib/finance";
+import { formatUnitLabel } from "@/lib/property-types";
+import { personDisplayName } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
-import { PaymentStatus } from "@/lib/generated/prisma/client";
+import { ChargeType, PaymentStatus } from "@/lib/generated/prisma/client";
 
-export type ReportPeriodPreset =
-  | "monthly"
-  | "quarterly"
-  | "six_monthly"
-  | "nine_monthly"
-  | "yearly"
-  | "custom";
+export type {
+  ReportPeriodPreset,
+} from "@/lib/report-period";
+export {
+  REPORT_PERIOD_LABEL,
+  parseDateInput,
+  resolveReportPeriod,
+} from "@/lib/report-period";
 
-export const REPORT_PERIOD_LABEL: Record<ReportPeriodPreset, string> = {
-  monthly: "Monthly",
-  quarterly: "Quarterly",
-  six_monthly: "Six Monthly",
-  nine_monthly: "Nine Monthly",
-  yearly: "Yearly",
-  custom: "Custom Date Range",
-};
-
-const PRESET_MONTHS: Record<Exclude<ReportPeriodPreset, "custom">, number> = {
-  monthly: 1,
-  quarterly: 3,
-  six_monthly: 6,
-  nine_monthly: 9,
-  yearly: 12,
-};
-
-/** Resolves a preset (or an explicit custom range) into a concrete From/To
- * window. Presets are trailing windows ending today, rather than
- * calendar-fixed quarters/half-years — the portfolio has no single fiscal
- * year convention, so "trailing N months from today" is the one reading
- * that's always well-defined. */
-export function resolveReportPeriod(
-  preset: ReportPeriodPreset,
-  customFrom: Date | null,
-  customTo: Date | null,
-): { from: Date; to: Date } {
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-
-  if (preset === "custom") {
-    const to = customTo ?? today;
-    const from = customFrom ?? subMonths(to, 1);
-    return { from, to };
-  }
-
-  const from = subMonths(today, PRESET_MONTHS[preset]);
-  from.setHours(0, 0, 0, 0);
-  return { from, to: today };
+export function summaryReportFileStem(propertyName: string, from: Date): string {
+  const safe = propertyName.replace(/[\\/:*?"<>|]+/g, " ").trim();
+  return `${safe} - ${format(from, "MMMM")} Summary`;
 }
+
+export function sumLines(lines: { amount: number }[]): number {
+  return lines.reduce((sum, line) => sum + line.amount, 0);
+}
+
+/** Spec #36 Darsait-style summary — rent collected vs expenses for one
+ * Independent or Building Management property over an admin-chosen period. */
 
 export type BuildingManagementReportLine = {
   description: string;
@@ -61,10 +35,27 @@ export type BuildingManagementReportLine = {
   amount: number;
 };
 
+export type RentCollectionDetail = {
+  unitLabel: string;
+  tenantName: string;
+  title: string;
+  month: string;
+  paidAt: Date;
+  amount: number;
+};
+
+export type BuildingManagementReportDetailLine = {
+  unitLabel: string;
+  description: string;
+  amount: number;
+};
+
 export type BuildingManagementReport = {
   propertyName: string;
   from: Date;
   to: Date;
+  /** Independent ("Others") vs BM — drives the report title, not the figures. */
+  isBuildingManagement: boolean;
   rentalCollection: {
     withCompany: BuildingManagementReportLine;
     withLandlord: BuildingManagementReportLine;
@@ -77,6 +68,11 @@ export type BuildingManagementReport = {
    * company collected; "to Landlord" when company collection outran those
    * expenses. Landlord-direct collections are excluded from this net. */
   finalBalanceLabel: "Balance Amount to Collect from Landlord" | "Balance Amount to Landlord";
+  expenseDetails: BuildingManagementReportDetailLine[];
+  agreementDetails: BuildingManagementReportDetailLine[];
+  utilityDetails: BuildingManagementReportDetailLine[];
+  companyRentDetails: RentCollectionDetail[];
+  landlordRentDetails: RentCollectionDetail[];
 };
 
 type ExpenseBucketKey =
@@ -105,33 +101,79 @@ function bucketFor(categoryName: string, subcategory: string | null): ExpenseBuc
   return "maintenanceOther";
 }
 
-/** Spec #36 "Building Management Summary Report" — a Darsait-style
- * reconciliation of rent collected against building expenses over a
- * period, for one "Building Management" property. Built entirely from
- * existing data (Payment.collectedBy, Expense.paidBy/units) — no new
- * schema needed. Shared between the on-screen view and its PDF export. */
+function expenseDescription(expense: {
+  description: string;
+  subcategory: string | null;
+  category: { label: string };
+}): string {
+  return expense.description.trim() || expense.subcategory || expense.category.label;
+}
+
+function expenseScopeLabel(
+  units: {
+    unit: {
+      label: string;
+      property: { propertyType: { unitPrefix: string | null; hasFloors: boolean } };
+    };
+  }[],
+): string {
+  if (units.length === 0) return "General";
+  if (units.length === 1) {
+    return formatUnitLabel(units[0].unit.property.propertyType, units[0].unit.label);
+  }
+  return `${units.length} units`;
+}
+
+/** Darsait-style summary — rent collected vs expenses for one multi-unit
+ * rental property (Building Management or Independent / Others). Shared by
+ * the on-screen view, PDF, and Excel. */
 export async function getBuildingManagementReport(
   propertyId: string,
   period: { from: Date; to: Date },
 ): Promise<BuildingManagementReport | null> {
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
-    select: { name: true, units: { select: { id: true } } },
+    select: {
+      name: true,
+      propertyType: {
+        select: {
+          isBuildingManagement: true,
+          unitPrefix: true,
+          hasFloors: true,
+        },
+      },
+      units: { select: { id: true, label: true } },
+    },
   });
   if (!property) return null;
 
   const allUnitIds = property.units.map((u) => u.id);
+  const unitNameById = new Map(
+    property.units.map((unit) => [
+      unit.id,
+      formatUnitLabel(property.propertyType, unit.label),
+    ]),
+  );
 
   const payments = await prisma.payment.findMany({
     where: {
       status: PaymentStatus.approved,
       paidAt: { gte: period.from, lte: period.to },
-      charge: { unit: { propertyId } },
+      charge: { type: ChargeType.rent, unit: { propertyId } },
     },
     select: {
       amount: true,
       collectedBy: true,
-      charge: { select: { unitId: true } },
+      paidAt: true,
+      charge: {
+        select: {
+          unitId: true,
+          title: true,
+          periodStart: true,
+          dueDate: true,
+          tenant: { select: { email: true, firstName: true, lastName: true } },
+        },
+      },
     },
   });
 
@@ -139,15 +181,27 @@ export async function getBuildingManagementReport(
   const landlordUnits = new Set<string>();
   let companyAmount = 0;
   let landlordAmount = 0;
+  const companyRentDetails: RentCollectionDetail[] = [];
+  const landlordRentDetails: RentCollectionDetail[] = [];
 
   for (const payment of payments) {
     const amount = moneyValue(payment.amount);
+    const detail: RentCollectionDetail = {
+      unitLabel: unitNameById.get(payment.charge.unitId) ?? payment.charge.unitId,
+      tenantName: personDisplayName(payment.charge.tenant),
+      title: payment.charge.title,
+      month: format(payment.charge.periodStart ?? payment.charge.dueDate, "MMM yy"),
+      paidAt: payment.paidAt,
+      amount,
+    };
     if (payment.collectedBy === "owner") {
       landlordUnits.add(payment.charge.unitId);
       landlordAmount += amount;
+      landlordRentDetails.push(detail);
     } else {
       companyUnits.add(payment.charge.unitId);
       companyAmount += amount;
+      companyRentDetails.push(detail);
     }
   }
 
@@ -166,9 +220,24 @@ export async function getBuildingManagementReport(
     select: {
       amount: true,
       paidBy: true,
-      category: { select: { name: true } },
+      description: true,
       subcategory: true,
-      units: { select: { unitId: true } },
+      category: { select: { name: true, label: true } },
+      units: {
+        select: {
+          unit: {
+            select: {
+              id: true,
+              label: true,
+              property: {
+                select: {
+                  propertyType: { select: { unitPrefix: true, hasFloors: true } },
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -187,16 +256,29 @@ export async function getBuildingManagementReport(
     maintenanceOther: new Set(),
   };
 
+  const expenseDetails: BuildingManagementReportDetailLine[] = [];
+  const agreementDetails: BuildingManagementReportDetailLine[] = [];
+  const utilityDetails: BuildingManagementReportDetailLine[] = [];
+
   for (const expense of expenses) {
     if (expense.paidBy === "owner") continue;
     const bucket = bucketFor(expense.category.name, expense.subcategory);
-    bucketAmounts[bucket] += moneyValue(expense.amount);
+    const amount = moneyValue(expense.amount);
+    bucketAmounts[bucket] += amount;
     if (expense.units.length > 0) {
-      expense.units.forEach((u) => bucketUnits[bucket].add(u.unitId));
+      expense.units.forEach((u) => bucketUnits[bucket].add(u.unit.id));
     } else {
-      // Property-wide (common-area) expense — applies across every unit.
       allUnitIds.forEach((id) => bucketUnits[bucket].add(id));
     }
+
+    const detail = {
+      unitLabel: expenseScopeLabel(expense.units),
+      description: expenseDescription(expense),
+      amount,
+    };
+    if (bucket === "agreementRegistration") agreementDetails.push(detail);
+    else if (bucket === "water" || bucket === "electricity") utilityDetails.push(detail);
+    else expenseDetails.push(detail);
   }
 
   const expenseLines: BuildingManagementReportLine[] = EXPENSE_BUCKETS.map(
@@ -215,10 +297,14 @@ export async function getBuildingManagementReport(
   // rent never entered Rawazen's books, so it must not offset what we spent.
   const finalBalance = companyAmount - totalExpenseAmount;
 
+  companyRentDetails.sort((a, b) => a.paidAt.getTime() - b.paidAt.getTime());
+  landlordRentDetails.sort((a, b) => a.paidAt.getTime() - b.paidAt.getTime());
+
   return {
     propertyName: property.name,
     from: period.from,
     to: period.to,
+    isBuildingManagement: property.propertyType.isBuildingManagement,
     rentalCollection: {
       withCompany: {
         description: "Rental Collection with Company",
@@ -247,5 +333,10 @@ export async function getBuildingManagementReport(
       finalBalance >= 0
         ? "Balance Amount to Landlord"
         : "Balance Amount to Collect from Landlord",
+    expenseDetails,
+    agreementDetails,
+    utilityDetails,
+    companyRentDetails,
+    landlordRentDetails,
   };
 }

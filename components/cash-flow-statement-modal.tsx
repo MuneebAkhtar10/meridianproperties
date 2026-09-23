@@ -8,25 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { dateInputValue, monthInputValue } from "@/lib/finance";
+import { dateInputValue } from "@/lib/finance";
+
+function startOfYearInput(): string {
+  return `${new Date().getFullYear()}-01-01`;
+}
 
 /**
- * Spec #22's "Detailed Cash Flow Statement" needs an arbitrary From/To
- * range and a Fund, not just the page's own Property + Year filters — so
- * it gets its own small form rather than reusing the shared filter bar
- * above the expense log. Submitting is a plain GET (no server action): it
- * just opens the PDF route in a new tab with the four params as a query
- * string.
+ * Detailed cash flow for one property over a From/To range. Fund tagging
+ * lives on the annual budget only — this statement covers the whole
+ * property. Submitting is a plain GET that opens the PDF in a new tab.
  */
 export function CashFlowStatementModal({
   properties,
-  funds,
   defaultPropertyId,
   autoOpen = false,
   trigger,
 }: {
   properties: { id: string; name: string }[];
-  funds: { id: string; label: string }[];
   /** Preselects a property — set when this modal is opened from that
    * property's own "Cash Flow" quick-link instead of the plain Expenses
    * page. */
@@ -40,16 +39,15 @@ export function CashFlowStatementModal({
   const [propertyId, setPropertyId] = useState(
     defaultPropertyId ?? properties[0]?.id ?? "",
   );
-  const fundId = funds[0]?.id ?? "";
-  const [from, setFrom] = useState(`${monthInputValue()}-01`);
-  const [to, setTo] = useState(dateInputValue());
+  const [from, setFrom] = useState(startOfYearInput);
+  const [to, setTo] = useState(dateInputValue);
 
-  const canGenerate = Boolean(propertyId && fundId && from && to);
+  const canGenerate = Boolean(propertyId && from && to);
 
   return (
     <Modal
       title="Detailed Cash Flow Statement"
-      description="Actual revenue and expenditure for one property over any date range."
+      description="Actual service-charge revenue and expenditure for one property over any date range."
       trigger={
         trigger ?? (
           <Button type="button" variant="outline">
@@ -112,7 +110,6 @@ export function CashFlowStatementModal({
           onClick={() => {
             const params = new URLSearchParams({
               property: propertyId,
-              fund: fundId,
               from,
               to,
             });

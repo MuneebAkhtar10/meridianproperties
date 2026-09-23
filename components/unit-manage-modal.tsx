@@ -265,6 +265,7 @@ export function UnitManageModal({
   owners,
   availableTenants,
   funds,
+  collectsServiceCharge = true,
   defaultTab = "details",
   triggerLabel = "Manage",
 }: {
@@ -279,6 +280,8 @@ export function UnitManageModal({
    * maintenance-request toggles entirely instead of just defaulting them
    * off, since there's nothing here for an admin to opt back into. */
   isBuildingType: boolean;
+  /** Independent properties never take service charge — hide that tab. */
+  collectsServiceCharge?: boolean;
   /** Admin, or this specific unit's own owner — anyone else viewing the
    * modal (e.g. an owner looking at a co-owner's unit on a shared property)
    * gets a read-only documents list. */
@@ -312,7 +315,9 @@ export function UnitManageModal({
   const tabs: { key: TabKey; label: string; icon: typeof Pencil }[] = [
     { key: "details", label: "Details", icon: Pencil },
     { key: "ownership", label: "Ownership", icon: ArrowLeftRight },
-    { key: "charge", label: "Service charge", icon: Settings2 },
+    ...(collectsServiceCharge
+      ? [{ key: "charge" as const, label: "Service charge", icon: Settings2 }]
+      : []),
     { key: "documents", label: "Agreements", icon: FileText },
     { key: "misc", label: "Miscellaneous", icon: FileStack },
     { key: "danger", label: "Danger zone", icon: Trash2 },
@@ -322,7 +327,9 @@ export function UnitManageModal({
   const persistOpenKey = `unit-manage-open:${unit.id}`;
   const persistTabKey = `unit-manage-tab:${unit.id}`;
 
-  const [tab, setTab] = useState<TabKey>(defaultTab);
+  const [tab, setTab] = useState<TabKey>(
+    !collectsServiceCharge && defaultTab === "charge" ? "details" : defaultTab,
+  );
 
   useEffect(() => {
     try {
@@ -331,7 +338,7 @@ export function UnitManageModal({
       if (
         stored === "details" ||
         stored === "ownership" ||
-        stored === "charge" ||
+        (collectsServiceCharge && stored === "charge") ||
         stored === "documents" ||
         stored === "misc" ||
         stored === "danger"
@@ -341,7 +348,7 @@ export function UnitManageModal({
     } catch {
       /* ignore */
     }
-  }, [persistOpenKey, persistTabKey]);
+  }, [persistOpenKey, persistTabKey, collectsServiceCharge]);
 
   useEffect(() => {
     try {
@@ -586,6 +593,7 @@ export function UnitManageModal({
                   hasActivePlan={Boolean(
                     activePlan?.installments.some((item) => !item.paidAt),
                   )}
+                  collectsServiceCharge={collectsServiceCharge}
                 />
               </div>
             )}
@@ -619,15 +627,23 @@ export function UnitManageModal({
                             </span>
                           </div>
                           <p className="text-muted-foreground">
-                            {transfer.keptServiceCharge
-                              ? "Kept the existing annual service charge"
-                              : "Annual service charge setup was cleared"}
-                            {" · "}
-                            {transfer.keptInstallmentPlan
-                              ? "continued the payment plan"
-                              : "cancelled the payment plan for a new schedule"}
-                            {transfer.createdBy &&
-                              ` · By ${ownerDisplayName(transfer.createdBy)}`}
+                            {[
+                              collectsServiceCharge
+                                ? transfer.keptServiceCharge
+                                  ? "Kept the existing annual service charge"
+                                  : "Annual service charge setup was cleared"
+                                : null,
+                              collectsServiceCharge
+                                ? transfer.keptInstallmentPlan
+                                  ? "continued the payment plan"
+                                  : "cancelled the payment plan for a new schedule"
+                                : null,
+                              transfer.createdBy
+                                ? `By ${ownerDisplayName(transfer.createdBy)}`
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </p>
                           {transfer.notes && (
                             <p className="italic text-muted-foreground">
@@ -644,7 +660,7 @@ export function UnitManageModal({
           </div>
         )}
 
-        {tab === "charge" && (
+        {tab === "charge" && collectsServiceCharge && (
           <UnitServiceChargePanel unit={unit} funds={funds} isAdmin={isAdmin} />
         )}
 
@@ -722,6 +738,7 @@ export function UnitManageModal({
               compact
               inline
               readOnly={!canManageDocuments}
+              expiryRequired
             />
           </div>
         )}
@@ -765,6 +782,7 @@ function TransferOwnershipModal({
   owners,
   currentBalance,
   hasActivePlan,
+  collectsServiceCharge,
 }: {
   unitId: string;
   unitLabel: string;
@@ -777,6 +795,7 @@ function TransferOwnershipModal({
   }[];
   currentBalance: number;
   hasActivePlan: boolean;
+  collectsServiceCharge: boolean;
 }) {
   return (
     <Modal
@@ -796,7 +815,8 @@ function TransferOwnershipModal({
           Current owner: <span className="font-medium text-foreground">{currentOwnerName}</span>
         </p>
 
-        {currentBalance > 0 ? (
+        {collectsServiceCharge ? (
+          currentBalance > 0 ? (
           <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
             This unit has an outstanding balance of{" "}
             <span className="font-semibold">{formatMoney(currentBalance)}</span>{" "}
@@ -808,7 +828,8 @@ function TransferOwnershipModal({
               ? `This unit is in credit by ${formatMoney(Math.abs(currentBalance))} — the new owner inherits that credit.`
               : "This unit's service charge is fully cleared — nothing outstanding to carry over."}
           </p>
-        )}
+        )
+        ) : null}
 
         <div className="space-y-1.5">
           <Label htmlFor={`transfer-owner-${unitId}`}>New owner</Label>
@@ -835,17 +856,19 @@ function TransferOwnershipModal({
           />
         </div>
 
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="keepServiceCharge"
-            defaultChecked
-            className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
-          />
-          Keep the current annual service charge for the new owner
-        </label>
+        {collectsServiceCharge && (
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="keepServiceCharge"
+              defaultChecked
+              className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+            />
+            Keep the current annual service charge for the new owner
+          </label>
+        )}
 
-        {hasActivePlan ? (
+        {collectsServiceCharge && hasActivePlan ? (
           <fieldset className="space-y-2 rounded-lg border border-border p-3">
             <legend className="px-1 text-sm font-medium">Payment plan</legend>
             <p className="text-xs text-muted-foreground">
@@ -875,15 +898,6 @@ function TransferOwnershipModal({
         ) : (
           <input type="hidden" name="installmentPlanAction" value="continue" />
         )}
-
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="alsoTransferOtherUnits"
-            className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
-          />
-          Also transfer the units currently held by the same owner
-        </label>
 
         <div className="space-y-1.5">
           <Label htmlFor={`transfer-notes-${unitId}`}>Notes</Label>

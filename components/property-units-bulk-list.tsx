@@ -46,6 +46,7 @@ export function PropertyUnitsBulkList({
   propertyId,
   floorGroups,
   owners,
+  collectsServiceCharge = true,
 }: {
   propertyId: string;
   floorGroups: PropertyUnitFloorGroup[];
@@ -55,6 +56,7 @@ export function PropertyUnitsBulkList({
     firstName: string | null;
     lastName: string | null;
   }[];
+  collectsServiceCharge?: boolean;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [panel, setPanel] = useState<"owner" | "charge" | "invoice" | null>(
@@ -133,6 +135,8 @@ export function PropertyUnitsBulkList({
                 <UserRoundPlus className="h-4 w-4" />
                 Assign owner
               </Button>
+              {collectsServiceCharge && (
+                <>
               <Button
                 type="button"
                 variant={panel === "charge" ? "default" : "outline"}
@@ -151,6 +155,8 @@ export function PropertyUnitsBulkList({
                 <Receipt className="h-4 w-4" />
                 Generate invoice
               </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -193,7 +199,7 @@ export function PropertyUnitsBulkList({
             </div>
           )}
 
-          {panel === "charge" && (
+          {collectsServiceCharge && panel === "charge" && (
             <div className="flex flex-wrap items-end gap-2 border-t pt-3">
               <div className="w-36 space-y-1">
                 <Label className="text-xs">Amount (OMR)</Label>
@@ -237,7 +243,7 @@ export function PropertyUnitsBulkList({
             </div>
           )}
 
-          {panel === "invoice" && (
+          {collectsServiceCharge && panel === "invoice" && (
             <div className="flex flex-wrap items-end gap-2 border-t pt-3">
               <div className="w-36 space-y-1">
                 <Label className="text-xs">Period start</Label>

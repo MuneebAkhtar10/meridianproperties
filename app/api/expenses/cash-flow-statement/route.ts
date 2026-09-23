@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/lib/generated/prisma/client";
 
 import { getExpenseCategoriesWithSubcategories } from "@/lib/expenses";
 import { moneyValue } from "@/lib/finance";
@@ -10,7 +11,7 @@ import {
 } from "@/lib/pdf/cash-flow-statement";
 import { formatOmanAddress } from "@/lib/oman";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 const numberFormat = new Intl.NumberFormat("en-OM", {
@@ -19,18 +20,15 @@ const numberFormat = new Intl.NumberFormat("en-OM", {
 });
 
 /**
- * A real cash flow statement, scoped to one property, one fund, and an
- * arbitrary From/To date range — REVENUE (actual collected
- * ServiceChargePayment receipts, not a budgeted estimate), then
- * EXPENDITURE broken down by category with subtotals, then a SUMMARY with
- * the fund's opening/closing balance. See lib/pdf/cash-flow-statement.tsx.
- * This is distinct from the general Expense Report PDF
- * (/api/expenses/export-pdf), which is the flat "owner association"
- * line-item sheet.
+ * Detailed cash flow for one property + From/To window (all funds).
+ * Revenue is billed service charge (invoices) for the period — matching the
+ * Urbanise-style statement — falling back to collected receipts if nothing
+ * has been invoiced yet. Expenditure is logged expenses in the same window,
+ * grouped by category. Fund tagging is only used on the annual budget.
  */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user || !isStaffAdmin(user.userType)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -38,68 +36,77 @@ export async function GET(request: NextRequest) {
   const propertyId = params.get("property");
   const fromParam = params.get("from");
   const toParam = params.get("to");
-  const fundId = params.get("fund");
 
   const from = fromParam ? new Date(`${fromParam}T00:00:00.000Z`) : null;
-  // Exclusive end — "to" is the last day INCLUDED in the period.
   const to = toParam ? new Date(`${toParam}T00:00:00.000Z`) : null;
   const toExclusive = to ? new Date(to.getTime() + 24 * 60 * 60 * 1000) : null;
 
   if (
     !propertyId ||
-    !fundId ||
     !from ||
     !toExclusive ||
     Number.isNaN(from.getTime()) ||
     Number.isNaN(toExclusive.getTime())
   ) {
     return NextResponse.json(
-      { error: "A property, fund, and date range are required." },
+      { error: "A property and date range are required." },
       { status: 400 },
     );
   }
 
-  const [property, fund] = await Promise.all([
-    prisma.property.findUnique({
-      where: { id: propertyId },
-      select: {
-        name: true,
-        address: true,
-        area: true,
-        wilayat: true,
-        governorate: true,
-        buildingNumber: true,
-        wayNumber: true,
-        postalCode: true,
-      },
-    }),
-    prisma.fund.findUnique({ where: { id: fundId }, select: { id: true, name: true, label: true } }),
-  ]);
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: {
+      name: true,
+      address: true,
+      area: true,
+      wilayat: true,
+      governorate: true,
+      buildingNumber: true,
+      wayNumber: true,
+      postalCode: true,
+    },
+  });
 
   if (!property) {
     return NextResponse.json({ error: "Property not found." }, { status: 404 });
   }
-  if (!fund) {
-    return NextResponse.json({ error: "Fund not found." }, { status: 404 });
-  }
 
   const scopedPropertyId: string = propertyId;
-  const scopedFundId: string = fund.id;
 
-  // Legacy/no-fund payments only ever moved a unit's total balance, never a
-  // specific fund's — treated as General Administrative Fund activity for
-  // reporting, since that's what they conceptually were before Funds
-  // existed.
-  const isGeneralFund = fund.name === "general_administrative";
-  const paymentFundWhere = isGeneralFund
-    ? { OR: [{ fundId: scopedFundId }, { fundId: null }] }
-    : { fundId: scopedFundId };
+  function expenseWhere(dateFilter: Prisma.ExpenseWhereInput): Prisma.ExpenseWhereInput {
+    return {
+      AND: [
+        {
+          OR: [
+            { propertyId: scopedPropertyId },
+            { units: { some: { unit: { propertyId: scopedPropertyId } } } },
+          ],
+        },
+        dateFilter,
+      ],
+    };
+  }
 
-  async function sumRevenue(paidBefore: Date | null, paidInRange: [Date, Date] | null) {
+  async function sumInvoiced(issuedBefore: Date | null, issuedInRange: [Date, Date] | null) {
+    const result = await prisma.serviceChargeInvoice.aggregate({
+      where: {
+        unit: { propertyId: scopedPropertyId },
+        ...(issuedBefore
+          ? { issueDate: { lt: issuedBefore } }
+          : issuedInRange
+            ? { issueDate: { gte: issuedInRange[0], lt: issuedInRange[1] } }
+            : {}),
+      },
+      _sum: { currentAmount: true },
+    });
+    return moneyValue(result._sum.currentAmount ?? 0);
+  }
+
+  async function sumCollected(paidBefore: Date | null, paidInRange: [Date, Date] | null) {
     const result = await prisma.serviceChargePayment.aggregate({
       where: {
         unit: { propertyId: scopedPropertyId },
-        ...paymentFundWhere,
         ...(paidBefore
           ? { paidAt: { lt: paidBefore } }
           : paidInRange
@@ -113,41 +120,50 @@ export async function GET(request: NextRequest) {
 
   async function sumExpenditure(before: Date | null, range: [Date, Date] | null) {
     const result = await prisma.expense.aggregate({
-      where: {
-        fundId: scopedFundId,
-        OR: [
-          { propertyId: scopedPropertyId },
-          { units: { some: { unit: { propertyId: scopedPropertyId } } } },
-        ],
-        ...(before ? { date: { lt: before } } : range ? { date: { gte: range[0], lt: range[1] } } : {}),
-      },
+      where: expenseWhere(
+        before
+          ? { date: { lt: before } }
+          : range
+            ? { date: { gte: range[0], lt: range[1] } }
+            : {},
+      ),
       _sum: { amount: true, vatAmount: true },
     });
     return moneyValue(result._sum.amount ?? 0) + moneyValue(result._sum.vatAmount ?? 0);
   }
 
-  const [pastRevenue, pastExpenditure, revenueTotal, categories, expenses] = await Promise.all([
-    sumRevenue(from, null),
+  const [
+    pastInvoiced,
+    periodInvoiced,
+    pastCollected,
+    periodCollected,
+    pastExpenditure,
+    categories,
+    expenses,
+  ] = await Promise.all([
+    sumInvoiced(from, null),
+    sumInvoiced(null, [from, toExclusive]),
+    sumCollected(from, null),
+    sumCollected(null, [from, toExclusive]),
     sumExpenditure(from, null),
-    sumRevenue(null, [from, toExclusive]),
     getExpenseCategoriesWithSubcategories(),
     prisma.expense.findMany({
-      where: {
-        fundId: fund.id,
-        OR: [{ propertyId }, { units: { some: { unit: { propertyId } } } }],
-        date: { gte: from, lt: toExclusive },
-      },
+      where: expenseWhere({ date: { gte: from, lt: toExclusive } }),
       select: { categoryId: true, subcategory: true, amount: true, vatAmount: true },
     }),
   ]);
 
+  const useInvoices = pastInvoiced > 0 || periodInvoiced > 0;
+  const pastRevenue = useInvoices ? pastInvoiced : pastCollected;
+  const revenueTotal = useInvoices ? periodInvoiced : periodCollected;
   const openingBalance = pastRevenue - pastExpenditure;
 
   const expenditureGroups: CashFlowCategoryGroup[] = [];
   let expenditureTotal = 0;
+  const knownCategoryIds = new Set(categories.map((category) => category.id));
 
   for (const category of categories) {
-    const inCategory = expenses.filter((e) => e.categoryId === category.id);
+    const inCategory = expenses.filter((expense) => expense.categoryId === category.id);
     if (inCategory.length === 0) continue;
 
     const bySubcategory = new Map<string, number>();
@@ -171,30 +187,50 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  const leftover = expenses.filter((expense) => !knownCategoryIds.has(expense.categoryId));
+  if (leftover.length > 0) {
+    const groupTotal = leftover.reduce(
+      (sum, expense) => sum + moneyValue(expense.amount) + moneyValue(expense.vatAmount),
+      0,
+    );
+    expenditureTotal += groupTotal;
+    expenditureGroups.push({
+      categoryLabel: "Other",
+      lines: leftover.map((expense) => ({
+        label: expense.subcategory ?? "Other",
+        amount: numberFormat.format(
+          moneyValue(expense.amount) + moneyValue(expense.vatAmount),
+        ),
+      })),
+      total: numberFormat.format(groupTotal),
+    });
+  }
+
   const closingBalance = openingBalance + revenueTotal - expenditureTotal;
-  const net = revenueTotal - expenditureTotal;
 
   const periodLabel = `For the period ${format(from, "d MMMM yyyy")} to ${format(to!, "d MMMM yyyy")}`;
   const address = formatOmanAddress(property);
+  const revenueLabel = useInvoices ? "Service Charge" : "Service Charge Revenue";
+  const formatSigned = (value: number) =>
+    value < 0 ? `(${numberFormat.format(Math.abs(value))})` : numberFormat.format(value);
 
   const pdfBuffer = await renderToBuffer(
     CashFlowStatementDocument({
       propertyName: property.name,
       propertyAddress: address,
       periodLabel,
-      openingBalance: numberFormat.format(Math.abs(openingBalance)),
+      openingBalance: formatSigned(openingBalance),
       openingIsDeficit: openingBalance < 0,
       revenueLines:
         revenueTotal > 0
-          ? [{ label: "Service Charge Revenue", amount: numberFormat.format(revenueTotal) }]
+          ? [{ label: revenueLabel, amount: numberFormat.format(revenueTotal) }]
           : [],
       revenueTotal: numberFormat.format(revenueTotal),
       expenditureGroups,
       expenditureTotal: numberFormat.format(expenditureTotal),
-      closingBalance: numberFormat.format(Math.abs(closingBalance)),
+      closingBalance: formatSigned(closingBalance),
       closingIsDeficit: closingBalance < 0,
-      netTotal: numberFormat.format(Math.abs(net)),
-      isSurplus: net >= 0,
+      closingLabel: `TOTAL BALANCE AS AT ${format(to!, "d MMM").toUpperCase()}`,
     }),
   );
 

@@ -125,7 +125,7 @@ async function main() {
   const admin = await upsertPerson(
     adminEmail,
     process.env.SEED_ADMIN_PASSWORD ?? "admin123",
-    { userType: UserType.admin, firstName: "Site", lastName: "Admin" },
+    { userType: UserType.super_admin, firstName: "Site", lastName: "Admin" },
   );
 
   console.log(`✅ admin: ${admin.email}`);

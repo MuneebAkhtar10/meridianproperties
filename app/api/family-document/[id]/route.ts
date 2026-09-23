@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { downloadAttachment } from "@/lib/storage";
 import { UserType } from "@/lib/generated/prisma/client";
 
@@ -29,7 +29,7 @@ export async function GET(
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
   }
 
-  const canRead = user.userType === UserType.admin || member.workerId === user.id;
+  const canRead = isStaffAdmin(user.userType) || member.workerId === user.id;
   if (!canRead) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }

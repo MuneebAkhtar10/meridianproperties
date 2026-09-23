@@ -10,7 +10,7 @@ import {
 import { formatMoney } from "@/lib/finance";
 import { CollectionPositionDocument } from "@/lib/pdf/collection-position";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 const BUCKET_LABEL: Record<CollectionPositionBucketFilter, string> = {
@@ -31,7 +31,7 @@ const BUCKET_LABEL: Record<CollectionPositionBucketFilter, string> = {
  * (spec #18) — same property/bucket filters, same totals, same table. */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
-  if (!user || user.userType !== UserType.admin) {
+  if (!user || !isStaffAdmin(user.userType)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
