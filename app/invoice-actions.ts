@@ -11,6 +11,11 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { notifyOwnerServiceChargeIssued } from "@/lib/notifications";
 import {
+  pdfAttachmentFromResult,
+  renderServiceChargeInvoicePdf,
+  renderServicesTemplateInvoicePdf,
+} from "@/lib/pdf/render-service-charge-invoice";
+import {
   ensureInvoiceColumns,
   nextInvoiceNumber,
 } from "@/lib/invoices";
@@ -38,7 +43,14 @@ function revalidateInvoiceSurfaces(propertyId?: string, unitId?: string) {
   }
 }
 
-type LineInput = { description: string; qty: number; unitRate: number; total: number };
+type LineInput = {
+  description: string;
+  qty: number;
+  unitRate: number;
+  total: number;
+  /** The expense category label picked for the line, if any. */
+  category?: string;
+};
 
 function parseLines(formData: FormData, fallbackDescription: string): LineInput[] {
   const categories = formData.getAll("lineCategory").map((v) => v.toString());
@@ -60,6 +72,7 @@ function parseLines(formData: FormData, fallbackDescription: string): LineInput[
       qty,
       unitRate: Number(unitRate),
       total: qty * Number(unitRate),
+      category: category || undefined,
     });
   }
 
@@ -182,7 +195,7 @@ export const createOwnerInvoiceAction = async (formData: FormData) => {
     return encodedRedirect(
       "error",
       back,
-      "Independent properties do not take a service charge. Use an additional charge instead.",
+      "Independent and building-management properties do not take a service charge. Use an additional charge instead.",
     );
   }
   if (intent === "issue" && !unit.ownerId) {
@@ -195,7 +208,53 @@ export const createOwnerInvoiceAction = async (formData: FormData) => {
 
   const fallbackDescription =
     kind === "service_charge" ? "Service Charge" : "Additional charge";
-  const lines = parseLines(formData, fallbackDescription);
+
+  // "expenses": bill expenses that already exist. "new": the lines typed in
+  // become new expense entries too. Anything else is the plain invoice form.
+  const modeRaw = formData.get("mode")?.toString();
+  const mode = modeRaw === "expenses" || modeRaw === "new" ? modeRaw : null;
+
+  let lines: LineInput[];
+  let billedExpenseIds: string[] = [];
+  if (mode === "expenses") {
+    const requestedIds = formData
+      .getAll("expenseId")
+      .map((value) => value.toString())
+      .filter(Boolean);
+    const expenses = requestedIds.length
+      ? await prisma.expense.findMany({
+          where: {
+            id: { in: requestedIds },
+            invoiceId: null,
+            units: { some: { unitId } },
+          },
+          include: {
+            category: { select: { label: true } },
+            _count: { select: { units: true } },
+          },
+        })
+      : [];
+    lines = expenses.map((expense) => {
+      // An expense split across several units is billed as this unit's share.
+      const share =
+        (Number(expense.amount) + Number(expense.vatAmount)) /
+        Math.max(1, expense._count.units);
+      return {
+        description: [expense.category.label, expense.subcategory, expense.description]
+          .filter(Boolean)
+          .join(" — "),
+        qty: 1,
+        unitRate: Math.round(share * 1000) / 1000,
+        total: Math.round(share * 1000) / 1000,
+      };
+    });
+    billedExpenseIds = expenses.map((expense) => expense.id);
+    if (lines.length === 0) {
+      return encodedRedirect("error", back, "Select at least one expense to bill.");
+    }
+  } else {
+    lines = parseLines(formData, fallbackDescription);
+  }
   if (lines.length === 0) {
     return encodedRedirect("error", back, "Add at least one charge line with an amount.");
   }
@@ -251,7 +310,7 @@ export const createOwnerInvoiceAction = async (formData: FormData) => {
       });
     }
 
-    return tx.serviceChargeInvoice.create({
+    const created = await tx.serviceChargeInvoice.create({
       data: {
         unitId,
         fundId,
@@ -282,9 +341,48 @@ export const createOwnerInvoiceAction = async (formData: FormData) => {
       },
       select: { id: true, invoiceNumber: true },
     });
-  });
+
+    if (mode === "expenses" && billedExpenseIds.length > 0) {
+      await tx.expense.updateMany({
+        where: { id: { in: billedExpenseIds } },
+        data: { invoiceId: created.id },
+      });
+    }
+
+    if (mode === "new") {
+      // Every new line is also recorded as an expense against this unit, so
+      // the Expenses section matches what was billed.
+      const categories = await tx.expenseCategoryType.findMany({
+        orderBy: { createdAt: "asc" },
+        include: { subcategories: { orderBy: { createdAt: "asc" }, take: 1 } },
+      });
+      for (const line of lines) {
+        const category =
+          categories.find((c) => c.label === line.category) ?? categories[0];
+        if (!category) continue;
+        await tx.expense.create({
+          data: {
+            categoryId: category.id,
+            subcategory: category.subcategories[0]?.label ?? null,
+            description: line.description,
+            amount: line.total,
+            vatAmount: 0,
+            fundId,
+            ownerChargeMethod: "extra_charge",
+            date: issueDate,
+            createdById: admin.id,
+            invoiceId: created.id,
+            units: { create: [{ unitId }] },
+          },
+        });
+      }
+    }
+
+    return created;
+  }, { timeout: 20000 });
 
   revalidateInvoiceSurfaces(unit.propertyId, unitId);
+  revalidatePath("/protected/expenses");
 
   if (intent === "issue" && unit.ownerId) {
     try {
@@ -293,13 +391,27 @@ export const createOwnerInvoiceAction = async (formData: FormData) => {
         propertyId: unit.propertyId,
         propertyName: unit.property.name,
         unitLabel: formatUnitLabel(unit.property.propertyType, unit.label),
-        amount: formatMoney(amountPayable),
+        // An additional charge is billed for its own amount, not the unit's
+        // running balance.
+        amount: formatMoney(kind === "additional" ? currentAmount : amountPayable),
         dueDate: dueDate.toLocaleDateString("en-GB", {
           day: "numeric",
           month: "short",
           year: "numeric",
         }),
         invoiceNumber: invoice.invoiceNumber,
+        additionalCharge: kind === "additional",
+        attachments: await (async () => {
+          try {
+            const pdf =
+              kind === "additional"
+                ? await renderServicesTemplateInvoicePdf(invoice.id)
+                : await renderServiceChargeInvoicePdf(invoice.id);
+            return pdf ? [pdfAttachmentFromResult(pdf)] : undefined;
+          } catch {
+            return undefined;
+          }
+        })(),
       });
     } catch (error) {
       console.error("Owner invoice alert failed:", error);

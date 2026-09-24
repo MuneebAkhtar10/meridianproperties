@@ -25,6 +25,7 @@ export function ExpenseEditModal({
   suppliers,
   targetLabel,
   isOaExpense,
+  noServiceCharge = false,
 }: {
   expense: {
     id: string;
@@ -51,6 +52,9 @@ export function ExpenseEditModal({
   /** OA properties never had an owner-charge-method distinction — hide
    * the picker entirely rather than show a meaningless choice. */
   isOaExpense: boolean;
+  /** Independent / Building management property — no service charge to
+   * deduct from, so only "Charged to owner" is offered. */
+  noServiceCharge?: boolean;
 }) {
   const defaultOwnerChargeMethod: OwnerChargeMethod = isOwnerChargeMethod(
     expense.ownerChargeMethod,
@@ -180,7 +184,10 @@ export function ExpenseEditModal({
         </div>
 
         {!isOaExpense && (
-          <OwnerChargeMethodPicker defaultValue={defaultOwnerChargeMethod} />
+          <OwnerChargeMethodPicker
+            defaultValue={defaultOwnerChargeMethod}
+            allowDeduction={!noServiceCharge}
+          />
         )}
 
         <div className="space-y-1.5">

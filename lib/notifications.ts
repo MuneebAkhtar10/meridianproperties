@@ -10,7 +10,11 @@ import {
   renderNotificationEmail,
   renderInvoiceEmail,
 } from "@/lib/email";
-import { sendWhatsAppAlert, sendWhatsAppTemplate } from "@/lib/whatsapp";
+import {
+  sendWhatsAppAlert,
+  sendWhatsAppDocument,
+  sendWhatsAppTemplate,
+} from "@/lib/whatsapp";
 import {
   formatOwnerWhatsApp,
   ownerChargeIssuedCopy,
@@ -29,7 +33,10 @@ import {
 } from "@/lib/tenant-alerts";
 import { formatMoney, PAYMENT_METHOD_LABEL } from "@/lib/finance";
 import { formatUnitLabel } from "@/lib/property-types";
-import { syncWorkerWhatsappSession } from "@/lib/whatsapp-session";
+import {
+  hasOpenWhatsappWindow,
+  syncWorkerWhatsappSession,
+} from "@/lib/whatsapp-session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 import type { RequestStatus } from "@/lib/generated/prisma/client";
@@ -92,6 +99,17 @@ async function dispatchExternalChannels(
     select: { id: true, email: true, phone: true, userType: true },
   });
   const byId = new Map(users.map((user) => [user.id, user]));
+  const windowByPhone = new Map<string, boolean>();
+  await Promise.all(
+    [...new Set(users.map((u) => u.phone).filter((p): p is string => Boolean(p)))].map(
+      async (phone) => {
+        windowByPhone.set(
+          phone,
+          await hasOpenWhatsappWindow(phone).catch(() => false),
+        );
+      },
+    ),
+  );
 
   await Promise.allSettled(
     rows.flatMap((row) => {
@@ -128,23 +146,36 @@ async function dispatchExternalChannels(
         }
       }
 
-      if (user.phone && row.whatsappTemplate) {
-        const templateName = process.env[row.whatsappTemplate.envVar];
-        if (templateName) {
-          tasks.push(
-            sendWhatsAppTemplate({
-              to: user.phone,
-              templateName,
-              bodyParams: row.whatsappTemplate.bodyParams,
-            }),
-          );
-        } else {
-          console.warn(
-            `[whatsapp] ${row.whatsappTemplate.envVar} not set — skipping first-contact template message to`,
-            user.phone,
-          );
-        }
+      // Free-form (multi-line) delivery only works inside the recipient's
+      // 24-hour window; otherwise fall back to the approved templates.
+      const windowOpen = user.phone ? windowByPhone.get(user.phone) === true : false;
+      const structuredTemplate =
+        !windowOpen &&
+        row.whatsappTemplate &&
+        process.env[row.whatsappTemplate.envVar];
+
+      if (user.phone && row.whatsappTemplate && structuredTemplate) {
+        const phone = user.phone;
+        tasks.push(
+          sendWhatsAppTemplate({
+            to: phone,
+            templateName: structuredTemplate,
+            bodyParams: row.whatsappTemplate.bodyParams,
+          }).then(() =>
+            Promise.all(
+              (row.attachments ?? []).map((file) =>
+                sendWhatsAppDocument({
+                  to: phone,
+                  filename: file.filename,
+                  contentBase64: file.content,
+                }),
+              ),
+            ),
+          ),
+        );
       } else if (user.phone) {
+        // (No structured template configured for this message — falls back
+        // to the generic single-line alert below.)
         // Anything without its own tailored copy still goes out as one tidy
         // labelled line - "Title: message | Label: value | ..." - rather than
         // a bare sentence, so tenant, owner and worker messages all read the
@@ -163,9 +194,11 @@ async function dispatchExternalChannels(
         const last = segments.length > 1 ? segments[segments.length - 1] : "";
         const closing = last && !/^[^:]{1,40}: /.test(last) ? last : undefined;
 
+        const phone = user.phone;
         tasks.push(
           sendWhatsAppAlert({
-            to: user.phone,
+            to: phone,
+            windowOpen,
             flatBody: body,
             parts: {
               title: row.title,
@@ -173,7 +206,19 @@ async function dispatchExternalChannels(
               details: row.details ?? [],
               closing,
             },
-          }),
+          }).then(() =>
+            // Invoices and other PDFs that go out by email are also sent on
+            // WhatsApp as a document, right after the summary message.
+            Promise.all(
+              (row.attachments ?? []).map((file) =>
+                sendWhatsAppDocument({
+                  to: phone,
+                  filename: file.filename,
+                  contentBase64: file.content,
+                }),
+              ),
+            ),
+          ),
         );
       }
 
@@ -189,10 +234,11 @@ async function dispatchExternalChannels(
 async function createNotification(args: {
   data: NotificationRow & ChannelExtras;
 }) {
-  const { details, emailHtml, whatsappTemplate, whatsappBody, ...dbData } = args.data;
+  const { details, emailHtml, whatsappTemplate, whatsappBody, attachments, ...dbData } =
+    args.data;
   const created = await prisma.notification.create({ data: dbData });
   const work = dispatchExternalChannels([
-    { ...dbData, details, emailHtml, whatsappTemplate, whatsappBody },
+    { ...dbData, details, emailHtml, whatsappTemplate, whatsappBody, attachments },
   ]).catch((error) =>
     console.error("Notification email/WhatsApp dispatch failed:", error),
   );
@@ -1056,6 +1102,17 @@ export async function notifyOwnerChargeReminder(input: {
   await publish({ kind: "notification", userIds: [input.ownerId] });
 }
 
+/** Adds a "PDF attached" row to an invoice notice's detail box when the
+ * PDF actually travels with it (email attachment + WhatsApp document). */
+function withInvoicePdfNote(
+  details: { label: string; value: string }[],
+  attachments?: import("@/lib/email").EmailAttachment[],
+) {
+  return attachments?.length
+    ? [...details, { label: "Invoice PDF", value: "Attached to this message" }]
+    : details;
+}
+
 export async function notifyOwnerServiceChargeIssued(input: {
   ownerId: string | null | undefined;
   propertyId: string;
@@ -1064,11 +1121,15 @@ export async function notifyOwnerServiceChargeIssued(input: {
   amount: string;
   dueDate: string;
   invoiceNumber?: string;
+  /** The invoice PDF — emailed and sent on WhatsApp as a document. */
+  attachments?: import("@/lib/email").EmailAttachment[];
+  additionalCharge?: boolean;
 }): Promise<void> {
   if (!input.ownerId) return;
 
   const copy = ownerServiceChargeCopy({
     stage: "issued",
+    additionalCharge: input.additionalCharge,
     propertyName: input.propertyName,
     unitLabel: input.unitLabel,
     amount: input.amount,
@@ -1082,8 +1143,13 @@ export async function notifyOwnerServiceChargeIssued(input: {
       title: copy.title,
       message: copy.message,
       href: `/protected/properties/${input.propertyId}`,
-      details: copy.details,
+      details: withInvoicePdfNote(copy.details, input.attachments),
       whatsappBody: copy.whatsappBody,
+      whatsappTemplate: {
+        envVar: "WHATSAPP_TEMPLATE_SERVICE_CHARGE",
+        bodyParams: copy.templateParams,
+      },
+      attachments: input.attachments,
     },
   });
 
@@ -1488,6 +1554,10 @@ export async function notifyServiceChargeUpcoming(input: {
       href: `/protected/properties/${input.propertyId}`,
       details: copy.details,
       whatsappBody: copy.whatsappBody,
+      whatsappTemplate: {
+        envVar: "WHATSAPP_TEMPLATE_SERVICE_CHARGE",
+        bodyParams: copy.templateParams,
+      },
       attachments: input.attachments,
     })),
   });
@@ -1522,6 +1592,10 @@ export async function notifyServiceChargeDue(input: {
       href: `/protected/properties/${input.propertyId}`,
       details: copy.details,
       whatsappBody: copy.whatsappBody,
+      whatsappTemplate: {
+        envVar: "WHATSAPP_TEMPLATE_SERVICE_CHARGE",
+        bodyParams: copy.templateParams,
+      },
       attachments: input.attachments,
     })),
   });
@@ -1542,6 +1616,7 @@ export async function notifyInstallmentDue(input: {
   dueDate: string;
   recipientIds: string[];
   attachments?: import("@/lib/email").EmailAttachment[];
+  daysOverdue?: number;
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
@@ -1552,6 +1627,7 @@ export async function notifyInstallmentDue(input: {
     amount: input.amount,
     dueDate: input.dueDate,
     installmentLabel: `Installment ${input.sequence} of ${input.installmentCount}`,
+    daysOverdue: input.daysOverdue,
   });
 
   await createNotifications({
@@ -1560,8 +1636,12 @@ export async function notifyInstallmentDue(input: {
       title: copy.title,
       message: copy.message,
       href: `/protected/properties/${input.propertyId}`,
-      details: copy.details,
+      details: withInvoicePdfNote(copy.details, input.attachments),
       whatsappBody: copy.whatsappBody,
+      whatsappTemplate: {
+        envVar: "WHATSAPP_TEMPLATE_SERVICE_CHARGE",
+        bodyParams: copy.templateParams,
+      },
       attachments: input.attachments,
     })),
   });
@@ -1598,6 +1678,10 @@ export async function notifyServiceChargeOverdue(input: {
       href: `/protected/properties/${input.propertyId}`,
       details: copy.details,
       whatsappBody: copy.whatsappBody,
+      whatsappTemplate: {
+        envVar: "WHATSAPP_TEMPLATE_SERVICE_CHARGE",
+        bodyParams: copy.templateParams,
+      },
       attachments: input.attachments,
     })),
   });
@@ -1622,6 +1706,52 @@ export async function notifyServiceChargeReceived(input: {
       title: "Service Charge Received",
       message: `The ${input.amount} service charge for “${input.propertyName}” was recorded as received. Next due: ${input.nextDueDate}.`,
       href: `/protected/properties/${input.propertyId}`,
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: input.recipientIds });
+}
+
+/** An admin sent an existing service charge invoice to the unit's owner
+ * (and the other admins) — the same professionally worded notice as the
+ * automatic "invoice issued" one, with the invoice PDF emailed and sent on
+ * WhatsApp as a document. */
+export async function notifyServiceChargeInvoiceSent(input: {
+  propertyId: string;
+  propertyName: string;
+  unitLabel: string;
+  invoiceNumber: string;
+  amount: string;
+  dueDate: string;
+  recipientIds: string[];
+  attachments?: import("@/lib/email").EmailAttachment[];
+  additionalCharge?: boolean;
+}): Promise<void> {
+  if (input.recipientIds.length === 0) return;
+
+  const copy = ownerServiceChargeCopy({
+    stage: "issued",
+    additionalCharge: input.additionalCharge,
+    propertyName: input.propertyName,
+    unitLabel: input.unitLabel,
+    amount: input.amount,
+    dueDate: input.dueDate,
+    invoiceNumber: input.invoiceNumber,
+  });
+
+  await createNotifications({
+    data: input.recipientIds.map((userId) => ({
+      userId,
+      title: copy.title,
+      message: copy.message,
+      href: `/protected/properties/${input.propertyId}`,
+      details: withInvoicePdfNote(copy.details, input.attachments),
+      whatsappBody: copy.whatsappBody,
+      whatsappTemplate: {
+        envVar: "WHATSAPP_TEMPLATE_SERVICE_CHARGE",
+        bodyParams: copy.templateParams,
+      },
+      attachments: input.attachments,
     })),
   });
 

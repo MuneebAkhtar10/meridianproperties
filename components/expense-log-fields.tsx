@@ -25,7 +25,13 @@ export type ExpenseLogFieldsProps = {
   properties: {
     id: string;
     name: string;
-    propertyType: { name: string; isOwnerAssociation: boolean };
+    propertyType: {
+      name: string;
+      isOwnerAssociation: boolean;
+      /** True for Independent and Building management properties: no
+       * common area and no service charge to deduct from. */
+      noServiceCharge?: boolean;
+    };
   }[];
   units: UnitOption[];
   categories: PickableExpenseCategory[];
@@ -54,6 +60,7 @@ export function ExpenseLogFields({
     [properties, propertyId],
   );
   const isOaProperty = selectedProperty?.propertyType.isOwnerAssociation ?? false;
+  const noServiceCharge = selectedProperty?.propertyType.noServiceCharge ?? false;
 
   return (
     <>
@@ -63,13 +70,16 @@ export function ExpenseLogFields({
         propertyId={propertyId}
         onPropertyIdChange={setPropertyId}
         hideSpecificUnits={isOaProperty}
+        hideCommonArea={noServiceCharge}
       />
       <ExpenseCategoryPicker
         categories={categories}
         suppliers={suppliers}
         propertyId={propertyId}
       />
-      {!isOaProperty && <OwnerChargeMethodPicker />}
+      {!isOaProperty && (
+        <OwnerChargeMethodPicker allowDeduction={!noServiceCharge} />
+      )}
     </>
   );
 }

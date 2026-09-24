@@ -217,6 +217,7 @@ export function CashFlowStatementDocument({
   periodLabel,
   openingBalance,
   openingIsDeficit,
+  openingModified = false,
   revenueLines,
   revenueTotal,
   expenditureGroups,
@@ -230,6 +231,8 @@ export function CashFlowStatementDocument({
   periodLabel: string;
   openingBalance: string;
   openingIsDeficit: boolean;
+  /** The opening balance was typed in rather than calculated. */
+  openingModified?: boolean;
   revenueLines: { label: string; amount: string }[];
   revenueTotal: string;
   expenditureGroups: CashFlowCategoryGroup[];
@@ -242,19 +245,22 @@ export function CashFlowStatementDocument({
     <Document title={`Cash flow statement - ${propertyName}`}>
       <Page size="A4" style={styles.page} wrap>
         <View style={styles.headerBar}>
-          <View>
+          {/* The left block takes the remaining width and wraps a long address;
+           * the title block keeps its own fixed width, so they never overlap. */}
+          <View style={{ flex: 1, paddingRight: 16 }}>
             <Text style={styles.propertyName}>{propertyName}</Text>
             <Text style={styles.propertyAddress}>{propertyAddress}</Text>
           </View>
-          <View>
-            <Text style={styles.reportTitle}>DETAILED CASH FLOW STATEMENT</Text>
+          <View style={{ width: 230 }}>
+            <Text style={styles.reportTitle}>DETAILED CASH FLOW</Text>
+            <Text style={styles.reportTitle}>STATEMENT</Text>
             <Text style={styles.period}>{periodLabel}</Text>
           </View>
         </View>
 
         <View style={styles.statRow}>
           <StatCard
-            label="Opening Balance"
+            label={openingModified ? "Opening Balance (modified)" : "Opening Balance"}
             value={`OMR ${openingBalance}`}
             accent={openingIsDeficit ? COLORS.rose : COLORS.emerald}
           />
@@ -343,7 +349,7 @@ export function CashFlowStatementDocument({
         <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 4 }}>
           <View style={[styles.itemRow, { paddingLeft: 8, paddingVertical: 4 }]}>
             <Text style={[styles.itemLabel, { width: "70%" }]}>
-              Opening Balance
+              {openingModified ? "Opening Balance (modified)" : "Opening Balance"}
             </Text>
             <Text style={[styles.itemAmount, { width: "30%" }]}>
               OMR {openingBalance}

@@ -250,29 +250,34 @@ export function EntityDocumentManager({
   const body = (
     <>
       {documents.length > 0 ? (
-        <div className="divide-y rounded-lg border">
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-white shadow-sm">
           {documents.map((document) => (
             <div
               key={document.id}
-              className="flex items-center gap-3 px-3 py-2.5"
+              className="flex items-center gap-3 px-3.5 py-3 transition-colors hover:bg-slate-50"
             >
-              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <FileText className="h-4 w-4" />
+              </span>
               <div className="min-w-0 flex-1">
                 <a
                   href={`/api/entity-document/${document.id}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1 truncate text-sm font-medium hover:text-primary hover:underline"
+                  className="flex items-center gap-1 truncate text-sm font-semibold text-foreground hover:text-primary hover:underline"
                 >
                   <span className="truncate">
                     {document.label || document.fileName}
                   </span>
                   <ExternalLink className="h-3 w-3 shrink-0" />
                 </a>
-                <p className="flex flex-wrap items-center gap-1 truncate text-[11px] text-muted-foreground">
-                  {ENTITY_DOCUMENT_CATEGORY_LABEL[document.category]} ·{" "}
-                  {formatFileSize(document.fileSize)} ·{" "}
-                  {document.createdAt.toLocaleDateString("en-OM")}
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                  <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[11px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/15">
+                    {ENTITY_DOCUMENT_CATEGORY_LABEL[document.category]}
+                  </span>
+                  <span>{formatFileSize(document.fileSize)}</span>
+                  <span>·</span>
+                  <span>{document.createdAt.toLocaleDateString("en-OM")}</span>
                   <ExpiryChip expiresAt={document.expiresAt} />
                 </p>
               </div>
@@ -296,14 +301,14 @@ export function EntityDocumentManager({
           ))}
         </div>
       ) : (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
+        <p className="rounded-xl border-2 border-dashed border-border bg-white px-3 py-5 text-center text-sm text-muted-foreground">
           No documents uploaded yet.
         </p>
       )}
 
       {!readOnly && (
       <form
-        className="space-y-3"
+        className="space-y-3 rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 shadow-sm"
         // React sets encType itself when action is a function (inline
         // mode) and warns if it's also set explicitly here.
         encType={inline ? undefined : "multipart/form-data"}
@@ -315,6 +320,10 @@ export function EntityDocumentManager({
         {singleCategory && (
           <input type="hidden" name="category" value={singleCategory} />
         )}
+        <p className="flex items-center gap-2 text-sm font-semibold text-indigo-900">
+          <Upload className="h-4 w-4" />
+          Add a document
+        </p>
         <div
           className={
             singleCategory

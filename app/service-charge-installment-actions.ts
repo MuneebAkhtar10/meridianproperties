@@ -1,9 +1,10 @@
 "use server";
 
-import { addMonths, format } from "date-fns";
+import { addMonths, differenceInCalendarDays, format } from "date-fns";
 import { revalidatePath } from "next/cache";
 
 import { parseDate, parsePositiveMoney, dateInputValue } from "@/lib/finance";
+import { installmentReminderStage } from "@/lib/installment-reminders";
 import { notifyInstallmentDue } from "@/lib/notifications";
 import {
   pdfAttachmentFromResult,
@@ -298,11 +299,21 @@ export const sendInstallmentInvoiceAction = async (formData: FormData) => {
     dueDate: format(installment.dueDate, "d MMM yyyy"),
     recipientIds,
     attachments,
+    daysOverdue:
+      installment.dueDate < new Date() &&
+      differenceInCalendarDays(new Date(), installment.dueDate) > 0
+        ? differenceInCalendarDays(new Date(), installment.dueDate)
+        : undefined,
   });
 
   await prisma.serviceChargeInstallment.update({
     where: { id: installmentId },
-    data: { reminderSentAt: new Date() },
+    data: {
+      reminderSentAt: new Date(),
+      reminderStage: installmentReminderStage(
+        differenceInCalendarDays(installment.dueDate, new Date()),
+      ),
+    },
   });
 
   revalidatePath(back);

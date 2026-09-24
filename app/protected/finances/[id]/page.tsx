@@ -22,6 +22,7 @@ import {
 import { ChargeStatusBadge } from "@/components/charge-status-badge";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { EditPaymentModal } from "@/components/edit-payment-modal";
 import { RecordPaymentForm } from "@/components/record-payment-form";
 import { SubmitButton } from "@/components/submit-button";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -33,6 +34,7 @@ import {
   PAYMENT_METHOD_LABEL,
   approvedTotal,
   chargeBalance,
+  dateInputValue,
   formatMoney,
   pendingTotal,
 } from "@/lib/finance";
@@ -348,6 +350,32 @@ export default async function FinanceDetailPage({
                             </p>
                           )
                         )}
+
+                        {canManagePayments &&
+                          payment.status === PaymentStatus.approved && (
+                            <div className="mt-4 flex justify-end border-t pt-3">
+                              <EditPaymentModal
+                                back={listBack}
+                                chargeAmount={formatMoney(charge.amount)}
+                                payment={{
+                                  id: payment.id,
+                                  amount: Number(payment.amount).toFixed(3),
+                                  paidAt: dateInputValue(payment.paidAt),
+                                  method: payment.method,
+                                  reference: payment.reference ?? "",
+                                  notes: payment.notes ?? "",
+                                  collectedBy: payment.collectedBy,
+                                  receivedByName: payment.receivedByName ?? "",
+                                  transactionNumber: payment.transactionNumber ?? "",
+                                  chequeNumber: payment.chequeNumber ?? "",
+                                  chequeDate: payment.chequeDate
+                                    ? dateInputValue(payment.chequeDate)
+                                    : "",
+                                  bank: payment.bank ?? "",
+                                }}
+                              />
+                            </div>
+                          )}
 
                         {canManagePayments &&
                           payment.status === PaymentStatus.pending && (

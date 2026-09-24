@@ -1409,6 +1409,109 @@ export const reviewPaymentAction = async (
   );
 };
 
+/**
+ * Corrects a payment after it has been approved — amount, date, method,
+ * reference and the collection/cheque details. Admin only. The charge's
+ * paid/open status is recomputed from the corrected approved total, and the
+ * edit is appended to the payment's review note as an audit trail.
+ */
+export const updatePaymentAction = async (formData: FormData) => {
+  const admin = await requireRole(UserType.admin);
+
+  const paymentId = formData.get("paymentId")?.toString();
+  const paidAt = parseDate(formData.get("paidAt")?.toString());
+  const method = formData.get("method")?.toString();
+  const reference = formData.get("reference")?.toString().trim() || null;
+  const notes = formData.get("notes")?.toString().trim() || null;
+  const collectedByRaw = formData.get("collectedBy")?.toString();
+  const collectedBy = (Object.values(PaymentCollector) as string[]).includes(
+    collectedByRaw ?? "",
+  )
+    ? (collectedByRaw as PaymentCollector)
+    : PaymentCollector.management;
+  const receivedByName = formData.get("receivedByName")?.toString().trim() || null;
+  const transactionNumber =
+    formData.get("transactionNumber")?.toString().trim() || null;
+  const chequeNumber = formData.get("chequeNumber")?.toString().trim() || null;
+  const chequeDate = parseDate(formData.get("chequeDate")?.toString());
+  const bank = formData.get("bank")?.toString().trim() || null;
+
+  const payment = paymentId
+    ? await prisma.payment.findUnique({
+        where: { id: paymentId },
+        include: {
+          charge: {
+            include: { payments: { select: { id: true, amount: true, status: true } } },
+          },
+        },
+      })
+    : null;
+  const back = payment ? chargeReturn(formData, payment.chargeId) : "/protected/finances";
+
+  if (!payment || !paidAt || !method || !PAYMENT_METHODS.includes(method)) {
+    return encodedRedirect("error", back, "Complete the payment details correctly.");
+  }
+  if (payment.status !== PaymentStatus.approved) {
+    return encodedRedirect(
+      "error",
+      back,
+      "Only an approved payment can be edited here — review pending proofs first.",
+    );
+  }
+
+  const stamp = `Edited ${new Date().toLocaleDateString("en-GB")} by ${admin.email}`;
+  const auditNote = [payment.reviewNotes, stamp].filter(Boolean).join(" · ");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        // The amount is deliberately not editable after approval.
+        paidAt,
+        method: method as PaymentMethod,
+        reference,
+        notes,
+        collectedBy,
+        receivedByName,
+        transactionNumber,
+        chequeNumber,
+        chequeDate,
+        bank,
+        reviewNotes: auditNote,
+      },
+    });
+
+    const total = await tx.payment.aggregate({
+      where: { chargeId: payment.chargeId, status: PaymentStatus.approved },
+      _sum: { amount: true },
+    });
+    if (payment.charge.status !== ChargeStatus.waived) {
+      await tx.charge.update({
+        where: { id: payment.chargeId },
+        data: {
+          status:
+            Number(total._sum.amount ?? 0) >= Number(payment.charge.amount)
+              ? ChargeStatus.paid
+              : ChargeStatus.open,
+        },
+      });
+    }
+  });
+
+  try {
+    await pushPaymentToDynamics(payment.id);
+  } catch (error) {
+    console.error("Dynamics sync failed for edited payment:", payment.id, error);
+  }
+
+  await publishFinance([payment.charge.tenantId]);
+  revalidatePath(chargeReturn(formData, payment.chargeId));
+  revalidatePath("/protected/finances");
+  revalidatePath("/protected/finances/rent-position");
+
+  return encodedRedirect("success", back, "Payment updated.");
+};
+
 export const waiveChargeAction = async (formData: FormData) => {
   await requireRole(UserType.admin);
   const chargeId = formData.get("chargeId")?.toString();

@@ -46,14 +46,18 @@ export async function saveAdminPermissionsAction(formData: FormData) {
     .map((value) => value.toString())
     .filter((value): value is AdminModuleKey => MODULE_KEYS.has(value as AdminModuleKey));
 
-  await prisma.$transaction([
-    prisma.adminModuleGrant.deleteMany({ where: { userId } }),
-    ...selected.map((module) =>
-      prisma.adminModuleGrant.create({
-        data: { userId, module },
+  // One delete + one bulk insert (2 round trips) — creating each grant
+  // separately blew past the 5s transaction timeout now that there are
+  // 30+ possible grants over a remote database.
+  await prisma.$transaction(
+    [
+      prisma.adminModuleGrant.deleteMany({ where: { userId } }),
+      prisma.adminModuleGrant.createMany({
+        data: [...new Set(selected)].map((module) => ({ userId, module })),
+        skipDuplicates: true,
       }),
-    ),
-  ]);
+    ],
+  );
 
   revalidatePath("/protected/admin/permissions");
   revalidatePath("/", "layout");

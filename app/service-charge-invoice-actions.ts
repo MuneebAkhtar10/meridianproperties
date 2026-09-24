@@ -10,10 +10,14 @@ import {
 } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
-import { notifyOwnerCustom, notifyOwnerServiceChargeIssued } from "@/lib/notifications";
+import {
+  notifyOwnerServiceChargeIssued,
+  notifyServiceChargeInvoiceSent,
+} from "@/lib/notifications";
 import {
   pdfAttachmentFromResult,
   renderServiceChargeInvoicePdf,
+  renderServicesTemplateInvoicePdf,
 } from "@/lib/pdf/render-service-charge-invoice";
 import {
   collectsServiceCharge,
@@ -117,7 +121,7 @@ async function generateServiceChargeInvoice({
   if (!collectsServiceCharge(unit.property.propertyType)) {
     return {
       ok: false,
-      error: "Independent properties do not take a service charge.",
+      error: "Independent and building-management properties do not take a service charge.",
     };
   }
 
@@ -217,6 +221,7 @@ async function generateServiceChargeInvoice({
           year: "numeric",
         }),
         invoiceNumber: created.invoiceNumber,
+        attachments: await invoiceAttachments(created.id),
       });
     } catch (error) {
       console.error("Owner service-charge WhatsApp/email failed:", error);
@@ -224,6 +229,18 @@ async function generateServiceChargeInvoice({
   }
 
   return { ok: true };
+}
+
+/** The invoice PDF as an email/WhatsApp attachment, or undefined if it
+ * can't be rendered — the notice still goes out without it. */
+async function invoiceAttachments(invoiceId: string) {
+  try {
+    const pdf = await renderServiceChargeInvoicePdf(invoiceId);
+    return pdf ? [pdfAttachmentFromResult(pdf)] : undefined;
+  } catch (error) {
+    console.error("Invoice PDF for notification failed:", error);
+    return undefined;
+  }
 }
 
 function parseInvoiceFormFields(formData: FormData) {
@@ -675,7 +692,7 @@ export const bulkGenerateServiceChargeInvoicesAction = async (
     const closingBalance = previousBalance + Number(currentAmount);
     const amountPayable = Math.max(0, closingBalance);
 
-    await prisma.$transaction([
+    const [bulkInvoice] = await prisma.$transaction([
       prisma.serviceChargeInvoice.create({
         data: {
           unitId: row.unitId,
@@ -740,6 +757,8 @@ export const bulkGenerateServiceChargeInvoicesAction = async (
             month: "short",
             year: "numeric",
           }),
+          invoiceNumber: bulkInvoice.invoiceNumber,
+          attachments: await invoiceAttachments(bulkInvoice.id),
         });
       } catch (error) {
         console.error("Owner service-charge alert failed:", error);
@@ -798,7 +817,7 @@ export const bulkGenerateUnitInvoicesAction = async (formData: FormData) => {
     return encodedRedirect(
       "error",
       back,
-      "Independent properties do not take a service charge.",
+      "Independent and building-management properties do not take a service charge.",
     );
   }
 
@@ -1202,6 +1221,8 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
       invoiceNumber: true,
       dueDate: true,
       amountPayable: true,
+      currentAmount: true,
+      kind: true,
       unit: {
         select: {
           id: true,
@@ -1235,23 +1256,32 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
     select: { id: true },
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const message = `Your service charge invoice ${invoice.invoiceNumber} for ${unitLabel} is ready — amount payable ${formatMoney(invoice.amountPayable)}, due ${invoice.dueDate.toLocaleDateString("en-GB")}. The invoice PDF is attached.`;
-
-  const pdf = await renderServiceChargeInvoicePdf(invoiceId);
-  const attachments = pdf ? [pdfAttachmentFromResult(pdf)] : [];
+  // An additional-charge invoice is ordinary billed services, so it goes on
+  // the Services invoice layout and for its own amount — never the unit's
+  // running service-charge balance. Service-charge invoices keep the
+  // statement layout.
+  const additional = invoice.kind === "additional";
+  const pdf = additional
+    ? await renderServicesTemplateInvoicePdf(invoiceId)
+    : await renderServiceChargeInvoicePdf(invoiceId);
+  const attachments = pdf ? [pdfAttachmentFromResult(pdf)] : undefined;
 
   await ensureInvoiceColumns();
 
-  await notifyOwnerCustom({
+  await notifyServiceChargeInvoiceSent({
     propertyId: unit.propertyId,
     propertyName: unit.property.name,
     unitLabel,
-    message,
-    attachmentUrl: `${appUrl}/api/service-charge-invoices/${invoiceId}/pdf`,
-    attachments,
+    invoiceNumber: invoice.invoiceNumber,
+    amount: formatMoney(additional ? invoice.currentAmount : invoice.amountPayable),
+    additionalCharge: additional,
+    dueDate: invoice.dueDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
     recipientIds: [unit.ownerId, ...admins.map((a) => a.id)],
-    title: "Service Charge Invoice",
+    attachments,
   });
 
   await prisma.unit.update({

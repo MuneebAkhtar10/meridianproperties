@@ -15,7 +15,10 @@ import {
   renderServiceChargeInvoicePdf,
 } from "@/lib/pdf/render-service-charge-invoice";
 import { prisma } from "@/lib/prisma";
+import { prismaCollectsServiceChargeTypeWhere } from "@/lib/property-types";
 
+/** First reminder this many days before the due date, then again the day
+ * before ("upcoming1"), on the day, and daily once overdue. */
 const UPCOMING_WINDOW_DAYS = 7;
 
 /**
@@ -34,11 +37,16 @@ export async function runServiceChargeReminders(): Promise<{
 }> {
   const units = await prisma.unit.findMany({
     where: {
-      serviceChargeAmount: { not: null },
+      // Independent and building-management properties never take service charge.
+      property: { propertyType: prismaCollectsServiceChargeTypeWhere() },
       serviceChargeDueDate: { not: null },
-      // The service charge is the owner's maintenance-budget collection, so
-      // it follows the maintenance toggle, not the rent & bills one.
-      maintenanceEnabled: true,
+      OR: [
+        // The recurring service charge follows the maintenance toggle, not
+        // the rent & bills one...
+        { serviceChargeAmount: { not: null }, maintenanceEnabled: true },
+        // ...but any unit that owes an invoiced balance is always chased.
+        { serviceChargeBalance: { gt: 0 } },
+      ],
     },
     select: {
       id: true,
@@ -46,6 +54,7 @@ export async function runServiceChargeReminders(): Promise<{
       propertyId: true,
       ownerId: true,
       serviceChargeAmount: true,
+      serviceChargeBalance: true,
       serviceChargeDueDate: true,
       serviceChargeLastStage: true,
       property: { select: { name: true } },
@@ -66,7 +75,13 @@ export async function runServiceChargeReminders(): Promise<{
   let notified = 0;
 
   for (const unit of units) {
-    if (!unit.serviceChargeDueDate || !unit.serviceChargeAmount) {
+    // What's actually owed: the invoiced balance when there is one,
+    // otherwise the recurring service charge amount.
+    const owed =
+      Number(unit.serviceChargeBalance) > 0
+        ? unit.serviceChargeBalance
+        : unit.serviceChargeAmount;
+    if (!unit.serviceChargeDueDate || !owed) {
       continue;
     }
 
@@ -82,9 +97,11 @@ export async function runServiceChargeReminders(): Promise<{
         ? `overdue:${Math.abs(daysUntilDue)}`
         : daysUntilDue === 0
           ? "due"
-          : daysUntilDue <= UPCOMING_WINDOW_DAYS
-            ? "upcoming"
-            : null;
+          : daysUntilDue === 1
+            ? "upcoming1"
+            : daysUntilDue <= UPCOMING_WINDOW_DAYS
+              ? "upcoming"
+              : null;
 
     if (!stageKey || unit.serviceChargeLastStage === stageKey) {
       continue;
@@ -97,7 +114,7 @@ export async function runServiceChargeReminders(): Promise<{
         ),
       ),
     );
-    const amount = formatMoney(unit.serviceChargeAmount);
+    const amount = formatMoney(owed);
     const propertyName = unit.property.name;
     const unitLabel = `Unit ${unit.label}`;
 
@@ -111,7 +128,7 @@ export async function runServiceChargeReminders(): Promise<{
       : null;
     const attachments = pdf ? [pdfAttachmentFromResult(pdf)] : undefined;
 
-    if (stageKey === "upcoming") {
+    if (stageKey === "upcoming" || stageKey === "upcoming1") {
       await notifyServiceChargeUpcoming({
         propertyId: unit.propertyId,
         propertyName,

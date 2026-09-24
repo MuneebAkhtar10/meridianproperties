@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollText } from "lucide-react";
 
 import { Modal } from "@/components/ui/modal";
@@ -43,6 +43,38 @@ export function CashFlowStatementModal({
   const [to, setTo] = useState(dateInputValue);
 
   const canGenerate = Boolean(propertyId && from && to);
+
+  // The opening balance is calculated from the property's history; the
+  // field starts on that figure and can be overtyped.
+  const [autoOpening, setAutoOpening] = useState<number | null>(null);
+  const [openingInput, setOpeningInput] = useState("");
+  const [loadingOpening, setLoadingOpening] = useState(false);
+
+  useEffect(() => {
+    if (!propertyId || !from || !to) return;
+    const controller = new AbortController();
+    setLoadingOpening(true);
+    fetch(
+      `/api/expenses/cash-flow-statement?${new URLSearchParams({ property: propertyId, from, to, preview: "1" })}`,
+      { signal: controller.signal },
+    )
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { openingBalance?: number } | null) => {
+        if (data && typeof data.openingBalance === "number") {
+          setAutoOpening(data.openingBalance);
+          setOpeningInput(data.openingBalance.toFixed(3));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingOpening(false));
+    return () => controller.abort();
+  }, [propertyId, from, to]);
+
+  const openingModified =
+    autoOpening !== null &&
+    openingInput.trim() !== "" &&
+    Number.isFinite(Number(openingInput)) &&
+    Math.abs(Number(openingInput) - autoOpening) > 0.0005;
 
   return (
     <Modal
@@ -103,6 +135,49 @@ export function CashFlowStatementModal({
           </div>
         </div>
 
+        <div className="space-y-1.5 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="cash-flow-opening" className="text-xs">
+              Opening balance (OMR)
+            </Label>
+            {openingModified ? (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-300">
+                Modified
+              </span>
+            ) : (
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                Automatic
+              </span>
+            )}
+          </div>
+          <Input
+            id="cash-flow-opening"
+            type="number"
+            step="0.001"
+            value={openingInput}
+            onChange={(e) => setOpeningInput(e.target.value)}
+            placeholder={loadingOpening ? "Calculating…" : "0.000"}
+            disabled={autoOpening === null}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            {autoOpening !== null
+              ? `Calculated from earlier invoices and expenses: OMR ${autoOpening.toFixed(3)}. Type a negative number for a deficit.`
+              : "Calculating from earlier invoices and expenses…"}
+            {openingModified && (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  className="font-medium text-primary underline"
+                  onClick={() => setOpeningInput((autoOpening ?? 0).toFixed(3))}
+                >
+                  Reset to automatic
+                </button>
+              </>
+            )}
+          </p>
+        </div>
+
         <Button
           type="button"
           className="w-full"
@@ -113,6 +188,7 @@ export function CashFlowStatementModal({
               from,
               to,
             });
+            if (openingModified) params.set("opening", String(Number(openingInput)));
             window.open(
               `/api/expenses/cash-flow-statement?${params}`,
               "_blank",

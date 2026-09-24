@@ -8,6 +8,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { moneyValue } from "@/lib/finance";
 import { formatServiceChargeLetterheadAddress } from "@/lib/oman";
 import { ServiceChargeInvoiceDocument } from "@/lib/pdf/service-charge-invoice";
+import { ServicesInvoiceDocument } from "@/lib/pdf/services-invoice";
 import { prisma } from "@/lib/prisma";
 import { ownerAtDate, personName } from "@/lib/unit-owner-at";
 import { isBuildingType } from "@/lib/property-types";
@@ -229,5 +230,64 @@ export function pdfAttachmentFromResult(result: InvoicePdfResult) {
   return {
     filename: result.filename,
     content: result.buffer.toString("base64"),
+  };
+}
+
+/**
+ * The same invoice on the Rawazen Services layout (qty / item / description /
+ * unit price) — used for additional-charge invoices, which are ordinary
+ * services billed to an owner rather than a service-charge statement.
+ */
+export async function renderServicesTemplateInvoicePdf(
+  invoiceId: string,
+): Promise<InvoicePdfResult | null> {
+  const full = await prisma.serviceChargeInvoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      lines: true,
+      billedOwner: {
+        select: { firstName: true, lastName: true, email: true, mailingAddress: true },
+      },
+      unit: {
+        select: {
+          property: { select: { name: true } },
+          owner: {
+            select: { firstName: true, lastName: true, email: true, mailingAddress: true },
+          },
+        },
+      },
+    },
+  });
+  if (!full) return null;
+
+  const owner = full.billedOwner ?? full.unit.owner;
+  const billedName = owner
+    ? [owner.firstName, owner.lastName].filter(Boolean).join(" ") || owner.email
+    : "Unassigned owner";
+  const buffer = await renderToBuffer(
+    ServicesInvoiceDocument({
+      invoiceNumber: full.invoiceNumber,
+      issueDate: format(full.issueDate, "dd/MM/yyyy"),
+      dueDate: format(full.dueDate, "dd/MM/yyyy"),
+      billedName,
+      billedAddress:
+        owner?.mailingAddress?.trim() || `${full.unit.property.name}, Sultanate of Oman`,
+      paid: false,
+      lines: full.lines.map((line) => {
+        // Lines are stored as "Category — description".
+        const [item, ...rest] = line.description.split(" — ");
+        return {
+          qty: Number(line.qty),
+          item: rest.length > 0 ? item : "Service",
+          description: rest.length > 0 ? rest.join(" — ") : line.description,
+          unitPrice: Number(line.unitRate),
+        };
+      }),
+    }),
+  );
+  return {
+    buffer,
+    filename: `Rawazen-Services-Invoice-${full.invoiceNumber}.pdf`,
+    invoiceId,
   };
 }

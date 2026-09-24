@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { FileText, List, Plus } from "lucide-react";
 
-import { ServicesInvoiceModal, type ServicesInvoiceUnitOption } from "@/components/services-invoice-modal";
+import {
+  GenerateInvoiceModal,
+  type BillableExpense,
+  type GenerateInvoiceUnit,
+} from "@/components/generate-invoice-modal";
 import { Button } from "@/components/ui/button";
 import { PendingLink } from "@/components/ui/pending-link";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -26,9 +30,15 @@ function ToolbarIcon({
 export function ServicesInvoiceMenu({
   propertyId,
   units,
+  expenses,
+  categories,
+  defaultFundId,
 }: {
   propertyId: string;
-  units: ServicesInvoiceUnitOption[];
+  units: GenerateInvoiceUnit[];
+  expenses: BillableExpense[];
+  categories: string[];
+  defaultFundId: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -56,9 +66,12 @@ export function ServicesInvoiceMenu({
           menuOpen ? "block" : "hidden",
         )}
       >
-        <ServicesInvoiceModal
+        <GenerateInvoiceModal
           propertyId={propertyId}
           units={units}
+          expenses={expenses}
+          categories={categories}
+          defaultFundId={defaultFundId}
           trigger={
             <button
               type="button"
@@ -69,14 +82,14 @@ export function ServicesInvoiceMenu({
               <span className="min-w-0">
                 <span className="block">Generate invoice</span>
                 <span className="block text-[11px] font-normal text-muted-foreground">
-                  Expenses and rent received for a unit
+                  Bill existing expenses, or add new charges
                 </span>
               </span>
             </button>
           }
         />
         <PendingLink
-          href={`/protected/properties/${propertyId}/services-invoices`}
+          href={`/protected/invoices?property=${propertyId}&bucket=all`}
           className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm hover:bg-muted"
           onClick={() => setMenuOpen(false)}
         >
@@ -84,7 +97,7 @@ export function ServicesInvoiceMenu({
           <span className="min-w-0">
             <span className="block">View all invoices</span>
             <span className="block text-[11px] font-normal text-muted-foreground">
-              Issued invoices — mark paid, download, or delete
+              All invoices for this property
             </span>
           </span>
         </PendingLink>

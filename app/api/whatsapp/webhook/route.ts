@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { NextRequest, NextResponse } from "next/server";
 
+import { recordWhatsappInbound } from "@/lib/whatsapp-session";
 import { handleIncomingWhatsapp, normalizeWhatsappPhone } from "@/lib/whatsapp-bot";
 import { sendWhatsApp } from "@/lib/whatsapp";
 
@@ -198,6 +199,9 @@ export async function POST(request: NextRequest) {
   const imageId = message.type === "image" ? message.image?.id : undefined;
 
   const from = normalizeWhatsappPhone(message.from);
+  await recordWhatsappInbound(from).catch((error) =>
+    console.error("[whatsapp webhook] Could not record inbound time:", error),
+  );
 
   try {
     const reply = await handleIncomingWhatsapp(message.from, body, imageId);

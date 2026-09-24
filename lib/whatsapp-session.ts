@@ -78,3 +78,29 @@ export async function syncWorkerWhatsappSession(
     taskId,
   });
 }
+
+const WINDOW_MS = 23 * 60 * 60 * 1000;
+
+/** Records that this phone just messaged us, opening WhatsApp's 24-hour
+ * free-form window. */
+export async function recordWhatsappInbound(phone: string): Promise<void> {
+  const now = new Date();
+  await prisma.whatsappSession.upsert({
+    where: { phone },
+    create: { phone, lastInboundAt: now },
+    update: { lastInboundAt: now },
+  });
+}
+
+/** True while free-form messages to this phone will actually be delivered
+ * (they messaged us within the last ~23 hours). */
+export async function hasOpenWhatsappWindow(phone: string): Promise<boolean> {
+  const session = await prisma.whatsappSession.findUnique({
+    where: { phone },
+    select: { lastInboundAt: true },
+  });
+  return Boolean(
+    session?.lastInboundAt &&
+      Date.now() - session.lastInboundAt.getTime() < WINDOW_MS,
+  );
+}

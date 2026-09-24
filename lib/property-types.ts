@@ -182,13 +182,14 @@ export function isIndependentType(propertyType: PropertyManagementFlags): boolea
   return propertyManagementCategory(propertyType) === "independent";
 }
 
-/** Service charge is an OA (and similar) product — independent rentals
- * never take it. Use this to hide SC UI and keep bulk SC runs off those
+/** Service charge is an OA (and similar) product — independent rentals and
+ * building-management properties never take it. Use this to hide SC UI and keep bulk SC runs off those
  * properties. */
 export function collectsServiceCharge(
   propertyType: PropertyManagementFlags,
 ): boolean {
-  return !isIndependentType(propertyType);
+  const category = propertyManagementCategory(propertyType);
+  return category !== "independent" && category !== "bm";
 }
 
 /** Prisma `select` for the five flags `isIndependentType` / `collectsServiceCharge` need. */
@@ -200,8 +201,16 @@ export const PROPERTY_MANAGEMENT_FLAGS_SELECT = {
   hasCommonAreas: true,
 } as const;
 
-/** Prisma `propertyType` filter: every type except Independent. */
+/** Prisma `propertyType` filter: every type except Independent and
+ * Building management. */
 export function prismaCollectsServiceChargeTypeWhere() {
-  return { NOT: PROPERTY_MANAGEMENT_CATEGORY_FLAGS.independent };
+  return {
+    NOT: {
+      OR: [
+        PROPERTY_MANAGEMENT_CATEGORY_FLAGS.independent,
+        PROPERTY_MANAGEMENT_CATEGORY_FLAGS.bm,
+      ],
+    },
+  };
 }
 

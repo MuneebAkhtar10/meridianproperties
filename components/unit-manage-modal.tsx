@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import {
   AlertTriangle,
   ArrowLeftRight,
+  CheckCircle2,
+  Circle,
   FileStack,
   FileText,
   KeyRound,
@@ -38,12 +40,17 @@ import {
 } from "@/lib/finance";
 import { cn, personDisplayName as ownerDisplayName } from "@/lib/utils";
 import { EntityDocumentCategory } from "@/lib/generated/prisma/client";
+import { UNIT_DOCUMENT_CATEGORIES } from "@/lib/entity-documents";
 
-/** Compact mode shows no category picker — it's built for exactly one fixed
- * category, which the ownership contract is. */
-const UNIT_CONTRACT_CATEGORY = [
-  EntityDocumentCategory.ownership_contract,
-] as const;
+/** Everything filed against a unit's owner: the contract itself plus the
+ * supporting ownership papers. Tenancy agreements live on the tenancy and
+ * "Other" on the Miscellaneous tab, so neither is offered here. */
+const OWNERSHIP_DOCUMENT_CATEGORIES: readonly EntityDocumentCategory[] =
+  UNIT_DOCUMENT_CATEGORIES.filter(
+  (category) =>
+    category !== EntityDocumentCategory.tenancy_agreement &&
+    category !== EntityDocumentCategory.other,
+);
 
 /** The "Miscellaneous" tab's fixed category — any other supporting file
  * that isn't the ownership contract itself (insurance, correspondence,
@@ -312,6 +319,73 @@ export function UnitManageModal({
   const activePlan = unit.installmentPlans[0] ?? null;
   const currentBalance = moneyValue(unit.serviceChargeBalance);
 
+  // Ownership contracts belong to whoever owned the unit when they were
+  // filed: a document created before a transfer was recorded belongs to that
+  // transfer's outgoing owner. Everything after the last transfer is the
+  // current owner's.
+  const transfersAsc = [...unit.ownershipTransfers].sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+  );
+  const ownershipContracts = unit.documents.filter((d) =>
+    OWNERSHIP_DOCUMENT_CATEGORIES.includes(d.category),
+  );
+  // One entry per ownership period, oldest first: period i (i < transfers)
+  // ended with transfer i; the last period is the current owner's.
+  const currentOwnerContracts: DocumentItem[] = [];
+  const previousOwnerPeriods = transfersAsc.map((transfer, index) => ({
+    transfer,
+    ownerName: transfer.fromOwner
+      ? ownerDisplayName(transfer.fromOwner)
+      : "Unassigned",
+    since: index > 0 ? transfersAsc[index - 1].transferDate : null,
+    documents: [] as DocumentItem[],
+  }));
+  for (const doc of ownershipContracts) {
+    const index = transfersAsc.findIndex(
+      (t) => doc.createdAt.getTime() < t.createdAt.getTime(),
+    );
+    if (index === -1) currentOwnerContracts.push(doc);
+    else previousOwnerPeriods[index].documents.push(doc);
+  }
+  previousOwnerPeriods.reverse();
+  const currentSince =
+    transfersAsc.length > 0
+      ? transfersAsc[transfersAsc.length - 1].transferDate
+      : null;
+
+  type TabStatus = "done" | "todo" | "optional" | "none";
+  const status: Record<TabKey, TabStatus> = {
+    details:
+      unit.label.trim() !== "" &&
+      unit.entitlements != null &&
+      (!hasFloors || unit.floor != null) &&
+      (!hasBedrooms || unit.bedrooms != null) &&
+      Boolean(unit.owner)
+        ? "done"
+        : "todo",
+    ownership:
+      unit.owner &&
+      currentOwnerContracts.some(
+        (d) => d.category === EntityDocumentCategory.ownership_contract,
+      )
+        ? "done"
+        : "todo",
+    charge:
+      unit.serviceChargeAmount != null && unit.serviceChargeDueDate != null
+        ? "done"
+        : "todo",
+    // With no tenant there's no tenant contract to file, so nothing is owed.
+    documents: unit.activeTenancy
+      ? unit.activeTenancy.documents.length > 0
+        ? "done"
+        : "todo"
+      : "done",
+    misc: unit.documents.some((d) => d.category === EntityDocumentCategory.other)
+      ? "done"
+      : "optional",
+    danger: "none",
+  };
+
   const tabs: { key: TabKey; label: string; icon: typeof Pencil }[] = [
     { key: "details", label: "Details", icon: Pencil },
     { key: "ownership", label: "Ownership", icon: ArrowLeftRight },
@@ -389,6 +463,24 @@ export function UnitManageModal({
             >
               <Icon className="h-3.5 w-3.5" />
               {label}
+              {status[key] === "done" && (
+                <CheckCircle2
+                  aria-label="Completed"
+                  className="h-4 w-4 text-emerald-600"
+                />
+              )}
+              {status[key] === "todo" && (
+                <Circle
+                  aria-label="Needs completing"
+                  className="h-4 w-4 text-amber-500"
+                />
+              )}
+              {status[key] === "optional" && (
+                <Circle
+                  aria-label="Optional"
+                  className="h-4 w-4 text-muted-foreground/40"
+                />
+              )}
             </button>
           ))}
         </div>
@@ -557,105 +649,186 @@ export function UnitManageModal({
 
         {/* ── Ownership ────────────────────────────────────────────────── */}
         {tab === "ownership" && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                {unit.owner ? ownerInitials(unit.owner) : "—"}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Current owner</p>
-                <p className="truncate text-sm font-medium">
-                  {unit.owner ? ownerDisplayName(unit.owner) : "Unassigned"}
-                </p>
-              </div>
-            </div>
-
-            {!isAdmin && (
-              <p className="text-xs text-muted-foreground">
-                Only an admin can transfer ownership.
-              </p>
-            )}
-            {isAdmin && !unit.owner && (
-              <p className="text-xs text-muted-foreground">
-                This {unitNoun} has no owner yet — assign one from the
-                Details tab first. Once it has an owner, transferring it to
-                someone else (with a recorded history) happens here.
-              </p>
-            )}
-            {isAdmin && unit.owner && (
-              <div>
-                <TransferOwnershipModal
-                  unitId={unit.id}
-                  unitLabel={unitLabel}
-                  currentOwnerName={ownerDisplayName(unit.owner)}
-                  owners={owners.filter((owner) => owner.id !== unit.owner?.id)}
-                  currentBalance={currentBalance}
-                  hasActivePlan={Boolean(
-                    activePlan?.installments.some((item) => !item.paidAt),
+          <div className="space-y-6">
+            {/* Current owner ─ who, since when, their contract, transfer */}
+            <section className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Current owner
+              </h3>
+              <div className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center gap-4 border-b border-emerald-100 bg-emerald-50/60 p-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white">
+                    {unit.owner ? ownerInitials(unit.owner) : "—"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-semibold">
+                      {unit.owner ? ownerDisplayName(unit.owner) : "Unassigned"}
+                    </p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {unit.owner
+                        ? currentSince
+                          ? `Owner since ${format(currentSince, "d MMM yyyy")}`
+                          : unit.owner.email
+                        : `This ${unitNoun} has no owner yet`}
+                    </p>
+                  </div>
+                  {isAdmin && unit.owner && (
+                    <TransferOwnershipModal
+                      unitId={unit.id}
+                      unitLabel={unitLabel}
+                      currentOwnerName={ownerDisplayName(unit.owner)}
+                      owners={owners.filter(
+                        (owner) => owner.id !== unit.owner?.id,
+                      )}
+                      currentBalance={currentBalance}
+                      hasActivePlan={Boolean(
+                        activePlan?.installments.some((item) => !item.paidAt),
+                      )}
+                      collectsServiceCharge={collectsServiceCharge}
+                    />
                   )}
-                  collectsServiceCharge={collectsServiceCharge}
-                />
-              </div>
-            )}
+                </div>
 
-            {isAdmin && unit.owner && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Transfer history
+                <div className="space-y-3 p-4">
+                  <div>
+                    <h4 className="text-sm font-semibold">Ownership documents</h4>
+                    <p className="text-sm text-muted-foreground">
+                      The signed ownership contract and supporting papers for
+                      this owner — pick the document type when uploading.
+                      Private to admins and the {unitNoun}&rsquo;s owner.
+                    </p>
+                  </div>
+                  {unit.owner ? (
+                    <EntityDocumentManager
+                      documents={currentOwnerContracts}
+                      targetType="unit"
+                      targetId={unit.id}
+                      back={`/protected/properties/${unit.propertyId}`}
+                      categories={OWNERSHIP_DOCUMENT_CATEGORIES}
+                      bare
+                      inline
+                      readOnly={!canManageDocuments}
+                    />
+                  ) : (
+                    <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                      Assign an owner from the Details tab first — the
+                      contract is between the property manager and the owner.
+                    </p>
+                  )}
+                </div>
+              </div>
+              {!isAdmin && (
+                <p className="text-sm text-muted-foreground">
+                  Only an admin can transfer ownership.
                 </p>
-                {unit.ownershipTransfers.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-border/60 p-3.5 text-xs text-muted-foreground">
+              )}
+            </section>
+
+            {/* Past owners ─ one card per period, newest first */}
+            {isAdmin && unit.owner && (
+              <section className="space-y-3">
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Previous owners
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Each earlier owner keeps their own contract on file.
+                  </p>
+                </div>
+                {previousOwnerPeriods.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-border/70 p-4 text-sm text-muted-foreground">
                     No ownership transfers recorded for this {unitNoun} yet.
                   </p>
                 ) : (
-                  <div className="divide-y rounded-xl border border-border/60">
-                    {unit.ownershipTransfers.map((transfer) => (
-                      <div key={transfer.id} className="flex gap-3 p-3.5 text-xs">
-                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                          <ArrowLeftRight className="h-3.5 w-3.5" />
-                        </div>
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
-                            <span className="font-medium text-foreground">
+                  <div className="space-y-4">
+                    {previousOwnerPeriods.map(
+                      ({ transfer, ownerName, since, documents }) => (
+                        <div
+                          key={transfer.id}
+                          className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm"
+                        >
+                          <div className="flex flex-wrap items-center gap-3 border-b bg-muted/40 p-4">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
                               {transfer.fromOwner
-                                ? ownerDisplayName(transfer.fromOwner)
-                                : "Unassigned"}{" "}
-                              &rarr; {ownerDisplayName(transfer.toOwner)}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {format(transfer.transferDate, "d MMM yyyy")}
-                            </span>
+                                ? ownerInitials(transfer.fromOwner)
+                                : "—"}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-base font-semibold">
+                                {ownerName}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {since
+                                  ? `${format(since, "d MMM yyyy")} – `
+                                  : "Until "}
+                                {format(transfer.transferDate, "d MMM yyyy")}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-muted-foreground">
-                            {[
-                              collectsServiceCharge
-                                ? transfer.keptServiceCharge
-                                  ? "Kept the existing annual service charge"
-                                  : "Annual service charge setup was cleared"
-                                : null,
-                              collectsServiceCharge
-                                ? transfer.keptInstallmentPlan
-                                  ? "continued the payment plan"
-                                  : "cancelled the payment plan for a new schedule"
-                                : null,
-                              transfer.createdBy
-                                ? `By ${ownerDisplayName(transfer.createdBy)}`
-                                : null,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </p>
-                          {transfer.notes && (
-                            <p className="italic text-muted-foreground">
-                              &ldquo;{transfer.notes}&rdquo;
-                            </p>
-                          )}
+
+                          <div className="space-y-4 p-4">
+                            <div className="space-y-1.5">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Transferred to
+                              </p>
+                              <p className="text-sm">
+                                <span className="font-medium">
+                                  {ownerDisplayName(transfer.toOwner)}
+                                </span>{" "}
+                                on {format(transfer.transferDate, "d MMM yyyy")}
+                                {transfer.createdBy
+                                  ? ` · recorded by ${ownerDisplayName(transfer.createdBy)}`
+                                  : ""}
+                              </p>
+                              {collectsServiceCharge && (
+                                <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+                                  <li>
+                                    {transfer.keptServiceCharge
+                                      ? "Kept the existing annual service charge"
+                                      : "Annual service charge setup was cleared"}
+                                  </li>
+                                  <li>
+                                    {transfer.keptInstallmentPlan
+                                      ? "Continued the payment plan"
+                                      : "Cancelled the payment plan for a new schedule"}
+                                  </li>
+                                </ul>
+                              )}
+                              {transfer.notes && (
+                                <p className="text-sm italic text-muted-foreground">
+                                  &ldquo;{transfer.notes}&rdquo;
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="space-y-2 border-t pt-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Ownership documents
+                              </p>
+                              {documents.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                  No documents were filed for this owner.
+                                </p>
+                              ) : (
+                                <EntityDocumentManager
+                                  documents={documents}
+                                  targetType="unit"
+                                  targetId={unit.id}
+                                  back={`/protected/properties/${unit.propertyId}`}
+                                  categories={OWNERSHIP_DOCUMENT_CATEGORIES}
+                                  bare
+                                  inline
+                                  readOnly
+                                />
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 )}
-              </div>
+              </section>
             )}
           </div>
         )}
@@ -667,34 +840,15 @@ export function UnitManageModal({
         {/* ── Agreements ───────────────────────────────────────────────── */}
         {tab === "documents" && (
           <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-medium">Ownership contract</h3>
-              <p className="text-xs text-muted-foreground">
-                The signed contract establishing this unit&rsquo;s owner.
-                Private to admins and the unit&rsquo;s owner.
-              </p>
-            </div>
-            <EntityDocumentManager
-              documents={unit.documents.filter(
-                (d) => d.category === EntityDocumentCategory.ownership_contract,
-              )}
-              targetType="unit"
-              targetId={unit.id}
-              back={`/protected/properties/${unit.propertyId}`}
-              categories={UNIT_CONTRACT_CATEGORY}
-              compact
-              inline
-              readOnly={!canManageDocuments}
-            />
-            {!unit.owner && (
-              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                Assign an owner to this {unitNoun} first — the contract is
-                between the property manager and the owner.
+            {!unit.activeTenancy && (
+              <p className="rounded-xl border border-dashed border-border/60 p-3.5 text-xs text-muted-foreground">
+                This {unitNoun} has no active tenant, so there is no tenant
+                contract to file. The ownership contract lives in the
+                Ownership tab.
               </p>
             )}
-
             {unit.activeTenancy && (
-              <div className="space-y-3 border-t pt-3">
+              <div className="space-y-3">
                 <div>
                   <h3 className="text-sm font-medium">Tenant contract</h3>
                   <p className="text-xs text-muted-foreground">

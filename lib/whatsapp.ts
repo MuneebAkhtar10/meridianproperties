@@ -263,7 +263,22 @@ export async function sendWhatsAppAlert(input: {
   parts: WhatsAppAlertParts;
   /** The flat one-line body, used by the generic single-variable template. */
   flatBody: string;
+  /** True while the recipient's 24-hour window is open (they messaged us
+   * recently): the alert then goes as a properly laid-out multi-line
+   * message. Otherwise it must go as an approved template, which Meta
+   * delivers regardless. (Meta accepts free-form text outside the window
+   * with a 200 and then never delivers it, so we must not guess.) */
+  windowOpen?: boolean;
 }): Promise<void> {
+  if (input.windowOpen) {
+    await sendWhatsApp({
+      to: input.to,
+      body: formatWhatsAppText(input.parts),
+      fallbackBody: input.flatBody,
+    });
+    return;
+  }
+
   const structured = process.env.WHATSAPP_TEMPLATE_STRUCTURED;
   if (structured && process.env.WHATSAPP_ACCESS_TOKEN) {
     const detailsLine = input.parts.details
@@ -282,21 +297,84 @@ export async function sendWhatsAppAlert(input: {
     });
     return;
   }
-  // Default for alerts: send the multi-line message as plain text first —
-  // recipients inside the 24-hour window get the full layout — and fall
-  // back to the flat generic template if Meta refuses it. Set
-  // WHATSAPP_FREEFORM_FIRST=0 to go back to template-first. Only alerts
-  // come through here; the bot's own conversation replies call sendWhatsApp
-  // directly and are untouched.
-  if (process.env.WHATSAPP_FREEFORM_FIRST !== "0") {
-    await sendWhatsApp({
-      to: input.to,
-      body: formatWhatsAppText(input.parts),
-      fallbackBody: input.flatBody,
-    });
-    return;
-  }
   await sendWhatsApp({ to: input.to, body: input.flatBody, preferTemplate: true });
+}
+
+/**
+ * Sends a file (e.g. an invoice PDF) as a WhatsApp document message —
+ * uploads it to Meta's media store, then sends it by media id. Documents are
+ * free-form messages, so Meta only delivers them inside the recipient's
+ * 24-hour window; outside it the request is refused and we just log it (the
+ * same PDF always goes by email, and the WhatsApp text carries the summary).
+ */
+export async function sendWhatsAppDocument(input: {
+  to: string;
+  filename: string;
+  /** Base64 file contents, same shape as an email attachment. */
+  contentBase64: string;
+  caption?: string;
+}): Promise<void> {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!accessToken || !phoneNumberId) return;
+
+  try {
+    const bytes = Buffer.from(input.contentBase64, "base64");
+    const form = new FormData();
+    form.append("messaging_product", "whatsapp");
+    form.append("type", "application/pdf");
+    form.append(
+      "file",
+      new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
+      input.filename,
+    );
+
+    const upload = await fetch(
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/media`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: form,
+      },
+    );
+    if (!upload.ok) {
+      console.error(
+        `[whatsapp] Media upload failed (${upload.status}):`,
+        await upload.text().catch(() => ""),
+      );
+      return;
+    }
+    const { id } = (await upload.json()) as { id?: string };
+    if (!id) return;
+
+    const response = await fetch(
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: input.to.replace(/^\+/, ""),
+          type: "document",
+          document: {
+            id,
+            filename: input.filename,
+            ...(input.caption ? { caption: input.caption } : {}),
+          },
+        }),
+      },
+    );
+    if (!response.ok) {
+      console.warn(
+        `[whatsapp] Document to ${input.to} not delivered (${response.status}) — likely outside the 24h window; the PDF is in the email.`,
+      );
+    }
+  } catch (error) {
+    console.error(`[whatsapp] Failed to send document to ${input.to}:`, error);
+  }
 }
 
 export async function sendWhatsAppTemplate(input: {

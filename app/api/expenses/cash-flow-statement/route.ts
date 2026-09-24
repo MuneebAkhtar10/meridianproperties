@@ -156,7 +156,24 @@ export async function GET(request: NextRequest) {
   const useInvoices = pastInvoiced > 0 || periodInvoiced > 0;
   const pastRevenue = useInvoices ? pastInvoiced : pastCollected;
   const revenueTotal = useInvoices ? periodInvoiced : periodCollected;
-  const openingBalance = pastRevenue - pastExpenditure;
+  const calculatedOpening = pastRevenue - pastExpenditure;
+
+  // The modal asks for the calculated figure first, so it can pre-fill an
+  // editable field with it.
+  if (params.get("preview") === "1") {
+    return NextResponse.json({ openingBalance: calculatedOpening });
+  }
+
+  // A typed-in opening balance replaces the calculated one, and the
+  // statement says so.
+  const openingParam = params.get("opening");
+  const openingOverride =
+    openingParam !== null && openingParam.trim() !== "" ? Number(openingParam) : null;
+  const openingModified =
+    openingOverride !== null &&
+    Number.isFinite(openingOverride) &&
+    Math.abs(openingOverride - calculatedOpening) > 0.0005;
+  const openingBalance = openingModified ? (openingOverride as number) : calculatedOpening;
 
   const expenditureGroups: CashFlowCategoryGroup[] = [];
   let expenditureTotal = 0;
@@ -221,6 +238,7 @@ export async function GET(request: NextRequest) {
       periodLabel,
       openingBalance: formatSigned(openingBalance),
       openingIsDeficit: openingBalance < 0,
+      openingModified,
       revenueLines:
         revenueTotal > 0
           ? [{ label: revenueLabel, amount: numberFormat.format(revenueTotal) }]

@@ -6,6 +6,7 @@ import { unstable_rethrow } from "next/navigation";
 import { parseDate, parseNonNegativeMoney, parsePositiveMoney } from "@/lib/finance";
 import { isOwnerChargeMethod } from "@/lib/owner-charge-method";
 import { prisma } from "@/lib/prisma";
+import { collectsServiceCharge } from "@/lib/property-types";
 import { requireRole } from "@/lib/session";
 import { deleteAttachment, uploadExpenseReceipt } from "@/lib/storage";
 import { encodedRedirect } from "@/utils/utils";
@@ -108,7 +109,18 @@ export const createExpenseAction = async (formData: FormData) => {
     validSupplier(supplierId, categoryId),
     prisma.property.findUnique({
       where: { id: propertyId },
-      select: { id: true },
+      select: {
+        id: true,
+        propertyType: {
+          select: {
+            isOwnerAssociation: true,
+            isBuildingManagement: true,
+            showRentBills: true,
+            showMaintenance: true,
+            hasCommonAreas: true,
+          },
+        },
+      },
     }),
     mode === "units"
       ? prisma.unit.findMany({
@@ -128,6 +140,17 @@ export const createExpenseAction = async (formData: FormData) => {
 
   if (!property) {
     return encodedRedirect("error", back, "Property not found.");
+  }
+
+  // Independent and building-management properties have no common area and
+  // no service charge to deduct from.
+  const noServiceCharge = !collectsServiceCharge(property.propertyType);
+  if (noServiceCharge && mode === "common") {
+    return encodedRedirect(
+      "error",
+      back,
+      "This property type has no common area — choose the specific unit(s) instead.",
+    );
   }
 
   // Common area logs one property-wide row. Specific units log ONE row too
@@ -161,7 +184,7 @@ export const createExpenseAction = async (formData: FormData) => {
       fundId: fundId!,
       paymentReference,
       paidBy,
-      ownerChargeMethod,
+      ownerChargeMethod: noServiceCharge ? "extra_charge" : ownerChargeMethod,
       notes,
       date,
       createdById: admin.id,

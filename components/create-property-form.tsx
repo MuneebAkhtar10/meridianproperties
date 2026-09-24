@@ -232,8 +232,8 @@ export function CreatePropertyForm({
             <UploadFileInput id="docMulkiya" name="docMulkiya" multiple hint="" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="docCrooky">Crooky (apartment blueprint)</Label>
-            <UploadFileInput id="docCrooky" name="docCrooky" multiple hint="" />
+            <Label htmlFor="docKrooky">Krooky (apartment blueprint)</Label>
+            <UploadFileInput id="docKrooky" name="docKrooky" multiple hint="" />
           </div>
           {isOwner && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

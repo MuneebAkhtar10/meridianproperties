@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { notFound } from "next/navigation";
-import { Download, ScrollText, Send } from "lucide-react";
+import { ChevronDown, Download, FileText, Landmark, ScrollText, Send } from "lucide-react";
 
 import {
   issueOwnerInvoiceAction,
@@ -151,27 +151,58 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
         ) : null}
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <article className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-            <header className="flex flex-wrap items-start justify-between gap-4 border-b bg-muted/30 px-6 py-5">
+          <article className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-md ring-1 ring-slate-900/5">
+            <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-300 bg-gradient-to-r from-slate-50 to-indigo-50/60 px-6 py-5">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-700">
                   {INVOICE_KIND_LABEL[kind]}
                 </p>
-                <h2 className="mt-1 font-semibold tracking-tight">
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
                   #{invoice.invoiceNumber}
                 </h2>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <InvoiceStatusBadge status={displayStatus} />
-                <ButtonLink
-                  href={`/api/service-charge-invoices/${invoice.id}/pdf`}
-                  variant="outline"
-                  size="sm"
-                  target="_blank"
-                >
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </ButtonLink>
+                <details className="group relative">
+                  <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                    <Download className="h-4 w-4" />
+                    Download PDF
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-500 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-xl border border-slate-300 bg-white p-1.5 shadow-xl">
+                    <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      Choose a template
+                    </p>
+                    <a
+                      href={`/api/service-charge-invoices/${invoice.id}/pdf?template=service_charge`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-start gap-3 rounded-lg px-2.5 py-2 hover:bg-slate-50"
+                    >
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-200">
+                        <Landmark className="h-4 w-4" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold text-slate-900">Service charge invoice</span>
+                        <span className="block text-xs text-slate-500">Statement with previous balance and payments</span>
+                      </span>
+                    </a>
+                    <a
+                      href={`/api/service-charge-invoices/${invoice.id}/pdf?template=services`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-start gap-3 rounded-lg px-2.5 py-2 hover:bg-slate-50"
+                    >
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 ring-1 ring-inset ring-sky-200">
+                        <FileText className="h-4 w-4" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold text-slate-900">Services invoice</span>
+                        <span className="block text-xs text-slate-500">Rawazen Services layout — qty, item, price</span>
+                      </span>
+                    </a>
+                  </div>
+                </details>
                 {status === "issued" && invoice.unit.owner && (
                   <form>
                     <input type="hidden" name="invoiceId" value={invoice.id} />
@@ -219,9 +250,9 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
               </div>
             </header>
 
-            <div className="grid gap-6 border-b px-6 py-5 sm:grid-cols-2">
+            <div className="grid gap-6 border-b border-slate-200 px-6 py-5 sm:grid-cols-2">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   Bill to
                 </p>
                 <p className="mt-1.5 text-[15px] font-semibold leading-snug">{party.name}</p>
@@ -240,14 +271,14 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
               </div>
             </div>
 
-            <dl className="grid grid-cols-2 border-b">
+            <dl className="grid grid-cols-2 border-b border-slate-200 bg-slate-50/60">
               {[
                 { label: "Issued", value: format(invoice.issueDate, "d MMM yyyy") },
                 { label: "Due", value: format(invoice.dueDate, "d MMM yyyy") },
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="border-b border-border/70 px-6 py-4 last:border-b-0 sm:odd:border-r lg:border-b-0 lg:border-r lg:last:border-r-0"
+                  className="border-slate-200 px-6 py-4 first:border-r"
                 >
                   <dt className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {item.label}
@@ -257,27 +288,27 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
               ))}
             </dl>
 
-            <div className="px-2 py-2 sm:px-4">
+            <div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <th className="px-4 py-3">Description</th>
+                  <tr className="border-b border-slate-300 bg-slate-100 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-3">Description</th>
                     <th className="px-4 py-3 text-right">Qty</th>
                     <th className="px-4 py-3 text-right">Rate</th>
-                    <th className="px-4 py-3 text-right">Total</th>
+                    <th className="px-6 py-3 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoice.lines.map((line) => (
-                    <tr key={line.id} className="border-t">
-                      <td className="px-4 py-3">{line.description}</td>
+                    <tr key={line.id} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/70">
+                      <td className="px-6 py-3.5">{line.description}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
                         {Number(line.qty)}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         {formatOmrAmount(line.unitRate)}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums font-medium">
+                      <td className="px-6 py-3.5 text-right tabular-nums font-semibold">
                         {formatOmrAmount(line.total)}
                       </td>
                     </tr>
@@ -286,7 +317,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
               </table>
             </div>
 
-            <div className="flex justify-end border-t bg-muted/20 px-6 py-4">
+            <div className="flex justify-end border-t border-slate-300 bg-slate-50 px-6 py-5">
               <dl className="w-full max-w-xs space-y-2 text-sm">
                 <div className="flex items-baseline justify-between gap-8">
                   <dt className="text-muted-foreground">Subtotal</dt>
@@ -294,9 +325,9 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
                     {formatMoney(invoice.currentAmount)}
                   </dd>
                 </div>
-                <div className="flex items-baseline justify-between gap-8 border-t pt-2">
-                  <dt className="font-medium">Outstanding</dt>
-                  <dd className="text-base font-semibold tabular-nums">
+                <div className="flex items-baseline justify-between gap-8 border-t-2 border-slate-800 pt-2.5">
+                  <dt className="font-semibold text-slate-900">Outstanding</dt>
+                  <dd className="text-lg font-bold tabular-nums text-slate-900">
                     {formatMoney(outstanding)}
                   </dd>
                 </div>
@@ -321,8 +352,8 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
               />
             ) : null}
 
-            <section className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <section className="rounded-2xl border border-slate-300 bg-white p-5 shadow-md ring-1 ring-slate-900/5">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
                 Payments on this unit
               </h3>
               {payments.length === 0 ? (

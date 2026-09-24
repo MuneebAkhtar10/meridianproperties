@@ -27,7 +27,7 @@ export function InvoicePaymentForm({
   const [paymentMethod, setPaymentMethod] = useState("");
 
   return (
-    <form className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
+    <form className="rounded-2xl border border-slate-300 bg-white p-5 shadow-md ring-1 ring-slate-900/5">
       <input type="hidden" name="unitId" value={unitId} />
       <input type="hidden" name="fundId" value={fundId} />
       <input type="hidden" name="redirectTo" value={`/protected/invoices/${invoiceId}`} />

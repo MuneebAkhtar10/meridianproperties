@@ -29,16 +29,31 @@ const OPTIONS: { value: OwnerChargeMethod; description: string; icon: typeof Rec
  */
 export function OwnerChargeMethodPicker({
   defaultValue = "extra_charge",
+  allowDeduction = true,
 }: {
   defaultValue?: OwnerChargeMethod;
+  /** False for properties with no service charge (Independent, Building
+   * management) — there's nothing to deduct from, so only "Charged to
+   * owner" is offered. */
+  allowDeduction?: boolean;
 }) {
-  const [value, setValue] = useState<OwnerChargeMethod>(defaultValue);
+  const [value, setValue] = useState<OwnerChargeMethod>(
+    allowDeduction ? defaultValue : "extra_charge",
+  );
+  const options = allowDeduction
+    ? OPTIONS
+    : OPTIONS.filter((option) => option.value === "extra_charge");
 
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">How is this billed to the owner?</Label>
-      <div className="grid grid-cols-2 gap-2">
-        {OPTIONS.map((option) => {
+      <div
+        className={cn(
+          "grid gap-2",
+          allowDeduction ? "grid-cols-2" : "grid-cols-1",
+        )}
+      >
+        {options.map((option) => {
           const Icon = option.icon;
           const active = value === option.value;
           return (

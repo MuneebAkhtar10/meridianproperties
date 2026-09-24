@@ -1,4 +1,6 @@
-import { Document, Page, Path, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import { RAWAZEN_SERVICES } from "@/lib/rawazen-company";
 
@@ -64,9 +66,12 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     fontSize: 9,
   },
+  line: {
+    lineHeight: 1.3,
+    marginBottom: 1,
+  },
   companyBlock: {
-    marginBottom: 14,
-    lineHeight: 1.35,
+    marginBottom: 16,
   },
   companyName: {
     fontFamily: "Helvetica-Bold",
@@ -78,8 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   billTo: {
-    marginBottom: 14,
-    lineHeight: 1.35,
+    marginBottom: 16,
   },
   table: {
     borderWidth: 1,
@@ -108,8 +112,8 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
   },
   colQty: { width: "10%" },
-  colItem: { width: "18%" },
-  colDesc: { width: "42%" },
+  colItem: { width: "24%" },
+  colDesc: { width: "36%" },
   colPrice: { width: "15%", textAlign: "right" },
   colTotal: { width: "15%", textAlign: "right" },
   stripe: { backgroundColor: "#F3F4F6" },
@@ -117,7 +121,9 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 8,
+    marginTop: 6,
+  },
+  totalBlock: {
     marginBottom: 18,
   },
   totalLabel: {
@@ -132,10 +138,12 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   bank: {
+    marginBottom: 14,
+  },
+  bankText: {
     fontFamily: "Helvetica-Bold",
     fontSize: 9,
     lineHeight: 1.4,
-    marginBottom: 12,
   },
   contact: {
     fontSize: 8,
@@ -152,13 +160,19 @@ const styles = StyleSheet.create({
   },
 });
 
+/** The exact Rawazen Services logo from the company's own invoice. */
 function Logo() {
-  return (
-    <Svg width={54} height={42} viewBox="0 0 54 42">
-      <Path d="M4 38 L20 10 L28 38 Z" fill="#2563EB" />
-      <Path d="M26 38 L38 8 L50 38 Z" fill="#F59E0B" />
-    </Svg>
-  );
+  try {
+    const src = readFileSync(join(process.cwd(), "lib/pdf/assets/rawazen-services-logo.png"));
+    return (
+      <Image
+        src={`data:image/png;base64,${src.toString("base64")}`}
+        style={{ width: 50, height: 50 }}
+      />
+    );
+  } catch {
+    return <View style={{ width: 50, height: 50 }} />;
+  }
 }
 
 export function ServicesInvoiceDocument({
@@ -168,16 +182,20 @@ export function ServicesInvoiceDocument({
   billedAddress,
   lines,
   paid,
+  dueDate,
 }: {
   invoiceNumber: string;
   issueDate: string;
+  /** Printed under the invoice number when given. */
+  dueDate?: string;
   billedName: string;
   billedAddress: string;
   lines: { qty: number; item: string; description: string; unitPrice: number }[];
   paid: boolean;
 }) {
   const total = lines.reduce((sum, line) => sum + line.qty * line.unitPrice, 0);
-  const minRows = Math.max(lines.length, 6);
+  const minRows = Math.max(lines.length, 5);
+  const balance = paid ? 0 : total;
 
   return (
     <Document title={`Invoice ${invoiceNumber}`}>
@@ -201,25 +219,33 @@ export function ServicesInvoiceDocument({
               <Text style={styles.metaLabel}>Invoice No.:</Text>
               <Text>{invoiceNumber}</Text>
             </View>
+            {dueDate ? (
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>Due Date:</Text>
+                <Text>{dueDate}</Text>
+              </View>
+            ) : null}
           </View>
           <Logo />
         </View>
 
         <View style={styles.companyBlock}>
           <Text style={styles.companyName}>{RAWAZEN_SERVICES.name}</Text>
-          <Text>CR - {RAWAZEN_SERVICES.cr}</Text>
-          <Text>
+          <Text style={styles.line}>CR - {RAWAZEN_SERVICES.cr}</Text>
+          <Text style={styles.line}>
             P.O.Box - {RAWAZEN_SERVICES.poBox}, Postal Code.{RAWAZEN_SERVICES.postalCode},
           </Text>
-          <Text>{RAWAZEN_SERVICES.locality}</Text>
-          <Text>{RAWAZEN_SERVICES.phone}</Text>
+          <Text style={styles.line}>{RAWAZEN_SERVICES.locality}</Text>
+          <Text style={styles.line}>{RAWAZEN_SERVICES.phone}</Text>
         </View>
 
         <View style={styles.billTo}>
           <Text style={styles.billToLabel}>Bill To</Text>
-          <Text style={{ fontFamily: "Helvetica-Bold" }}>{billedName}</Text>
+          <Text style={[styles.line, { fontFamily: "Helvetica-Bold" }]}>{billedName}</Text>
           {billedAddress.split("\n").map((line, index) => (
-            <Text key={index}>{line}</Text>
+            <Text key={index} style={styles.line}>
+              {line}
+            </Text>
           ))}
         </View>
 
@@ -253,15 +279,21 @@ export function ServicesInvoiceDocument({
           })}
         </View>
 
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>{omr(total)}</Text>
+        <View style={styles.totalBlock}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalValue}>{omr(total)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Balance</Text>
+            <Text style={styles.totalValue}>{omr(balance)}</Text>
+          </View>
         </View>
 
         <View style={styles.bank}>
-          <Text>{RAWAZEN_SERVICES.name.toUpperCase()}</Text>
-          <Text>{RAWAZEN_SERVICES.bankAccountNumber}</Text>
-          <Text>{RAWAZEN_SERVICES.bankName}</Text>
+          <Text style={styles.bankText}>{RAWAZEN_SERVICES.name.toUpperCase()}</Text>
+          <Text style={styles.bankText}>{RAWAZEN_SERVICES.bankAccountNumber}</Text>
+          <Text style={styles.bankText}>{RAWAZEN_SERVICES.bankName}</Text>
         </View>
 
         <Text style={styles.contact}>

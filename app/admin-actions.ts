@@ -236,7 +236,7 @@ export const createPropertyAction = async (formData: FormData) => {
   });
 
   // Key documents captured at creation (independent = exactly one unit):
-  // SPA, Mulkiya and Crooky against the unit, and — for an owner creating
+  // SPA, Mulkiya and Krooky against the unit, and — for an owner creating
   // their own property — their ID/Bataka against themselves. Optional; a
   // failed upload never blocks the property itself.
   try {
@@ -247,7 +247,7 @@ export const createPropertyAction = async (formData: FormData) => {
         groups: [
           { category: EntityDocumentCategory.sales_purchase_agreement, files: uploadedFiles(formData, "docSpa") },
           { category: EntityDocumentCategory.ownership_certificate, files: uploadedFiles(formData, "docMulkiya") },
-          { category: EntityDocumentCategory.cadastral_plan, files: uploadedFiles(formData, "docCrooky") },
+          { category: EntityDocumentCategory.cadastral_plan, files: uploadedFiles(formData, "docKrooky") },
         ],
       });
     }
@@ -748,7 +748,7 @@ export const updateUnitServiceChargeAction = async (formData: FormData) => {
     return encodedRedirect(
       "error",
       `/protected/properties/${unit.propertyId}`,
-      "Independent properties do not take a service charge.",
+      "Independent and building-management properties do not take a service charge.",
     );
   }
 
@@ -869,7 +869,7 @@ export const bulkSetUnitServiceChargeAction = async (formData: FormData) => {
     return encodedRedirect(
       "error",
       back,
-      "Independent properties do not take a service charge.",
+      "Independent and building-management properties do not take a service charge.",
     );
   }
 
@@ -1251,15 +1251,16 @@ export const createUnitAction = async (formData: FormData) => {
   let rentBillsEnabled = formData.get("rentBillsEnabled") === "on";
   let maintenanceEnabled = formData.get("maintenanceEnabled") === "on";
 
-  if (!propertyId || !label) {
-    return encodedRedirect(
-      "error",
-      `/protected/properties/${propertyId ?? ""}`,
-      "Unit number is required",
-    );
-  }
+  // A form embedded elsewhere (e.g. an owner's card on the People page) can
+  // ask to come back to where it was opened instead of the property page.
+  const backRaw = formData.get("back")?.toString();
+  const back = backRaw?.startsWith("/protected")
+    ? backRaw
+    : `/protected/properties/${propertyId ?? ""}`;
 
-  const back = `/protected/properties/${propertyId}`;
+  if (!propertyId || !label) {
+    return encodedRedirect("error", back, "Unit number is required");
+  }
 
   if (!(await ownerCanManageUnitsOn(actor, propertyId))) {
     return encodedRedirect(
@@ -1309,9 +1310,10 @@ export const createUnitAction = async (formData: FormData) => {
   }
 
   // A blank charge is fine (no service charge tracked); a partial one isn't.
-  // Independent properties never take SC — ignore any charge fields posted.
+  // Independent and building-management properties never take SC — ignore
+  // any charge fields posted.
   const chargeFieldsFilled =
-    !(property && isIndependentType(property.propertyType)) &&
+    !(property && !collectsServiceCharge(property.propertyType)) &&
     [
       "serviceChargeAmount",
       "serviceChargeCycleMonths",
@@ -1359,6 +1361,7 @@ export const createUnitAction = async (formData: FormData) => {
   await publishDirectoryChange();
 
   revalidatePath(back);
+  revalidatePath(`/protected/properties/${propertyId}`);
 
   return encodedRedirect("success", back, `Unit ${label} added.`);
 };

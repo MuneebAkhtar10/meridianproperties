@@ -7,8 +7,12 @@ import {
 } from "@/components/entity-document-manager";
 import { AccountSection } from "@/components/account-section";
 import { CreatePropertyForm, type CreatePropertyTypeOption } from "@/components/create-property-form";
+import { createUnitAction } from "@/app/admin-actions";
+import { SubmitButton } from "@/components/submit-button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
+import { CloseModalOnSubmit, Modal } from "@/components/ui/modal";
 import { formatUnitLabel } from "@/lib/property-types";
 
 export type OwnerPortfolioProperty = {
@@ -21,6 +25,12 @@ export type OwnerPortfolioProperty = {
     documents: DocumentItem[];
   }[];
   unitLabelPrefix: string | null;
+  /** "Unit", "BM", "Villa"... — the property type's own noun. */
+  unitNoun: string;
+  hasFloors: boolean;
+  hasBedrooms: boolean;
+  /** Independent properties have exactly one unit, so none can be added. */
+  singleUnitOnly: boolean;
 };
 
 /**
@@ -87,13 +97,13 @@ export function OwnerPortfolio({
             return (
               <details
                 key={property.id}
-                className="group overflow-hidden rounded-xl border border-border/60 bg-background shadow-sm"
+                className="group overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-md"
               >
-                <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-muted/30 [&::-webkit-details-marker]:hidden">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                <summary className="flex cursor-pointer list-none items-center gap-3 bg-slate-50 px-4 py-3.5 transition-colors hover:bg-slate-100 group-open:border-b group-open:border-slate-300 [&::-webkit-details-marker]:hidden">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white">
                     <Building2 className="h-4 w-4" />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                  <span className="min-w-0 flex-1 truncate text-base font-semibold">
                     {property.name}
                   </span>
                   <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
@@ -113,15 +123,17 @@ export function OwnerPortfolio({
                   <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
                 </summary>
 
-                <div className="space-y-5 border-t bg-muted/20 p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Property documents
-                        <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">
+                <div className="space-y-6 bg-slate-100/70 p-4 sm:p-5">
+                  <div className="space-y-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-3">
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground">
+                          Property documents
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
                           OA agreement, NOC, Ministry of Housing, fire certificate…
-                        </span>
-                      </h4>
+                        </p>
+                      </div>
                       <Link
                         href={`/protected/properties/${property.id}`}
                         className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
@@ -139,34 +151,123 @@ export function OwnerPortfolio({
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Units ({property.units.length})
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <DoorOpen className="h-4 w-4 text-indigo-600" />
+                      Units
+                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
+                        {property.units.length}
+                      </span>
                     </h4>
-                    <div className="space-y-2">
+                    {!property.singleUnitOnly && (
+                      <Modal
+                        title={`Add another ${property.unitNoun.toLowerCase()}`}
+                        description={`Add a ${property.unitNoun.toLowerCase()} to ${property.name} — it's assigned to ${ownerName} straight away.`}
+                        trigger={
+                          <Button type="button" variant="outline" size="sm" className="bg-white">
+                            <Plus className="h-3.5 w-3.5" />
+                            Add {property.unitNoun.toLowerCase()}
+                          </Button>
+                        }
+                      >
+                        <form className="space-y-4">
+                          <input type="hidden" name="propertyId" value={property.id} />
+                          <input type="hidden" name="ownerId" value={ownerId} />
+                          <input type="hidden" name="back" value="/protected/users?role=owner" />
+                          {/* Rent/maintenance follow the property type's own
+                           * defaults; the server clamps them to what the type
+                           * supports. */}
+                          <input type="hidden" name="rentBillsEnabled" value="on" />
+                          <input type="hidden" name="maintenanceEnabled" value="on" />
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="space-y-1.5">
+                              <Label htmlFor={`add-unit-label-${property.id}`} className="text-xs">
+                                {property.unitNoun} number
+                              </Label>
+                              <Input
+                                id={`add-unit-label-${property.id}`}
+                                name="label"
+                                placeholder={property.hasFloors ? "101" : `${property.unitNoun} 1`}
+                                required
+                              />
+                            </div>
+                            {property.hasFloors && (
+                              <div className="space-y-1.5">
+                                <Label htmlFor={`add-unit-floor-${property.id}`} className="text-xs">
+                                  Floor
+                                </Label>
+                                <Input
+                                  id={`add-unit-floor-${property.id}`}
+                                  name="floor"
+                                  type="number"
+                                  placeholder="1"
+                                />
+                              </div>
+                            )}
+                            {property.hasBedrooms && (
+                              <div className="space-y-1.5">
+                                <Label htmlFor={`add-unit-beds-${property.id}`} className="text-xs">
+                                  Bedrooms
+                                </Label>
+                                <Input
+                                  id={`add-unit-beds-${property.id}`}
+                                  name="bedrooms"
+                                  type="number"
+                                  min={0}
+                                  placeholder="2"
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor={`add-unit-ent-${property.id}`} className="text-xs">
+                              Unit entitlement (m²)
+                            </Label>
+                            <Input
+                              id={`add-unit-ent-${property.id}`}
+                              name="entitlements"
+                              type="number"
+                              min={0}
+                              placeholder="e.g. 70"
+                            />
+                          </div>
+                          <SubmitButton
+                            formAction={createUnitAction}
+                            className="w-full"
+                            pendingText="Adding..."
+                          >
+                            Add {property.unitNoun.toLowerCase()}
+                          </SubmitButton>
+                          <CloseModalOnSubmit />
+                        </form>
+                      </Modal>
+                    )}
+                    </div>
+                    <div className="space-y-3">
                       {property.units.map((unit) => (
                         <details
                           key={unit.id}
                           open={unit.documents.length > 0 && property.units.length <= 3}
-                          className="group/unit overflow-hidden rounded-lg border border-border/60 bg-background"
+                          className="group/unit overflow-hidden rounded-xl border border-slate-300 border-l-4 border-l-indigo-500 bg-white shadow-sm"
                         >
-                          <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-muted/30 [&::-webkit-details-marker]:hidden">
-                            <DoorOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            <span className="flex-1 font-medium">
+                          <summary className="flex cursor-pointer list-none items-center gap-2.5 px-4 py-3 text-sm transition-colors hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                            <DoorOpen className="h-4 w-4 shrink-0 text-indigo-600" />
+                            <span className="flex-1 text-sm font-semibold">
                               {formatUnitLabel(
                                 { unitPrefix: property.unitLabelPrefix, hasFloors: false },
                                 unit.label,
                               )}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                               {unit.documents.length}{" "}
                               {unit.documents.length === 1 ? "document" : "documents"}
                             </span>
                             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open/unit:rotate-180" />
                           </summary>
-                          <div className="space-y-2 border-t bg-muted/10 p-3">
-                            <p className="text-[11px] text-muted-foreground">
-                              SPA, Mulkiya, Crooky, ownership contract and unit-level agreements.
+                          <div className="space-y-3 border-t border-slate-200 bg-slate-50 p-4">
+                            <p className="text-xs text-muted-foreground">
+                              SPA, Mulkiya, Krooky, ownership contract and unit-level agreements.
                             </p>
                             <EntityDocumentManager
                               documents={unit.documents}

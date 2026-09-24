@@ -1,6 +1,9 @@
 import {
   Briefcase,
   Building2,
+  ChevronLeft,
+  ChevronRight,
+  KeyRound,
   DoorOpen,
   Home,
   Landmark,
@@ -41,6 +44,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
     q?: string;
     type?: string;
     newOwner?: string;
+    page?: string;
   };
   const message = params as unknown as Message;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
@@ -101,14 +105,26 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
           : {}),
       };
 
+  const PAGE_SIZE = 25;
+  const listWhere = {
+    ...baseWhere,
+    ...(typeFilter !== "all" ? { propertyTypeId: typeFilter } : {}),
+  };
+  const totalProperties = await prisma.property.count({ where: listWhere });
+  const totalPages = Math.max(1, Math.ceil(totalProperties / PAGE_SIZE));
+  const requestedPage = Number(typeof params.page === "string" ? params.page : "1");
+  const currentPage = Math.min(
+    totalPages,
+    Math.max(1, Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1),
+  );
+
   const [properties, propertyTypeCounts, propertyTypes, pendingProperties, owners] =
     await Promise.all([
       prisma.property.findMany({
-        where: {
-          ...baseWhere,
-          ...(typeFilter !== "all" ? { propertyTypeId: typeFilter } : {}),
-        },
+        where: listWhere,
         orderBy: { createdAt: "desc" },
+        skip: (currentPage - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
         include: {
           propertyType: true,
           _count: { select: { units: true } },
@@ -172,6 +188,16 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
     icon: Home,
     iconBg: "bg-teal-50 text-teal-600",
     accent: "bg-teal-500",
+  };
+
+  const pageHref = (page: number) => {
+    const query = new URLSearchParams();
+    if (ownerFilter !== "all") query.set("owner", ownerFilter);
+    if (search) query.set("q", search);
+    if (typeFilter !== "all") query.set("type", typeFilter);
+    if (page > 1) query.set("page", String(page));
+    const qs = query.toString();
+    return `/protected/properties${qs ? `?${qs}` : ""}`;
   };
 
   const buildTypeHref = (typeId: string) => {
@@ -473,7 +499,13 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
       )}
 
       <div className="grid gap-8 lg:grid-cols-[1fr_27rem]">
-        <div className="min-w-0 space-y-4">
+        {/* The list column takes the height of the "Add a property" card next
+         * to it: the wrapper reserves no height of its own, its content is
+         * laid over the grid cell, and the scroll area fills what's left
+         * above the pager — so the scroll bar is exactly as tall as the
+         * form beside it. */}
+        <div className="min-w-0 lg:relative lg:min-h-[34rem]">
+          <div className="flex flex-col gap-3 lg:absolute lg:inset-0">
           {properties.length === 0 ? (
             <EmptyState
               icon={Building2}
@@ -481,7 +513,8 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
               description="Add your first Oman property using the form, then add its units."
             />
           ) : (
-            properties.map((property) => {
+            <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
+            {properties.map((property) => {
               const occupied = property.units.filter((u) => u.tenantId).length;
               const total = property._count.units;
               const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
@@ -507,93 +540,151 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
                   href={`/protected/properties/${property.id}`}
                   className="block"
                 >
-                  <Card className="overflow-hidden border-border/60 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#0886be]/30 hover:shadow-md">
-                    <CardContent className="space-y-4 p-5">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex items-start gap-4">
-                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0886be]/10 text-[#0886be] ring-1 ring-inset ring-[#0886be]/15">
-                            <Building2 className="h-5 w-5" />
-                          </span>
-                          <div className="space-y-1.5">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="font-semibold tracking-tight">
-                                {property.name}
-                              </h3>
-                              <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700 ring-1 ring-inset ring-violet-600/15">
-                                {property.propertyType.label}
-                              </span>
-                              {!property.approved &&
-                                (property.submittedAt ? (
-                                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
-                                    Pending approval
-                                  </span>
-                                ) : property.rejectedAt ? (
-                                  <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-800 ring-1 ring-inset ring-rose-200">
-                                    Rejected
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
-                                    Draft
-                                  </span>
-                                ))}
-                            </div>
-                            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <MapPin className="h-3.5 w-3.5 shrink-0" />
-                              {formatOmanAddress(property)}
-                            </p>
-                            {isAdmin && (
-                              <p className="text-sm text-muted-foreground">
-                                {distinctOwnerEmails(property.units).length > 0
-                                  ? `Owner${
-                                      distinctOwnerEmails(property.units)
-                                        .length > 1
-                                        ? "s"
-                                        : ""
-                                    }: ${distinctOwnerEmails(
-                                      property.units,
-                                    ).join(", ")}`
-                                  : "No owner assigned"}
-                              </p>
-                            )}
+                  <article className="group/card overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-indigo-300 hover:shadow-md">
+                    <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+                      <div className="flex min-w-0 flex-1 items-center gap-3.5">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+                          <Building2 className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <h3 className="truncate text-base font-semibold tracking-tight text-slate-900 group-hover/card:text-indigo-700">
+                              {property.name}
+                            </h3>
+                            <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20">
+                              {property.propertyType.label}
+                            </span>
+                            {!property.approved &&
+                              (property.submittedAt ? (
+                                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-300">
+                                  Pending approval
+                                </span>
+                              ) : property.rejectedAt ? (
+                                <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-800 ring-1 ring-inset ring-rose-300">
+                                  Rejected
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-inset ring-slate-300">
+                                  Draft
+                                </span>
+                              ))}
                           </div>
+                          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                            <span className="truncate">{formatOmanAddress(property)}</span>
+                          </p>
+                          {isAdmin && (
+                            <p className="flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+                              <KeyRound className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                              <span className="truncate">
+                                {distinctOwnerEmails(property.units).length > 0
+                                  ? distinctOwnerEmails(property.units).join(", ")
+                                  : "No owner assigned"}
+                              </span>
+                            </p>
+                          )}
                         </div>
+                      </div>
 
-                        <div className="flex shrink-0 items-center gap-5 sm:gap-6">
-                          <Stat
-                            icon={<DoorOpen className="h-4 w-4" />}
-                            value={total}
-                            label={property.propertyType.unitNounPlural.toLowerCase()}
-                          />
-                          <div className="h-8 w-px bg-border/60" />
-                          <div className="text-right">
-                            <div className="flex items-center justify-end gap-1.5 font-semibold">
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                              {occupied}
-                            </div>
-                            <span
-                              className={`mt-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${occupancyTone.pill}`}
-                            >
-                              {pct}% occupied
+                      <div className="flex shrink-0 items-center gap-5 border-t border-slate-100 pt-3 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                        <div className="text-center">
+                          <p className="text-lg font-semibold leading-none text-slate-900">{total}</p>
+                          <p className="mt-1 text-[11px] font-medium text-slate-500">
+                            {property.propertyType.unitNounPlural}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-semibold leading-none text-slate-900">{occupied}</p>
+                          <p className="mt-1 text-[11px] font-medium text-slate-500">Occupied</p>
+                        </div>
+                        <div className="w-28">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-medium text-slate-500">Occupancy</span>
+                            <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${occupancyTone.pill}`}>
+                              {pct}%
                             </span>
                           </div>
+                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                            <div className={`h-full rounded-full ${occupancyTone.bar}`} style={{ width: `${pct}%` }} />
+                          </div>
                         </div>
+                        <ChevronRight className="hidden h-5 w-5 shrink-0 text-slate-400 transition-colors group-hover/card:text-indigo-600 lg:block" />
                       </div>
-
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={`h-full rounded-full ${occupancyTone.bar}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </article>
                 </Link>
               );
-            })
+            })}
+            </div>
           )}
+
+          {totalProperties > PAGE_SIZE && (
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
+              <p className="text-xs text-muted-foreground">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+                {Math.min(currentPage * PAGE_SIZE, totalProperties)} of {totalProperties}
+              </p>
+              <nav className="flex items-center gap-1" aria-label="Pagination">
+                {currentPage > 1 ? (
+                  <Link
+                    href={pageHref(currentPage - 1)}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border bg-background px-2.5 text-xs font-medium hover:bg-muted"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    Prev
+                  </Link>
+                ) : (
+                  <span className="inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs text-muted-foreground/50">
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    Prev
+                  </span>
+                )}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(
+                    (page) =>
+                      page === 1 ||
+                      page === totalPages ||
+                      Math.abs(page - currentPage) <= 1,
+                  )
+                  .map((page, index, pages) => (
+                    <span key={page} className="flex items-center gap-1">
+                      {index > 0 && page - pages[index - 1] > 1 && (
+                        <span className="px-1 text-xs text-muted-foreground">…</span>
+                      )}
+                      <Link
+                        href={pageHref(page)}
+                        aria-current={page === currentPage ? "page" : undefined}
+                        className={
+                          page === currentPage
+                            ? "inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground"
+                            : "inline-flex h-8 min-w-8 items-center justify-center rounded-lg border bg-background px-2 text-xs font-medium hover:bg-muted"
+                        }
+                      >
+                        {page}
+                      </Link>
+                    </span>
+                  ))}
+                {currentPage < totalPages ? (
+                  <Link
+                    href={pageHref(currentPage + 1)}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border bg-background px-2.5 text-xs font-medium hover:bg-muted"
+                  >
+                    Next
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                ) : (
+                  <span className="inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs text-muted-foreground/50">
+                    Next
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
+                )}
+              </nav>
+            </div>
+          )}
+          </div>
         </div>
 
-        <Card className="h-fit overflow-hidden border-border/60 shadow-sm lg:sticky lg:top-24">
+        <Card className="h-fit overflow-hidden border-border/60 shadow-sm">
           <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 text-white">
               <Plus className="h-4 w-4" />

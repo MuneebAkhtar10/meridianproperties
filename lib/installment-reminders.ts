@@ -8,10 +8,22 @@ import {
   renderInstallmentInvoicePdf,
 } from "@/lib/pdf/render-service-charge-invoice";
 import { prisma } from "@/lib/prisma";
+import { prismaCollectsServiceChargeTypeWhere } from "@/lib/property-types";
 import { UserType } from "@/lib/generated/prisma/client";
 import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 
 const REMINDER_WINDOW_DAYS = 7;
+
+/** Which reminder an installment is due for today, or null: 7 days before
+ * ("upcoming", caught up if set up later), the day before, on the day, then
+ * a fresh key for every day it stays overdue. */
+export function installmentReminderStage(daysUntilDue: number): string | null {
+  if (daysUntilDue < 0) return `overdue:${Math.abs(daysUntilDue)}`;
+  if (daysUntilDue === 0) return "due";
+  if (daysUntilDue === 1) return "upcoming1";
+  if (daysUntilDue <= REMINDER_WINDOW_DAYS) return "upcoming";
+  return null;
+}
 
 /**
  * Runs daily (see app/api/cron/installment-reminders/route.ts). Emails the
@@ -28,8 +40,12 @@ export async function runInstallmentReminders(): Promise<{
   const installments = await prisma.serviceChargeInstallment.findMany({
     where: {
       paidAt: null,
-      reminderSentAt: null,
-      plan: { cancelledAt: null },
+      plan: {
+        cancelledAt: null,
+        unit: {
+          property: { propertyType: prismaCollectsServiceChargeTypeWhere() },
+        },
+      },
     },
     include: {
       plan: {
@@ -63,7 +79,8 @@ export async function runInstallmentReminders(): Promise<{
 
   for (const installment of installments) {
     const daysUntilDue = differenceInCalendarDays(installment.dueDate, today);
-    if (daysUntilDue > REMINDER_WINDOW_DAYS) continue;
+    const stage = installmentReminderStage(daysUntilDue);
+    if (!stage || installment.reminderStage === stage) continue;
 
     const unit = installment.plan.unit;
     const recipientIds = Array.from(
@@ -88,11 +105,12 @@ export async function runInstallmentReminders(): Promise<{
       dueDate: format(installment.dueDate, "d MMM yyyy"),
       recipientIds,
       attachments,
+      daysOverdue: daysUntilDue < 0 ? Math.abs(daysUntilDue) : undefined,
     });
 
     await prisma.serviceChargeInstallment.update({
       where: { id: installment.id },
-      data: { reminderSentAt: new Date() },
+      data: { reminderSentAt: new Date(), reminderStage: stage },
     });
     notified++;
   }

@@ -10,7 +10,7 @@ export const ENTITY_DOCUMENT_CATEGORY_LABEL: Record<
   title_deed: "Title deed",
   ownership_certificate: "Mulkiya (ownership)",
   ownership_contract: "Ownership contract",
-  cadastral_plan: "Crooky / Krooki (blueprint)",
+  cadastral_plan: "Krooky (blueprint)",
   building_permit: "Building permit / approval",
   completion_certificate: "Building completion certificate",
   noc: "No-objection certificate (NOC)",

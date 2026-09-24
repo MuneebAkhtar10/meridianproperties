@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   AlertCircle,
   AlertTriangle,
@@ -262,6 +263,7 @@ export default async function PropertyDetailPage({
     expenseCategories,
     expenseSuppliers,
     propertyExpenses,
+    unbilledExpenses,
   ] = await Promise.all([
       prisma.user.findMany({
         where: { userType: UserType.user, unit: null },
@@ -323,6 +325,25 @@ export default async function PropertyDetailPage({
           amount: true,
           paidBy: true,
           category: { select: { label: true } },
+        },
+      }),
+      // Expenses on this property's units that no invoice has billed yet —
+      // what the "Generate invoice → from existing expenses" option offers.
+      prisma.expense.findMany({
+        where: {
+          invoiceId: null,
+          ownerChargeMethod: "extra_charge",
+          units: { some: { unit: { propertyId: id } } },
+        },
+        orderBy: { date: "desc" },
+        select: {
+          id: true,
+          date: true,
+          description: true,
+          amount: true,
+          vatAmount: true,
+          category: { select: { label: true } },
+          units: { select: { unitId: true } },
         },
       }),
     ]);
@@ -529,7 +550,16 @@ export default async function PropertyDetailPage({
         {propertySuppliers.map((supplier) => (
           <div key={supplier.id} className="rounded-lg border border-border/60 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="font-medium">{supplier.companyName}</p>
+              {isAdmin ? (
+                <Link
+                  href={`/protected/admin/suppliers/${supplier.id}/edit`}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  {supplier.companyName}
+                </Link>
+              ) : (
+                <p className="font-medium">{supplier.companyName}</p>
+              )}
               <span
                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
                   supplier.availableForAllProperties
@@ -659,7 +689,7 @@ export default async function PropertyDetailPage({
                 className="bg-background"
               >
                 <ToolbarIcon icon={ClipboardList} className="bg-teal-100 text-teal-600" />
-                Tenant Report
+                List of Tenants
               </ButtonLink>
             </Tooltip>
 )}
@@ -676,7 +706,7 @@ export default async function PropertyDetailPage({
                 className="bg-background"
               >
                 <ToolbarIcon icon={FileBarChart} className="bg-purple-100 text-purple-600" />
-                Owner Report
+                List of Owners
               </ButtonLink>
             </Tooltip>
 )}
@@ -702,15 +732,20 @@ export default async function PropertyDetailPage({
               can("prop_services_invoice") && (
               <ServicesInvoiceMenu
                 propertyId={property.id}
+                defaultFundId={funds[0]?.id ?? ""}
+                categories={expenseCategories.map((category) => category.label)}
                 units={property.units.map((unit) => ({
-                  unitId: unit.id,
-                  unitLabel: formatUnitLabel(propertyType, unit.label),
-                  ownerName: unit.owner
-                    ? personDisplayName(unit.owner)
-                    : "Unassigned owner",
-                  tenantName: unit.tenant
-                    ? personDisplayName(unit.tenant)
-                    : null,
+                  id: unit.id,
+                  label: formatUnitLabel(propertyType, unit.label),
+                  ownerName: unit.owner ? personDisplayName(unit.owner) : null,
+                }))}
+                expenses={unbilledExpenses.map((expense) => ({
+                  id: expense.id,
+                  unitIds: expense.units.map((u) => u.unitId),
+                  date: format(expense.date, "dd MMM yyyy"),
+                  category: expense.category.label,
+                  description: expense.description,
+                  total: Number(expense.amount) + Number(expense.vatAmount),
                 }))}
               />
             )}
@@ -801,6 +836,7 @@ export default async function PropertyDetailPage({
                     propertyType: {
                       name: propertyType.name,
                       isOwnerAssociation: propertyType.isOwnerAssociation,
+                      noServiceCharge: !takesServiceCharge,
                     },
                   },
                 ],
@@ -1810,7 +1846,7 @@ export default async function PropertyDetailPage({
                   <p className="text-xs text-muted-foreground">
                     {takesServiceCharge
                       ? `Ownership and service charges are now set per unit — see each ${unitNoun}’s row above.`
-                      : `Ownership is set on the ${unitNoun} — this independent property does not take a service charge.`}
+                      : `Ownership is set on the ${unitNoun} — this property does not take a service charge.`}
                   </p>
                   <div className="space-y-2 rounded-md border p-2">
                     <p className="text-xs font-medium">

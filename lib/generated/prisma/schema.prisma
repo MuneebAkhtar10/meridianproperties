@@ -856,15 +856,21 @@ model Expense {
   receiptFilePath   String?          @map("receipt_file_path")
   receiptFileType   String?          @map("receipt_file_type")
   receiptFileSize   Int?             @map("receipt_file_size")
+  /// The invoice this expense was billed on, if any. Set when an invoice is
+  /// generated from existing expenses, or when an invoice with brand-new
+  /// lines creates its own expense entries — so Expenses and Invoices stay
+  /// in sync and an expense is never billed twice.
+  invoiceId         String?          @map("invoice_id") @db.Uuid
   createdById       String?          @map("created_by") @db.Uuid
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 
-  property  Property?           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  category  ExpenseCategoryType @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  supplier  Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  fund      Fund                @relation(fields: [fundId], references: [id], onDelete: Restrict)
-  createdBy User?               @relation("ExpenseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  invoice   ServiceChargeInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  property  Property?             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  category  ExpenseCategoryType   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier  Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  fund      Fund                  @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  createdBy User?                 @relation("ExpenseCreator", fields: [createdById], references: [id], onDelete: SetNull)
   /// The unit(s) this expense is split across when it isn't property-wide —
   /// a many-to-many join (not a single unitId) so one shared cost logged
   /// against several units stays ONE row with the amount as entered,
@@ -877,6 +883,7 @@ model Expense {
   @@index([categoryId])
   @@index([supplierId])
   @@index([fundId])
+  @@index([invoiceId])
   @@map("expenses")
 }
 
@@ -974,6 +981,7 @@ model ServiceChargeInvoice {
   createdBy        User?                          @relation("ServiceChargeInvoiceCreator", fields: [createdById], references: [id], onDelete: SetNull)
   lines            ServiceChargeInvoiceLine[]
   installmentPlans ServiceChargeInstallmentPlan[]
+  expenses         Expense[]
 
   @@index([unitId, issueDate])
   @@map("service_charge_invoices")
@@ -1098,6 +1106,10 @@ model ServiceChargeInstallment {
   /// installment — set by the daily cron or the manual "Send invoice"
   /// button, whichever fires first, so it's never sent twice automatically.
   reminderSentAt DateTime? @map("reminder_sent_at")
+  /// The last reminder stage sent ("upcoming" 7 days out, "upcoming1" the
+  /// day before, "due", "overdue:N") so each stage goes out once and overdue
+  /// nudges daily.
+  reminderStage  String?   @map("reminder_stage")
 
   plan    ServiceChargeInstallmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
   payment ServiceChargePayment?        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
@@ -1479,24 +1491,28 @@ enum WhatsappFlow {
 }
 
 model WhatsappSession {
-  id        String        @id @default(uuid()) @db.Uuid
+  id            String        @id @default(uuid()) @db.Uuid
   /// E.164 phone number — the WhatsApp conversation's identity. Looked up
   /// against User.phone on every inbound message.
-  phone     String        @unique
-  userId    String?       @map("user_id") @db.Uuid
-  flow      WhatsappFlow?
+  phone         String        @unique
+  userId        String?       @map("user_id") @db.Uuid
+  flow          WhatsappFlow?
   /// Free-form step name within the flow (e.g. "category", "location",
   /// "description", "confirm" for new_request). Not used by worker_task /
   /// awaiting_completion_code, which re-derive state from the live task.
-  step      String?
+  step          String?
   /// Answers collected so far in the current flow (category, location,
   /// description, ...). Cleared whenever the flow resets or completes.
-  data      Json?
+  data          Json?
   /// The task a worker_task / awaiting_completion_code conversation is
   /// about.
-  taskId    String?       @map("task_id") @db.Uuid
-  updatedAt DateTime      @updatedAt @map("updated_at")
-  createdAt DateTime      @default(now()) @map("created_at")
+  taskId        String?       @map("task_id") @db.Uuid
+  /// When this person last messaged us. WhatsApp only delivers free-form
+  /// (multi-line) messages within 24 hours of this; outside it, alerts must
+  /// use an approved template.
+  lastInboundAt DateTime?     @map("last_inbound_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
 
   user User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
   task MaintenanceRequest? @relation(fields: [taskId], references: [id], onDelete: SetNull)

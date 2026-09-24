@@ -26,6 +26,9 @@ export function ExpenseTargetPicker({
    * of the building itself, so there's nothing to pick a specific unit
    * for. */
   hideSpecificUnits = false,
+  /** Independent and building-management properties have no common areas —
+   * every expense there is against specific unit(s). */
+  hideCommonArea = false,
 }: {
   properties: { id: string; name: string }[];
   units: UnitOption[];
@@ -34,12 +37,17 @@ export function ExpenseTargetPicker({
   propertyId: string;
   onPropertyIdChange: (propertyId: string) => void;
   hideSpecificUnits?: boolean;
+  hideCommonArea?: boolean;
 }) {
   const [mode, setMode] = useState<"common" | "units">("common");
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(
     new Set(),
   );
-  const effectiveMode = hideSpecificUnits ? "common" : mode;
+  const effectiveMode = hideSpecificUnits
+    ? "common"
+    : hideCommonArea
+      ? "units"
+      : mode;
 
   const unitsForProperty = useMemo(
     () => units.filter((unit) => unit.propertyId === propertyId),
@@ -85,7 +93,13 @@ export function ExpenseTargetPicker({
 
       <div className="space-y-1.5">
         <p className="text-xs font-medium text-foreground">Against</p>
-        <div className={cn("grid gap-2", hideSpecificUnits ? "grid-cols-1" : "grid-cols-2")}>
+        <div
+          className={cn(
+            "grid gap-2",
+            hideSpecificUnits || hideCommonArea ? "grid-cols-1" : "grid-cols-2",
+          )}
+        >
+          {!hideCommonArea && (
           <label
             className={cn(
               "flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border px-3 py-2.5 text-center transition-colors",
@@ -114,6 +128,7 @@ export function ExpenseTargetPicker({
               (whole property)
             </span>
           </label>
+          )}
           {!hideSpecificUnits && (
             <label
               className={cn(

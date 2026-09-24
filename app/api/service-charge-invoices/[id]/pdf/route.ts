@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { renderServiceChargeInvoicePdf } from "@/lib/pdf/render-service-charge-invoice";
+
+import {
+  renderServiceChargeInvoicePdf,
+  renderServicesTemplateInvoicePdf,
+} from "@/lib/pdf/render-service-charge-invoice";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isStaffAdmin } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
@@ -32,6 +36,21 @@ export async function GET(
     (user.id === invoice.unit.ownerId || user.id === invoice.billedOwnerId);
   if (!isStaffAdmin(user.userType) && !isOwnInvoice) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Two layouts for the same invoice: the service-charge statement
+  // (default) or the Rawazen Services invoice.
+  if (request.nextUrl.searchParams.get("template") === "services") {
+    const services = await renderServicesTemplateInvoicePdf(id);
+    if (!services) {
+      return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
+    }
+    return new NextResponse(services.buffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${services.filename}"`,
+      },
+    });
   }
 
   const pdf = await renderServiceChargeInvoicePdf(id);

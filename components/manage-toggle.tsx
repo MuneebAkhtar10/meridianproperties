@@ -25,13 +25,13 @@ export function ManageToggle({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border/60">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-sm font-medium transition-colors hover:bg-muted/50"
+        className="flex w-full items-center gap-2.5 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
       >
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200">
           {icon ?? <Settings2 className="h-3.5 w-3.5" />}
         </span>
         <span>
@@ -47,7 +47,7 @@ export function ManageToggle({
         />
       </button>
       {open && (
-        <div className="space-y-4 border-t bg-muted/10 p-3 sm:p-4">
+        <div className="space-y-4 border-t border-slate-300 bg-slate-100/70 p-3 sm:p-4">
           {children}
         </div>
       )}
