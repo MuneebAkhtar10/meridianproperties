@@ -140,7 +140,7 @@ export async function getUnitRentStatement(
     [tenancy.tenant.firstName, tenancy.tenant.lastName].filter(Boolean).join(" ") ||
     tenancy.tenant.email;
 
-  const monthlyRows: RentStatementMonthRow[] = tenancy.charges.flatMap((charge) => {
+  const monthlyRows: RentStatementMonthRow[] = tenancy.charges.flatMap((charge): RentStatementMonthRow[] => {
     const month = format(charge.periodStart ?? charge.dueDate, "MMM-yy");
     if (charge.payments.length === 0) {
       return [
@@ -158,7 +158,10 @@ export async function getUnitRentStatement(
       transactionDate: payment.paidAt,
       amount: moneyValue(payment.amount),
       receivedBy: receivedByLabel(payment, ownerName),
-      collectedBy: payment.collectedBy === "owner" ? "owner" : "management",
+      collectedBy:
+        payment.collectedBy === "owner"
+          ? ("owner" as const)
+          : ("management" as const),
     }));
   });
 

@@ -51,7 +51,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
-      {showAdminDashboard && <AdminDashboard />}
+      {showAdminDashboard && (
+        <AdminDashboard showRequests={await hasAdminModule(user, "maintenance")} />
+      )}
       {isStaffAdmin(user.userType) && !showAdminDashboard && (
         <PageHeader
           title="No modules assigned"

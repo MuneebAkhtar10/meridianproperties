@@ -33,7 +33,10 @@ import { getAdminDashboardMetrics } from "@/lib/dashboard-metrics";
 import { formatMoney, formatMoneyCompact } from "@/lib/finance";
 import { StatusBadge } from "@/lib/status";
 
-export async function AdminDashboard() {
+/** `showRequests` is false when the viewing admin's Requests module is
+ * switched off — every maintenance/supply-request figure, card and link
+ * then disappears from the dashboard. */
+export async function AdminDashboard({ showRequests = true }: { showRequests?: boolean } = {}) {
   const data = await getAdminDashboardMetrics();
   const today = new Intl.DateTimeFormat("en-GB", {
     weekday: "long",
@@ -51,9 +54,9 @@ export async function AdminDashboard() {
   const attentionCount =
     data.pendingRentProofs +
     data.pendingApprovals +
-    data.requestCounts.pending +
+    (showRequests ? data.requestCounts.pending : 0) +
     data.awaitingCheques +
-    data.pendingSupplyRequests +
+    (showRequests ? data.pendingSupplyRequests : 0) +
     data.scOverdueUnits +
     urgentExpiryCount;
   const cashIn = data.rentCollectedThisMonth + data.scCollectedThisMonth;
@@ -75,6 +78,7 @@ export async function AdminDashboard() {
       </PageHeader>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+{showRequests && (
         <StatTile
           label="Open requests"
           value={data.openRequests}
@@ -83,6 +87,7 @@ export async function AdminDashboard() {
           color="amber"
           href="/protected/maintenance"
         />
+)}
         <StatTile
           label="Occupancy"
           value={`${data.occupiedCount}/${data.unitCount}`}
@@ -304,6 +309,7 @@ export async function AdminDashboard() {
           </CardContent>
         </Card>
 
+        {showRequests && (
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
@@ -350,6 +356,7 @@ export async function AdminDashboard() {
             />
           </CardContent>
         </Card>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -449,24 +456,28 @@ export async function AdminDashboard() {
               count={data.pendingApprovals}
               href="/protected/onboarding?includeActive=0"
             />
+{showRequests && (
             <PendingTaskRow
               icon={<Wrench className="h-4 w-4" />}
               label="Maintenance requests pending"
               count={data.requestCounts.pending}
               href="/protected/maintenance?status=pending"
             />
+)}
             <PendingTaskRow
               icon={<FileClock className="h-4 w-4" />}
               label="Cheques awaiting clearance"
               count={data.awaitingCheques}
               href="/protected/finances/cheque-reminders"
             />
+{showRequests && (
             <PendingTaskRow
               icon={<Package className="h-4 w-4" />}
               label="Supply requests pending decision"
               count={data.pendingSupplyRequests}
               href="/protected/maintenance?status=on_hold"
             />
+)}
           </CardContent>
         </Card>
       </div>
@@ -550,6 +561,7 @@ export async function AdminDashboard() {
             icon={<Wallet className="h-4 w-4" />}
             iconClass="bg-amber-50 text-amber-700"
           />
+{showRequests && (
           <ShortcutTile
             href="/protected/maintenance"
             label="Requests"
@@ -557,6 +569,7 @@ export async function AdminDashboard() {
             icon={<Wrench className="h-4 w-4" />}
             iconClass="bg-orange-50 text-orange-700"
           />
+)}
           <ShortcutTile
             href="/protected/reports/agreement-expiry"
             label="Agreement expiry"
@@ -621,6 +634,7 @@ export async function AdminDashboard() {
                       {property.occupied}/{property.units} occupied
                     </p>
                   </div>
+                  {showRequests && (
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
                       property.openRequests > 0
@@ -630,12 +644,14 @@ export async function AdminDashboard() {
                   >
                     {property.openRequests} open
                   </span>
+                  )}
                 </Link>
               ))
             )}
           </CardContent>
         </Card>
 
+        {showRequests && (
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
@@ -675,6 +691,7 @@ export async function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
     </>
   );

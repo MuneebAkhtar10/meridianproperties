@@ -27,6 +27,34 @@ export const ADMIN_MODULES: {
   { key: "settings", label: "Settings", description: "Property types and storage" },
 ];
 
+/** Individual buttons on a property's page — a finer layer than the
+ * "Properties" module: an admin can open Properties yet be denied, say,
+ * Cash Flow or Owner Report. Stored as grants alongside the modules. */
+export const ADMIN_FEATURES: {
+  key: AdminModuleKey;
+  label: string;
+  description: string;
+}[] = [
+  { key: "prop_building_contracts", label: "Building Contracts", description: "Open a property's building contracts" },
+  { key: "prop_tenancy_terms", label: "Tenancy terms", description: "Jump to tenancy terms from a property" },
+  { key: "prop_tenant_report", label: "Tenant Report", description: "Per-property tenant report and PDF" },
+  { key: "prop_owner_report", label: "Owner Report", description: "Owner portfolio report from a property" },
+  { key: "prop_landlord_statement", label: "Landlord Statement", description: "Landlord statement for Independent properties" },
+  { key: "prop_services_invoice", label: "Services Invoice", description: "Services invoices for a property" },
+  { key: "prop_annual_budget", label: "Annual Budget", description: "Yearly budget and budget PDF" },
+  { key: "prop_building_expenses", label: "Building Expenses", description: "Building management expenses report" },
+  { key: "prop_management_report", label: "Building Management Report", description: "Building management summary report" },
+  { key: "prop_suppliers", label: "Suppliers", description: "Suppliers eligible for a property" },
+  { key: "prop_expenses", label: "Expenses", description: "Log and view a property's expenses" },
+  { key: "prop_rent_position", label: "Rent Position", description: "Portfolio rent position for a property" },
+  { key: "prop_rent_summary", label: "Monthly Rent Summary", description: "All-units monthly rent summary" },
+  { key: "prop_invoices", label: "Invoices", description: "Property invoices hub" },
+  { key: "prop_unit_ledgers", label: "Unit Ledgers", description: "Per-unit ledgers" },
+  { key: "prop_service_charge", label: "Service Charge", description: "Service charge ledger for a property" },
+  { key: "prop_collection_position", label: "Collection Position", description: "Service charge collection position" },
+  { key: "prop_cash_flow", label: "Cash Flow", description: "Cash flow statement" },
+];
+
 export const ADMIN_NAV_ITEMS: {
   href: string;
   label: string;

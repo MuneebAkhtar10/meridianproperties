@@ -75,7 +75,11 @@ function financesReturn(formData: FormData, fallback: string): string {
 
 /** Stay on the charge after a payment/review, but keep the ledger filters
  * on `back` so "Rent & bills" still opens the same filtered list. */
-function chargeReturn(formData: FormData, chargeId: string): string {
+function chargeReturn(
+  formData: FormData,
+  chargeId: string | undefined,
+): string {
+  if (!chargeId) return "/protected/finances";
   const detail = `/protected/finances/${chargeId}`;
   const list = formData.get("back")?.toString() ?? "";
   if (

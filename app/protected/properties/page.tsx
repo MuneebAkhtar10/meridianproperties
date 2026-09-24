@@ -27,6 +27,7 @@ import { Select } from "@/components/ui/select";
 import { formatOmanAddress } from "@/lib/oman";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole, isStaffAdmin } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 import {
@@ -218,7 +219,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
       >
         {isAdmin && (
           <>
-            <OwnerReportModal owners={owners} />
+            {(await adminAccess(user)).can("prop_owner_report") && <OwnerReportModal owners={owners} />}
             <ButtonLink href="/protected/admin/property-types" variant="outline">
               <Settings className="h-4 w-4" />
               Property types

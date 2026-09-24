@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
-import { ADMIN_MODULES, type AdminModuleKey } from "@/lib/admin-modules";
+import { ADMIN_FEATURES, ADMIN_MODULES, type AdminModuleKey } from "@/lib/admin-modules";
 import { requireSuperAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { UserType } from "@/lib/generated/prisma/client";
 import { encodedRedirect } from "@/utils/utils";
 
-const MODULE_KEYS = new Set(ADMIN_MODULES.map((module) => module.key));
+const MODULE_KEYS = new Set([...ADMIN_MODULES, ...ADMIN_FEATURES].map((module) => module.key));
 
 export async function saveAdminPermissionsAction(formData: FormData) {
   const actor = await requireSuperAdmin();

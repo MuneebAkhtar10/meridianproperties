@@ -39,6 +39,24 @@ enum AdminModule {
   qr_code
   dynamics
   settings
+  prop_building_contracts
+  prop_tenancy_terms
+  prop_tenant_report
+  prop_owner_report
+  prop_landlord_statement
+  prop_services_invoice
+  prop_annual_budget
+  prop_building_expenses
+  prop_management_report
+  prop_suppliers
+  prop_expenses
+  prop_rent_position
+  prop_rent_summary
+  prop_invoices
+  prop_unit_ledgers
+  prop_service_charge
+  prop_collection_position
+  prop_cash_flow
 }
 
 /// Only meaningful when userType = worker. Distinguishes staff employed by

@@ -5,7 +5,7 @@ import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ADMIN_MODULES } from "@/lib/admin-modules";
+import { ADMIN_FEATURES, ADMIN_MODULES } from "@/lib/admin-modules";
 import { requireSuperAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { personDisplayName } from "@/lib/utils";
@@ -33,7 +33,7 @@ export default async function PermissionsPage({ searchParams }: PageProps) {
     <div className="w-full space-y-6 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Permissions"
-        description="Choose which modules each admin can open. Super admins always see everything, including this page."
+        description="Choose which modules — and which buttons on a property's page — each admin can use. Super admins always see everything, including this page."
       />
       <FormMessage message={message} />
 
@@ -71,8 +71,41 @@ export default async function PermissionsPage({ searchParams }: PageProps) {
                   ) : (
                     <form className="space-y-4">
                       <input type="hidden" name="userId" value={admin.id} />
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Modules
+                      </p>
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         {ADMIN_MODULES.map((module) => (
+                          <label
+                            key={module.key}
+                            className="flex cursor-pointer items-start gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              name="modules"
+                              value={module.key}
+                              defaultChecked={granted.has(module.key)}
+                              className="mt-0.5"
+                            />
+                            <span>
+                              <span className="block font-medium">{module.label}</span>
+                              <span className="block text-xs text-muted-foreground">
+                                {module.description}
+                              </span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="space-y-1 border-t pt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Property page buttons
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          The report and record buttons on a property's page. Requires the Properties module.
+                        </p>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {ADMIN_FEATURES.map((module) => (
                           <label
                             key={module.key}
                             className="flex cursor-pointer items-start gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-sm"

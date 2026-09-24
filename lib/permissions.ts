@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import { prisma } from "@/lib/prisma";
 import {
+  ADMIN_FEATURES,
   ADMIN_MODULES,
   ADMIN_NAV_ITEMS,
   ADMIN_TOOLBAR_ITEMS,
@@ -15,7 +16,7 @@ import type { ToolbarItem } from "@/components/app-topbar";
 import { requireUser, type SessionUser } from "@/lib/session";
 import { isStaffAdmin, isSuperAdmin } from "@/lib/user-roles";
 
-export const ALL_ADMIN_MODULE_KEYS = ADMIN_MODULES.map((module) => module.key);
+export const ALL_ADMIN_MODULE_KEYS = [...ADMIN_MODULES, ...ADMIN_FEATURES].map((module) => module.key);
 
 function isMissingRelation(error: unknown): boolean {
   return (
@@ -127,4 +128,19 @@ export async function firstAllowedAdminHref(user: SessionUser): Promise<string> 
   const toolbar = ADMIN_TOOLBAR_ITEMS.find((item) => granted.has(item.module));
   if (toolbar) return toolbar.href;
   return "/protected";
+}
+
+/**
+ * What a viewer may use on a page: staff admins get exactly their grants
+ * (super admins everything); anyone else (owners, tenants) is not limited
+ * by admin permissions, so `can` is always true for them.
+ */
+export async function adminAccess(
+  user: Pick<SessionUser, "id" | "userType">,
+): Promise<{ can: (key: AdminModuleKey) => boolean }> {
+  if (!isStaffAdmin(user.userType) || isSuperAdmin(user.userType)) {
+    return { can: () => true };
+  }
+  const granted = await grantedAdminModules(user.id);
+  return { can: (key) => granted.has(key) };
 }

@@ -39,8 +39,12 @@ type RawManagedUnit = Omit<
   > & { amountPayable: unknown; currentAmount: unknown; previousBalance: unknown })[];
   serviceChargePayments?: (Omit<
     ManagedUnit["serviceChargePayments"][number],
-    "amount" | "originalAmount"
-  > & { amount: unknown; originalAmount?: unknown })[];
+    "amount" | "originalAmount" | "fromInstallment"
+  > & {
+    amount: unknown;
+    originalAmount?: unknown;
+    installment?: unknown;
+  })[];
   installmentPlans: (Omit<
     ManagedUnit["installmentPlans"][number],
     "installments"
