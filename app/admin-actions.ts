@@ -18,7 +18,8 @@ import {
   pushUnitToDynamics,
   pushTenantToDynamics,
 } from "@/lib/dynamics/entities";
-import { formatMoney, parseServiceCharge } from "@/lib/finance";
+import { formatMoney, parseDate, parseServiceCharge } from "@/lib/finance";
+import { storeEntityDocumentGroups, uploadedFiles } from "@/lib/entity-document-service";
 import {
   defaultUnitPermissions,
   formatUnitLabel,
@@ -39,6 +40,7 @@ import { isValidPhone } from "@/lib/phone";
 import { deleteAttachment, uploadEntityDocument } from "@/lib/storage";
 import { encodedRedirect } from "@/utils/utils";
 import {
+  EntityDocumentCategory,
   FamilyRelationship,
   RejectionKind,
   UserType,
@@ -71,6 +73,12 @@ function publishDirectoryChange(userIds: (string | null | undefined)[] = []) {
 export const createPropertyAction = async (formData: FormData) => {
   const actor = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = actor.userType === UserType.owner;
+  // Created from the People page's owner card (in a modal) — stay there
+  // instead of jumping to the new property's page.
+  const requestedBack = formData.get("back")?.toString();
+  const stayOnPeople =
+    !isOwner && requestedBack === "/protected/users" ? requestedBack : null;
+  const errorPath = stayOnPeople ?? "/protected/properties";
 
   const name = formData.get("name")?.toString().trim();
   const propertyTypeId = formData.get("propertyTypeId")?.toString().trim();
@@ -95,7 +103,7 @@ export const createPropertyAction = async (formData: FormData) => {
   if (!name || !address) {
     return encodedRedirect(
       "error",
-      "/protected/properties",
+      errorPath,
       "Name and address are required",
     );
   }
@@ -106,7 +114,7 @@ export const createPropertyAction = async (formData: FormData) => {
   if (!propertyType) {
     return encodedRedirect(
       "error",
-      "/protected/properties",
+      errorPath,
       "Select a property type.",
     );
   }
@@ -121,7 +129,7 @@ export const createPropertyAction = async (formData: FormData) => {
   if (oa && !associationRegistrationNumber) {
     return encodedRedirect(
       "error",
-      "/protected/properties",
+      errorPath,
       "Enter the OA number for an owners’ association property.",
     );
   }
@@ -129,7 +137,7 @@ export const createPropertyAction = async (formData: FormData) => {
   if (independent && !unitLabel) {
     return encodedRedirect(
       "error",
-      "/protected/properties",
+      errorPath,
       "Enter the unit number — independent properties have exactly one unit.",
     );
   }
@@ -138,12 +146,12 @@ export const createPropertyAction = async (formData: FormData) => {
   const bedroomsValue = unitBedrooms ? Number(unitBedrooms) : null;
   const entitlementsValue = unitEntitlements ? Number(unitEntitlements) : null;
   if (unitFloor && !Number.isInteger(floorValue)) {
-    return encodedRedirect("error", "/protected/properties", "Floor must be a whole number.");
+    return encodedRedirect("error", errorPath, "Floor must be a whole number.");
   }
   if (unitBedrooms && (!Number.isInteger(bedroomsValue) || (bedroomsValue ?? 0) < 0)) {
     return encodedRedirect(
       "error",
-      "/protected/properties",
+      errorPath,
       "Beds must be a non-negative whole number.",
     );
   }
@@ -153,7 +161,7 @@ export const createPropertyAction = async (formData: FormData) => {
   ) {
     return encodedRedirect(
       "error",
-      "/protected/properties",
+      errorPath,
       "Entitlement must be a non-negative whole number.",
     );
   }
@@ -166,13 +174,26 @@ export const createPropertyAction = async (formData: FormData) => {
   ) {
     return encodedRedirect(
       "error",
-      "/protected/properties",
+      errorPath,
       "Select a valid Oman governorate.",
     );
   }
 
   const permissions = defaultUnitPermissions(propertyType);
 
+  // An admin adding a property from an owner's card links the unit to them.
+  const requestedOwnerId = formData.get("ownerId")?.toString();
+  const adminChosenOwnerId =
+    !isOwner && requestedOwnerId
+      ? ((
+          await prisma.user.findFirst({
+            where: { id: requestedOwnerId, userType: UserType.owner },
+            select: { id: true },
+          })
+        )?.id ?? null)
+      : null;
+
+  const createdUnit: { id?: string } = {};
   const property = await prisma.$transaction(async (tx) => {
     const created = await tx.property.create({
       data: {
@@ -196,22 +217,56 @@ export const createPropertyAction = async (formData: FormData) => {
     });
 
     if (independent && unitLabel) {
-      await tx.unit.create({
+      const unitRow = await tx.unit.create({
         data: {
           propertyId: created.id,
           label: unitLabel,
           floor: propertyType.hasFloors ? floorValue : null,
           bedrooms: propertyType.hasBedrooms ? bedroomsValue : null,
           entitlements: entitlementsValue,
-          ownerId: isOwner ? actor.id : null,
+          ownerId: isOwner ? actor.id : adminChosenOwnerId,
           rentBillsEnabled: permissions.rentBillsEnabled,
           maintenanceEnabled: permissions.maintenanceEnabled,
         },
       });
+      createdUnit.id = unitRow.id;
     }
 
     return created;
   });
+
+  // Key documents captured at creation (independent = exactly one unit):
+  // SPA, Mulkiya and Crooky against the unit, and — for an owner creating
+  // their own property — their ID/Bataka against themselves. Optional; a
+  // failed upload never blocks the property itself.
+  try {
+    if (createdUnit.id) {
+      await storeEntityDocumentGroups({
+        target: { type: "unit", id: createdUnit.id },
+        uploadedById: actor.id,
+        groups: [
+          { category: EntityDocumentCategory.sales_purchase_agreement, files: uploadedFiles(formData, "docSpa") },
+          { category: EntityDocumentCategory.ownership_certificate, files: uploadedFiles(formData, "docMulkiya") },
+          { category: EntityDocumentCategory.cadastral_plan, files: uploadedFiles(formData, "docCrooky") },
+        ],
+      });
+    }
+    if (isOwner) {
+      await storeEntityDocumentGroups({
+        target: { type: "user", id: actor.id },
+        uploadedById: actor.id,
+        groups: [
+          {
+            category: EntityDocumentCategory.civil_id,
+            expiresAt: parseDate(formData.get("docOwnerIdExpiry")?.toString()),
+            files: uploadedFiles(formData, "docOwnerId"),
+          },
+        ],
+      });
+    }
+  } catch (error) {
+    console.error("Key document upload failed for property:", property.id, error);
+  }
 
   try {
     await pushPropertyToDynamics({
@@ -231,7 +286,7 @@ export const createPropertyAction = async (formData: FormData) => {
 
   return encodedRedirect(
     "success",
-    `/protected/properties/${property.id}`,
+    stayOnPeople ?? `/protected/properties/${property.id}`,
     independent
       ? `"${name}" created with its ${propertyType.unitNounSingular.toLowerCase()}.`
       : oa

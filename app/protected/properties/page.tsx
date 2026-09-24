@@ -39,6 +39,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
     owner?: string;
     q?: string;
     type?: string;
+    newOwner?: string;
   };
   const message = params as unknown as Message;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
@@ -50,6 +51,20 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
     isAdmin && typeof params.q === "string" ? params.q.trim() : "";
   const typeFilter =
     isAdmin && typeof params.type === "string" ? params.type : "all";
+  // Arriving from an owner's card ("Add another property") — the new
+  // property is created already linked to that owner.
+  const newOwnerParam = isAdmin ? params.newOwner : undefined;
+  const newOwnerRow =
+    typeof newOwnerParam === "string"
+      ? await prisma.user.findFirst({
+          where: { id: newOwnerParam, userType: UserType.owner },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        })
+      : null;
+  const newOwnerName = newOwnerRow
+    ? [newOwnerRow.firstName, newOwnerRow.lastName].filter(Boolean).join(" ") ||
+      newOwnerRow.email
+    : undefined;
 
   // Shared by both the main list query and the "by management type" cards
   // below — the cards themselves always reflect every type (so they all
@@ -588,6 +603,8 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
           </div>
           <CardContent className="pt-5">
             <CreatePropertyForm
+              defaultOwnerId={newOwnerRow?.id}
+              defaultOwnerName={newOwnerName}
               propertyTypes={propertyTypes}
               isOwner={isOwner}
               isAdmin={isAdmin}

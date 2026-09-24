@@ -4,6 +4,8 @@ import {
   Banknote,
   CalendarClock,
   CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
   FileCheck2,
   Landmark,
   LayoutDashboard,
@@ -318,6 +320,23 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     sortDir,
   );
 
+  // Only the first PAGE_SIZE entries show at once, so the "Add rent / bill"
+  // forms beside the ledger stay within easy reach instead of buried under
+  // a long list.
+  const PAGE_SIZE = 25;
+  const totalPages = Math.max(1, Math.ceil(visibleCharges.length / PAGE_SIZE));
+  const requestedPage = Number(typeof params.page === "string" ? params.page : "1");
+  const currentPage = Math.min(
+    totalPages,
+    Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1,
+  );
+  const pagedCharges = visibleCharges.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+  const pageHref = (page: number) =>
+    `${filterHref(params, { page: String(page) })}#ledger`;
+
   const sortHref = (column: SortColumn) =>
     `${filterHref(params, {
       sort: column,
@@ -515,9 +534,9 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                   {visibleCharges.length === 1 ? "entry" : "entries"}
                 </p>
               </div>
-              <div className="overflow-x-auto">
+              <div className="max-h-[calc(100vh-7rem)] overflow-auto">
                 <table className="w-full min-w-[46rem] text-sm">
-                  <thead className="border-b bg-muted/40 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <thead className="sticky top-0 z-10 border-b bg-muted text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <SortableTh
                         label="Charge"
@@ -570,7 +589,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {visibleCharges.map((charge) => {
+                    {pagedCharges.map((charge) => {
                       const tenantName = tenantLabel(charge);
                       return (
                         <FinanceChargeRow
@@ -624,6 +643,70 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                   </tbody>
                 </table>
               </div>
+              {visibleCharges.length > PAGE_SIZE && (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 px-4 py-2.5">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+                    {Math.min(currentPage * PAGE_SIZE, visibleCharges.length)} of{" "}
+                    {visibleCharges.length}
+                  </p>
+                  <nav className="flex items-center gap-1" aria-label="Pagination">
+                    {currentPage > 1 ? (
+                      <Link
+                        href={pageHref(currentPage - 1)}
+                        className="inline-flex h-8 items-center gap-1 rounded-lg border bg-background px-2.5 text-xs font-medium hover:bg-muted"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                        Prev
+                      </Link>
+                    ) : (
+                      <span className="inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs text-muted-foreground/50">
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                        Prev
+                      </span>
+                    )}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(
+                        (page) =>
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - currentPage) <= 1,
+                      )
+                      .map((page, index, pages) => (
+                        <span key={page} className="flex items-center gap-1">
+                          {index > 0 && page - pages[index - 1] > 1 && (
+                            <span className="px-1 text-xs text-muted-foreground">…</span>
+                          )}
+                          <Link
+                            href={pageHref(page)}
+                            aria-current={page === currentPage ? "page" : undefined}
+                            className={
+                              page === currentPage
+                                ? "inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground"
+                                : "inline-flex h-8 min-w-8 items-center justify-center rounded-lg border bg-background px-2 text-xs font-medium hover:bg-muted"
+                            }
+                          >
+                            {page}
+                          </Link>
+                        </span>
+                      ))}
+                    {currentPage < totalPages ? (
+                      <Link
+                        href={pageHref(currentPage + 1)}
+                        className="inline-flex h-8 items-center gap-1 rounded-lg border bg-background px-2.5 text-xs font-medium hover:bg-muted"
+                      >
+                        Next
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Link>
+                    ) : (
+                      <span className="inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs text-muted-foreground/50">
+                        Next
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </nav>
+                </div>
+              )}
             </Card>
           )}
         </div>
@@ -876,6 +959,9 @@ function filterHref(
     if (key === "error" || key === "success" || key === "message") continue;
     if (typeof value === "string" && value) search.set(key, value);
   }
+  // Any filter/sort change starts back on page 1; only an explicit page
+  // link keeps its own page number.
+  if (!("page" in update)) search.delete("page");
   for (const [key, value] of Object.entries(update)) {
     if (value === "all" && (key === "type" || key === "property" || key === "tenant" || key === "status")) {
       search.delete(key);

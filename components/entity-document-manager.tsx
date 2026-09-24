@@ -109,13 +109,9 @@ export function EntityDocumentManager({
    * modal or land on a page-level banner the modal itself covers up. Shows
    * the result right inside this component instead. */
   inline = false,
-  /** Overrides the default "tenancy documents always have a term" rule
-   * below — set for any other document type that also always has a
-   * real-world expiry (e.g. an ownership contract or miscellaneous file).
-   * Must agree with performDocumentUpload's matching server-side check in
-   * app/document-actions.ts, since the client-side `required` here is a UX
-   * nicety, not the actual enforcement. */
-  expiryRequired: expiryRequiredOverride,
+  /** Renders just the list and upload form — no outer bordered section or
+   * heading — for embedding inside a card that already titles it. */
+  bare = false,
 }: {
   documents: DocumentItem[];
   targetType: EntityDocumentTargetType;
@@ -127,17 +123,13 @@ export function EntityDocumentManager({
   compact?: boolean;
   readOnly?: boolean;
   inline?: boolean;
-  expiryRequired?: boolean;
+  bare?: boolean;
 }) {
   const fieldPrefix = `${targetType}-${targetId}`;
   // A single fixed category (the common case when embedded in a specific
   // document's own card) doesn't need a picker — it would just be a
   // one-option dropdown restating what the card title already says.
   const singleCategory = categories.length === 1 ? categories[0] : null;
-  // A tenancy document (agreement, municipality registration, ...) always
-  // has a real-world term — see performDocumentUpload's matching
-  // server-side check in app/document-actions.ts.
-  const expiryRequired = expiryRequiredOverride ?? targetType === "tenancy";
 
   const [uploadState, uploadFormAction] = useActionState<
     UploadDocumentsState,
@@ -228,15 +220,14 @@ export function EntityDocumentManager({
                 htmlFor={`${fieldPrefix}-expires-compact`}
                 className="text-xs"
               >
-                Expiry date{expiryRequired ? "" : " (optional)"}
+                Expiry date (optional)
               </Label>
               <Input
                 id={`${fieldPrefix}-expires-compact`}
                 type="date"
                 name="expiresAt"
                 min={dateInputValue()}
-                required={expiryRequired}
-                className="h-9 w-40 text-xs"
+                  className="h-9 w-40 text-xs"
               />
             </div>
             <SubmitButton
@@ -361,14 +352,13 @@ export function EntityDocumentManager({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={`${fieldPrefix}-expires`} className="text-xs">
-              Expiry date{expiryRequired ? "" : " (optional)"}
+              Expiry date (optional)
             </Label>
             <Input
               id={`${fieldPrefix}-expires`}
               type="date"
               name="expiresAt"
               min={dateInputValue()}
-              required={expiryRequired}
             />
           </div>
         </div>
@@ -397,6 +387,8 @@ export function EntityDocumentManager({
       )}
     </>
   );
+
+  if (bare) return <div className="space-y-4">{body}</div>;
 
   return (
     <section className="space-y-4 rounded-xl border bg-background p-4">

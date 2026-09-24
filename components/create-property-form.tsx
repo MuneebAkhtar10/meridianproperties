@@ -6,9 +6,11 @@ import Link from "next/link";
 import { createPropertyAction } from "@/app/admin-actions";
 import { PropertyLocationFields } from "@/components/property-location-fields";
 import { SubmitButton } from "@/components/submit-button";
+import { CloseModalOnSubmit } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { UploadFileInput } from "@/components/upload-file-input";
 import { OMAN_GOVERNORATES } from "@/lib/oman";
 import {
   isBuildingType,
@@ -29,7 +31,17 @@ export function CreatePropertyForm({
   propertyTypes,
   isOwner,
   isAdmin,
+  defaultOwnerId,
+  defaultOwnerName,
+  stayOnPeople = false,
 }: {
+  /** Rendered inside a modal on the People page — the action returns there
+   * (instead of the new property's page) and the modal closes once saved. */
+  stayOnPeople?: boolean;
+  /** Set when an admin arrives from an owner's card — the new property's
+   * unit is created already assigned to this owner. */
+  defaultOwnerId?: string;
+  defaultOwnerName?: string;
   propertyTypes: CreatePropertyTypeOption[];
   isOwner: boolean;
   isAdmin: boolean;
@@ -184,6 +196,57 @@ export function CreatePropertyForm({
               />
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {stayOnPeople && (
+        <>
+          <input type="hidden" name="back" value="/protected/users" />
+          <CloseModalOnSubmit />
+        </>
+      )}
+
+      {defaultOwnerId && (
+        <>
+          <input type="hidden" name="ownerId" value={defaultOwnerId} />
+          <p className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-xs">
+            Adding a property for <span className="font-medium">{defaultOwnerName}</span>.
+            {independent
+              ? " Its unit will be linked to them."
+              : " Assign them as owner when you add its units."}
+          </p>
+        </>
+      )}
+
+      {independent ? (
+        <div className="space-y-3 rounded-xl border border-border/60 bg-muted/20 p-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Key documents (optional)
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="docSpa">SPA (Sales &amp; Purchase Agreement)</Label>
+            <UploadFileInput id="docSpa" name="docSpa" multiple hint="" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="docMulkiya">Mulkiya (ownership)</Label>
+            <UploadFileInput id="docMulkiya" name="docMulkiya" multiple hint="" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="docCrooky">Crooky (apartment blueprint)</Label>
+            <UploadFileInput id="docCrooky" name="docCrooky" multiple hint="" />
+          </div>
+          {isOwner && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="docOwnerId">Your ID / Bataka</Label>
+                <UploadFileInput id="docOwnerId" name="docOwnerId" multiple hint="" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="docOwnerIdExpiry">ID expiry date (optional)</Label>
+                <Input id="docOwnerIdExpiry" name="docOwnerIdExpiry" type="date" />
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
 

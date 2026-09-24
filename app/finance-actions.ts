@@ -1229,6 +1229,7 @@ export const submitPaymentAction = async (formData: FormData) => {
         chargeId,
         title: charge.title,
         approved: true,
+        ownerId: charge.unit.ownerId,
       });
     }
 
@@ -1364,6 +1365,8 @@ export const reviewPaymentAction = async (
       chargeId: payment.chargeId,
       title: payment.charge.title,
       approved,
+      reason: approved ? undefined : reviewNotes,
+      ownerId: payment.charge.unit.ownerId,
     });
 
     if (chargeFullyPaid) {

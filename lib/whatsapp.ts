@@ -101,6 +101,10 @@ export async function sendWhatsApp(input: {
    * message still arrives when the recipient has not messaged us in 24h.
    * Leave unset for in-session bot replies. */
   preferTemplate?: boolean;
+  /** Body for the generic template if a free-form send is refused (outside
+   * the 24h window) — templates can't carry line breaks, so this is the
+   * flattened one-liner while `body` may be a multi-line message. */
+  fallbackBody?: string;
 }): Promise<void> {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -151,7 +155,7 @@ export async function sendWhatsApp(input: {
         await sendWhatsAppTemplate({
           to: input.to,
           templateName: genericTemplate,
-          bodyParams: [input.body],
+          bodyParams: [input.fallbackBody ?? input.body],
         });
         return;
       }
@@ -203,6 +207,96 @@ function isMissingTemplateLanguage(rawBody: string): boolean {
 function templateLanguages(preferred?: string): string[] {
   const configured = process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim();
   return [...new Set([preferred, configured, "en_US", "en"].filter(Boolean) as string[])];
+}
+
+/** Pieces of one alert, kept apart so each can go on its own line. */
+export type WhatsAppAlertParts = {
+  title: string;
+  message: string;
+  details: { label: string; value: string }[];
+  closing?: string;
+};
+
+/** A properly laid-out chat message — bold title, blank lines between the
+ * blocks, one detail per line. Real line breaks only survive in free-form
+ * text (Meta strips them from template variables), so this is what's sent
+ * inside an open 24-hour window and what the structured template mirrors. */
+export function formatWhatsAppText(parts: WhatsAppAlertParts): string {
+  const details = parts.details
+    .filter((d) => d.value.trim().length > 0)
+    .map((d) => `▪️ ${d.label}: *${d.value.trim()}*`);
+  return [
+    `*${parts.title}*`,
+    parts.message,
+    details.length ? details.join("\n") : "",
+    parts.closing ? `_${parts.closing}_` : "",
+  ]
+    .filter((block) => block.length > 0)
+    .join("\n\n");
+}
+
+/**
+ * Sends one account alert with the best layout the channel allows:
+ *
+ *  1. WHATSAPP_TEMPLATE_STRUCTURED set → a multi-variable approved template
+ *     whose BODY holds the line breaks and spacing (only the template text
+ *     itself may contain newlines, so each variable is one short line):
+ *
+ *       PropertyCare account notification
+ *
+ *       {{1}}          <- title
+ *
+ *       {{2}}          <- message
+ *
+ *       {{3}}          <- details, one line
+ *
+ *       {{4}}          <- closing note
+ *
+ *       This message relates to your existing tenancy, maintenance request,
+ *       or property account.
+ *
+ *  2. Otherwise the original single-variable generic template with the flat
+ *     one-line body (unchanged behaviour).
+ */
+export async function sendWhatsAppAlert(input: {
+  to: string;
+  parts: WhatsAppAlertParts;
+  /** The flat one-line body, used by the generic single-variable template. */
+  flatBody: string;
+}): Promise<void> {
+  const structured = process.env.WHATSAPP_TEMPLATE_STRUCTURED;
+  if (structured && process.env.WHATSAPP_ACCESS_TOKEN) {
+    const detailsLine = input.parts.details
+      .filter((d) => d.value.trim().length > 0)
+      .map((d) => `${d.label}: ${d.value.trim()}`)
+      .join(" | ");
+    await sendWhatsAppTemplate({
+      to: input.to,
+      templateName: structured,
+      bodyParams: [
+        input.parts.title,
+        input.parts.message,
+        detailsLine || "-",
+        input.parts.closing || "Thank you.",
+      ],
+    });
+    return;
+  }
+  // Default for alerts: send the multi-line message as plain text first —
+  // recipients inside the 24-hour window get the full layout — and fall
+  // back to the flat generic template if Meta refuses it. Set
+  // WHATSAPP_FREEFORM_FIRST=0 to go back to template-first. Only alerts
+  // come through here; the bot's own conversation replies call sendWhatsApp
+  // directly and are untouched.
+  if (process.env.WHATSAPP_FREEFORM_FIRST !== "0") {
+    await sendWhatsApp({
+      to: input.to,
+      body: formatWhatsAppText(input.parts),
+      fallbackBody: input.flatBody,
+    });
+    return;
+  }
+  await sendWhatsApp({ to: input.to, body: input.flatBody, preferTemplate: true });
 }
 
 export async function sendWhatsAppTemplate(input: {

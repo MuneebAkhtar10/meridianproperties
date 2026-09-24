@@ -468,6 +468,12 @@ export const EntityDocumentCategory: {
   vehicle_registration: 'vehicle_registration',
   car_insurance: 'car_insurance',
   parking_agreement: 'parking_agreement',
+  fire_certificate: 'fire_certificate',
+  pest_control_agreement: 'pest_control_agreement',
+  refuse_collection_agreement: 'refuse_collection_agreement',
+  oa_agreement: 'oa_agreement',
+  ministry_housing_agreement: 'ministry_housing_agreement',
+  sales_purchase_agreement: 'sales_purchase_agreement',
   other: 'other'
 };
 

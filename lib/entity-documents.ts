@@ -4,13 +4,13 @@ export const ENTITY_DOCUMENT_CATEGORY_LABEL: Record<
   EntityDocumentCategory,
   string
 > = {
-  tenancy_agreement: "Signed tenancy agreement",
+  tenancy_agreement: "Rent / tenancy agreement",
   municipality_registration: "Municipality registration",
   move_in_report: "Move-in / handover report",
   title_deed: "Title deed",
-  ownership_certificate: "Ownership certificate",
+  ownership_certificate: "Mulkiya (ownership)",
   ownership_contract: "Ownership contract",
-  cadastral_plan: "Cadastral plan / Krooki",
+  cadastral_plan: "Crooky / Krooki (blueprint)",
   building_permit: "Building permit / approval",
   completion_certificate: "Building completion certificate",
   noc: "No-objection certificate (NOC)",
@@ -24,6 +24,12 @@ export const ENTITY_DOCUMENT_CATEGORY_LABEL: Record<
   vehicle_registration: "Vehicle registration (Mulkiya)",
   car_insurance: "Car insurance",
   parking_agreement: "Parking slot agreement",
+  fire_certificate: "Fire certificate",
+  pest_control_agreement: "Pest control agreement",
+  refuse_collection_agreement: "Refuse collection agreement",
+  oa_agreement: "OA agreement (2-year)",
+  ministry_housing_agreement: "Ministry of Housing agreement",
+  sales_purchase_agreement: "Sales & Purchase Agreement (SPA)",
   other: "Other document",
 };
 
@@ -32,6 +38,9 @@ export const TENANCY_DOCUMENT_CATEGORIES = [
   EntityDocumentCategory.municipality_registration,
   EntityDocumentCategory.move_in_report,
   EntityDocumentCategory.parking_agreement,
+  EntityDocumentCategory.pest_control_agreement,
+  EntityDocumentCategory.refuse_collection_agreement,
+  EntityDocumentCategory.noc,
   EntityDocumentCategory.other,
 ] as const;
 
@@ -43,6 +52,14 @@ export const PROPERTY_DOCUMENT_CATEGORIES = [
   EntityDocumentCategory.completion_certificate,
   EntityDocumentCategory.noc,
   EntityDocumentCategory.property_insurance,
+  EntityDocumentCategory.parking_agreement,
+  EntityDocumentCategory.tenancy_agreement,
+  EntityDocumentCategory.fire_certificate,
+  EntityDocumentCategory.pest_control_agreement,
+  EntityDocumentCategory.refuse_collection_agreement,
+  EntityDocumentCategory.oa_agreement,
+  EntityDocumentCategory.ministry_housing_agreement,
+  EntityDocumentCategory.sales_purchase_agreement,
   EntityDocumentCategory.other,
 ] as const;
 
@@ -63,6 +80,13 @@ export const PERSONAL_DOCUMENT_CATEGORIES = [
 export const UNIT_DOCUMENT_CATEGORIES = [
   EntityDocumentCategory.ownership_contract,
   EntityDocumentCategory.ownership_certificate,
+  EntityDocumentCategory.cadastral_plan,
+  EntityDocumentCategory.oa_agreement,
+  EntityDocumentCategory.ministry_housing_agreement,
+  EntityDocumentCategory.sales_purchase_agreement,
+  EntityDocumentCategory.parking_agreement,
+  EntityDocumentCategory.tenancy_agreement,
+  EntityDocumentCategory.noc,
   EntityDocumentCategory.other,
 ] as const;
 

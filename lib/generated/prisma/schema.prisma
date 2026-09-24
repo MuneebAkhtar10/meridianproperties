@@ -152,6 +152,16 @@ enum EntityDocumentCategory {
   /// this is the internal document assigning the slot and registering the
   /// tenant's car against their unit.
   parking_agreement
+  /// Building-level safety certificate — renewed on a fixed cycle.
+  fire_certificate
+  /// Pest control / refuse collection contracts — building-level, or
+  /// tenant-level where the tenant holds their own.
+  pest_control_agreement
+  refuse_collection_agreement
+  /// Owners' association agreement, signed every 2 years.
+  oa_agreement
+  ministry_housing_agreement
+  sales_purchase_agreement
   other
 }
 

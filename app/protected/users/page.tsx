@@ -19,6 +19,8 @@ import {
 } from "@/app/admin-actions";
 import { EmptyState } from "@/components/empty-state";
 import { EntityDocumentManager } from "@/components/entity-document-manager";
+import { AccountSection } from "@/components/account-section";
+import { OwnerPortfolio, type OwnerPortfolioProperty } from "@/components/owner-portfolio";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
@@ -113,7 +115,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
     ? { AND: andConditions }
     : {};
 
-  const [users, emptyUnits, inHouseWorkers, roleCounts] = await Promise.all([
+  const [users, emptyUnits, inHouseWorkers, roleCounts, propertyTypes] = await Promise.all([
     prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -141,7 +143,44 @@ export default async function PeoplePage({ searchParams }: PageProps) {
     // Unfiltered totals for the summary tiles — these always describe the
     // whole org, independent of whatever search/role filter is applied below.
     prisma.user.groupBy({ by: ["userType"], _count: true }),
+    prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
   ]);
+
+  // Owners' linked properties + every document attached to them — the same
+  // property/unit document rows the property page manages.
+  const ownerIds = users.filter((u) => u.userType === UserType.owner).map((u) => u.id);
+  const ownedUnits = ownerIds.length
+    ? await prisma.unit.findMany({
+        where: { ownerId: { in: ownerIds } },
+        orderBy: [{ property: { name: "asc" } }, { label: "asc" }],
+        include: {
+          documents: { orderBy: { createdAt: "desc" } },
+          property: {
+            include: {
+              propertyType: { select: { unitPrefix: true } },
+              documents: { orderBy: { createdAt: "desc" } },
+            },
+          },
+        },
+      })
+    : [];
+  const portfolioByOwner = new Map<string, OwnerPortfolioProperty[]>();
+  for (const unit of ownedUnits) {
+    const list = portfolioByOwner.get(unit.ownerId!) ?? [];
+    let entry = list.find((p) => p.id === unit.propertyId);
+    if (!entry) {
+      entry = {
+        id: unit.propertyId,
+        name: unit.property.name,
+        propertyDocuments: unit.property.documents,
+        units: [],
+        unitLabelPrefix: unit.property.propertyType.unitPrefix,
+      };
+      list.push(entry);
+    }
+    entry.units.push({ id: unit.id, label: unit.label, documents: unit.documents });
+    portfolioByOwner.set(unit.ownerId!, list);
+  }
 
   const totalPeople = roleCounts.reduce((sum, r) => sum + r._count, 0);
   const countByType = (type: UserType) =>
@@ -274,7 +313,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
               description="Nobody matches these filters. Try clearing the search."
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 lg:max-h-[calc(100vh-15rem)] lg:overflow-y-auto lg:pr-2">
               {users.map((user) => {
                 const isSelf = user.id === admin.id;
                 const name = [user.firstName, user.lastName]
@@ -385,12 +424,13 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                         )}
 
                       <ManageToggle label="Manage account">
-                        <div className="space-y-2">
-                          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            <IdCard className="h-3.5 w-3.5" />
-                            Oman identity & contact record
-                          </p>
-                        <form className="space-y-3 rounded-lg border border-border/60 bg-background p-3">
+                        <AccountSection
+                          icon={<IdCard />}
+                          tone="violet"
+                          title="Oman identity & contact record"
+                          subtitle="Contact details, Civil ID and mailing address"
+                        >
+                        <form className="space-y-3">
                           <input type="hidden" name="userId" value={user.id} />
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-1">
@@ -539,35 +579,40 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                             Save profile
                           </SubmitButton>
                         </form>
-                        </div>
+                        </AccountSection>
 
-                        <div className="space-y-2">
-                          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            <FileText className="h-3.5 w-3.5" />
-                            Identity documents
-                            <span className="font-normal normal-case text-muted-foreground/70">
-                              ({user.documents.length})
-                            </span>
-                          </p>
-                          <div className="rounded-lg border border-border/60 bg-background p-3">
-                            <EntityDocumentManager
-                              documents={user.documents}
-                              targetType="user"
-                              targetId={user.id}
-                              back="/protected/users"
-                              title="Personal documents"
-                              description="Civil ID, passport, resident card, visa and employment or sponsor documents."
-                            />
-                          </div>
-                        </div>
+                        {user.userType === UserType.owner && (
+                          <OwnerPortfolio
+                            ownerId={user.id}
+                            ownerName={name || user.email}
+                            propertyTypes={propertyTypes}
+                            properties={portfolioByOwner.get(user.id) ?? []}
+                          />
+                        )}
+
+                        <AccountSection
+                          icon={<FileText />}
+                          tone="sky"
+                          title="Identity documents"
+                          subtitle={`${user.documents.length} ${user.documents.length === 1 ? "document" : "documents"} · Civil ID, passport, resident card, visa, employment letter`}
+                        >
+                          <EntityDocumentManager
+                            bare
+                            documents={user.documents}
+                            targetType="user"
+                            targetId={user.id}
+                            back="/protected/users"
+                          />
+                        </AccountSection>
 
                         {!isStaffAdmin(user.userType) && (
-                          <div className="space-y-2">
-                            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                              <KeyRound className="h-3.5 w-3.5" />
-                              Reset password
-                            </p>
-                            <form className="space-y-3 rounded-lg border border-border/60 bg-background p-3">
+                          <AccountSection
+                            icon={<KeyRound />}
+                            tone="amber"
+                            title="Reset password"
+                            subtitle="Set a temporary password and share it securely"
+                          >
+                            <form className="space-y-3">
                               <input
                                 type="hidden"
                                 name="userId"
@@ -605,11 +650,17 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                                 Set temporary password
                               </SubmitButton>
                             </form>
-                          </div>
+                          </AccountSection>
                         )}
 
                         {!isSelf && (
-                          <div className="flex flex-wrap items-end gap-3 border-t pt-4">
+                          <AccountSection
+                            icon={<UserCog />}
+                            tone="slate"
+                            title="Account settings"
+                            subtitle="Change this person's role or remove the account"
+                          >
+                          <div className="flex flex-wrap items-end gap-3">
                             <form className="flex items-end gap-2">
                               <input
                                 type="hidden"
@@ -654,6 +705,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                               </SubmitButton>
                             </form>
                           </div>
+                          </AccountSection>
                         )}
                       </ManageToggle>
                     </CardContent>
@@ -667,7 +719,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         {/* ── Create a user ────────────────────────────────────────────────── */}
         <Card
           id="add-person"
-          className="h-fit overflow-hidden border-border/60 shadow-sm lg:sticky lg:top-24"
+          className="h-fit overflow-hidden border-border/60 shadow-sm lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
         >
           <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-white">

@@ -23,7 +23,7 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   oman_net: "OmanNet / card receipt",
   mobile_payment: "Mobile payment",
   direct_debit: "Direct debit",
-  cheque: "Cheque",
+  cheque: "Cheque (incl. post-dated)",
   other: "Other",
 };
 

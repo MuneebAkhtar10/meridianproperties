@@ -143,22 +143,6 @@ async function performDocumentUpload(
     };
   }
 
-  // A tenancy document, an ownership contract, and miscellaneous "other"
-  // files all have a real-world term — unlike leftover optional types,
-  // their expiry isn't optional. Must agree with EntityDocumentManager's
-  // matching client-side `expiryRequired`.
-  const expiryRequired =
-    target.type === "tenancy" ||
-    category === EntityDocumentCategory.ownership_contract ||
-    category === EntityDocumentCategory.other;
-  if (expiryRequired && !expiresAt) {
-    return {
-      back,
-      ok: false,
-      message: "Enter an expiry date for this document.",
-    };
-  }
-
   // The redirect stays outside the try on purpose. `redirect()` reports itself by
   // throwing, so a redirect called inside this try would be caught by its own
   // catch and reported to the user as the error "NEXT_REDIRECT" — on an upload

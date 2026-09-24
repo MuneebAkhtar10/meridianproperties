@@ -1,6 +1,7 @@
 import "server-only";
 
 import { after } from "next/server";
+import { format } from "date-fns";
 
 import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
@@ -9,13 +10,25 @@ import {
   renderNotificationEmail,
   renderInvoiceEmail,
 } from "@/lib/email";
-import { sendWhatsApp, sendWhatsAppTemplate } from "@/lib/whatsapp";
+import { sendWhatsAppAlert, sendWhatsAppTemplate } from "@/lib/whatsapp";
 import {
   formatOwnerWhatsApp,
   ownerChargeIssuedCopy,
   ownerChargeReminderCopy,
   ownerServiceChargeCopy,
 } from "@/lib/owner-alerts";
+import {
+  ownerChargePaidCopy,
+  ownerPaymentProofCopy,
+  tenantChargeIssuedCopy,
+  tenantPaymentApprovedCopy,
+  tenantPaymentRejectedCopy,
+  tenantRentReminderCopy,
+  workerTaskAssignedCopy,
+  workerTaskReassignedCopy,
+} from "@/lib/tenant-alerts";
+import { formatMoney, PAYMENT_METHOD_LABEL } from "@/lib/finance";
+import { formatUnitLabel } from "@/lib/property-types";
 import { syncWorkerWhatsappSession } from "@/lib/whatsapp-session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
@@ -132,9 +145,36 @@ async function dispatchExternalChannels(
           );
         }
       } else if (user.phone) {
-        const body = row.whatsappBody || row.message || row.title;
+        // Anything without its own tailored copy still goes out as one tidy
+        // labelled line - "Title: message | Label: value | ..." - rather than
+        // a bare sentence, so tenant, owner and worker messages all read the
+        // same professional way.
+        const body =
+          row.whatsappBody ||
+          formatOwnerWhatsApp({
+            heading: row.title,
+            intro: row.message ? `${row.title}: ${row.message}` : row.title,
+            lines: row.details,
+          });
 
-        tasks.push(sendWhatsApp({ to: phone, body, preferTemplate: true }));
+        // A trailing segment that isn't a "Label: value" pair is the closing
+        // note; everything else is already in the row's own fields.
+        const segments = body.split(" | ");
+        const last = segments.length > 1 ? segments[segments.length - 1] : "";
+        const closing = last && !/^[^:]{1,40}: /.test(last) ? last : undefined;
+
+        tasks.push(
+          sendWhatsAppAlert({
+            to: user.phone,
+            flatBody: body,
+            parts: {
+              title: row.title,
+              message: row.message,
+              details: row.details ?? [],
+              closing,
+            },
+          }),
+        );
       }
 
       return tasks;
@@ -543,6 +583,8 @@ export async function notifyWorkerAssigned(
       : `You have been assigned to work on a maintenance request: "${request.title}".`) +
     ` Just let me know here once you're heading over, or open My Tasks for full details.`;
 
+  const workerCopy = workerTaskAssignedCopy({ jobTitle: request.title, place });
+
   const workerName =
     [worker?.firstName, worker?.lastName].filter(Boolean).join(" ") ||
     worker?.email;
@@ -578,14 +620,12 @@ export async function notifyWorkerAssigned(
       },
       {
         userId: workerId,
-        title: "New Task Assigned",
+        title: workerCopy.title,
         message: workerMessage,
         relatedId: request.id,
         href: "/protected/tasks",
-        details: [
-          { label: "Job", value: request.title },
-          ...(place ? [{ label: "Location", value: place }] : []),
-        ],
+        details: workerCopy.details.filter((d) => d.value),
+        whatsappBody: workerCopy.whatsappBody,
       },
     ],
   });
@@ -607,12 +647,15 @@ export async function notifyWorkerUnassigned(request: {
   title: string;
   workerId: string;
 }): Promise<void> {
+  const copy = workerTaskReassignedCopy({ jobTitle: request.title });
   await createNotification({
     data: {
       userId: request.workerId,
-      title: "Reassigned",
-      message: `"${request.title}" has been reassigned to someone else.`,
+      title: copy.title,
+      message: copy.message,
       relatedId: request.id,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
     },
   });
 
@@ -773,17 +816,64 @@ export async function notifyAdminsPaymentProof(input: {
   });
 }
 
+/** Property/unit/tenant/kind for a charge — every payment message names
+ * where it is about, so none of them read as a bare one-liner. */
+async function chargeContext(chargeId: string) {
+  const charge = await prisma.charge.findUnique({
+    where: { id: chargeId },
+    select: {
+      title: true,
+      amount: true,
+      dueDate: true,
+      type: true,
+      tenant: { select: { firstName: true, lastName: true, email: true } },
+      unit: {
+        select: {
+          label: true,
+          property: {
+            select: {
+              name: true,
+              propertyType: { select: { unitPrefix: true, hasFloors: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!charge) return null;
+  return {
+    charge,
+    propertyName: charge.unit.property.name,
+    unitLabel: formatUnitLabel(charge.unit.property.propertyType, charge.unit.label),
+    tenantName:
+      [charge.tenant.firstName, charge.tenant.lastName].filter(Boolean).join(" ") ||
+      charge.tenant.email,
+  };
+}
+
 export async function notifyTenantCharge(input: {
   tenantId: string;
   chargeId: string;
   title: string;
 }): Promise<void> {
+  const ctx = await chargeContext(input.chargeId);
+  const copy = ctx
+    ? tenantChargeIssuedCopy({
+        propertyName: ctx.propertyName,
+        unitLabel: ctx.unitLabel,
+        chargeTitle: input.title,
+        amount: formatMoney(ctx.charge.amount),
+        dueDate: format(ctx.charge.dueDate, "d MMM yyyy"),
+      })
+    : null;
+
   await createNotification({
     data: {
       userId: input.tenantId,
-      title: "New Amount Due",
-      message: `A new charge has been added: “${input.title}”.`,
+      title: copy?.title ?? "New Amount Due",
+      message: copy?.message ?? `A new charge has been added: “${input.title}”.`,
       href: `/protected/finances/${input.chargeId}`,
+      ...(copy && { details: copy.details, whatsappBody: copy.whatsappBody }),
     },
   });
 
@@ -884,6 +974,60 @@ export async function notifyOwnerChargeIssued(input: {
 }
 
 /** Upcoming / due / overdue rent or bill — owners only. */
+/** Plain rent reminder to the tenant themselves — sent on the 1st and 15th
+ * while a month's rent is still unpaid (see lib/tenant-rent-reminders.ts).
+ * Goes out in-app, by email and by WhatsApp like every other notification. */
+export async function notifyTenantRentReminder(input: {
+  tenantId: string;
+  chargeId: string;
+  monthLabel: string;
+  amount: string;
+  overdue: boolean;
+  propertyName: string;
+  unitLabel: string;
+}): Promise<void> {
+  const copy = tenantRentReminderCopy(input);
+  await createNotification({
+    data: {
+      userId: input.tenantId,
+      title: copy.title,
+      message: copy.message,
+      href: `/protected/finances/${input.chargeId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
+    },
+  });
+  await publish({ kind: "notification", userIds: [input.tenantId] });
+}
+
+/** A post-dated cheque's date has arrived and it's still uncleared — tells
+ * every admin to deposit it / chase it. See lib/cheque-date-reminders.ts. */
+export async function notifyAdminsChequeDue(input: {
+  chargeId: string;
+  chequeNumber: string | null;
+  amount: string;
+  tenantName: string;
+  unitLabel: string;
+  propertyName: string;
+  chequeDate: string;
+}): Promise<void> {
+  const admins = await prisma.user.findMany({
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
+    select: { id: true },
+  });
+  if (admins.length === 0) return;
+
+  await createNotifications({
+    data: admins.map((admin) => ({
+      userId: admin.id,
+      title: "Cheque due today",
+      message: `Cheque${input.chequeNumber ? ` no. ${input.chequeNumber}` : ""} of ${input.amount} from ${input.tenantName} (${input.unitLabel}, ${input.propertyName}) is dated ${input.chequeDate}. Deposit it and mark the outcome.`,
+      href: "/protected/finances/cheque-reminders",
+    })),
+  });
+  await publish({ kind: "notification", userIds: admins.map((a) => a.id) });
+}
+
 export async function notifyOwnerChargeReminder(input: {
   ownerId: string;
   chargeId: string;
@@ -1080,15 +1224,51 @@ export async function notifyPaymentReviewed(input: {
   chargeId: string;
   title: string;
   approved: boolean;
+  /** Admin's note when rejecting — shown to the tenant as the reason. */
+  reason?: string | null;
+  /** The property's owner. When the tenant IS the owner (same account) the
+   * tenant-directed wording is skipped — they get the owner-side notice
+   * instead — so nobody is ever told "your payment" about a payment that
+   * isn't theirs. */
+  ownerId?: string | null;
 }): Promise<void> {
+  if (input.ownerId && input.ownerId === input.tenantId) return;
+
+  const ctx = await chargeContext(input.chargeId);
+  const place = ctx
+    ? { propertyName: ctx.propertyName, unitLabel: ctx.unitLabel }
+    : { propertyName: "your property", unitLabel: "your unit" };
+
+  let copy;
+  if (input.approved) {
+    const payment = await prisma.payment.findFirst({
+      where: { chargeId: input.chargeId, status: "approved" },
+      orderBy: { reviewedAt: "desc" },
+      select: { amount: true, method: true, paidAt: true },
+    });
+    copy = tenantPaymentApprovedCopy({
+      ...place,
+      chargeTitle: input.title,
+      amount: formatMoney(payment?.amount ?? ctx?.charge.amount ?? 0),
+      method: payment ? PAYMENT_METHOD_LABEL[payment.method] : undefined,
+      paidOn: payment ? format(payment.paidAt, "d MMM yyyy") : undefined,
+    });
+  } else {
+    copy = tenantPaymentRejectedCopy({
+      ...place,
+      chargeTitle: input.title,
+      reason: input.reason ?? undefined,
+    });
+  }
+
   await createNotification({
     data: {
       userId: input.tenantId,
-      title: input.approved ? "Payment Approved" : "Payment Needs Attention",
-      message: input.approved
-        ? `Your payment for “${input.title}” was approved.`
-        : `Your payment proof for “${input.title}” was not approved. You can review the note and submit it again.`,
+      title: copy.title,
+      message: copy.message,
       href: `/protected/finances/${input.chargeId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
     },
   });
 
@@ -1107,17 +1287,24 @@ export async function notifyOwnerChargePaid(input: {
 }): Promise<void> {
   if (!input.ownerId) return;
 
+  const ctx = await chargeContext(input.chargeId);
+  const copy = ownerChargePaidCopy({
+    propertyName: ctx?.propertyName ?? "your property",
+    unitLabel: ctx?.unitLabel ?? "your unit",
+    kind: ctx?.charge.type === "rent" ? "rent" : "bill",
+    tenantName: ctx?.tenantName ?? input.tenantEmail,
+    chargeTitle: input.title,
+    amount: input.amount,
+  });
+
   await createNotification({
     data: {
       userId: input.ownerId,
-      title: "Charge Paid",
-      message: `${input.tenantEmail} paid ${input.amount} for “${input.title}”.`,
+      title: copy.title,
+      message: copy.message,
       href: `/protected/finances/${input.chargeId}`,
-      details: [
-        { label: "Tenant", value: input.tenantEmail },
-        { label: "Charge", value: input.title },
-        { label: "Amount", value: input.amount },
-      ],
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
     },
   });
 
@@ -1134,16 +1321,22 @@ export async function notifyOwnerPaymentProof(input: {
 }): Promise<void> {
   if (!input.ownerId) return;
 
+  const ctx = await chargeContext(input.chargeId);
+  const copy = ownerPaymentProofCopy({
+    propertyName: ctx?.propertyName ?? "your property",
+    unitLabel: ctx?.unitLabel ?? "your unit",
+    tenantName: ctx?.tenantName ?? input.tenantEmail,
+    chargeTitle: input.title,
+  });
+
   await createNotification({
     data: {
       userId: input.ownerId,
-      title: "Payment Proof Submitted",
-      message: `${input.tenantEmail} submitted proof for “${input.title}”.`,
+      title: copy.title,
+      message: copy.message,
       href: `/protected/finances/${input.chargeId}`,
-      details: [
-        { label: "Tenant", value: input.tenantEmail },
-        { label: "Charge", value: input.title },
-      ],
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
     },
   });
 
