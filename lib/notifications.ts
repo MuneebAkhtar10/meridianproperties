@@ -31,6 +31,7 @@ import {
   tenantWelcomeCopy,
   tenantPaymentApprovedCopy,
   tenantPaymentRejectedCopy,
+  tenantBillReminderCopy,
   tenantRentReminderCopy,
   workerTaskAssignedCopy,
   workerTaskReassignedCopy,
@@ -1181,9 +1182,9 @@ export async function notifyOwnerChargeIssued(input: {
 }
 
 /** Upcoming / due / overdue rent or bill — owners only. */
-/** Plain rent reminder to the tenant themselves — sent on the 1st and 15th
- * while a month's rent is still unpaid (see lib/tenant-rent-reminders.ts).
- * Goes out in-app, by email and by WhatsApp like every other notification. */
+/** Plain rent reminder to the tenant themselves, relative to the charge's
+ * own due date (see lib/tenant-bill-reminders.ts). Goes out in-app, by
+ * email and by WhatsApp like every other notification. */
 export async function notifyTenantRentReminder(input: {
   tenantId: string;
   chargeId: string;
@@ -1194,6 +1195,36 @@ export async function notifyTenantRentReminder(input: {
   unitLabel: string;
 }): Promise<void> {
   const copy = tenantRentReminderCopy(input);
+  await createNotification({
+    data: {
+      userId: input.tenantId,
+      title: copy.title,
+      message: copy.message,
+      href: `/protected/finances/${input.chargeId}`,
+      details: copy.details,
+      whatsappBody: copy.whatsappBody,
+    },
+  });
+  await publish({ kind: "notification", userIds: [input.tenantId] });
+}
+
+/** Non-rent bill reminder to the tenant themselves (electricity, water,
+ * maintenance fee, ...), relative to the charge's own due date — see
+ * lib/tenant-bill-reminders.ts. The "bill was generated" alert is separate
+ * and already fires synchronously at creation time via notifyTenantInvoice;
+ * this only covers the upcoming/due/overdue reminder cadence. */
+export async function notifyTenantBillReminder(input: {
+  tenantId: string;
+  chargeId: string;
+  chargeTitle: string;
+  chargeTypeLabel: string;
+  amount: string;
+  dueDateLabel: string;
+  stage: "upcoming" | "due" | "overdue";
+  propertyName: string;
+  unitLabel: string;
+}): Promise<void> {
+  const copy = tenantBillReminderCopy(input);
   await createNotification({
     data: {
       userId: input.tenantId,

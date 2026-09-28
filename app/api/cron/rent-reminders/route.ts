@@ -4,9 +4,10 @@ import { runChequeDateReminders } from "@/lib/cheque-date-reminders";
 import { runTenantRentReminders } from "@/lib/tenant-rent-reminders";
 
 /**
- * Daily: tenant rent reminders (1st and 15th only, while unpaid) and
- * post-dated cheque reminders (on the cheque's own date). Same CRON_SECRET
- * protection as the other reminder jobs.
+ * Daily: tenant reminders for every open charge (rent and bills alike),
+ * timed off each charge's own due date, plus post-dated cheque reminders
+ * (on the cheque's own date). Same CRON_SECRET protection as the other
+ * reminder jobs.
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;

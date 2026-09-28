@@ -111,6 +111,49 @@ export function tenantRentReminderCopy(
   );
 }
 
+/** Same shape as tenantRentReminderCopy, generalized to any bill type
+ * (electricity, water, maintenance fee, ...) for the due-date-relative
+ * cron in lib/tenant-bill-reminders.ts. `stage` picks the wording —
+ * "upcoming"/"upcoming1" haven't come due yet, "due" is due today,
+ * "overdue" already passed. */
+export function tenantBillReminderCopy(
+  input: Place & {
+    chargeTitle: string;
+    chargeTypeLabel: string;
+    amount: string;
+    dueDateLabel: string;
+    stage: "upcoming" | "due" | "overdue";
+    daysOverdue?: number;
+  },
+): AlertCopy {
+  const title =
+    input.stage === "overdue"
+      ? `${input.chargeTypeLabel} reminder - overdue`
+      : input.stage === "due"
+        ? `${input.chargeTypeLabel} reminder - due today`
+        : `${input.chargeTypeLabel} reminder`;
+
+  const message =
+    input.stage === "overdue"
+      ? `Your ${input.chargeTitle} (${input.amount}) for ${input.unitLabel} at ${input.propertyName} was due ${input.dueDateLabel} and is still pending.`
+      : input.stage === "due"
+        ? `Your ${input.chargeTitle} (${input.amount}) for ${input.unitLabel} at ${input.propertyName} is due today.`
+        : `Your ${input.chargeTitle} (${input.amount}) for ${input.unitLabel} at ${input.propertyName} is due ${input.dueDateLabel}.`;
+
+  return build(
+    title,
+    message,
+    [
+      { label: "Property", value: input.propertyName },
+      { label: "Unit", value: input.unitLabel },
+      { label: "Bill", value: input.chargeTitle },
+      { label: "Amount due", value: input.amount },
+      { label: "Due date", value: input.dueDateLabel },
+    ],
+    "Please arrange payment as soon as possible. If you have already paid, please ignore this message.",
+  );
+}
+
 export function tenantWelcomeCopy(
   input: Place & {
     moveInDate: string;
