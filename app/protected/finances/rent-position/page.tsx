@@ -23,6 +23,7 @@ import {
 } from "@/lib/rent-position";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -49,7 +50,8 @@ const BUCKET_BADGE: Record<string, string> = {
  * overdue." Mirrors the OA side's Collection Position dashboard.
  */
 export default async function RentPositionPage({ searchParams }: PageProps) {
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
+  const canDownloadPdf = (await adminAccess(admin)).can("download_pdf");
 
   const params = (await searchParams) as unknown as {
     bucket?: string;
@@ -88,6 +90,7 @@ export default async function RentPositionPage({ searchParams }: PageProps) {
         description="Every occupied unit's rent status, portfolio-wide."
         back={{ href: "/protected/finances", label: "Rent & Bills" }}
       >
+        {canDownloadPdf && (
         <ButtonLink
           href={`/api/finances/rent-position/pdf${propertyFilter !== "all" ? `?property=${propertyFilter}` : ""}`}
           target="_blank"
@@ -96,6 +99,7 @@ export default async function RentPositionPage({ searchParams }: PageProps) {
           <Receipt className="h-4 w-4" />
           Download PDF
         </ButtonLink>
+        )}
       </PageHeader>
 
       <form className="flex flex-wrap items-end gap-2">

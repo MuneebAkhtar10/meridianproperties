@@ -14,6 +14,8 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { getAgreementExpiryAlerts } from "@/lib/agreement-expiry";
+import type { AdminModuleKey } from "@/lib/admin-modules";
+import { adminAccess } from "@/lib/permissions";
 import { requireRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 
@@ -24,6 +26,9 @@ type ReportCard = {
   icon: React.ReactNode;
   iconBg: string;
   badge?: string;
+  /** The module this report belongs to — a card is hidden if the viewing
+   * admin wasn't granted it, same as the module's own nav entry. */
+  module: AdminModuleKey;
 };
 
 /**
@@ -33,7 +38,8 @@ type ReportCard = {
  * indexes them; each card still owns its own data and filters.
  */
 export default async function ReportsPage() {
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
+  const { can } = await adminAccess(admin);
 
   const expiryAlerts = await getAgreementExpiryAlerts();
   const urgentExpiryCount = expiryAlerts.filter(
@@ -43,6 +49,7 @@ export default async function ReportsPage() {
   const cards: ReportCard[] = [
     {
       href: "/protected/reports/agreement-expiry",
+      module: "reports",
       title: "Agreement Expiry",
       description:
         "Tenant, building and supplier agreements approaching or past expiry.",
@@ -52,6 +59,7 @@ export default async function ReportsPage() {
     },
     {
       href: "/protected/tenancies/report",
+      module: "tenancies",
       title: "Tenant Report",
       description: "Every active tenancy for one property, with rent terms.",
       icon: <Users className="h-5 w-5" />,
@@ -59,6 +67,7 @@ export default async function ReportsPage() {
     },
     {
       href: "/protected/tenancies/agreements",
+      module: "tenancies",
       title: "Agreement List",
       description: "Every tenant agreement across the portfolio, active and ended.",
       icon: <ScrollText className="h-5 w-5" />,
@@ -66,6 +75,7 @@ export default async function ReportsPage() {
     },
     {
       href: "/protected/finances/rent-position",
+      module: "finances",
       title: "Rent Position",
       description: "Portfolio-wide paid / due / overdue rent, per unit.",
       icon: <Banknote className="h-5 w-5" />,
@@ -73,6 +83,7 @@ export default async function ReportsPage() {
     },
     {
       href: "/protected/finances/cheque-reminders",
+      module: "finances",
       title: "Cheque Reminders",
       description: "Cheques due soon, awaiting clearance, or bounced.",
       icon: <FileClock className="h-5 w-5" />,
@@ -80,6 +91,7 @@ export default async function ReportsPage() {
     },
     {
       href: "/protected/service-charge-ledger/collection-position",
+      module: "service_charges",
       title: "OA Collection Position",
       description: "Service charge collection across every owners' association.",
       icon: <Landmark className="h-5 w-5" />,
@@ -87,6 +99,7 @@ export default async function ReportsPage() {
     },
     {
       href: "/protected/service-charge-ledger",
+      module: "service_charges",
       title: "Service Charge Ledger",
       description: "Every unit's service charge balance, portfolio-wide.",
       icon: <ClipboardList className="h-5 w-5" />,
@@ -94,12 +107,15 @@ export default async function ReportsPage() {
     },
     {
       href: "/protected/expenses?cashflow=1",
+      module: "expenses",
       title: "Cash Flow Statement",
       description: "Actual revenue and expenditure for one property over a date range.",
       icon: <TrendingUp className="h-5 w-5" />,
       iconBg: "bg-cyan-50 text-cyan-600",
     },
   ];
+
+  const visibleCards = cards.filter((card) => can(card.module));
 
   return (
     <div className="w-full space-y-6 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
@@ -109,7 +125,7 @@ export default async function ReportsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map((card) => (
+        {visibleCards.map((card) => (
           <Link key={card.href} href={card.href} className="block">
             <Card className="h-full border-border/60 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
               <div className="flex h-full items-start gap-3 p-4">

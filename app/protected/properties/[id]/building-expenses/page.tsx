@@ -9,6 +9,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { formatMoney } from "@/lib/finance";
 import { getBuildingExpensesData } from "@/lib/building-expenses";
 import { requireRole } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -19,7 +20,8 @@ import { PageProps } from "@/types/page";
  * an expense, exactly as the spec asks.
  */
 export default async function BuildingExpensesPage({ params }: PageProps) {
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
+  const canDownloadPdf = (await adminAccess(admin)).can("download_pdf");
 
   const { id: propertyId } = (await params) as { id: string };
   const data = await getBuildingExpensesData(propertyId);
@@ -39,6 +41,7 @@ export default async function BuildingExpensesPage({ params }: PageProps) {
           label: "Back to property",
         }}
       >
+        {canDownloadPdf && (
         <ButtonLink
           href={`/api/properties/${propertyId}/building-expenses/pdf`}
           target="_blank"
@@ -47,6 +50,7 @@ export default async function BuildingExpensesPage({ params }: PageProps) {
           <Download className="h-4 w-4" />
           Download PDF
         </ButtonLink>
+        )}
       </PageHeader>
 
       {data.groups.length === 0 ? (

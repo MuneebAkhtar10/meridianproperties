@@ -10,7 +10,10 @@ import {
   type PropertyManagementCategory,
 } from "@/lib/property-types";
 
-const CATEGORIES: PropertyManagementCategory[] = ["oa", "bm", "callout", "independent"];
+// "callout" (one-off maintenance only, no rent/bills/common areas) is kept
+// in lib/property-types.ts for backward compatibility with any existing
+// data, but is no longer offered when creating or editing a property type.
+const CATEGORIES: PropertyManagementCategory[] = ["oa", "bm", "independent"];
 
 /**
  * Every property type is exactly one of four management categories — each

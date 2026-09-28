@@ -55,6 +55,63 @@ export const ADMIN_FEATURES: {
   { key: "prop_cash_flow", label: "Cash Flow", description: "Cash flow statement" },
 ];
 
+/** Which categories of person an admin is allowed to see at all — in the
+ * People list, and in every dropdown across the app that picks a tenant,
+ * an owner or a worker (assigning a request, starting a tenancy, creating a
+ * property, adding a person, ...). An admin without a category unchecked
+ * here simply cannot find that kind of person anywhere; it isn't just a
+ * hidden tab. Super admins always see everyone. */
+export const ADMIN_PEOPLE_VISIBILITY: {
+  key: AdminModuleKey;
+  label: string;
+  description: string;
+}[] = [
+  { key: "see_workers_in_house", label: "In-house workers", description: "See and assign the company's own staff" },
+  { key: "see_workers_third_party", label: "3rd-party vendors", description: "See and assign outside contractors" },
+  { key: "see_owners", label: "Property owners", description: "See and pick property owners" },
+  { key: "see_tenants", label: "Tenants", description: "See and pick tenants" },
+];
+
+/** Whether this admin can download a report as a file at all — separate
+ * from being able to open/view the report itself (a module grant above).
+ * Applies everywhere a "Download PDF" / "Download Excel" (or CSV) button
+ * appears across the app; unticking one just removes that button, the
+ * on-screen report stays visible. */
+export const ADMIN_DOWNLOAD_PERMISSIONS: {
+  key: AdminModuleKey;
+  label: string;
+  description: string;
+}[] = [
+  { key: "download_pdf", label: "Download PDF", description: "Every \"Download PDF\" button across reports and statements" },
+  { key: "download_excel", label: "Download Excel / CSV", description: "Every \"Download Excel\" / \"Export CSV\" button" },
+];
+
+/** What a brand-new regular admin account is granted automatically, the
+ * moment it's created — the sensible day-to-day set for someone running
+ * the portfolio, minus the things that need a super admin's deliberate
+ * say-so (Onboarding, Requests, Communications, Reports, the Suppliers
+ * module and its property-page button, QR Code, Dynamics, worker
+ * visibility, Excel/CSV downloads). A super admin can still tick or
+ * untick anything afterward from Permissions — this only sets the
+ * starting point instead of leaving a new admin with nothing granted at
+ * all until someone visits that page. */
+export const DEFAULT_ADMIN_MODULE_KEYS: AdminModuleKey[] = [
+  "dashboard",
+  "properties",
+  "tenancies",
+  "finances",
+  "service_charges",
+  "invoices",
+  "expenses",
+  "people",
+  "rejections",
+  "settings",
+  ...ADMIN_FEATURES.map((feature) => feature.key).filter((key) => key !== "prop_suppliers"),
+  "see_owners",
+  "see_tenants",
+  "download_pdf",
+];
+
 export const ADMIN_NAV_ITEMS: {
   href: string;
   label: string;

@@ -9,6 +9,13 @@ import { PhoneInput } from "@/components/phone-input";
 import { UnitPicker, type PickableUnit } from "@/components/unit-picker";
 import { NewWorkerHrModal } from "@/components/worker-hr-modal";
 
+export type VisibleRoles = {
+  tenant: boolean;
+  workerInHouse: boolean;
+  workerThirdParty: boolean;
+  owner: boolean;
+};
+
 /**
  * The whole "Add a person" form body below the email/password fields: role +
  * worker-only fields, then name/phone/unit/etc. All one client component (not
@@ -19,15 +26,26 @@ export function NewPersonFields({
   units,
   initialRole = "user",
   allowSuperAdmin = false,
+  visibleRoles = { tenant: true, workerInHouse: true, workerThirdParty: true, owner: true },
 }: {
   units: PickableUnit[];
   /** Preselects the role — e.g. arriving here from the property form's
    * "create an owner first" link with `?newPersonRole=owner`. */
   initialRole?: string;
   allowSuperAdmin?: boolean;
+  /** Which role/worker-type options to offer, from this admin's People
+   * visibility grants — an admin can't create a person in a category they
+   * aren't allowed to see. */
+  visibleRoles?: VisibleRoles;
 }) {
-  const [role, setRole] = useState(initialRole);
-  const [workerCategory, setWorkerCategory] = useState("in_house");
+  const [role, setRole] = useState(
+    initialRole === "worker" && !visibleRoles.workerInHouse && !visibleRoles.workerThirdParty
+      ? "user"
+      : initialRole,
+  );
+  const [workerCategory, setWorkerCategory] = useState(
+    visibleRoles.workerInHouse ? "in_house" : "third_party",
+  );
 
   const isWorker = role === "worker";
   const isThirdParty = isWorker && workerCategory === "third_party";
@@ -43,11 +61,13 @@ export function NewPersonFields({
           value={role}
           onChange={(event) => setRole(event.target.value)}
         >
-          <option value="user">Tenant</option>
-          <option value="worker">Worker</option>
+          {visibleRoles.tenant && <option value="user">Tenant</option>}
+          {(visibleRoles.workerInHouse || visibleRoles.workerThirdParty) && (
+            <option value="worker">Worker</option>
+          )}
           <option value="admin">Admin</option>
           {allowSuperAdmin && <option value="super_admin">Super admin</option>}
-          <option value="owner">Property owner</option>
+          {visibleRoles.owner && <option value="owner">Property owner</option>}
         </Select>
       </div>
 
@@ -60,8 +80,10 @@ export function NewPersonFields({
             value={workerCategory}
             onChange={(event) => setWorkerCategory(event.target.value)}
           >
-            <option value="in_house">In-house</option>
-            <option value="third_party">3rd-party</option>
+            {visibleRoles.workerInHouse && <option value="in_house">In-house</option>}
+            {visibleRoles.workerThirdParty && (
+              <option value="third_party">3rd-party</option>
+            )}
           </Select>
         </div>
       )}

@@ -23,8 +23,12 @@ import {
 } from "@/lib/owner-alerts";
 import {
   ownerChargePaidCopy,
+  ownerChargeWaivedCopy,
   ownerPaymentProofCopy,
+  ownerTenantMovedInCopy,
+  tenantChargeWaivedCopy,
   tenantChargeIssuedCopy,
+  tenantWelcomeCopy,
   tenantPaymentApprovedCopy,
   tenantPaymentRejectedCopy,
   tenantRentReminderCopy,
@@ -81,7 +85,79 @@ type ChannelExtras = {
   /** Override the default WhatsApp body. Owners otherwise get a formatted
    * account notice built from title/message/details. */
   whatsappBody?: string;
+  /** A closing line for the email and WhatsApp ("No action is needed…"). */
+  closing?: string;
 };
+
+/** Where a maintenance request is, who raised it and who is on it — added to
+ * every request-related alert so none of them is a bare one-liner. */
+async function requestDetailRows(requestIds: string[]) {
+  const ids = [...new Set(requestIds)];
+  if (ids.length === 0) return new Map<string, { label: string; value: string }[]>();
+  const requests = await prisma.maintenanceRequest.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      title: true,
+      location: true,
+      priority: true,
+      user: { select: { firstName: true, lastName: true, email: true } },
+      assignedTo: { select: { firstName: true, lastName: true, email: true } },
+      unit: {
+        select: {
+          label: true,
+          property: {
+            select: {
+              name: true,
+              propertyType: { select: { unitPrefix: true, hasFloors: true } },
+            },
+          },
+        },
+      },
+      property: { select: { name: true } },
+    },
+  });
+  const person = (u: { firstName: string | null; lastName: string | null; email: string } | null) =>
+    u ? [u.firstName, u.lastName].filter(Boolean).join(" ") || u.email : "";
+  return new Map(
+    requests.map((r) => {
+      const propertyName = r.unit?.property.name ?? r.property?.name ?? "";
+      const unitLabel = r.unit
+        ? formatUnitLabel(r.unit.property.propertyType, r.unit.label)
+        : "Common area";
+      const rows = [
+        { label: "Request", value: r.title },
+        { label: "Property", value: propertyName },
+        { label: "Unit", value: unitLabel },
+        { label: "Location", value: r.location },
+        { label: "Priority", value: r.priority.charAt(0).toUpperCase() + r.priority.slice(1) },
+        { label: "Reported by", value: person(r.user) },
+        { label: "Assigned to", value: person(r.assignedTo) },
+      ].filter((row) => row.value);
+      return [r.id, rows] as const;
+    }),
+  );
+}
+
+/** Rows that carry a request id get the request's context added first, so the email and WhatsApp messages name the place, the
+ * person and the job. */
+async function withRequestDetails<T extends NotificationRow & ChannelExtras>(
+  rows: T[],
+): Promise<T[]> {
+  const needing = rows.filter((row) => row.relatedId);
+  if (needing.length === 0) return rows;
+  const byRequest = await requestDetailRows(needing.map((row) => row.relatedId!));
+  return rows.map((row) => {
+    const context = row.relatedId ? byRequest.get(row.relatedId) : undefined;
+    if (!context) return row;
+    const own = row.details ?? [];
+    const have = new Set(own.map((d) => d.label));
+    return {
+      ...row,
+      details: [...context.filter((d) => !have.has(d.label)), ...own],
+    };
+  });
+}
 
 /** Every in-app notification also goes out by email and (when the recipient
  * has a phone on file) WhatsApp. Both channels are best-effort: a missing
@@ -96,7 +172,14 @@ async function dispatchExternalChannels(
   const userIds = [...new Set(rows.map((row) => row.userId))];
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, email: true, phone: true, userType: true },
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      userType: true,
+      firstName: true,
+      lastName: true,
+    },
   });
   const byId = new Map(users.map((user) => [user.id, user]));
   const windowByPhone = new Map<string, boolean>();
@@ -117,11 +200,30 @@ async function dispatchExternalChannels(
       if (!user) return [];
 
       const tasks: Promise<unknown>[] = [];
+      // A closing line: the row's own, or the trailing sentence of a tailored
+      // WhatsApp body (the copy builders put it there), so the email and the
+      // WhatsApp message end on the same note.
+      const bodySegments = row.whatsappBody?.split(" | ") ?? [];
+      const bodyLast = bodySegments.length > 1 ? bodySegments[bodySegments.length - 1] : "";
+      const rowClosing =
+        row.closing ?? (bodyLast && !/^[^:]{1,40}: /.test(bodyLast) ? bodyLast : undefined);
+      // Every message is addressed to the person by name.
+      const greeting = user.firstName?.trim() ? `Dear ${user.firstName.trim()}` : undefined;
 
       if (user.email) {
         const emailHtml =
           row.emailHtml ??
-          renderNotificationEmail(row.title, row.message, row.href, row.details);
+          renderNotificationEmail(
+            row.title,
+            row.message,
+            // Owners don't have their own use for the app link inside an
+            // email — everything they need is in the message itself, so
+            // the "Open PropertyCare" button is left out for them.
+            user.userType === UserType.owner ? undefined : row.href,
+            row.details,
+            greeting,
+            rowClosing,
+          );
 
         tasks.push(
           sendEmail({
@@ -154,28 +256,9 @@ async function dispatchExternalChannels(
         row.whatsappTemplate &&
         process.env[row.whatsappTemplate.envVar];
 
-      if (user.phone && row.whatsappTemplate && structuredTemplate) {
+      if (user.phone) {
         const phone = user.phone;
-        tasks.push(
-          sendWhatsAppTemplate({
-            to: phone,
-            templateName: structuredTemplate,
-            bodyParams: row.whatsappTemplate.bodyParams,
-          }).then(() =>
-            Promise.all(
-              (row.attachments ?? []).map((file) =>
-                sendWhatsAppDocument({
-                  to: phone,
-                  filename: file.filename,
-                  contentBase64: file.content,
-                }),
-              ),
-            ),
-          ),
-        );
-      } else if (user.phone) {
-        // (No structured template configured for this message — falls back
-        // to the generic single-line alert below.)
+
         // Anything without its own tailored copy still goes out as one tidy
         // labelled line - "Title: message | Label: value | ..." - rather than
         // a bare sentence, so tenant, owner and worker messages all read the
@@ -184,18 +267,34 @@ async function dispatchExternalChannels(
           row.whatsappBody ||
           formatOwnerWhatsApp({
             heading: row.title,
-            intro: row.message ? `${row.title}: ${row.message}` : row.title,
+            intro: `${greeting ? `${greeting}, ` : ""}${
+              row.message ? `${row.title}: ${row.message}` : row.title
+            }`,
             lines: row.details,
+            closing: rowClosing,
           });
 
         // A trailing segment that isn't a "Label: value" pair is the closing
         // note; everything else is already in the row's own fields.
         const segments = body.split(" | ");
         const last = segments.length > 1 ? segments[segments.length - 1] : "";
-        const closing = last && !/^[^:]{1,40}: /.test(last) ? last : undefined;
+        const closing =
+          rowClosing ?? (last && !/^[^:]{1,40}: /.test(last) ? last : undefined);
 
-        const phone = user.phone;
-        tasks.push(
+        // Invoices and other PDFs that go out by email are also sent on
+        // WhatsApp as a document, right after the summary message.
+        const sendDocuments = () =>
+          Promise.all(
+            (row.attachments ?? []).map((file) =>
+              sendWhatsAppDocument({
+                to: phone,
+                filename: file.filename,
+                contentBase64: file.content,
+              }),
+            ),
+          );
+
+        const sendAlert = () =>
           sendWhatsAppAlert({
             to: phone,
             windowOpen,
@@ -205,21 +304,25 @@ async function dispatchExternalChannels(
               message: row.message,
               details: row.details ?? [],
               closing,
+              greeting,
             },
-          }).then(() =>
-            // Invoices and other PDFs that go out by email are also sent on
-            // WhatsApp as a document, right after the summary message.
-            Promise.all(
-              (row.attachments ?? []).map((file) =>
-                sendWhatsAppDocument({
-                  to: phone,
-                  filename: file.filename,
-                  contentBase64: file.content,
-                }),
-              ),
-            ),
-          ),
-        );
+          }).then(sendDocuments);
+
+        if (row.whatsappTemplate && structuredTemplate) {
+          // A message with its own approved template. If Meta refuses it (the
+          // template was edited, is missing in that language, or takes a
+          // different number of values) the person must still get the
+          // message, so fall back to the regular alert instead of dropping it.
+          tasks.push(
+            sendWhatsAppTemplate({
+              to: phone,
+              templateName: structuredTemplate,
+              bodyParams: row.whatsappTemplate.bodyParams,
+            }).then((sent) => (sent ? sendDocuments() : sendAlert())),
+          );
+        } else {
+          tasks.push(sendAlert());
+        }
       }
 
       return tasks;
@@ -234,11 +337,12 @@ async function dispatchExternalChannels(
 async function createNotification(args: {
   data: NotificationRow & ChannelExtras;
 }) {
-  const { details, emailHtml, whatsappTemplate, whatsappBody, attachments, ...dbData } =
-    args.data;
+  const [row] = await withRequestDetails([args.data]);
+  const { details, emailHtml, whatsappTemplate, whatsappBody, attachments, closing, ...dbData } =
+    row;
   const created = await prisma.notification.create({ data: dbData });
   const work = dispatchExternalChannels([
-    { ...dbData, details, emailHtml, whatsappTemplate, whatsappBody, attachments },
+    { ...dbData, details, emailHtml, whatsappTemplate, whatsappBody, attachments, closing },
   ]).catch((error) =>
     console.error("Notification email/WhatsApp dispatch failed:", error),
   );
@@ -253,11 +357,12 @@ async function createNotification(args: {
 async function createNotifications(args: {
   data: (NotificationRow & ChannelExtras)[];
 }) {
-  const dbData = args.data.map(
-    ({ details, emailHtml, whatsappTemplate, attachments, whatsappBody, ...rest }) => rest,
+  const enriched = await withRequestDetails(args.data);
+  const dbData = enriched.map(
+    ({ details, emailHtml, whatsappTemplate, attachments, whatsappBody, closing, ...rest }) => rest,
   );
   const created = await prisma.notification.createMany({ data: dbData });
-  const work = dispatchExternalChannels(args.data).catch((error) =>
+  const work = dispatchExternalChannels(enriched).catch((error) =>
     console.error("Notification email/WhatsApp dispatch failed:", error),
   );
   after(() => work);
@@ -372,6 +477,10 @@ export async function notifyStatusChange(request: {
       title: template.title,
       message: template.message(request.title),
       relatedId: request.id,
+      closing:
+        request.status === "completed"
+          ? "Thank you. Please contact us if anything still needs attention."
+          : "You will be updated as the work progresses.",
       ...(details && { details }),
     },
   });
@@ -420,6 +529,8 @@ export async function notifyTenantCompletionCode(input: {
       title: "Give this code to the worker",
       message: `Work on "${input.taskTitle}" is ready. Share code ${input.code} with the worker to confirm completion.`,
       relatedId: input.taskId,
+      details: [{ label: "Completion code", value: input.code }],
+      closing: "Only share this code once you are satisfied the work is complete.",
     },
   });
 
@@ -447,12 +558,16 @@ export async function notifyRequestHeld(input: {
         title: "Request Put On Hold",
         message: `Work on "${input.title}" is paused. Reason: ${input.reason}`,
         relatedId: input.id,
+        details: [{ label: "Reason", value: input.reason }],
+        closing: "Management will review this and contact you about the next steps.",
       },
       ...admins.map((admin) => ({
         userId: admin.id,
         title: "Job Needs Admin Review",
         message: `"${input.title}" was put on hold. Reason: ${input.reason}`,
         relatedId: input.id,
+        details: [{ label: "Reason", value: input.reason }],
+        closing: "Please review the job and decide how to proceed.",
         href: "/protected/maintenance?status=on_hold",
       })),
     ],
@@ -482,6 +597,7 @@ export async function notifyAdminsResumeRequested(input: {
       title: "Held Job Ready for Review",
       message: `${input.tenantEmail} says the blocker for "${input.title}" is resolved. Choose a worker to resume it.`,
       relatedId: input.id,
+      closing: "Open the job, choose a worker, and resume it.",
       href: "/protected/maintenance?status=on_hold",
     })),
   });
@@ -510,6 +626,7 @@ export async function notifyRequestResumed(input: {
           ? `A worker has been assigned and work on "${input.title}" is ready to continue.`
           : `Work on "${input.title}" has been resumed with the same worker.`,
         relatedId: input.id,
+        closing: "You will be updated as the work progresses.",
       },
       {
         userId: input.workerId,
@@ -560,6 +677,7 @@ export async function notifyAdminsNewRequest(request: {
       title: "New Maintenance Request",
       message: `${request.reportedBy} reported "${request.title}" at ${request.location}.`,
       relatedId: request.id,
+      closing: "Please review the request and assign a worker.",
     })),
   });
 
@@ -592,6 +710,11 @@ export async function notifyAdminsPropertySubmitted(input: {
       title: "Property Submitted for Review",
       message: `${input.ownerEmail} submitted “${input.propertyName}” for approval.`,
       href: "/protected/properties",
+      details: [
+        { label: "Property", value: input.propertyName },
+        { label: "Submitted by", value: input.ownerEmail },
+      ],
+      closing: "Please review the property and approve or reject it.",
     })),
   });
 
@@ -732,6 +855,8 @@ export async function notifySupplyRequested(input: {
       title: "Worker Needs Something",
       message: `For "${input.taskTitle}", the worker needs: ${input.item}.`,
       relatedId: input.taskId,
+      details: [{ label: "Item needed", value: input.item }],
+      closing: "Please approve or deny the request from the maintenance page.",
       href: "/protected/maintenance?status=on_hold",
     })),
   });
@@ -764,6 +889,8 @@ export async function notifySupplyReceiptUploaded(input: {
       title: "Receipt Uploaded",
       message: `A receipt was added for "${input.item}" on "${input.taskTitle}".`,
       relatedId: input.taskId,
+      details: [{ label: "Item", value: input.item }],
+      closing: "Please review the receipt.",
       href: "/protected/maintenance?status=on_hold",
     })),
   });
@@ -795,6 +922,14 @@ export async function notifySupplyRequestDecided(input: {
             input.adminNote ? ` Reason: ${input.adminNote}` : ""
           }`,
       relatedId: input.taskId,
+      details: [
+        { label: "Item", value: input.item },
+        { label: "Decision", value: input.approved ? "Approved" : "Denied" },
+        ...(input.adminNote ? [{ label: input.approved ? "Note" : "Reason", value: input.adminNote }] : []),
+      ],
+      closing: input.approved
+        ? "You can go ahead and continue the job."
+        : "Please speak to your admin if you need this reconsidered.",
     },
   });
 
@@ -823,6 +958,7 @@ export async function notifyAdminsWorkerReadyToResume(input: {
       title: "Held Job Ready for Review",
       message: `${input.workerEmail} says they're ready to resume "${input.title}".`,
       relatedId: input.id,
+      closing: "Open the job and resume it when you are ready.",
       href: "/protected/maintenance?status=on_hold",
     })),
   });
@@ -847,12 +983,23 @@ export async function notifyAdminsPaymentProof(input: {
     return;
   }
 
+  const ctx = await chargeContext(input.chargeId);
   await createNotifications({
     data: admins.map((admin) => ({
       userId: admin.id,
       title: "Payment Proof Submitted",
-      message: `${input.tenantEmail} submitted proof for “${input.title}”.`,
+      message: `${ctx?.tenantName ?? input.tenantEmail} submitted proof of payment for “${input.title}”.`,
       href: `/protected/finances/${input.chargeId}`,
+      details: ctx
+        ? [
+            { label: "Property", value: ctx.propertyName },
+            { label: "Unit", value: ctx.unitLabel },
+            { label: "Tenant", value: ctx.tenantName },
+            { label: "Charge", value: input.title },
+            { label: "Amount", value: formatMoney(ctx.charge.amount) },
+          ]
+        : undefined,
+      closing: "Please review the proof and approve or reject it.",
     })),
   });
 
@@ -931,7 +1078,7 @@ export async function notifyTenantCharge(input: {
  * of a plain "a charge was added" line, with every line item and the total.
  * The in-app notification stays a short summary; only the email uses the
  * full invoice layout. */
-export async function notifyTenantInvoice(input: {
+export type TenantInvoiceInput = {
   tenantId: string;
   tenantName: string;
   propertyName: string;
@@ -944,15 +1091,21 @@ export async function notifyTenantInvoice(input: {
   href: string;
   lineItems: { label: string; amount: string }[];
   total: string;
-}): Promise<void> {
-  if (input.lineItems.length === 0) return;
+  /** An admin-edited message replacing the standard sentence. */
+  customMessage?: string;
+};
 
+/** Everything a tenant invoice notice contains, built without sending — so
+ * the exact email and WhatsApp text can be previewed before it goes out. */
+export function buildTenantInvoiceNotice(input: TenantInvoiceInput) {
   const summary =
     input.lineItems.length === 1
       ? `A new charge has been added: “${input.lineItems[0].label}” — ${input.lineItems[0].amount}, due ${input.dueDate}.`
       : `${input.lineItems.length} new charges have been added, totaling ${input.total}, due ${input.dueDate}.`;
 
+  const customMessage = input.customMessage?.trim() || undefined;
   const emailHtml = renderInvoiceEmail({
+    note: customMessage,
     invoiceNumber: input.invoiceRef.slice(0, 8).toUpperCase(),
     issueDate: new Date().toLocaleDateString("en-GB", {
       day: "numeric",
@@ -968,22 +1121,30 @@ export async function notifyTenantInvoice(input: {
     href: input.href,
   });
 
+  return {
+    title: input.lineItems.length === 1 ? "New Amount Due" : "New Invoice",
+    message: customMessage ?? summary,
+    details: [
+      ...input.lineItems.map((item) => ({ label: item.label, value: item.amount })),
+      ...(input.lineItems.length > 1 ? [{ label: "Total", value: input.total }] : []),
+    ],
+    emailHtml,
+  };
+}
+
+export async function notifyTenantInvoice(input: TenantInvoiceInput): Promise<void> {
+  if (input.lineItems.length === 0) return;
+
+  const notice = buildTenantInvoiceNotice(input);
+
   await createNotification({
     data: {
       userId: input.tenantId,
-      title: input.lineItems.length === 1 ? "New Amount Due" : "New Invoice",
-      message: summary,
+      title: notice.title,
+      message: notice.message,
       href: input.href,
-      details: [
-        ...input.lineItems.map((item) => ({
-          label: item.label,
-          value: item.amount,
-        })),
-        ...(input.lineItems.length > 1
-          ? [{ label: "Total", value: input.total }]
-          : []),
-      ],
-      emailHtml,
+      details: notice.details,
+      emailHtml: notice.emailHtml,
     },
   });
 
@@ -1069,6 +1230,15 @@ export async function notifyAdminsChequeDue(input: {
       title: "Cheque due today",
       message: `Cheque${input.chequeNumber ? ` no. ${input.chequeNumber}` : ""} of ${input.amount} from ${input.tenantName} (${input.unitLabel}, ${input.propertyName}) is dated ${input.chequeDate}. Deposit it and mark the outcome.`,
       href: "/protected/finances/cheque-reminders",
+      details: [
+        { label: "Property", value: input.propertyName },
+        { label: "Unit", value: input.unitLabel },
+        { label: "Tenant", value: input.tenantName },
+        ...(input.chequeNumber ? [{ label: "Cheque no.", value: input.chequeNumber }] : []),
+        { label: "Amount", value: input.amount },
+        { label: "Cheque date", value: input.chequeDate },
+      ],
+      closing: "Please deposit the cheque and record the outcome.",
     })),
   });
   await publish({ kind: "notification", userIds: admins.map((a) => a.id) });
@@ -1217,56 +1387,83 @@ export async function notifyTenantAssigned(input: {
   rentDueDay: number;
   securityDeposit?: string;
   leaseEndDate?: string;
+  /** The tenant's name, for the owner's notice. */
+  tenantName?: string;
+  /** A quick assignment has no real lease terms yet (zero-rent placeholder):
+   * the rent rows are left out rather than showing "OMR 0.000". */
+  placeholderTerms?: boolean;
   /** The property's owner, if it has one — they get their own "new tenant
-   * moved in" notice alongside the tenant's welcome email. */
+   * moved in" notice alongside the tenant's welcome message. */
   ownerId?: string | null;
+  /** An admin-edited message for the tenant, replacing the standard one. */
+  customMessage?: string;
 }): Promise<void> {
-  const details = [
-    { label: "Property", value: input.propertyName },
-    { label: "Unit", value: input.unitLabel },
-    { label: "Move-in date", value: input.moveInDate },
-    { label: "Monthly rent", value: input.monthlyRent },
-    { label: "Rent due day", value: `${ordinal(input.rentDueDay)} of each month` },
-    ...(input.securityDeposit
-      ? [{ label: "Security deposit", value: input.securityDeposit }]
-      : []),
-    ...(input.leaseEndDate
-      ? [{ label: "Lease end date", value: input.leaseEndDate }]
-      : []),
-  ];
+  const terms = input.placeholderTerms
+    ? []
+    : [
+        { label: "Monthly rent", value: input.monthlyRent },
+        { label: "Rent due day", value: `${ordinal(input.rentDueDay)} of each month` },
+        ...(input.securityDeposit
+          ? [{ label: "Security deposit", value: input.securityDeposit }]
+          : []),
+        ...(input.leaseEndDate
+          ? [{ label: "Lease end date", value: input.leaseEndDate }]
+          : []),
+      ];
+
+  const place = { propertyName: input.propertyName, unitLabel: input.unitLabel };
+  const welcome = tenantWelcomeCopy({ ...place, moveInDate: input.moveInDate, terms });
+  const custom = input.customMessage?.trim() || undefined;
+  const termsLine = terms.length
+    ? terms.map((t) => `${t.label}: ${t.value}`).join(". ")
+    : "Your rent and lease terms will be confirmed by property management shortly.";
+  const closingLine = terms.length
+    ? "Reply here if you have any questions about your tenancy."
+    : "You can view your tenancy anytime from the PropertyCare app. Reply here if you need anything.";
 
   await createNotification({
     data: {
       userId: input.tenantId,
-      title: "You've Been Assigned a New Home",
-      message: `You've been assigned to ${input.unitLabel} at ${input.propertyName}. Welcome!`,
+      title: welcome.title,
+      message: custom ?? welcome.message,
       href: "/protected",
-      details,
-      // This is very often the tenant's first-ever contact with the
-      // WhatsApp number — Meta blocks free-form text in that case, so this
-      // sends the approved WHATSAPP_TEMPLATE_TENANT_WELCOME template
-      // instead (see lib/whatsapp.ts). Update the params here to match
-      // that template's {{1}}, {{2}}, ... order if you change its wording.
-      whatsappTemplate: {
-        envVar: "WHATSAPP_TEMPLATE_TENANT_WELCOME",
-        bodyParams: [
-          input.unitLabel,
-          input.propertyName,
-          input.moveInDate,
-          input.monthlyRent,
-        ],
-      },
+      details: welcome.details,
+      whatsappBody: custom ? undefined : welcome.whatsappBody,
+      // A dedicated, purpose-built template for this one event (not the
+      // generic multi-purpose one) — only used for the standard message; an
+      // admin's edited note falls back to the ordinary alert path instead,
+      // since this template's wording is fixed.
+      ...(!custom && {
+        whatsappTemplate: {
+          envVar: "WHATSAPP_TEMPLATE_TENANT_WELCOME_V2",
+          bodyParams: [
+            input.tenantName ?? "Tenant",
+            input.unitLabel,
+            input.propertyName,
+            input.moveInDate,
+            termsLine,
+            closingLine,
+          ],
+        },
+      }),
     },
   });
 
   if (input.ownerId) {
+    const ownerCopy = ownerTenantMovedInCopy({
+      ...place,
+      tenantName: input.tenantName ?? "A new tenant",
+      moveInDate: input.moveInDate,
+      terms,
+    });
     await createNotification({
       data: {
         userId: input.ownerId,
-        title: "New Tenant Moved In",
-        message: `A new tenant has been assigned to ${input.unitLabel} at ${input.propertyName}.`,
+        title: ownerCopy.title,
+        message: ownerCopy.message,
         href: "/protected/tenancies",
-        details,
+        details: ownerCopy.details,
+        whatsappBody: ownerCopy.whatsappBody,
       },
     });
   }
@@ -1416,22 +1613,55 @@ export async function notifyChargeWaived(input: {
   ownerId: string | null | undefined;
   chargeId: string;
   title: string;
+  propertyName: string;
+  unitLabel: string;
+  amount: string;
+  tenantName: string;
+  /** An admin-edited message for the tenant, replacing the standard one. */
+  customMessage?: string;
 }): Promise<void> {
-  const recipientIds = Array.from(
-    new Set([input.tenantId, input.ownerId].filter((id): id is string => Boolean(id))),
-  );
-  if (recipientIds.length === 0) return;
+  const place = { propertyName: input.propertyName, unitLabel: input.unitLabel };
+  const tenantCopy = tenantChargeWaivedCopy({
+    ...place,
+    chargeTitle: input.title,
+    amount: input.amount,
+  });
+  const custom = input.customMessage?.trim() || undefined;
 
-  await createNotifications({
-    data: recipientIds.map((userId) => ({
-      userId,
-      title: "Charge Waived",
-      message: `“${input.title}” has been waived and is no longer due.`,
+  await createNotification({
+    data: {
+      userId: input.tenantId,
+      title: tenantCopy.title,
+      message: custom ?? tenantCopy.message,
       href: `/protected/finances/${input.chargeId}`,
-    })),
+      details: tenantCopy.details,
+      whatsappBody: custom ? undefined : tenantCopy.whatsappBody,
+    },
   });
 
-  await publish({ kind: "notification", userIds: recipientIds });
+  if (input.ownerId && input.ownerId !== input.tenantId) {
+    const ownerCopy = ownerChargeWaivedCopy({
+      ...place,
+      chargeTitle: input.title,
+      amount: input.amount,
+      tenantName: input.tenantName,
+    });
+    await createNotification({
+      data: {
+        userId: input.ownerId,
+        title: ownerCopy.title,
+        message: ownerCopy.message,
+        href: `/protected/finances/${input.chargeId}`,
+        details: ownerCopy.details,
+        whatsappBody: ownerCopy.whatsappBody,
+      },
+    });
+  }
+
+  await publish({
+    kind: "notification",
+    userIds: [input.tenantId, ...(input.ownerId ? [input.ownerId] : [])],
+  });
 }
 
 /** An admin approved a property an owner submitted — it's now live. */
@@ -1446,6 +1676,11 @@ export async function notifyPropertyApproved(input: {
       title: "Property Approved",
       message: `“${input.propertyName}” has been approved and is now live.`,
       href: `/protected/properties/${input.propertyId}`,
+      details: [
+        { label: "Property", value: input.propertyName },
+        { label: "Status", value: "Approved and live" },
+      ],
+      closing: "You can now manage its units, tenants and documents.",
     },
   });
 
@@ -1479,6 +1714,7 @@ export async function notifyPropertyServiceCharge(input: {
         },
         { label: "Due date", value: input.dueDate },
       ],
+      closing: "The invoice is on the property page.",
     },
   });
 
@@ -1498,6 +1734,11 @@ export async function notifyPropertyRejected(input: {
       title: "Property Rejected",
       message: `“${input.propertyName}” was not approved: ${input.reason}. Fix it up and submit it again from the property page.`,
       href: "/protected/properties",
+      details: [
+        { label: "Property", value: input.propertyName },
+        { label: "Reason", value: input.reason },
+      ],
+      closing: "Please correct the points above and submit it again.",
     },
   });
 
@@ -1516,6 +1757,8 @@ export async function notifyPropertyAssigned(input: {
       title: "Property Assigned to You",
       message: `“${input.propertyName}” has been assigned to you.`,
       href: `/protected/properties/${input.propertyId}`,
+      details: [{ label: "Property", value: input.propertyName }],
+      closing: "You can view its units and documents in your account.",
     },
   });
 
@@ -1704,8 +1947,14 @@ export async function notifyServiceChargeReceived(input: {
     data: input.recipientIds.map((userId) => ({
       userId,
       title: "Service Charge Received",
-      message: `The ${input.amount} service charge for “${input.propertyName}” was recorded as received. Next due: ${input.nextDueDate}.`,
+      message: `The ${input.amount} service charge for “${input.propertyName}” was recorded as received.`,
       href: `/protected/properties/${input.propertyId}`,
+      details: [
+        { label: "Property", value: input.propertyName },
+        { label: "Amount received", value: input.amount },
+        { label: "Next due", value: input.nextDueDate },
+      ],
+      closing: "Thank you. The payment is on the ledger.",
     })),
   });
 
@@ -1726,6 +1975,8 @@ export async function notifyServiceChargeInvoiceSent(input: {
   recipientIds: string[];
   attachments?: import("@/lib/email").EmailAttachment[];
   additionalCharge?: boolean;
+  /** An admin-edited message replacing the standard sentence. */
+  customMessage?: string;
 }): Promise<void> {
   if (input.recipientIds.length === 0) return;
 
@@ -1743,7 +1994,7 @@ export async function notifyServiceChargeInvoiceSent(input: {
     data: input.recipientIds.map((userId) => ({
       userId,
       title: copy.title,
-      message: copy.message,
+      message: input.customMessage?.trim() || copy.message,
       href: `/protected/properties/${input.propertyId}`,
       details: withInvoicePdfNote(copy.details, input.attachments),
       whatsappBody: copy.whatsappBody,
@@ -1842,8 +2093,54 @@ export async function notifyHrDocumentExpiring(input: {
       title,
       message,
       href: "/protected/users?role=worker",
+      details: [
+        { label: "Worker", value: input.workerName },
+        { label: "Document", value: input.documentLabel },
+        { label: "Expiry date", value: input.expiryDate },
+      ],
+      closing:
+        input.daysUntilDue < 0
+          ? "This has expired — please arrange the renewal urgently."
+          : "Please arrange the renewal before it expires.",
     })),
   });
 
   await publish({ kind: "notification", userIds: input.recipientIds });
+}
+
+/** A WhatsApp message came back as undelivered (Meta's status webhook). This
+ * is otherwise completely invisible — the send call itself returns success
+ * (Meta "accepts" the message before it knows whether it will deliver), so
+ * without this an admin has no way to know a tenant or owner never actually
+ * got their alert. Sent by email/in-app only, never WhatsApp, and never to
+ * the phone that just failed. */
+export async function notifyAdminsWhatsappDeliveryFailed(input: {
+  phone: string;
+  recipientName?: string;
+  reason: string;
+  messageTitle?: string;
+}): Promise<void> {
+  const admins = await prisma.user.findMany({
+    where: { userType: { in: STAFF_ADMIN_TYPES } },
+    select: { id: true },
+  });
+  if (admins.length === 0) return;
+
+  const who = input.recipientName ? `${input.recipientName} (${input.phone})` : input.phone;
+
+  await createNotifications({
+    data: admins.map((admin) => ({
+      userId: admin.id,
+      title: "WhatsApp message not delivered",
+      message: `A WhatsApp message${input.messageTitle ? ` ("${input.messageTitle}")` : ""} to ${who} was not delivered.`,
+      details: [
+        { label: "Recipient", value: who },
+        { label: "Reason", value: input.reason },
+      ],
+      closing:
+        "Check that this number is verified with your WhatsApp Business number, and follow up with them by phone or email.",
+    })),
+  });
+
+  await publish({ kind: "notification", userIds: admins.map((a) => a.id) });
 }

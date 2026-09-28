@@ -10,7 +10,6 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { BulkGenerateServiceChargeModal } from "@/components/bulk-generate-service-charge-modal";
 import { StatTile, TileMoney } from "@/components/dashboard-ui";
 import { EmptyState } from "@/components/empty-state";
 import { FormMessage, type Message } from "@/components/form-message";
@@ -30,7 +29,6 @@ import {
   type InvoiceKind,
 } from "@/lib/invoice-options";
 import { listOwnerInvoices } from "@/lib/invoices";
-import { collectsServiceCharge } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
@@ -69,7 +67,7 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
   const search = firstParam(raw.q) ?? "";
   const unitId = firstParam(raw.unit) || undefined;
 
-  const [result, properties, owners, funds] = await Promise.all([
+  const [result, properties, owners] = await Promise.all([
     listOwnerInvoices({
       bucket,
       propertyId: propertyId && propertyId !== "all" ? propertyId : undefined,
@@ -99,10 +97,6 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }, { email: "asc" }],
       select: { id: true, email: true, firstName: true, lastName: true },
     }),
-    prisma.fund.findMany({
-      orderBy: { createdAt: "asc" },
-      select: { id: true, label: true },
-    }),
   ]);
 
   const buildHref = (next: Record<string, string | undefined>) => {
@@ -123,9 +117,6 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
 
   const { rows, totals } = result;
   const chips: InvoiceBucket[] = ["open", "billed", "unpaid", "overdue", "drafts", "paid", "all"];
-  const serviceChargeProperties = properties
-    .filter((property) => collectsServiceCharge(property.propertyType))
-    .map(({ id, name }) => ({ id, name }));
 
   const brandButton =
     "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90";
@@ -136,13 +127,6 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
         title="Invoices & payments"
         description="Open balances, billed invoices, and one-off charges against a unit — including every invoice already issued."
       >
-        <BulkGenerateServiceChargeModal
-          properties={serviceChargeProperties}
-          owners={owners}
-          funds={funds}
-          redirectTo="/protected/invoices?bucket=billed"
-          triggerLabel="Service-charge run"
-        />
         <ButtonLink href="/protected/invoices/new" className={brandButton}>
           <Plus className="h-4 w-4" />
           New invoice

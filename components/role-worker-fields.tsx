@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import type { VisibleRoles } from "@/components/new-person-fields";
 
 /**
  * Role select + the worker-only fields that go with it (worker type, and the
@@ -21,6 +22,7 @@ export function RoleWorkerFields({
   defaultCompanyName = "",
   roleLabel = "Role",
   allowSuperAdmin = false,
+  visibleRoles = { tenant: true, workerInHouse: true, workerThirdParty: true, owner: true },
   children,
 }: {
   idPrefix: string;
@@ -30,6 +32,9 @@ export function RoleWorkerFields({
   defaultCompanyName?: string;
   roleLabel?: string;
   allowSuperAdmin?: boolean;
+  /** Which role/worker-type options to offer, from this admin's People
+   * visibility grants. */
+  visibleRoles?: VisibleRoles;
   children?: ReactNode;
 }) {
   const [role, setRole] = useState(defaultRole);
@@ -51,11 +56,13 @@ export function RoleWorkerFields({
           onChange={(event) => setRole(event.target.value)}
           className={roleSelectClassName}
         >
-          <option value="user">Tenant</option>
-          <option value="worker">Worker</option>
+          {visibleRoles.tenant && <option value="user">Tenant</option>}
+          {(visibleRoles.workerInHouse || visibleRoles.workerThirdParty) && (
+            <option value="worker">Worker</option>
+          )}
           <option value="admin">Admin</option>
           {allowSuperAdmin && <option value="super_admin">Super admin</option>}
-          <option value="owner">Property owner</option>
+          {visibleRoles.owner && <option value="owner">Property owner</option>}
         </Select>
       </div>
 
@@ -71,8 +78,10 @@ export function RoleWorkerFields({
             onChange={(event) => setWorkerCategory(event.target.value)}
             className={roleSelectClassName}
           >
-            <option value="in_house">In-house</option>
-            <option value="third_party">3rd-party</option>
+            {visibleRoles.workerInHouse && <option value="in_house">In-house</option>}
+            {visibleRoles.workerThirdParty && (
+              <option value="third_party">3rd-party</option>
+            )}
           </Select>
         </div>
       )}

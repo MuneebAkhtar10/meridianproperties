@@ -44,7 +44,12 @@ import type { PickableUnit } from "@/components/unit-picker";
 import { formatUnitLabel, isIndependentType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireRole, isStaffAdmin } from "@/lib/session";
-import { adminAccess, canManagePermissions } from "@/lib/permissions";
+import {
+  adminAccess,
+  canManagePermissions,
+  personVisibilityWhere,
+  visiblePersonCategories,
+} from "@/lib/permissions";
 import { OwnerReportModal } from "@/components/owner-report-modal";
 import { UserType } from "@/lib/generated/prisma/client";
 import type { Prisma } from "@/lib/generated/prisma/client";
@@ -90,6 +95,14 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const message = params as unknown as Message;
   const admin = await requireRole(UserType.admin);
   const allowSuperAdmin = await canManagePermissions(admin);
+  const visible = await visiblePersonCategories(admin);
+  const visibleRoles = {
+    tenant: visible.has("tenant"),
+    workerInHouse: visible.has("worker_in_house"),
+    workerThirdParty: visible.has("worker_third_party"),
+    owner: visible.has("owner"),
+  };
+  const personWhere = personVisibilityWhere(visible);
 
   const query = params.query as string | undefined;
   const role = params.role as string | undefined;
@@ -100,7 +113,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       ? newPersonRoleParam
       : "user";
 
-  const andConditions: Prisma.UserWhereInput[] = [];
+  const andConditions: Prisma.UserWhereInput[] = [personWhere];
   // Super admin accounts belong to the company/developers only — nobody else
   // sees them listed, counted or filterable anywhere.
   if (!allowSuperAdmin) {
@@ -119,12 +132,12 @@ export default async function PeoplePage({ searchParams }: PageProps) {
     });
   }
 
-  if (role === "worker_in_house") {
+  if (role === "worker_in_house" && visibleRoles.workerInHouse) {
     andConditions.push(
       { userType: UserType.worker },
       { OR: [{ workerCategory: "in_house" }, { workerCategory: null }] },
     );
-  } else if (role === "worker_third_party") {
+  } else if (role === "worker_third_party" && visibleRoles.workerThirdParty) {
     andConditions.push({ userType: UserType.worker, workerCategory: "third_party" });
   } else if (role && role !== "all" && role in UserType) {
     andConditions.push({ userType: role as UserType });
@@ -150,28 +163,33 @@ export default async function PeoplePage({ searchParams }: PageProps) {
       include: { property: { include: { propertyType: true } } },
     }),
     // Independent of the search/role filters above — the HR overview always
-    // reflects every in-house worker, not just the currently filtered list.
-    prisma.user.findMany({
-      where: { userType: UserType.worker, workerCategory: "in_house" },
-      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-      include: {
-        documents: { orderBy: { createdAt: "desc" } },
-        familyMembers: { orderBy: { createdAt: "asc" } },
-      },
-    }),
+    // reflects every in-house worker this admin can see.
+    visibleRoles.workerInHouse
+      ? prisma.user.findMany({
+          where: { userType: UserType.worker, workerCategory: "in_house" },
+          orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+          include: {
+            documents: { orderBy: { createdAt: "desc" } },
+            familyMembers: { orderBy: { createdAt: "asc" } },
+          },
+        })
+      : Promise.resolve([]),
     // Unfiltered totals for the summary tiles — these always describe the
-    // whole org, independent of whatever search/role filter is applied below.
+    // whole org this admin can see, independent of whatever search/role
+    // filter is applied below.
     prisma.user.groupBy({
       by: ["userType"],
       _count: true,
-      where: allowSuperAdmin ? {} : { userType: { not: UserType.super_admin } },
+      where: allowSuperAdmin ? personWhere : { AND: [personWhere, { userType: { not: UserType.super_admin } }] },
     }),
     prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
-    prisma.user.findMany({
-      where: { userType: UserType.owner },
-      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-      select: { id: true, email: true, firstName: true, lastName: true },
-    }),
+    visibleRoles.owner
+      ? prisma.user.findMany({
+          where: { userType: UserType.owner },
+          orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+          select: { id: true, email: true, firstName: true, lastName: true },
+        })
+      : Promise.resolve([]),
   ]);
   const canOwnerReport = (await adminAccess(admin)).can("prop_owner_report");
 
@@ -230,6 +248,9 @@ export default async function PeoplePage({ searchParams }: PageProps) {
   const totalPeople = roleCounts.reduce((sum, r) => sum + r._count, 0);
   const countByType = (type: UserType) =>
     roleCounts.find((r) => r.userType === type)?._count ?? 0;
+  const workerCount = visibleRoles.workerInHouse || visibleRoles.workerThirdParty ? countByType(UserType.worker) : 0;
+  const ownerCount = visibleRoles.owner ? countByType(UserType.owner) : 0;
+  const tenantCount = visibleRoles.tenant ? countByType(UserType.user) : 0;
 
   const pickableUnits: PickableUnit[] = emptyUnits.map((unit) => ({
     id: unit.id,
@@ -270,21 +291,21 @@ export default async function PeoplePage({ searchParams }: PageProps) {
         />
         <StatTile
           icon={<KeyRound className="h-5 w-5" />}
-          value={countByType(UserType.owner)}
+          value={ownerCount}
           label="Property owners"
           accent="bg-amber-500"
           iconBg="bg-amber-50 text-amber-600"
         />
         <StatTile
           icon={<Users className="h-5 w-5" />}
-          value={countByType(UserType.user)}
+          value={tenantCount}
           label="Tenants"
           accent="bg-emerald-500"
           iconBg="bg-emerald-50 text-emerald-600"
         />
         <StatTile
           icon={<UserCog className="h-5 w-5" />}
-          value={countByType(UserType.worker)}
+          value={workerCount}
           label="Workers"
           accent="bg-[#0886be]"
           iconBg="bg-[#0886be]/10 text-[#0886be]"
@@ -313,9 +334,14 @@ export default async function PeoplePage({ searchParams }: PageProps) {
           {/* Filters */}
           <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-1">
-              {ROLE_FILTERS.filter(
-                (filter) => !("superOnly" in filter) || allowSuperAdmin,
-              ).map((filter) => {
+              {ROLE_FILTERS.filter((filter) => {
+                if ("superOnly" in filter && !allowSuperAdmin) return false;
+                if (filter.value === "user" && !visibleRoles.tenant) return false;
+                if (filter.value === "worker_in_house" && !visibleRoles.workerInHouse) return false;
+                if (filter.value === "worker_third_party" && !visibleRoles.workerThirdParty) return false;
+                if (filter.value === "owner" && !visibleRoles.owner) return false;
+                return true;
+              }).map((filter) => {
                 const active =
                   filter.value === "all"
                     ? !role || role === "all"
@@ -757,6 +783,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                                 }
                                 defaultCompanyName={user.companyName ?? ""}
                                 allowSuperAdmin={allowSuperAdmin}
+                                visibleRoles={visibleRoles}
                               />
                               <SubmitButton
                                 formAction={updateUserTypeAction}
@@ -837,6 +864,7 @@ export default async function PeoplePage({ searchParams }: PageProps) {
                 units={pickableUnits}
                 initialRole={newPersonRole}
                 allowSuperAdmin={allowSuperAdmin}
+                visibleRoles={visibleRoles}
               />
 
               <SubmitButton

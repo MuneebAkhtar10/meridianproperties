@@ -30,13 +30,22 @@ import { PageHeader } from "@/components/page-header";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAdminDashboardMetrics } from "@/lib/dashboard-metrics";
+import type { AdminModuleKey } from "@/lib/admin-modules";
 import { formatMoney, formatMoneyCompact } from "@/lib/finance";
 import { StatusBadge } from "@/lib/status";
 
 /** `showRequests` is false when the viewing admin's Requests module is
  * switched off — every maintenance/supply-request figure, card and link
- * then disappears from the dashboard. */
-export async function AdminDashboard({ showRequests = true }: { showRequests?: boolean } = {}) {
+ * then disappears from the dashboard. `can` gates every other shortcut and
+ * report link the same way a restricted admin's sidebar/toolbar already
+ * are — a module they weren't granted simply has no tile here either. */
+export async function AdminDashboard({
+  showRequests = true,
+  can = () => true,
+}: {
+  showRequests?: boolean;
+  can?: (module: AdminModuleKey) => boolean;
+} = {}) {
   const data = await getAdminDashboardMetrics();
   const today = new Intl.DateTimeFormat("en-GB", {
     weekday: "long",
@@ -67,14 +76,18 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
         title="Dashboard"
         description={`${today} · Portfolio snapshot across properties, rent, service charges and work.`}
       >
+        {can("invoices") && (
         <ButtonLink href="/protected/invoices" variant="outline">
           <ReceiptText className="h-4 w-4" />
           Invoices
         </ButtonLink>
+        )}
+        {can("service_charges") && (
         <ButtonLink href="/protected/service-charge-ledger">
           <Landmark className="h-4 w-4" />
           Service charges
         </ButtonLink>
+        )}
       </PageHeader>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -490,14 +503,17 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
               Every operational area, one click from here.
             </p>
           </div>
+          {can("reports") && (
           <Link
             href="/protected/reports"
             className="text-xs font-medium text-primary hover:underline"
           >
             All reports
           </Link>
+          )}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {can("properties") && (
           <ShortcutTile
             href="/protected/properties"
             label="Properties"
@@ -505,6 +521,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<Building2 className="h-4 w-4" />}
             iconClass="bg-violet-50 text-violet-600"
           />
+          )}
+          {can("tenancies") && (
           <ShortcutTile
             href="/protected/tenancies"
             label="Tenancies"
@@ -512,6 +530,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<ScrollText className="h-4 w-4" />}
             iconClass="bg-indigo-50 text-indigo-600"
           />
+          )}
+          {can("invoices") && (
           <ShortcutTile
             href="/protected/invoices"
             label="Invoices"
@@ -519,6 +539,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<ReceiptText className="h-4 w-4" />}
             iconClass="bg-sky-50 text-sky-700"
           />
+          )}
+          {can("communications") && (
           <ShortcutTile
             href="/protected/communications"
             label="Communications"
@@ -526,6 +548,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<MessageSquare className="h-4 w-4" />}
             iconClass="bg-indigo-50 text-indigo-600"
           />
+          )}
+          {can("finances") && (
           <ShortcutTile
             href="/protected/finances"
             label="Rent & bills"
@@ -533,6 +557,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<Banknote className="h-4 w-4" />}
             iconClass="bg-emerald-50 text-emerald-600"
           />
+          )}
+          {can("finances") && (
           <ShortcutTile
             href="/protected/finances/rent-position"
             label="Rent position"
@@ -540,6 +566,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<ReceiptText className="h-4 w-4" />}
             iconClass="bg-sky-50 text-sky-700"
           />
+          )}
+          {can("service_charges") && (
           <ShortcutTile
             href="/protected/service-charge-ledger"
             label="Service charge ledger"
@@ -547,6 +575,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<Landmark className="h-4 w-4" />}
             iconClass="bg-teal-50 text-teal-700"
           />
+          )}
+          {can("service_charges") && (
           <ShortcutTile
             href="/protected/service-charge-ledger/collection-position"
             label="Collection position"
@@ -554,6 +584,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<ClipboardList className="h-4 w-4" />}
             iconClass="bg-cyan-50 text-cyan-700"
           />
+          )}
+          {can("expenses") && (
           <ShortcutTile
             href="/protected/expenses"
             label="Expenses"
@@ -561,6 +593,7 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<Wallet className="h-4 w-4" />}
             iconClass="bg-amber-50 text-amber-700"
           />
+          )}
 {showRequests && (
           <ShortcutTile
             href="/protected/maintenance"
@@ -570,6 +603,7 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             iconClass="bg-orange-50 text-orange-700"
           />
 )}
+          {can("reports") && (
           <ShortcutTile
             href="/protected/reports/agreement-expiry"
             label="Agreement expiry"
@@ -577,6 +611,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<AlertTriangle className="h-4 w-4" />}
             iconClass="bg-rose-50 text-rose-600"
           />
+          )}
+          {can("onboarding") && (
           <ShortcutTile
             href="/protected/onboarding"
             label="Onboarding"
@@ -584,6 +620,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<ListChecks className="h-4 w-4" />}
             iconClass="bg-slate-100 text-slate-700"
           />
+          )}
+          {can("people") && (
           <ShortcutTile
             href="/protected/users"
             label="People"
@@ -591,6 +629,8 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<Users className="h-4 w-4" />}
             iconClass="bg-fuchsia-50 text-fuchsia-700"
           />
+          )}
+          {can("suppliers") && (
           <ShortcutTile
             href="/protected/admin/suppliers"
             label="Suppliers"
@@ -598,6 +638,7 @@ export async function AdminDashboard({ showRequests = true }: { showRequests?: b
             icon={<Tags className="h-4 w-4" />}
             iconClass="bg-lime-50 text-lime-700"
           />
+          )}
         </div>
       </div>
 

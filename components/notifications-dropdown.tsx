@@ -23,6 +23,7 @@ import {
 import { useRealtime } from "@/components/realtime-provider";
 import { LinkPendingIndicator } from "@/components/link-pending-indicator";
 import { cn } from "@/lib/utils";
+import { reloadIfStaleAction } from "@/components/stale-action-reload";
 
 type Notification = {
   id: string;
@@ -81,7 +82,10 @@ export function NotificationsDropdown() {
       setNotifications(result.notifications);
       setUnreadCount(result.unreadCount);
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      // A tab left open across a redeploy/restart holds stale action ids.
+      if (!reloadIfStaleAction(error)) {
+        console.error("Error fetching notifications:", error);
+      }
     } finally {
       setIsLoading(false);
     }

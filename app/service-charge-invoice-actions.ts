@@ -1275,6 +1275,7 @@ export const sendServiceChargeInvoiceAction = async (formData: FormData) => {
     invoiceNumber: invoice.invoiceNumber,
     amount: formatMoney(additional ? invoice.currentAmount : invoice.amountPayable),
     additionalCharge: additional,
+    customMessage: formData.get("customMessage")?.toString(),
     dueDate: invoice.dueDate.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",

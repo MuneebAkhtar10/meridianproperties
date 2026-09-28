@@ -27,10 +27,16 @@ export function RentStatementModal({
   options = [],
   defaultTenancyId,
   trigger,
+  canDownloadPdf = true,
+  canDownloadExcel = true,
 }: {
   options?: LandlordStatementOption[];
   defaultTenancyId?: string;
   trigger?: ReactNode;
+  /** From the viewing admin's "Downloads" permissions — each button only
+   * shows if granted. */
+  canDownloadPdf?: boolean;
+  canDownloadExcel?: boolean;
 }) {
   const targets = options ?? [];
   const [tenancyId, setTenancyId] = useState(
@@ -152,30 +158,40 @@ export function RentStatementModal({
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            PDF is the printed statement. Excel matches the same boxed layout
-            for editing in a spreadsheet.
-          </p>
+          {(canDownloadPdf || canDownloadExcel) && (
+            <>
+              <p className="text-xs text-muted-foreground">
+                PDF is the printed statement. Excel matches the same boxed layout
+                for editing in a spreadsheet.
+              </p>
 
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              disabled={!canGenerate}
-              onClick={() => window.open(`${exportPath}/pdf?${query}`, "_blank")}
-            >
-              <Download className="h-4 w-4" />
-              Download PDF
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!canGenerate}
-              onClick={() => window.open(`${exportPath}/csv?${query}`, "_blank")}
-            >
-              <Download className="h-4 w-4" />
-              Download Excel
-            </Button>
-          </div>
+              <div
+                className={`grid gap-2 ${canDownloadPdf && canDownloadExcel ? "grid-cols-2" : "grid-cols-1"}`}
+              >
+                {canDownloadPdf && (
+                  <Button
+                    type="button"
+                    disabled={!canGenerate}
+                    onClick={() => window.open(`${exportPath}/pdf?${query}`, "_blank")}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download PDF
+                  </Button>
+                )}
+                {canDownloadExcel && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!canGenerate}
+                    onClick={() => window.open(`${exportPath}/csv?${query}`, "_blank")}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Excel
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </Modal>

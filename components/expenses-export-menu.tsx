@@ -21,10 +21,17 @@ import { buttonVariants } from "@/components/ui/button-variants";
 export function ExpensesExportMenu({
   csvHref,
   pdfHref,
+  canDownloadPdf = true,
+  canDownloadExcel = true,
 }: {
   csvHref: string;
   pdfHref: string;
+  /** From the viewing admin's "Downloads" permissions. */
+  canDownloadPdf?: boolean;
+  canDownloadExcel?: boolean;
 }) {
+  if (!canDownloadPdf && !canDownloadExcel) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={buttonVariants({ variant: "outline" })}>
@@ -33,18 +40,22 @@ export function ExpensesExportMenu({
         <ChevronDown className="h-3.5 w-3.5 opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem asChild>
-          <a href={csvHref} className="cursor-pointer">
-            <Download className="mr-2 h-4 w-4" />
-            Download CSV
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={pdfHref} className="cursor-pointer">
-            <FileDown className="mr-2 h-4 w-4" />
-            Download PDF
-          </a>
-        </DropdownMenuItem>
+        {canDownloadExcel && (
+          <DropdownMenuItem asChild>
+            <a href={csvHref} className="cursor-pointer">
+              <Download className="mr-2 h-4 w-4" />
+              Download CSV
+            </a>
+          </DropdownMenuItem>
+        )}
+        {canDownloadPdf && (
+          <DropdownMenuItem asChild>
+            <a href={pdfHref} className="cursor-pointer">
+              <FileDown className="mr-2 h-4 w-4" />
+              Download PDF
+            </a>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

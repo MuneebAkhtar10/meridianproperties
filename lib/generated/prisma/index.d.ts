@@ -65,6 +65,11 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
  */
 export type AdminModuleGrant = $Result.DefaultSelection<Prisma.$AdminModuleGrantPayload>
 /**
+ * Model TenantModuleGrant
+ * 
+ */
+export type TenantModuleGrant = $Result.DefaultSelection<Prisma.$TenantModuleGrantPayload>
+/**
  * Model WorkerFamilyMember
  * A dependent (spouse/father/mother) tracked for an in-house worker whose
  * employeeType is "family" — mirrors the worker's own Bataka tracking, one
@@ -352,7 +357,13 @@ export const AdminModule: {
   prop_unit_ledgers: 'prop_unit_ledgers',
   prop_service_charge: 'prop_service_charge',
   prop_collection_position: 'prop_collection_position',
-  prop_cash_flow: 'prop_cash_flow'
+  prop_cash_flow: 'prop_cash_flow',
+  see_workers_in_house: 'see_workers_in_house',
+  see_workers_third_party: 'see_workers_third_party',
+  see_owners: 'see_owners',
+  see_tenants: 'see_tenants',
+  download_pdf: 'download_pdf',
+  download_excel: 'download_excel'
 };
 
 export type AdminModule = (typeof AdminModule)[keyof typeof AdminModule]
@@ -498,6 +509,17 @@ export const EntityDocumentCategory: {
 export type EntityDocumentCategory = (typeof EntityDocumentCategory)[keyof typeof EntityDocumentCategory]
 
 
+export const TenantModule: {
+  dashboard: 'dashboard',
+  requests: 'requests',
+  finances: 'finances',
+  documents: 'documents',
+  report: 'report'
+};
+
+export type TenantModule = (typeof TenantModule)[keyof typeof TenantModule]
+
+
 export const FamilyRelationship: {
   spouse: 'spouse',
   father: 'father',
@@ -582,6 +604,10 @@ export const FinancialDocumentKind: typeof $Enums.FinancialDocumentKind
 export type EntityDocumentCategory = $Enums.EntityDocumentCategory
 
 export const EntityDocumentCategory: typeof $Enums.EntityDocumentCategory
+
+export type TenantModule = $Enums.TenantModule
+
+export const TenantModule: typeof $Enums.TenantModule
 
 export type FamilyRelationship = $Enums.FamilyRelationship
 
@@ -785,6 +811,16 @@ export class PrismaClient<
     * ```
     */
   get adminModuleGrant(): Prisma.AdminModuleGrantDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.tenantModuleGrant`: Exposes CRUD operations for the **TenantModuleGrant** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more TenantModuleGrants
+    * const tenantModuleGrants = await prisma.tenantModuleGrant.findMany()
+    * ```
+    */
+  get tenantModuleGrant(): Prisma.TenantModuleGrantDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.workerFamilyMember`: Exposes CRUD operations for the **WorkerFamilyMember** model.
@@ -1579,6 +1615,7 @@ export namespace Prisma {
     OwnershipTransfer: 'OwnershipTransfer',
     User: 'User',
     AdminModuleGrant: 'AdminModuleGrant',
+    TenantModuleGrant: 'TenantModuleGrant',
     WorkerFamilyMember: 'WorkerFamilyMember',
     Tenancy: 'Tenancy',
     EntityDocument: 'EntityDocument',
@@ -1628,7 +1665,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "propertyType" | "property" | "unit" | "unitPermissionChange" | "ownershipTransfer" | "user" | "adminModuleGrant" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "expense" | "expenseUnit" | "fund" | "unitFundBalance" | "serviceChargeInvoice" | "serviceChargeInvoiceLine" | "serviceChargePayment" | "serviceChargeInstallmentPlan" | "serviceChargeInstallment" | "annualBudget" | "budgetIncomeLine" | "budgetExpenseLine" | "expenseCategoryType" | "supplier" | "buildingServiceContract" | "supplierCategory" | "supplierProperty" | "expenseSubcategoryType" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession" | "rejectionLog" | "servicesInvoice" | "servicesInvoiceLine" | "communicationLog"
+      modelProps: "propertyType" | "property" | "unit" | "unitPermissionChange" | "ownershipTransfer" | "user" | "adminModuleGrant" | "tenantModuleGrant" | "workerFamilyMember" | "tenancy" | "entityDocument" | "charge" | "payment" | "financialAttachment" | "expense" | "expenseUnit" | "fund" | "unitFundBalance" | "serviceChargeInvoice" | "serviceChargeInvoiceLine" | "serviceChargePayment" | "serviceChargeInstallmentPlan" | "serviceChargeInstallment" | "annualBudget" | "budgetIncomeLine" | "budgetExpenseLine" | "expenseCategoryType" | "supplier" | "buildingServiceContract" | "supplierCategory" | "supplierProperty" | "expenseSubcategoryType" | "maintenanceRequest" | "supplyRequest" | "maintenanceAttachment" | "taskLog" | "notification" | "whatsappSession" | "rejectionLog" | "servicesInvoice" | "servicesInvoiceLine" | "communicationLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2147,6 +2184,80 @@ export namespace Prisma {
           count: {
             args: Prisma.AdminModuleGrantCountArgs<ExtArgs>
             result: $Utils.Optional<AdminModuleGrantCountAggregateOutputType> | number
+          }
+        }
+      }
+      TenantModuleGrant: {
+        payload: Prisma.$TenantModuleGrantPayload<ExtArgs>
+        fields: Prisma.TenantModuleGrantFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.TenantModuleGrantFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.TenantModuleGrantFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>
+          }
+          findFirst: {
+            args: Prisma.TenantModuleGrantFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.TenantModuleGrantFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>
+          }
+          findMany: {
+            args: Prisma.TenantModuleGrantFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>[]
+          }
+          create: {
+            args: Prisma.TenantModuleGrantCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>
+          }
+          createMany: {
+            args: Prisma.TenantModuleGrantCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.TenantModuleGrantCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>[]
+          }
+          delete: {
+            args: Prisma.TenantModuleGrantDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>
+          }
+          update: {
+            args: Prisma.TenantModuleGrantUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>
+          }
+          deleteMany: {
+            args: Prisma.TenantModuleGrantDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.TenantModuleGrantUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.TenantModuleGrantUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>[]
+          }
+          upsert: {
+            args: Prisma.TenantModuleGrantUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TenantModuleGrantPayload>
+          }
+          aggregate: {
+            args: Prisma.TenantModuleGrantAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateTenantModuleGrant>
+          }
+          groupBy: {
+            args: Prisma.TenantModuleGrantGroupByArgs<ExtArgs>
+            result: $Utils.Optional<TenantModuleGrantGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.TenantModuleGrantCountArgs<ExtArgs>
+            result: $Utils.Optional<TenantModuleGrantCountAggregateOutputType> | number
           }
         }
       }
@@ -4796,6 +4907,7 @@ export namespace Prisma {
     ownershipTransfer?: OwnershipTransferOmit
     user?: UserOmit
     adminModuleGrant?: AdminModuleGrantOmit
+    tenantModuleGrant?: TenantModuleGrantOmit
     workerFamilyMember?: WorkerFamilyMemberOmit
     tenancy?: TenancyOmit
     entityDocument?: EntityDocumentOmit
@@ -16787,6 +16899,980 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: AdminModuleGrantInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model TenantModuleGrant
+   */
+
+  export type AggregateTenantModuleGrant = {
+    _count: TenantModuleGrantCountAggregateOutputType | null
+    _min: TenantModuleGrantMinAggregateOutputType | null
+    _max: TenantModuleGrantMaxAggregateOutputType | null
+  }
+
+  export type TenantModuleGrantMinAggregateOutputType = {
+    id: string | null
+    module: $Enums.TenantModule | null
+    createdAt: Date | null
+  }
+
+  export type TenantModuleGrantMaxAggregateOutputType = {
+    id: string | null
+    module: $Enums.TenantModule | null
+    createdAt: Date | null
+  }
+
+  export type TenantModuleGrantCountAggregateOutputType = {
+    id: number
+    module: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type TenantModuleGrantMinAggregateInputType = {
+    id?: true
+    module?: true
+    createdAt?: true
+  }
+
+  export type TenantModuleGrantMaxAggregateInputType = {
+    id?: true
+    module?: true
+    createdAt?: true
+  }
+
+  export type TenantModuleGrantCountAggregateInputType = {
+    id?: true
+    module?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type TenantModuleGrantAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which TenantModuleGrant to aggregate.
+     */
+    where?: TenantModuleGrantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TenantModuleGrants to fetch.
+     */
+    orderBy?: TenantModuleGrantOrderByWithRelationInput | TenantModuleGrantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: TenantModuleGrantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TenantModuleGrants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TenantModuleGrants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned TenantModuleGrants
+    **/
+    _count?: true | TenantModuleGrantCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: TenantModuleGrantMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: TenantModuleGrantMaxAggregateInputType
+  }
+
+  export type GetTenantModuleGrantAggregateType<T extends TenantModuleGrantAggregateArgs> = {
+        [P in keyof T & keyof AggregateTenantModuleGrant]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateTenantModuleGrant[P]>
+      : GetScalarType<T[P], AggregateTenantModuleGrant[P]>
+  }
+
+
+
+
+  export type TenantModuleGrantGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: TenantModuleGrantWhereInput
+    orderBy?: TenantModuleGrantOrderByWithAggregationInput | TenantModuleGrantOrderByWithAggregationInput[]
+    by: TenantModuleGrantScalarFieldEnum[] | TenantModuleGrantScalarFieldEnum
+    having?: TenantModuleGrantScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: TenantModuleGrantCountAggregateInputType | true
+    _min?: TenantModuleGrantMinAggregateInputType
+    _max?: TenantModuleGrantMaxAggregateInputType
+  }
+
+  export type TenantModuleGrantGroupByOutputType = {
+    id: string
+    module: $Enums.TenantModule
+    createdAt: Date
+    _count: TenantModuleGrantCountAggregateOutputType | null
+    _min: TenantModuleGrantMinAggregateOutputType | null
+    _max: TenantModuleGrantMaxAggregateOutputType | null
+  }
+
+  type GetTenantModuleGrantGroupByPayload<T extends TenantModuleGrantGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<TenantModuleGrantGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof TenantModuleGrantGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], TenantModuleGrantGroupByOutputType[P]>
+            : GetScalarType<T[P], TenantModuleGrantGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type TenantModuleGrantSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    module?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["tenantModuleGrant"]>
+
+  export type TenantModuleGrantSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    module?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["tenantModuleGrant"]>
+
+  export type TenantModuleGrantSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    module?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["tenantModuleGrant"]>
+
+  export type TenantModuleGrantSelectScalar = {
+    id?: boolean
+    module?: boolean
+    createdAt?: boolean
+  }
+
+  export type TenantModuleGrantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "module" | "createdAt", ExtArgs["result"]["tenantModuleGrant"]>
+
+  export type $TenantModuleGrantPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "TenantModuleGrant"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      module: $Enums.TenantModule
+      createdAt: Date
+    }, ExtArgs["result"]["tenantModuleGrant"]>
+    composites: {}
+  }
+
+  type TenantModuleGrantGetPayload<S extends boolean | null | undefined | TenantModuleGrantDefaultArgs> = $Result.GetResult<Prisma.$TenantModuleGrantPayload, S>
+
+  type TenantModuleGrantCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<TenantModuleGrantFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: TenantModuleGrantCountAggregateInputType | true
+    }
+
+  export interface TenantModuleGrantDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['TenantModuleGrant'], meta: { name: 'TenantModuleGrant' } }
+    /**
+     * Find zero or one TenantModuleGrant that matches the filter.
+     * @param {TenantModuleGrantFindUniqueArgs} args - Arguments to find a TenantModuleGrant
+     * @example
+     * // Get one TenantModuleGrant
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends TenantModuleGrantFindUniqueArgs>(args: SelectSubset<T, TenantModuleGrantFindUniqueArgs<ExtArgs>>): Prisma__TenantModuleGrantClient<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one TenantModuleGrant that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {TenantModuleGrantFindUniqueOrThrowArgs} args - Arguments to find a TenantModuleGrant
+     * @example
+     * // Get one TenantModuleGrant
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends TenantModuleGrantFindUniqueOrThrowArgs>(args: SelectSubset<T, TenantModuleGrantFindUniqueOrThrowArgs<ExtArgs>>): Prisma__TenantModuleGrantClient<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first TenantModuleGrant that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TenantModuleGrantFindFirstArgs} args - Arguments to find a TenantModuleGrant
+     * @example
+     * // Get one TenantModuleGrant
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends TenantModuleGrantFindFirstArgs>(args?: SelectSubset<T, TenantModuleGrantFindFirstArgs<ExtArgs>>): Prisma__TenantModuleGrantClient<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first TenantModuleGrant that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TenantModuleGrantFindFirstOrThrowArgs} args - Arguments to find a TenantModuleGrant
+     * @example
+     * // Get one TenantModuleGrant
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends TenantModuleGrantFindFirstOrThrowArgs>(args?: SelectSubset<T, TenantModuleGrantFindFirstOrThrowArgs<ExtArgs>>): Prisma__TenantModuleGrantClient<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more TenantModuleGrants that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TenantModuleGrantFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all TenantModuleGrants
+     * const tenantModuleGrants = await prisma.tenantModuleGrant.findMany()
+     * 
+     * // Get first 10 TenantModuleGrants
+     * const tenantModuleGrants = await prisma.tenantModuleGrant.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const tenantModuleGrantWithIdOnly = await prisma.tenantModuleGrant.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends TenantModuleGrantFindManyArgs>(args?: SelectSubset<T, TenantModuleGrantFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a TenantModuleGrant.
+     * @param {TenantModuleGrantCreateArgs} args - Arguments to create a TenantModuleGrant.
+     * @example
+     * // Create one TenantModuleGrant
+     * const TenantModuleGrant = await prisma.tenantModuleGrant.create({
+     *   data: {
+     *     // ... data to create a TenantModuleGrant
+     *   }
+     * })
+     * 
+     */
+    create<T extends TenantModuleGrantCreateArgs>(args: SelectSubset<T, TenantModuleGrantCreateArgs<ExtArgs>>): Prisma__TenantModuleGrantClient<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many TenantModuleGrants.
+     * @param {TenantModuleGrantCreateManyArgs} args - Arguments to create many TenantModuleGrants.
+     * @example
+     * // Create many TenantModuleGrants
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends TenantModuleGrantCreateManyArgs>(args?: SelectSubset<T, TenantModuleGrantCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many TenantModuleGrants and returns the data saved in the database.
+     * @param {TenantModuleGrantCreateManyAndReturnArgs} args - Arguments to create many TenantModuleGrants.
+     * @example
+     * // Create many TenantModuleGrants
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many TenantModuleGrants and only return the `id`
+     * const tenantModuleGrantWithIdOnly = await prisma.tenantModuleGrant.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends TenantModuleGrantCreateManyAndReturnArgs>(args?: SelectSubset<T, TenantModuleGrantCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a TenantModuleGrant.
+     * @param {TenantModuleGrantDeleteArgs} args - Arguments to delete one TenantModuleGrant.
+     * @example
+     * // Delete one TenantModuleGrant
+     * const TenantModuleGrant = await prisma.tenantModuleGrant.delete({
+     *   where: {
+     *     // ... filter to delete one TenantModuleGrant
+     *   }
+     * })
+     * 
+     */
+    delete<T extends TenantModuleGrantDeleteArgs>(args: SelectSubset<T, TenantModuleGrantDeleteArgs<ExtArgs>>): Prisma__TenantModuleGrantClient<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one TenantModuleGrant.
+     * @param {TenantModuleGrantUpdateArgs} args - Arguments to update one TenantModuleGrant.
+     * @example
+     * // Update one TenantModuleGrant
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends TenantModuleGrantUpdateArgs>(args: SelectSubset<T, TenantModuleGrantUpdateArgs<ExtArgs>>): Prisma__TenantModuleGrantClient<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more TenantModuleGrants.
+     * @param {TenantModuleGrantDeleteManyArgs} args - Arguments to filter TenantModuleGrants to delete.
+     * @example
+     * // Delete a few TenantModuleGrants
+     * const { count } = await prisma.tenantModuleGrant.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends TenantModuleGrantDeleteManyArgs>(args?: SelectSubset<T, TenantModuleGrantDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more TenantModuleGrants.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TenantModuleGrantUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many TenantModuleGrants
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends TenantModuleGrantUpdateManyArgs>(args: SelectSubset<T, TenantModuleGrantUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more TenantModuleGrants and returns the data updated in the database.
+     * @param {TenantModuleGrantUpdateManyAndReturnArgs} args - Arguments to update many TenantModuleGrants.
+     * @example
+     * // Update many TenantModuleGrants
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more TenantModuleGrants and only return the `id`
+     * const tenantModuleGrantWithIdOnly = await prisma.tenantModuleGrant.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends TenantModuleGrantUpdateManyAndReturnArgs>(args: SelectSubset<T, TenantModuleGrantUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one TenantModuleGrant.
+     * @param {TenantModuleGrantUpsertArgs} args - Arguments to update or create a TenantModuleGrant.
+     * @example
+     * // Update or create a TenantModuleGrant
+     * const tenantModuleGrant = await prisma.tenantModuleGrant.upsert({
+     *   create: {
+     *     // ... data to create a TenantModuleGrant
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the TenantModuleGrant we want to update
+     *   }
+     * })
+     */
+    upsert<T extends TenantModuleGrantUpsertArgs>(args: SelectSubset<T, TenantModuleGrantUpsertArgs<ExtArgs>>): Prisma__TenantModuleGrantClient<$Result.GetResult<Prisma.$TenantModuleGrantPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of TenantModuleGrants.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TenantModuleGrantCountArgs} args - Arguments to filter TenantModuleGrants to count.
+     * @example
+     * // Count the number of TenantModuleGrants
+     * const count = await prisma.tenantModuleGrant.count({
+     *   where: {
+     *     // ... the filter for the TenantModuleGrants we want to count
+     *   }
+     * })
+    **/
+    count<T extends TenantModuleGrantCountArgs>(
+      args?: Subset<T, TenantModuleGrantCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], TenantModuleGrantCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a TenantModuleGrant.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TenantModuleGrantAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends TenantModuleGrantAggregateArgs>(args: Subset<T, TenantModuleGrantAggregateArgs>): Prisma.PrismaPromise<GetTenantModuleGrantAggregateType<T>>
+
+    /**
+     * Group by TenantModuleGrant.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TenantModuleGrantGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends TenantModuleGrantGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: TenantModuleGrantGroupByArgs['orderBy'] }
+        : { orderBy?: TenantModuleGrantGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, TenantModuleGrantGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTenantModuleGrantGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the TenantModuleGrant model
+   */
+  readonly fields: TenantModuleGrantFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for TenantModuleGrant.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__TenantModuleGrantClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the TenantModuleGrant model
+   */
+  interface TenantModuleGrantFieldRefs {
+    readonly id: FieldRef<"TenantModuleGrant", 'String'>
+    readonly module: FieldRef<"TenantModuleGrant", 'TenantModule'>
+    readonly createdAt: FieldRef<"TenantModuleGrant", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * TenantModuleGrant findUnique
+   */
+  export type TenantModuleGrantFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * Filter, which TenantModuleGrant to fetch.
+     */
+    where: TenantModuleGrantWhereUniqueInput
+  }
+
+  /**
+   * TenantModuleGrant findUniqueOrThrow
+   */
+  export type TenantModuleGrantFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * Filter, which TenantModuleGrant to fetch.
+     */
+    where: TenantModuleGrantWhereUniqueInput
+  }
+
+  /**
+   * TenantModuleGrant findFirst
+   */
+  export type TenantModuleGrantFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * Filter, which TenantModuleGrant to fetch.
+     */
+    where?: TenantModuleGrantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TenantModuleGrants to fetch.
+     */
+    orderBy?: TenantModuleGrantOrderByWithRelationInput | TenantModuleGrantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for TenantModuleGrants.
+     */
+    cursor?: TenantModuleGrantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TenantModuleGrants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TenantModuleGrants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TenantModuleGrants.
+     */
+    distinct?: TenantModuleGrantScalarFieldEnum | TenantModuleGrantScalarFieldEnum[]
+  }
+
+  /**
+   * TenantModuleGrant findFirstOrThrow
+   */
+  export type TenantModuleGrantFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * Filter, which TenantModuleGrant to fetch.
+     */
+    where?: TenantModuleGrantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TenantModuleGrants to fetch.
+     */
+    orderBy?: TenantModuleGrantOrderByWithRelationInput | TenantModuleGrantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for TenantModuleGrants.
+     */
+    cursor?: TenantModuleGrantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TenantModuleGrants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TenantModuleGrants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TenantModuleGrants.
+     */
+    distinct?: TenantModuleGrantScalarFieldEnum | TenantModuleGrantScalarFieldEnum[]
+  }
+
+  /**
+   * TenantModuleGrant findMany
+   */
+  export type TenantModuleGrantFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * Filter, which TenantModuleGrants to fetch.
+     */
+    where?: TenantModuleGrantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TenantModuleGrants to fetch.
+     */
+    orderBy?: TenantModuleGrantOrderByWithRelationInput | TenantModuleGrantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing TenantModuleGrants.
+     */
+    cursor?: TenantModuleGrantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TenantModuleGrants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TenantModuleGrants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TenantModuleGrants.
+     */
+    distinct?: TenantModuleGrantScalarFieldEnum | TenantModuleGrantScalarFieldEnum[]
+  }
+
+  /**
+   * TenantModuleGrant create
+   */
+  export type TenantModuleGrantCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * The data needed to create a TenantModuleGrant.
+     */
+    data: XOR<TenantModuleGrantCreateInput, TenantModuleGrantUncheckedCreateInput>
+  }
+
+  /**
+   * TenantModuleGrant createMany
+   */
+  export type TenantModuleGrantCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many TenantModuleGrants.
+     */
+    data: TenantModuleGrantCreateManyInput | TenantModuleGrantCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * TenantModuleGrant createManyAndReturn
+   */
+  export type TenantModuleGrantCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * The data used to create many TenantModuleGrants.
+     */
+    data: TenantModuleGrantCreateManyInput | TenantModuleGrantCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * TenantModuleGrant update
+   */
+  export type TenantModuleGrantUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * The data needed to update a TenantModuleGrant.
+     */
+    data: XOR<TenantModuleGrantUpdateInput, TenantModuleGrantUncheckedUpdateInput>
+    /**
+     * Choose, which TenantModuleGrant to update.
+     */
+    where: TenantModuleGrantWhereUniqueInput
+  }
+
+  /**
+   * TenantModuleGrant updateMany
+   */
+  export type TenantModuleGrantUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update TenantModuleGrants.
+     */
+    data: XOR<TenantModuleGrantUpdateManyMutationInput, TenantModuleGrantUncheckedUpdateManyInput>
+    /**
+     * Filter which TenantModuleGrants to update
+     */
+    where?: TenantModuleGrantWhereInput
+    /**
+     * Limit how many TenantModuleGrants to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * TenantModuleGrant updateManyAndReturn
+   */
+  export type TenantModuleGrantUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * The data used to update TenantModuleGrants.
+     */
+    data: XOR<TenantModuleGrantUpdateManyMutationInput, TenantModuleGrantUncheckedUpdateManyInput>
+    /**
+     * Filter which TenantModuleGrants to update
+     */
+    where?: TenantModuleGrantWhereInput
+    /**
+     * Limit how many TenantModuleGrants to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * TenantModuleGrant upsert
+   */
+  export type TenantModuleGrantUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * The filter to search for the TenantModuleGrant to update in case it exists.
+     */
+    where: TenantModuleGrantWhereUniqueInput
+    /**
+     * In case the TenantModuleGrant found by the `where` argument doesn't exist, create a new TenantModuleGrant with this data.
+     */
+    create: XOR<TenantModuleGrantCreateInput, TenantModuleGrantUncheckedCreateInput>
+    /**
+     * In case the TenantModuleGrant was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<TenantModuleGrantUpdateInput, TenantModuleGrantUncheckedUpdateInput>
+  }
+
+  /**
+   * TenantModuleGrant delete
+   */
+  export type TenantModuleGrantDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
+    /**
+     * Filter which TenantModuleGrant to delete.
+     */
+    where: TenantModuleGrantWhereUniqueInput
+  }
+
+  /**
+   * TenantModuleGrant deleteMany
+   */
+  export type TenantModuleGrantDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which TenantModuleGrants to delete
+     */
+    where?: TenantModuleGrantWhereInput
+    /**
+     * Limit how many TenantModuleGrants to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * TenantModuleGrant without action
+   */
+  export type TenantModuleGrantDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TenantModuleGrant
+     */
+    select?: TenantModuleGrantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TenantModuleGrant
+     */
+    omit?: TenantModuleGrantOmit<ExtArgs> | null
   }
 
 
@@ -59018,6 +60104,15 @@ export namespace Prisma {
   export type AdminModuleGrantScalarFieldEnum = (typeof AdminModuleGrantScalarFieldEnum)[keyof typeof AdminModuleGrantScalarFieldEnum]
 
 
+  export const TenantModuleGrantScalarFieldEnum: {
+    id: 'id',
+    module: 'module',
+    createdAt: 'createdAt'
+  };
+
+  export type TenantModuleGrantScalarFieldEnum = (typeof TenantModuleGrantScalarFieldEnum)[keyof typeof TenantModuleGrantScalarFieldEnum]
+
+
   export const WorkerFamilyMemberScalarFieldEnum: {
     id: 'id',
     workerId: 'workerId',
@@ -59754,6 +60849,20 @@ export namespace Prisma {
    * Reference to a field of type 'AdminModule[]'
    */
   export type ListEnumAdminModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AdminModule[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'TenantModule'
+   */
+  export type EnumTenantModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TenantModule'>
+    
+
+
+  /**
+   * Reference to a field of type 'TenantModule[]'
+   */
+  export type ListEnumTenantModuleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TenantModule[]'>
     
 
 
@@ -60992,6 +62101,48 @@ export namespace Prisma {
     userId?: UuidWithAggregatesFilter<"AdminModuleGrant"> | string
     module?: EnumAdminModuleWithAggregatesFilter<"AdminModuleGrant"> | $Enums.AdminModule
     createdAt?: DateTimeWithAggregatesFilter<"AdminModuleGrant"> | Date | string
+  }
+
+  export type TenantModuleGrantWhereInput = {
+    AND?: TenantModuleGrantWhereInput | TenantModuleGrantWhereInput[]
+    OR?: TenantModuleGrantWhereInput[]
+    NOT?: TenantModuleGrantWhereInput | TenantModuleGrantWhereInput[]
+    id?: UuidFilter<"TenantModuleGrant"> | string
+    module?: EnumTenantModuleFilter<"TenantModuleGrant"> | $Enums.TenantModule
+    createdAt?: DateTimeFilter<"TenantModuleGrant"> | Date | string
+  }
+
+  export type TenantModuleGrantOrderByWithRelationInput = {
+    id?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type TenantModuleGrantWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    module?: $Enums.TenantModule
+    AND?: TenantModuleGrantWhereInput | TenantModuleGrantWhereInput[]
+    OR?: TenantModuleGrantWhereInput[]
+    NOT?: TenantModuleGrantWhereInput | TenantModuleGrantWhereInput[]
+    createdAt?: DateTimeFilter<"TenantModuleGrant"> | Date | string
+  }, "id" | "module">
+
+  export type TenantModuleGrantOrderByWithAggregationInput = {
+    id?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+    _count?: TenantModuleGrantCountOrderByAggregateInput
+    _max?: TenantModuleGrantMaxOrderByAggregateInput
+    _min?: TenantModuleGrantMinOrderByAggregateInput
+  }
+
+  export type TenantModuleGrantScalarWhereWithAggregatesInput = {
+    AND?: TenantModuleGrantScalarWhereWithAggregatesInput | TenantModuleGrantScalarWhereWithAggregatesInput[]
+    OR?: TenantModuleGrantScalarWhereWithAggregatesInput[]
+    NOT?: TenantModuleGrantScalarWhereWithAggregatesInput | TenantModuleGrantScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"TenantModuleGrant"> | string
+    module?: EnumTenantModuleWithAggregatesFilter<"TenantModuleGrant"> | $Enums.TenantModule
+    createdAt?: DateTimeWithAggregatesFilter<"TenantModuleGrant"> | Date | string
   }
 
   export type WorkerFamilyMemberWhereInput = {
@@ -65400,6 +66551,48 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     module?: EnumAdminModuleFieldUpdateOperationsInput | $Enums.AdminModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TenantModuleGrantCreateInput = {
+    id?: string
+    module: $Enums.TenantModule
+    createdAt?: Date | string
+  }
+
+  export type TenantModuleGrantUncheckedCreateInput = {
+    id?: string
+    module: $Enums.TenantModule
+    createdAt?: Date | string
+  }
+
+  export type TenantModuleGrantUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumTenantModuleFieldUpdateOperationsInput | $Enums.TenantModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TenantModuleGrantUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumTenantModuleFieldUpdateOperationsInput | $Enums.TenantModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TenantModuleGrantCreateManyInput = {
+    id?: string
+    module: $Enums.TenantModule
+    createdAt?: Date | string
+  }
+
+  export type TenantModuleGrantUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumTenantModuleFieldUpdateOperationsInput | $Enums.TenantModule
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TenantModuleGrantUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    module?: EnumTenantModuleFieldUpdateOperationsInput | $Enums.TenantModule
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -69939,6 +71132,41 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumAdminModuleFilter<$PrismaModel>
     _max?: NestedEnumAdminModuleFilter<$PrismaModel>
+  }
+
+  export type EnumTenantModuleFilter<$PrismaModel = never> = {
+    equals?: $Enums.TenantModule | EnumTenantModuleFieldRefInput<$PrismaModel>
+    in?: $Enums.TenantModule[] | ListEnumTenantModuleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TenantModule[] | ListEnumTenantModuleFieldRefInput<$PrismaModel>
+    not?: NestedEnumTenantModuleFilter<$PrismaModel> | $Enums.TenantModule
+  }
+
+  export type TenantModuleGrantCountOrderByAggregateInput = {
+    id?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type TenantModuleGrantMaxOrderByAggregateInput = {
+    id?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type TenantModuleGrantMinOrderByAggregateInput = {
+    id?: SortOrder
+    module?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumTenantModuleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TenantModule | EnumTenantModuleFieldRefInput<$PrismaModel>
+    in?: $Enums.TenantModule[] | ListEnumTenantModuleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TenantModule[] | ListEnumTenantModuleFieldRefInput<$PrismaModel>
+    not?: NestedEnumTenantModuleWithAggregatesFilter<$PrismaModel> | $Enums.TenantModule
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTenantModuleFilter<$PrismaModel>
+    _max?: NestedEnumTenantModuleFilter<$PrismaModel>
   }
 
   export type EnumFamilyRelationshipFilter<$PrismaModel = never> = {
@@ -74831,6 +76059,10 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAdminModuleGrantsInput, UserUpdateWithoutAdminModuleGrantsInput>, UserUncheckedUpdateWithoutAdminModuleGrantsInput>
   }
 
+  export type EnumTenantModuleFieldUpdateOperationsInput = {
+    set?: $Enums.TenantModule
+  }
+
   export type UserCreateNestedOneWithoutFamilyMembersInput = {
     create?: XOR<UserCreateWithoutFamilyMembersInput, UserUncheckedCreateWithoutFamilyMembersInput>
     connectOrCreate?: UserCreateOrConnectWithoutFamilyMembersInput
@@ -77917,6 +79149,23 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumAdminModuleFilter<$PrismaModel>
     _max?: NestedEnumAdminModuleFilter<$PrismaModel>
+  }
+
+  export type NestedEnumTenantModuleFilter<$PrismaModel = never> = {
+    equals?: $Enums.TenantModule | EnumTenantModuleFieldRefInput<$PrismaModel>
+    in?: $Enums.TenantModule[] | ListEnumTenantModuleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TenantModule[] | ListEnumTenantModuleFieldRefInput<$PrismaModel>
+    not?: NestedEnumTenantModuleFilter<$PrismaModel> | $Enums.TenantModule
+  }
+
+  export type NestedEnumTenantModuleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TenantModule | EnumTenantModuleFieldRefInput<$PrismaModel>
+    in?: $Enums.TenantModule[] | ListEnumTenantModuleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TenantModule[] | ListEnumTenantModuleFieldRefInput<$PrismaModel>
+    not?: NestedEnumTenantModuleWithAggregatesFilter<$PrismaModel> | $Enums.TenantModule
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTenantModuleFilter<$PrismaModel>
+    _max?: NestedEnumTenantModuleFilter<$PrismaModel>
   }
 
   export type NestedEnumFamilyRelationshipFilter<$PrismaModel = never> = {

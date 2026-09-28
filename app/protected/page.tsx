@@ -28,7 +28,7 @@ import {
 import { formatOmanAddress } from "@/lib/oman";
 import { formatUnitLabel } from "@/lib/property-types";
 import { requireUser, type SessionUser, isStaffAdmin } from "@/lib/session";
-import { firstAllowedAdminHref, hasAdminModule } from "@/lib/permissions";
+import { adminAccess, firstAllowedAdminHref, firstAllowedTenantHref, hasAdminModule, hasTenantModule } from "@/lib/permissions";
 import { StatusBadge } from "@/lib/status";
 import {
   ChargeStatus,
@@ -38,6 +38,13 @@ import {
 
 export default async function DashboardPage() {
   const user = await requireUser();
+
+  if (user.userType === UserType.user && !(await hasTenantModule("dashboard"))) {
+    const href = await firstAllowedTenantHref();
+    if (href !== "/protected") {
+      redirect(href);
+    }
+  }
 
   if (isStaffAdmin(user.userType) && !(await hasAdminModule(user, "dashboard"))) {
     const href = await firstAllowedAdminHref(user);
@@ -52,7 +59,10 @@ export default async function DashboardPage() {
   return (
     <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
       {showAdminDashboard && (
-        <AdminDashboard showRequests={await hasAdminModule(user, "maintenance")} />
+        <AdminDashboard
+          showRequests={await hasAdminModule(user, "maintenance")}
+          can={(await adminAccess(user)).can}
+        />
       )}
       {isStaffAdmin(user.userType) && !showAdminDashboard && (
         <PageHeader
@@ -61,7 +71,15 @@ export default async function DashboardPage() {
         />
       )}
       {user.userType === UserType.worker && <WorkerDashboard user={user} />}
-      {user.userType === UserType.user && <TenantDashboard user={user} />}
+      {user.userType === UserType.user && (await hasTenantModule("dashboard")) && (
+        <TenantDashboard user={user} />
+      )}
+      {user.userType === UserType.user && !(await hasTenantModule("dashboard")) && (
+        <PageHeader
+          title="No sections assigned"
+          description="A super admin has not granted tenant sections yet. Ask them to open Permissions and enable the modules tenants need."
+        />
+      )}
       {user.userType === UserType.owner && <OwnerDashboard user={user} />}
     </div>
   );
@@ -318,7 +336,8 @@ async function WorkerDashboard({ user }: { user: SessionUser }) {
 /* ── Tenant ────────────────────────────────────────────────────────────────── */
 
 async function TenantDashboard({ user }: { user: SessionUser }) {
-  const [unit, byStatus, recent, awaitingCode, charges] = await Promise.all([
+  const [unit, byStatus, recent, awaitingCode, charges, canReport, canFinances, canRequests] =
+    await Promise.all([
     prisma.unit.findUnique({
       where: { tenantId: user.id },
       include: { property: { include: { propertyType: true } } },
@@ -350,6 +369,9 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
         payments: { select: { amount: true, status: true } },
       },
     }),
+    hasTenantModule("report"),
+    hasTenantModule("finances"),
+    hasTenantModule("requests"),
   ]);
 
   const count = (status: RequestStatus) =>
@@ -368,7 +390,7 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
   return (
     <>
       <PageHeader title="Dashboard" description="Your home and requests.">
-        {unit && (
+        {unit && canReport && (
           <ButtonLink href="/protected/report">
             <Plus className="h-4 w-4" />
             Report an issue
@@ -411,28 +433,44 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
             </Card>
           ))}
 
-          <Link href="/protected/finances" className="block">
-          <Card className="transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <Card className={canFinances ? "transition-all hover:-translate-y-0.5 hover:shadow-md" : undefined}>
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                  <Home className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="font-semibold">
-                    {formatUnitLabel(unit.property.propertyType, unit.label)}
-                    {unit.floor !== null ? ` · Floor ${unit.floor}` : ""}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {unit.property.name} — {formatOmanAddress(unit.property)}
-                  </p>
+              {canFinances ? (
+                <Link href="/protected/finances" className="flex items-center gap-4">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                    <Home className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">
+                      {formatUnitLabel(unit.property.propertyType, unit.label)}
+                      {unit.floor !== null ? ` · Floor ${unit.floor}` : ""}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {unit.property.name} — {formatOmanAddress(unit.property)}
+                    </p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                    <Home className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">
+                      {formatUnitLabel(unit.property.propertyType, unit.label)}
+                      {unit.floor !== null ? ` · Floor ${unit.floor}` : ""}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {unit.property.name} — {formatOmanAddress(unit.property)}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
-          </Link>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {canFinances && (
             <StatTile
               label="Rent & bills due"
               value={<TileMoney amount={outstanding} />}
@@ -445,6 +483,9 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
                   : "nothing outstanding"
               }
             />
+            )}
+            {canRequests && (
+            <>
             <StatTile
               label="Open requests"
               value={open}
@@ -469,15 +510,20 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
               color="emerald"
               href="/protected/requests"
             />
+            </>
+            )}
           </div>
 
+          {canFinances && (
           <div className="flex justify-end">
             <ButtonLink href="/protected/finances" variant="outline" size="sm">
               <WalletCards className="h-4 w-4" />
               View rent, bills & receipts
             </ButtonLink>
           </div>
+          )}
 
+          {canRequests && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Recent requests</CardTitle>
@@ -508,6 +554,7 @@ async function TenantDashboard({ user }: { user: SessionUser }) {
               )}
             </CardContent>
           </Card>
+          )}
         </>
       )}
     </>

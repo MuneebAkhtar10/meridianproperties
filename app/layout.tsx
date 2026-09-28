@@ -11,10 +11,10 @@ import { AppTopbar, TOOLBAR_BY_ROLE } from "@/components/app-topbar";
 import { RealtimeProvider } from "@/components/realtime-provider";
 import { UserMenu } from "@/components/user-menu";
 import { ButtonLink } from "@/components/ui/button-link";
-import { staffAdminNavItems, staffAdminToolbarItems } from "@/lib/permissions";
+import { staffAdminNavItems, staffAdminToolbarItems, tenantNavItems } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { isStaffAdmin } from "@/lib/user-roles";
-import type { UserType } from "@/lib/generated/prisma/client";
+import { UserType } from "@/lib/generated/prisma/client";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,13 +29,6 @@ const NAV_BY_ROLE: Partial<Record<UserType, NavItem[]>> = {
     { href: "/protected", label: "Dashboard", icon: "dashboard" },
     { href: "/protected/tasks", label: "My Tasks", icon: "requests" },
     { href: "/protected/history", label: "History", icon: "history" },
-  ],
-  user: [
-    { href: "/protected", label: "Dashboard", icon: "dashboard" },
-    { href: "/protected/requests", label: "My Requests", icon: "requests" },
-    { href: "/protected/finances", label: "Rent & Bills", icon: "rentAndBills" },
-    { href: "/protected/documents", label: "My Documents", icon: "documents" },
-    { href: "/protected/report", label: "Report Issue", icon: "report" },
   ],
   owner: [
     { href: "/protected", label: "Dashboard", icon: "dashboard" },
@@ -56,7 +49,9 @@ export default async function RootLayout({
   const navItems = user
     ? isStaffAdmin(user.userType)
       ? await staffAdminNavItems(user)
-      : (NAV_BY_ROLE[user.userType] ?? [])
+      : user.userType === UserType.user
+        ? await tenantNavItems()
+        : (NAV_BY_ROLE[user.userType] ?? [])
     : [];
   const toolbarItems = user
     ? isStaffAdmin(user.userType)

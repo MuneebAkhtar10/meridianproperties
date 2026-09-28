@@ -57,6 +57,12 @@ enum AdminModule {
   prop_service_charge
   prop_collection_position
   prop_cash_flow
+  see_workers_in_house
+  see_workers_third_party
+  see_owners
+  see_tenants
+  download_pdf
+  download_excel
 }
 
 /// Only meaningful when userType = worker. Distinguishes staff employed by
@@ -591,6 +597,24 @@ model AdminModuleGrant {
   @@unique([userId, module])
   @@index([userId])
   @@map("admin_module_grants")
+}
+
+/// Sidebar sections of the tenant app. One global row per module — a
+/// super admin ticks these once and every tenant sees the same set.
+enum TenantModule {
+  dashboard
+  requests
+  finances
+  documents
+  report
+}
+
+model TenantModuleGrant {
+  id        String       @id @default(uuid()) @db.Uuid
+  module    TenantModule @unique
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@map("tenant_module_grants")
 }
 
 enum FamilyRelationship {

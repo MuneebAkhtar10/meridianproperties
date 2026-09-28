@@ -21,6 +21,7 @@ import { EntityDocumentManager } from "@/components/entity-document-manager";
 import { ManageToggle } from "@/components/manage-toggle";
 import { FormMessage, Message } from "@/components/form-message";
 import { PageHeader } from "@/components/page-header";
+import { AlertPreviewModal } from "@/components/alert-preview-modal";
 import { RentStatementModal } from "@/components/rent-statement-modal";
 import { StartTenancyForm } from "@/components/start-tenancy-form";
 import { SubmitButton } from "@/components/submit-button";
@@ -32,9 +33,15 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { type PickableUnit } from "@/components/unit-picker";
+import { tenantWelcomePreview } from "@/lib/alert-preview";
 import { chargeBalance, dateInputValue, formatMoney } from "@/lib/finance";
 import { formatUnitLabel, isIndependentType } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
+import {
+  adminAccess,
+  personVisibilityWhere,
+  visiblePersonCategories,
+} from "@/lib/permissions";
 import { requireAnyRole, isStaffAdmin } from "@/lib/session";
 import {
   ChargeStatus,
@@ -48,6 +55,8 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = user.userType === UserType.owner;
   const isAdmin = isStaffAdmin(user.userType);
+  const tenantPersonWhere = personVisibilityWhere(await visiblePersonCategories(user));
+  const { can } = await adminAccess(user);
 
   const params = (await searchParams) as unknown as {
     property?: string;
@@ -129,7 +138,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
       }),
       isAdmin
         ? prisma.user.findMany({
-            where: { userType: UserType.user, unit: null },
+            where: { AND: [{ userType: UserType.user, unit: null }, tenantPersonWhere] },
             orderBy: { email: "asc" },
             select: { id: true, email: true, firstName: true, lastName: true },
           })
@@ -176,6 +185,15 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
     propertyTypeShowRentBills: unit.property.propertyType.showRentBills,
   }));
   const scheduledMonthlyRent = Number(activeTotals._sum.monthlyRent ?? 0);
+  const welcomePreviews = isAdmin
+    ? new Map(
+        await Promise.all(
+          active.map(
+            async (tenancy) => [tenancy.id, await tenantWelcomePreview(tenancy.id)] as const,
+          ),
+        ),
+      )
+    : new Map();
 
   return (
     <div className="w-full space-y-8 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
@@ -442,6 +460,8 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                         ) && (
                           <div className="flex justify-end">
                             <RentStatementModal
+                              canDownloadPdf={can("download_pdf")}
+                              canDownloadExcel={can("download_excel")}
                               options={[
                                 {
                                   tenancyId: tenancy.id,
@@ -652,12 +672,7 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                             </div>
                           </form>
 
-                          <form className="flex items-center justify-between gap-4 border-t p-4 sm:p-5">
-                            <input
-                              type="hidden"
-                              name="tenancyId"
-                              value={tenancy.id}
-                            />
+                          <div className="flex items-center justify-between gap-4 border-t p-4 sm:p-5">
                             <div>
                               <p className="text-sm font-medium">
                                 Welcome email
@@ -667,15 +682,19 @@ export default async function TenanciesPage({ searchParams }: PageProps) {
                                 current terms.
                               </p>
                             </div>
-                            <SubmitButton
-                              formAction={resendTenancyWelcomeEmailAction}
-                              variant="outline"
-                              size="sm"
-                              pendingText="Sending..."
-                            >
-                              Resend
-                            </SubmitButton>
-                          </form>
+                            {welcomePreviews.get(tenancy.id) ? (
+                              <AlertPreviewModal
+                                title="Resend welcome email"
+                                description="This is exactly what the tenant will receive. Check it, edit if you like, then send."
+                                triggerLabel="Preview & send"
+                                compactTrigger
+                                preview={welcomePreviews.get(tenancy.id)!}
+                                action={resendTenancyWelcomeEmailAction}
+                                hiddenFields={{ tenancyId: tenancy.id }}
+                                sendLabel="Send email & WhatsApp"
+                              />
+                            ) : null}
+                          </div>
 
                           <div className="border-t p-4 sm:p-5">
                             <EntityDocumentManager

@@ -17,6 +17,7 @@ import { Select } from "@/components/ui/select";
 import { PendingLink } from "@/components/ui/pending-link";
 import { prisma } from "@/lib/prisma";
 import { isBuildingType } from "@/lib/property-types";
+import { personVisibilityWhere, visiblePersonCategories } from "@/lib/permissions";
 import { requireAnyRole } from "@/lib/session";
 import { STATUS_META } from "@/lib/status";
 import { RequestStatus, UserType } from "@/lib/generated/prisma/client";
@@ -36,6 +37,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const message = params as unknown as Message;
   const user = await requireAnyRole(UserType.admin, UserType.owner);
+  const personWhere = personVisibilityWhere(await visiblePersonCategories(user));
   const isOwner = user.userType === UserType.owner;
 
   const status = params.status as string | undefined;
@@ -126,7 +128,7 @@ export default async function AllRequestsPage({ searchParams }: PageProps) {
       },
     }),
     prisma.user.findMany({
-      where: { userType: UserType.worker },
+      where: { AND: [{ userType: UserType.worker }, personWhere] },
       select: {
         id: true,
         email: true,

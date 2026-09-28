@@ -20,6 +20,7 @@ import { YearPicker } from "@/components/year-picker";
 import { formatMoney, moneyValue } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
 import { requireAnyRole } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -58,6 +59,7 @@ export default async function AnnualBudgetPage({ params, searchParams }: PagePro
   }
 
   const user = await requireAnyRole(UserType.admin, UserType.owner);
+  const canDownloadPdf = (await adminAccess(user)).can("download_pdf");
   const isOwner = user.userType === UserType.owner;
 
   const property = await prisma.property.findUnique({
@@ -129,6 +131,7 @@ export default async function AnnualBudgetPage({ params, searchParams }: PagePro
             year={year}
             years={years}
           />
+          {canDownloadPdf && (
           <ButtonLink
             href={`/api/properties/${propertyId}/budget/${year}/pdf`}
             target="_blank"
@@ -138,6 +141,7 @@ export default async function AnnualBudgetPage({ params, searchParams }: PagePro
             <Download className="h-4 w-4" />
             Download PDF
           </ButtonLink>
+          )}
         </div>
       </PageHeader>
 

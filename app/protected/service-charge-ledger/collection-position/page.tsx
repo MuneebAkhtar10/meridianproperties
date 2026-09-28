@@ -31,6 +31,7 @@ import {
 import { prismaCollectsServiceChargeTypeWhere } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -72,7 +73,8 @@ function statusBadge(row: CollectionPositionRow): { label: string; className: st
  * | Last Reminder | Payment Arrangement.
  */
 export default async function CollectionPositionPage({ searchParams }: PageProps) {
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
+  const canDownloadPdf = (await adminAccess(admin)).can("download_pdf");
 
   const rawParams = (await searchParams) as unknown as {
     bucket?: string;
@@ -151,10 +153,12 @@ export default async function CollectionPositionPage({ searchParams }: PageProps
           label: "Service Charge Ledger",
         }}
       >
+        {canDownloadPdf && (
         <ButtonLink href={pdfHref} target="_blank" variant="outline">
           <Download className="h-4 w-4" />
           Download PDF
         </ButtonLink>
+        )}
       </PageHeader>
 
       <form className="flex flex-wrap items-end gap-2">

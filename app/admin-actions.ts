@@ -32,6 +32,7 @@ import {
 } from "@/lib/property-types";
 import { publish } from "@/lib/realtime";
 import { requireAnyRole, requireRole, isStaffAdmin } from "@/lib/session";
+import { DEFAULT_ADMIN_MODULE_KEYS } from "@/lib/admin-modules";
 import { canManagePermissions } from "@/lib/permissions";
 import { STAFF_ADMIN_TYPES } from "@/lib/user-roles";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -1819,12 +1820,19 @@ export const assignTenantAction = async (formData: FormData) => {
   // Not a rich lease-terms email like startTenancyAction's — this quick
   // assignment has none yet (zero-rent placeholder, see above) — but the
   // tenant and owner still deserve to know a move-in happened at all,
-  // which previously sent nothing. Skipped entirely when rent & bills are
-  // off for this unit, since the whole notice is about lease/rent terms.
-  if (isNewAssignment && tenantId && unit.rentBillsEnabled) {
+  // which previously sent nothing.
+  if (isNewAssignment && tenantId) {
     try {
+      const assignedTenant = await prisma.user.findUnique({
+        where: { id: tenantId },
+        select: { firstName: true, lastName: true, email: true },
+      });
       await notifyTenantAssigned({
         tenantId,
+        tenantName: assignedTenant
+          ? [assignedTenant.firstName, assignedTenant.lastName].filter(Boolean).join(" ") || assignedTenant.email
+          : undefined,
+        placeholderTerms: true,
         propertyName: unit.property.name,
         unitLabel: formatUnitLabel(unit.property.propertyType, unit.label),
         moveInDate: format(new Date(), "d MMMM yyyy"),
@@ -2013,6 +2021,18 @@ export const createUserAction = async (formData: FormData) => {
     // rather than leave a login with no profile behind it.
     await createAdminClient().auth.admin.deleteUser(authUser.user.id);
     throw error;
+  }
+
+  // A brand-new regular admin starts with the standard day-to-day set of
+  // permissions (see DEFAULT_ADMIN_MODULE_KEYS) rather than nothing at all —
+  // a super admin can still adjust it afterward from Permissions. Super
+  // admins themselves bypass permission checks entirely and never need
+  // grants.
+  if (userType === UserType.admin) {
+    await prisma.adminModuleGrant.createMany({
+      data: DEFAULT_ADMIN_MODULE_KEYS.map((module) => ({ userId: user.id, module })),
+      skipDuplicates: true,
+    });
   }
 
   if (userType === UserType.user) {
@@ -2211,6 +2231,14 @@ export const updateUserTypeAction = async (formData: FormData) => {
 
   if (existing.userType === UserType.admin && userType !== UserType.admin) {
     await prisma.adminModuleGrant.deleteMany({ where: { userId } });
+  } else if (existing.userType !== UserType.admin && userType === UserType.admin) {
+    // Same starting point as a brand-new admin account — see
+    // DEFAULT_ADMIN_MODULE_KEYS — rather than becoming an admin with
+    // nothing granted at all.
+    await prisma.adminModuleGrant.createMany({
+      data: DEFAULT_ADMIN_MODULE_KEYS.map((module) => ({ userId, module })),
+      skipDuplicates: true,
+    });
   }
 
   // Someone who is no longer a tenant should not still hold an apartment.

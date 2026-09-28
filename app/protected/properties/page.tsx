@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { formatOmanAddress } from "@/lib/oman";
 import { prisma } from "@/lib/prisma";
+import { personVisibilityWhere, visiblePersonCategories } from "@/lib/permissions";
 import { requireAnyRole, isStaffAdmin } from "@/lib/session";
 import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
@@ -50,6 +51,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const isOwner = user.userType === UserType.owner;
   const isAdmin = isStaffAdmin(user.userType);
+  const ownerPersonWhere = personVisibilityWhere(await visiblePersonCategories(user));
   const ownerFilter =
     isAdmin && typeof params.owner === "string" ? params.owner : "all";
   const search =
@@ -160,7 +162,7 @@ export default async function PropertiesPage({ searchParams }: PageProps) {
         : Promise.resolve([]),
       isAdmin
         ? prisma.user.findMany({
-            where: { userType: UserType.owner },
+            where: { AND: [{ userType: UserType.owner }, ownerPersonWhere] },
             select: { id: true, email: true, firstName: true, lastName: true },
             orderBy: { email: "asc" },
           })

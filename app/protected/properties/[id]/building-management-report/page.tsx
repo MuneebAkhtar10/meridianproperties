@@ -27,6 +27,7 @@ import {
   type ReportPeriodPreset,
 } from "@/lib/building-management-report";
 import { requireRole } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,8 @@ export default async function BuildingManagementReportPage({
   params,
   searchParams,
 }: PageProps) {
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
+  const { can } = await adminAccess(admin);
 
   const { id: propertyId } = (await params) as { id: string };
   const sp = (await searchParams) as unknown as {
@@ -84,6 +86,7 @@ export default async function BuildingManagementReportPage({
           label: "Back to property",
         }}
       >
+        {can("download_pdf") && (
         <ButtonLink
           href={`/api/properties/${propertyId}/building-management-report/pdf?${pdfParams}`}
           target="_blank"
@@ -92,6 +95,8 @@ export default async function BuildingManagementReportPage({
           <Download className="h-4 w-4" />
           Download PDF
         </ButtonLink>
+        )}
+        {can("download_excel") && (
         <ButtonLink
           href={`/api/properties/${propertyId}/building-management-report/excel?${pdfParams}`}
           target="_blank"
@@ -100,6 +105,7 @@ export default async function BuildingManagementReportPage({
           <FileSpreadsheet className="h-4 w-4" />
           Download Excel
         </ButtonLink>
+        )}
       </PageHeader>
 
       <Card className="overflow-hidden border-border/60 shadow-sm">

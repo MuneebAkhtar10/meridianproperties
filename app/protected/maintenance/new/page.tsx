@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { FormMessage, Message } from "@/components/form-message";
 import { prisma } from "@/lib/prisma";
 import { isBuildingType } from "@/lib/property-types";
+import { personVisibilityWhere, visiblePersonCategories } from "@/lib/permissions";
 import { requireRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
@@ -11,7 +12,8 @@ export default async function NewMaintenanceRequestPage({
   searchParams,
 }: PageProps) {
   const message = (await searchParams) as unknown as Message;
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
+  const personWhere = personVisibilityWhere(await visiblePersonCategories(admin));
 
   const [allProperties, workers] = await Promise.all([
     prisma.property.findMany({
@@ -42,7 +44,7 @@ export default async function NewMaintenanceRequestPage({
       },
     }),
     prisma.user.findMany({
-      where: { userType: UserType.worker },
+      where: { AND: [{ userType: UserType.worker }, personWhere] },
       select: {
         id: true,
         email: true,

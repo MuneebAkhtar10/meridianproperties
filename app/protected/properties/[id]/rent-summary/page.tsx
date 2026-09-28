@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { getBuildingRentSummary, type RentSummaryStatus } from "@/lib/building-rent-summary";
 import { formatMoney, monthInputValue } from "@/lib/finance";
 import { requireAnyRole } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
@@ -23,6 +24,7 @@ const STATUS_BADGE: Record<RentSummaryStatus, { label: string; className: string
 export default async function BuildingRentSummaryPage({ params, searchParams }: PageProps) {
   const { id } = (await params) as { id: string };
   const user = await requireAnyRole(UserType.admin, UserType.owner);
+  const canDownloadExcel = (await adminAccess(user)).can("download_excel");
   const query = (await searchParams) as unknown as { month?: string };
   const monthValue = /^\d{4}-\d{2}$/.test(query.month ?? "") ? query.month! : monthInputValue();
 
@@ -43,10 +45,12 @@ export default async function BuildingRentSummaryPage({ params, searchParams }: 
         description={`${summary.propertyName} · ${format(summary.monthStart, "MMMM yyyy")} · ${totals.unitCount} units`}
         back={{ href: `/protected/properties/${id}`, label: summary.propertyName }}
       >
+        {canDownloadExcel && (
         <a href={csvHref} className={buttonVariants({ variant: "outline" })}>
           <Download className="h-4 w-4" />
           Export CSV
         </a>
+        )}
       </PageHeader>
 
       <form className="flex items-end gap-2">

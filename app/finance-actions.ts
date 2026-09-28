@@ -332,6 +332,9 @@ export const startTenancyAction = async (formData: FormData) => {
     try {
       await notifyTenantAssigned({
         tenantId,
+        tenantName:
+          [tenant.firstName, tenant.lastName].filter(Boolean).join(" ") ||
+          tenant.email,
         propertyName: unit.property.name,
         unitLabel,
         moveInDate: format(startDate, "d MMMM yyyy"),
@@ -566,17 +569,13 @@ export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
     return encodedRedirect("error", "/protected/tenancies", "Tenancy not found.");
   }
 
-  if (!tenancy.unit.rentBillsEnabled) {
-    return encodedRedirect(
-      "error",
-      "/protected/tenancies",
-      "Rent & bills are turned off for this unit — there's no welcome email to resend.",
-    );
-  }
-
   try {
     await notifyTenantAssigned({
       tenantId: tenancy.tenantId,
+      tenantName:
+        [tenancy.tenant.firstName, tenancy.tenant.lastName].filter(Boolean).join(" ") ||
+        tenancy.tenant.email,
+      placeholderTerms: Number(tenancy.monthlyRent) === 0,
       propertyName: tenancy.unit.property.name,
       unitLabel: formatUnitLabel(
         tenancy.unit.property.propertyType,
@@ -593,6 +592,7 @@ export const resendTenancyWelcomeEmailAction = async (formData: FormData) => {
         ? format(tenancy.leaseEndDate, "d MMMM yyyy")
         : undefined,
       ownerId: tenancy.unit.ownerId,
+      customMessage: formData.get("customMessage")?.toString(),
     });
   } catch (error) {
     console.error("Resend welcome email failed:", error);
@@ -1524,7 +1524,16 @@ export const waiveChargeAction = async (formData: FormData) => {
     where: { id: chargeId },
     include: {
       payments: { select: { status: true } },
-      unit: { select: { ownerId: true } },
+      tenant: { select: { email: true, firstName: true, lastName: true } },
+      unit: {
+        select: {
+          ownerId: true,
+          label: true,
+          property: {
+            select: { name: true, propertyType: { select: { unitPrefix: true, hasFloors: true } } },
+          },
+        },
+      },
     },
   });
   if (!charge || charge.status !== ChargeStatus.open) {
@@ -1560,6 +1569,13 @@ export const waiveChargeAction = async (formData: FormData) => {
       ownerId: charge.unit.ownerId,
       chargeId,
       title: charge.title,
+      propertyName: charge.unit.property.name,
+      unitLabel: formatUnitLabel(charge.unit.property.propertyType, charge.unit.label),
+      amount: formatMoney(charge.amount),
+      tenantName:
+        [charge.tenant.firstName, charge.tenant.lastName].filter(Boolean).join(" ") ||
+        charge.tenant.email,
+      customMessage: formData.get("customMessage")?.toString(),
     });
   } catch (error) {
     console.error("Charge waived notification failed:", error);
@@ -1570,6 +1586,66 @@ export const waiveChargeAction = async (formData: FormData) => {
   revalidatePath("/protected/finances");
 
   return encodedRedirect("success", chargeReturn(formData, chargeId), "Charge waived.");
+};
+
+/** Re-sends the "charge waived" notice for a charge that has already been
+ * waived — the right message when a tenant asks about a waived charge,
+ * instead of an invoice that says something is due. */
+export const resendWaiverNoticeAction = async (formData: FormData) => {
+  await requireRole(UserType.admin);
+  const chargeId = formData.get("chargeId")?.toString();
+  if (!chargeId) {
+    return encodedRedirect("error", "/protected/finances", "Charge not found.");
+  }
+
+  const charge = await prisma.charge.findUnique({
+    where: { id: chargeId },
+    include: {
+      tenant: { select: { email: true, firstName: true, lastName: true } },
+      unit: {
+        select: {
+          ownerId: true,
+          label: true,
+          property: {
+            select: { name: true, propertyType: { select: { unitPrefix: true, hasFloors: true } } },
+          },
+        },
+      },
+    },
+  });
+  if (!charge || charge.status !== ChargeStatus.waived) {
+    return encodedRedirect(
+      "error",
+      chargeReturn(formData, chargeId),
+      "Only a waived charge has a waiver notice to resend.",
+    );
+  }
+
+  try {
+    await notifyChargeWaived({
+      tenantId: charge.tenantId,
+      // Only the tenant is re-notified; the owner already had theirs.
+      ownerId: null,
+      chargeId,
+      title: charge.title,
+      propertyName: charge.unit.property.name,
+      unitLabel: formatUnitLabel(charge.unit.property.propertyType, charge.unit.label),
+      amount: formatMoney(charge.amount),
+      tenantName:
+        [charge.tenant.firstName, charge.tenant.lastName].filter(Boolean).join(" ") ||
+        charge.tenant.email,
+      customMessage: formData.get("customMessage")?.toString(),
+    });
+  } catch (error) {
+    console.error("Resend waiver notice failed:", error);
+    return encodedRedirect(
+      "error",
+      chargeReturn(formData, chargeId),
+      "Could not resend the notice. Try again.",
+    );
+  }
+
+  return encodedRedirect("success", chargeReturn(formData, chargeId), "Waiver notice resent to the tenant.");
 };
 
 /** Re-sends the invoice email for a single charge, rebuilt fresh from the
@@ -1606,6 +1682,18 @@ export const resendChargeInvoiceEmailAction = async (formData: FormData) => {
     );
   }
 
+  // A closed charge is no longer due — an invoice reminder would tell the
+  // tenant to pay something they don't owe.
+  if (charge.status !== ChargeStatus.open) {
+    return encodedRedirect(
+      "error",
+      chargeReturn(formData, chargeId),
+      charge.status === ChargeStatus.waived
+        ? "This charge was waived — resend the waiver notice instead."
+        : "This charge is already paid — there is no invoice to resend.",
+    );
+  }
+
   try {
     await notifyTenantInvoice({
       tenantId: charge.tenantId,
@@ -1623,6 +1711,7 @@ export const resendChargeInvoiceEmailAction = async (formData: FormData) => {
       href: financeBack(charge.id),
       lineItems: [{ label: charge.title, amount: formatMoney(charge.amount) }],
       total: formatMoney(charge.amount),
+      customMessage: formData.get("customMessage")?.toString(),
     });
   } catch (error) {
     console.error("Resend invoice email failed:", error);

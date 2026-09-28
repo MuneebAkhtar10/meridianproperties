@@ -8,6 +8,7 @@ import {
 } from "@/app/invoice-actions";
 import { sendServiceChargeInvoiceAction } from "@/app/service-charge-invoice-actions";
 import { FormMessage, type Message } from "@/components/form-message";
+import { AlertPreviewModal } from "@/components/alert-preview-modal";
 import { InvoicePaymentForm } from "@/components/invoice-payment-form";
 import { InvoiceStatusBadge } from "@/components/invoice-status-badge";
 import { PageHeader } from "@/components/page-header";
@@ -16,9 +17,11 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { formatMoney, formatOmrAmount, moneyValue } from "@/lib/finance";
 import { INVOICE_KIND_LABEL, isInvoiceKind, isInvoiceStatus } from "@/lib/invoice-options";
 import { allocateOutstanding, ensureInvoiceColumns } from "@/lib/invoices";
+import { serviceChargeInvoicePreview } from "@/lib/alert-preview";
 import { prisma } from "@/lib/prisma";
 import { formatUnitLabel } from "@/lib/property-types";
 import { requireRole } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 import { personDisplayName } from "@/lib/utils";
@@ -39,7 +42,8 @@ function billedParty(person: {
 }
 
 export default async function InvoiceDetailPage({ params, searchParams }: PageProps) {
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
+  const canDownloadPdf = (await adminAccess(admin)).can("download_pdf");
   await ensureInvoiceColumns();
 
   const { id } = await params;
@@ -97,6 +101,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
     })),
   });
 
+  const sendPreview = await serviceChargeInvoicePreview(invoice.id);
   const kind = isInvoiceKind(invoice.kind) ? invoice.kind : "service_charge";
   const status = isInvoiceStatus(invoice.status) ? invoice.status : "issued";
   const outstanding =
@@ -163,6 +168,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <InvoiceStatusBadge status={displayStatus} />
+                {canDownloadPdf && (
                 <details className="group relative">
                   <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                     <Download className="h-4 w-4" />
@@ -203,24 +209,21 @@ export default async function InvoiceDetailPage({ params, searchParams }: PagePr
                     </a>
                   </div>
                 </details>
-                {status === "issued" && invoice.unit.owner && (
-                  <form>
-                    <input type="hidden" name="invoiceId" value={invoice.id} />
-                    <input
-                      type="hidden"
-                      name="redirectTo"
-                      value={`/protected/invoices/${invoice.id}`}
-                    />
-                    <SubmitButton
-                      formAction={sendServiceChargeInvoiceAction}
-                      variant="outline"
-                      size="sm"
-                      pendingText="Sending..."
-                    >
-                      <Send className="h-4 w-4" />
-                      Send
-                    </SubmitButton>
-                  </form>
+                )}
+                {status === "issued" && invoice.unit.owner && sendPreview && (
+                  <AlertPreviewModal
+                    title="Send invoice to the owner"
+                    description="This is exactly what the property owner will receive, with the invoice PDF attached. Check it, edit if you like, then send."
+                    triggerLabel="Send"
+                    compactTrigger
+                    preview={sendPreview}
+                    action={sendServiceChargeInvoiceAction}
+                    hiddenFields={{
+                      invoiceId: invoice.id,
+                      redirectTo: `/protected/invoices/${invoice.id}`,
+                    }}
+                    sendLabel="Send email & WhatsApp"
+                  />
                 )}
                 {status === "draft" && (
                   <>

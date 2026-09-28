@@ -1,4 +1,5 @@
 import { LayoutProps } from "@/types/page";
+import { StaleActionReload } from "@/components/stale-action-reload";
 import { requireUser } from "@/lib/session";
 
 export default async function ProtectedLayout({ children }: LayoutProps) {
@@ -6,5 +7,10 @@ export default async function ProtectedLayout({ children }: LayoutProps) {
 
   // The live event stream is opened once for the whole signed-in shell, up in
   // the root layout, so that the notification bell sits inside it too.
-  return <>{children}</>;
+  return (
+    <>
+      <StaleActionReload />
+      {children}
+    </>
+  );
 }

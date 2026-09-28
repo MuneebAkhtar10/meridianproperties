@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { LoaderCircle } from "lucide-react";
-import { type ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
 
 type Props = ComponentProps<typeof Button> & {
@@ -12,15 +12,38 @@ type Props = ComponentProps<typeof Button> & {
 export function SubmitButton({
   children,
   pendingText = "Submitting...",
+  onClick,
   ...props
 }: Props) {
-  const { pending } = useFormStatus();
+  const { pending: formPending } = useFormStatus();
+  // A button that submits a *different* form through the `form=""` attribute
+  // (e.g. inside a modal that is portalled away from its form) is not inside
+  // that form, so useFormStatus can't see it pending — track the click itself.
+  const [clicked, setClicked] = useState(false);
+  const submitsOtherForm = Boolean(props.form);
+  const pending = formPending || clicked;
+
+  useEffect(() => {
+    if (!clicked) return;
+    // The page navigates or refreshes on completion; this only covers a
+    // submit that fails to leave the page, so the button never stays stuck.
+    const timer = setTimeout(() => setClicked(false), 20000);
+    return () => clearTimeout(timer);
+  }, [clicked]);
 
   return (
     <Button
       type="submit"
       aria-disabled={pending}
       {...props}
+      onClick={(event) => {
+        onClick?.(event);
+        if (submitsOtherForm && !event.defaultPrevented) {
+          // Deferred so the button isn't disabled before the browser has
+          // started the submit.
+          setTimeout(() => setClicked(true), 0);
+        }
+      }}
       disabled={pending || props.disabled}
     >
       {pending && (

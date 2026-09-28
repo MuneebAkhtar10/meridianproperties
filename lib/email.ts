@@ -201,13 +201,19 @@ export function renderNotificationEmail(
   message: string,
   href?: string,
   details?: { label: string; value: string }[],
+  /** "Dear Ahmed" — addresses the person by name. */
+  greeting?: string,
+  /** A closing line under the details ("Please settle by the due date…"). */
+  closing?: string,
 ): string {
   const preheader = message.length > 120 ? `${message.slice(0, 117)}...` : message;
 
   const bodyHtml = `
     <h1 style="margin:0 0 14px;font-size:21px;line-height:1.3;color:#111827;font-weight:700;">${escapeHtml(title)}</h1>
-    <p style="margin:0 0 ${details?.length ? "18" : "28"}px;font-size:15px;line-height:1.65;color:#4b5563;">${escapeHtml(message)}</p>
+    ${greeting ? `<p style="margin:0 0 10px;font-size:15px;line-height:1.6;color:#111827;">${escapeHtml(greeting)},</p>` : ""}
+    <p style="margin:0 0 ${details?.length ? "18" : "20"}px;font-size:15px;line-height:1.65;color:#4b5563;">${escapeHtml(message)}</p>
     ${details?.length ? renderDetailsTable(details) : ""}
+    ${closing ? `<p style="margin:${details?.length ? "18" : "0"}px 0 26px;font-size:14px;line-height:1.6;color:#6b7280;font-style:italic;">${escapeHtml(closing)}</p>` : `<div style="height:8px"></div>`}
   `;
 
   return renderEmailShell({
@@ -233,7 +239,12 @@ export function renderInvoiceEmail(input: {
   lineItems: { label: string; amount: string }[];
   total: string;
   href: string;
+  /** A personal message from the admin, shown above the invoice. */
+  note?: string;
 }): string {
+  const noteHtml = input.note
+    ? `<p style="margin:0 0 20px;padding:14px 16px;background-color:#f3f4f6;border-radius:10px;font-size:14px;line-height:1.6;color:#374151;">${escapeHtml(input.note).replaceAll("\n", "<br>")}</p>`
+    : "";
   const lineRows = input.lineItems
     .map(
       (item, index) => `
@@ -245,6 +256,7 @@ export function renderInvoiceEmail(input: {
     .join("");
 
   const bodyHtml = `
+    ${noteHtml}
     <h1 style="margin:0 0 4px;font-size:21px;line-height:1.3;color:#111827;font-weight:700;">New invoice</h1>
     <p style="margin:0 0 22px;font-size:13px;color:#9ca3af;">Invoice ${escapeHtml(input.invoiceNumber)} · Issued ${escapeHtml(input.issueDate)}</p>
 

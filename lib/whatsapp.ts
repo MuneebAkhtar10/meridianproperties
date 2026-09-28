@@ -215,6 +215,8 @@ export type WhatsAppAlertParts = {
   message: string;
   details: { label: string; value: string }[];
   closing?: string;
+  /** "Dear Ahmed," — the message is addressed to the person by name. */
+  greeting?: string;
 };
 
 /** A properly laid-out chat message — bold title, blank lines between the
@@ -227,6 +229,7 @@ export function formatWhatsAppText(parts: WhatsAppAlertParts): string {
     .map((d) => `▪️ ${d.label}: *${d.value.trim()}*`);
   return [
     `*${parts.title}*`,
+    parts.greeting ? `${parts.greeting},` : "",
     parts.message,
     details.length ? details.join("\n") : "",
     parts.closing ? `_${parts.closing}_` : "",
@@ -270,13 +273,48 @@ export async function sendWhatsAppAlert(input: {
    * with a 200 and then never delivers it, so we must not guess.) */
   windowOpen?: boolean;
 }): Promise<void> {
-  if (input.windowOpen) {
+  // Free-form text is only used when explicitly switched on
+  // (WHATSAPP_FREEFORM_FIRST=1). Meta accepts it with a success reply even
+  // when the recipient's 24-hour window has closed and then never delivers
+  // it, so an alert must not depend on our estimate of that window. Approved
+  // templates always arrive, so they are the default for every alert.
+  if (input.windowOpen && process.env.WHATSAPP_FREEFORM_FIRST === "1") {
     await sendWhatsApp({
       to: input.to,
       body: formatWhatsAppText(input.parts),
       fallbackBody: input.flatBody,
     });
     return;
+  }
+
+  // Approved templates laid out line by line — one detail per line, with the
+  // line breaks written into the template's own text (the only place Meta
+  // allows them). One template per number of detail lines, named
+  // `${WHATSAPP_TEMPLATE_ALERT_PREFIX}2` ... `6`. If Meta refuses it (not
+  // approved yet, edited, ...) we carry on to the one-line templates below.
+  const alertPrefix = process.env.WHATSAPP_TEMPLATE_ALERT_PREFIX;
+  if (alertPrefix && process.env.WHATSAPP_ACCESS_TOKEN) {
+    const lines = input.parts.details
+      .filter((d) => d.value.trim().length > 0)
+      .map((d) => `${d.label}: ${d.value.trim()}`);
+    if (lines.length >= 2) {
+      // More than six details: the surplus joins the last line.
+      const shown =
+        lines.length > 6 ? [...lines.slice(0, 5), lines.slice(5).join(" · ")] : lines;
+      const sent = await sendWhatsAppTemplate({
+        to: input.to,
+        templateName: `${alertPrefix}${shown.length}`,
+        bodyParams: [
+          input.parts.title,
+          input.parts.greeting
+            ? `${input.parts.greeting}, ${input.parts.message}`
+            : input.parts.message,
+          ...shown,
+          input.parts.closing || "Thank you.",
+        ],
+      });
+      if (sent) return;
+    }
   }
 
   const structured = process.env.WHATSAPP_TEMPLATE_STRUCTURED;
@@ -382,7 +420,7 @@ export async function sendWhatsAppTemplate(input: {
   templateName: string;
   languageCode?: string;
   bodyParams?: string[];
-}): Promise<void> {
+}): Promise<boolean> {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
@@ -391,7 +429,7 @@ export async function sendWhatsAppTemplate(input: {
       "[whatsapp] WhatsApp Cloud API env vars not set — skipping template message to",
       input.to,
     );
-    return;
+    return false;
   }
 
   const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`;
@@ -431,7 +469,7 @@ export async function sendWhatsAppTemplate(input: {
         }),
       });
 
-      if (response.ok) return;
+      if (response.ok) return true;
 
       const body = await response.text().catch(() => "");
       if (isMissingTemplateLanguage(body) && i < languages.length - 1) {
@@ -444,11 +482,12 @@ export async function sendWhatsAppTemplate(input: {
       console.error(
         `[whatsapp] Meta Cloud API template request failed (${response.status}) for ${input.to}: ${body}`,
       );
-      return;
+      return false;
     }
   } catch (error) {
     console.error(`[whatsapp] Failed to send template to ${input.to}:`, error);
   }
+  return false;
 }
 
 /**

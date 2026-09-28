@@ -9,11 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney, moneyValue } from "@/lib/finance";
 import { getTenantReportData } from "@/lib/tenant-report";
 import { requireAnyRole } from "@/lib/session";
+import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
 export default async function TenantReportPage({ searchParams }: PageProps) {
   const user = await requireAnyRole(UserType.admin, UserType.owner);
+  const canDownloadPdf = (await adminAccess(user)).can("download_pdf");
 
   const params = (await searchParams) as unknown as { property?: string };
   const propertyId = typeof params.property === "string" ? params.property : "";
@@ -40,10 +42,12 @@ export default async function TenantReportPage({ searchParams }: PageProps) {
         description={report.propertyName}
         back={{ href: "/protected/tenancies", label: "All tenancies" }}
       >
+        {canDownloadPdf && (
         <a href={pdfHref} className={buttonVariants({ variant: "outline" })}>
           <Download className="h-4 w-4" />
           Download PDF
         </a>
+        )}
       </PageHeader>
 
       <div

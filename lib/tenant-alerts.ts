@@ -111,6 +111,84 @@ export function tenantRentReminderCopy(
   );
 }
 
+export function tenantWelcomeCopy(
+  input: Place & {
+    moveInDate: string;
+    /** Extra rows when real lease terms are known (rent, deposit, ...). */
+    terms?: { label: string; value: string }[];
+  },
+): AlertCopy {
+  return build(
+    "Welcome to your new home",
+    `You have been assigned to ${input.unitLabel} at ${input.propertyName}. Welcome!`,
+    [
+      { label: "Property", value: input.propertyName },
+      { label: "Unit", value: input.unitLabel },
+      { label: "Move-in date", value: input.moveInDate },
+      ...(input.terms ?? []),
+    ],
+    input.terms?.length
+      ? "Reply here if you have any questions about your tenancy."
+      : "Your rent and lease terms will be confirmed by property management shortly. Reply here if you need anything.",
+  );
+}
+
+export function ownerTenantMovedInCopy(
+  input: Place & {
+    tenantName: string;
+    moveInDate: string;
+    terms?: { label: string; value: string }[];
+  },
+): AlertCopy {
+  return build(
+    "New tenant moved in",
+    `${input.tenantName} has been assigned to ${input.unitLabel} at ${input.propertyName}.`,
+    [
+      { label: "Property", value: input.propertyName },
+      { label: "Unit", value: input.unitLabel },
+      { label: "Tenant", value: input.tenantName },
+      { label: "Move-in date", value: input.moveInDate },
+      ...(input.terms ?? []),
+    ],
+    input.terms?.length
+      ? "The tenancy terms are recorded on the Tenancies page."
+      : "The rent and lease terms will be confirmed with the tenant shortly.",
+  );
+}
+
+export function tenantChargeWaivedCopy(
+  input: Place & { chargeTitle: string; amount: string },
+): AlertCopy {
+  return build(
+    "Charge waived",
+    `"${input.chargeTitle}" (${input.amount}) for ${input.unitLabel} at ${input.propertyName} has been waived - nothing more is due for it.`,
+    [
+      { label: "Property", value: input.propertyName },
+      { label: "Unit", value: input.unitLabel },
+      { label: "Charge", value: input.chargeTitle },
+      { label: "Amount waived", value: input.amount },
+    ],
+    "No action is needed from you. Reply here if you have any questions.",
+  );
+}
+
+export function ownerChargeWaivedCopy(
+  input: Place & { chargeTitle: string; amount: string; tenantName: string },
+): AlertCopy {
+  return build(
+    "Charge waived",
+    `"${input.chargeTitle}" (${input.amount}) billed to ${input.tenantName} for ${input.unitLabel} at ${input.propertyName} has been waived and is no longer due.`,
+    [
+      { label: "Property", value: input.propertyName },
+      { label: "Unit", value: input.unitLabel },
+      { label: "Tenant", value: input.tenantName },
+      { label: "Charge", value: input.chargeTitle },
+      { label: "Amount waived", value: input.amount },
+    ],
+    "This charge will not be collected.",
+  );
+}
+
 /* ── Property owner ─────────────────────────────────────────────────── */
 
 export function ownerChargePaidCopy(

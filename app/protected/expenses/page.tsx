@@ -42,12 +42,14 @@ import {
 import { dateInputValue, formatMoney, moneyValue } from "@/lib/finance";
 import { collectsServiceCharge, formatUnitLabel } from "@/lib/property-types";
 import { prisma } from "@/lib/prisma";
+import { adminAccess } from "@/lib/permissions";
 import { requireRole } from "@/lib/session";
 import { UserType } from "@/lib/generated/prisma/client";
 import { PageProps } from "@/types/page";
 
 export default async function ExpensesPage({ searchParams }: PageProps) {
-  await requireRole(UserType.admin);
+  const admin = await requireRole(UserType.admin);
+  const { can } = await adminAccess(admin);
 
   const rawParams = (await searchParams) as unknown as {
     tab?: string;
@@ -232,7 +234,12 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
         <div className="flex flex-wrap items-center gap-2">
           {tab === "log" ? (
             <>
-              <ExpensesExportMenu csvHref={exportCsvHref} pdfHref={exportPdfHref} />
+              <ExpensesExportMenu
+                csvHref={exportCsvHref}
+                pdfHref={exportPdfHref}
+                canDownloadPdf={can("download_pdf")}
+                canDownloadExcel={can("download_excel")}
+              />
               <CashFlowStatementModal
                 properties={properties}
                 defaultPropertyId={

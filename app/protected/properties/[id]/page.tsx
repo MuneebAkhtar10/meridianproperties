@@ -83,6 +83,7 @@ import { getRentPositionData } from "@/lib/rent-position";
 import { SummaryTile } from "@/components/summary-tile";
 import { cn, personDisplayName } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
+import { personVisibilityWhere, visiblePersonCategories } from "@/lib/permissions";
 import { requireAnyRole, isStaffAdmin } from "@/lib/session";
 import { adminAccess } from "@/lib/permissions";
 import { UserType } from "@/lib/generated/prisma/client";
@@ -161,6 +162,7 @@ export default async function PropertyDetailPage({
   const user = await requireAnyRole(UserType.admin, UserType.owner);
   const { can } = await adminAccess(user);
   const isAdmin = isStaffAdmin(user.userType);
+  const personWhere = personVisibilityWhere(await visiblePersonCategories(user));
   const isOwner = user.userType === UserType.owner;
 
   const property = await prisma.property.findUnique({
@@ -266,14 +268,14 @@ export default async function PropertyDetailPage({
     unbilledExpenses,
   ] = await Promise.all([
       prisma.user.findMany({
-        where: { userType: UserType.user, unit: null },
+        where: { AND: [{ userType: UserType.user, unit: null }, personWhere] },
         orderBy: { email: "asc" },
         select: { id: true, email: true, firstName: true, lastName: true },
       }),
       prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } }),
       isAdmin
         ? prisma.user.findMany({
-            where: { userType: UserType.owner },
+            where: { AND: [{ userType: UserType.owner }, personWhere] },
             select: { id: true, email: true, firstName: true, lastName: true },
             orderBy: { email: "asc" },
           })
@@ -714,6 +716,8 @@ export default async function PropertyDetailPage({
 <Tooltip label="Download the landlord statement — rent collected versus expenses for a tenancy.">
                 <RentStatementModal
                   options={activeStatementTenancies}
+                  canDownloadPdf={can("download_pdf")}
+                  canDownloadExcel={can("download_excel")}
                   trigger={
                     <Button
                       type="button"

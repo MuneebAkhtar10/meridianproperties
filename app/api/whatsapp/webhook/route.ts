@@ -2,6 +2,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { NextRequest, NextResponse } from "next/server";
 
+import { notifyAdminsWhatsappDeliveryFailed } from "@/lib/notifications";
+import { prisma } from "@/lib/prisma";
 import { recordWhatsappInbound } from "@/lib/whatsapp-session";
 import { handleIncomingWhatsapp, normalizeWhatsappPhone } from "@/lib/whatsapp-bot";
 import { sendWhatsApp } from "@/lib/whatsapp";
@@ -168,6 +170,9 @@ export async function POST(request: NextRequest) {
   if (statuses?.length) {
     for (const status of statuses) {
       if (status.status === "failed" || status.errors?.length) {
+        const reason =
+          status.errors?.map((e) => e.title || e.message).filter(Boolean).join("; ") ||
+          "Unknown error";
         console.error(
           "[whatsapp webhook] Delivery failed",
           JSON.stringify({
@@ -177,6 +182,23 @@ export async function POST(request: NextRequest) {
             errors: status.errors,
           }),
         );
+
+        if (status.recipient_id) {
+          const phone = normalizeWhatsappPhone(status.recipient_id);
+          void prisma.user
+            .findUnique({ where: { phone }, select: { firstName: true, lastName: true } })
+            .then((user) =>
+              notifyAdminsWhatsappDeliveryFailed({
+                phone,
+                recipientName:
+                  [user?.firstName, user?.lastName].filter(Boolean).join(" ") || undefined,
+                reason,
+              }),
+            )
+            .catch((error) =>
+              console.error("[whatsapp webhook] Failed to notify admins of delivery failure:", error),
+            );
+        }
       }
     }
   }
